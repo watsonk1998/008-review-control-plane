@@ -31,7 +31,8 @@ body {
     radial-gradient(circle at top left, rgba(56, 189, 248, 0.18), transparent 32%),
     radial-gradient(circle at top right, rgba(14, 165, 233, 0.18), transparent 28%),
     linear-gradient(180deg, #020617 0%, #0f172a 100%);
-  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -49,7 +50,9 @@ button {
 
 code,
 pre {
-  font-family: var(--font-geist-mono), monospace;
+  font-family:
+    "SFMono-Regular", "JetBrains Mono", ui-monospace, "Cascadia Code",
+    "Source Code Pro", Menlo, monospace;
 }
 
 main.shell {

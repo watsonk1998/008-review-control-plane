@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 
 from src.config.fastgpt import resolve_fastgpt_config
-from src.config.llm import resolve_llm_config
+from src.config.llm import resolve_embedding_config, resolve_llm_config
 
 
 def test_resolve_llm_config_from_env(monkeypatch):
@@ -93,3 +93,28 @@ def test_resolve_fastgpt_config_from_env(monkeypatch):
     assert config.api_key == 'api-key'
     assert config.search_api_key == 'search-key'
     assert config.source == 'env'
+
+
+def test_resolve_embedding_config_from_file(tmp_path: Path, monkeypatch):
+    monkeypatch.delenv('EMBEDDING_BASE_URL', raising=False)
+    monkeypatch.delenv('EMBEDDING_API_KEY', raising=False)
+    monkeypatch.delenv('EMBEDDING_MODEL', raising=False)
+    payload = {
+        'dashscope_embedding': {
+            'base_url': 'https://dashscope.aliyuncs.com/compatible-mode/v1',
+            'api_key': 'embed-secret',
+            'provider': 'dashscope_embedding',
+            'models': ['text-embedding-v4'],
+        }
+    }
+    config_path = tmp_path / 'century.json'
+    config_path.write_text(json.dumps(payload), encoding='utf-8')
+    monkeypatch.setenv('LLM_CONFIG_PATH', str(config_path))
+    monkeypatch.setenv('EMBEDDING_CONFIG_PROFILE', 'dashscope_embedding')
+
+    config = resolve_embedding_config()
+
+    assert config.base_url.endswith('/v1')
+    assert config.api_key == 'embed-secret'
+    assert config.model == 'text-embedding-v4'
+    assert config.source == 'credentials_file'

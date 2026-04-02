@@ -11,7 +11,15 @@ from src.routes.tasks import router as tasks_router
 app = FastAPI(title='008 Review Control Plane API', version='0.1.0')
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[get_settings().web_origin, 'http://localhost:3018', 'http://127.0.0.1:3018', 'http://localhost:3000', 'http://127.0.0.1:3000'],
+    allow_origins=[
+        get_settings().web_origin,
+        'http://localhost:3008',
+        'http://127.0.0.1:3008',
+        'http://localhost:3018',
+        'http://127.0.0.1:3018',
+        'http://localhost:3000',
+        'http://127.0.0.1:3000',
+    ],
     allow_credentials=True,
     allow_methods=['*'],
     allow_headers=['*'],

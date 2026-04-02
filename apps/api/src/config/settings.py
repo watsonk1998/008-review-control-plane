@@ -38,7 +38,7 @@ def get_settings() -> Settings:
         fixture_manifest_path=project_root / 'fixtures' / 'manifest.json',
         api_host=os.getenv('REVIEW_CONTROL_API_HOST', '127.0.0.1'),
         api_port=int(os.getenv('REVIEW_CONTROL_API_PORT', '8018')),
-        web_origin=os.getenv('REVIEW_CONTROL_WEB_ORIGIN', 'http://127.0.0.1:3018'),
+        web_origin=os.getenv('REVIEW_CONTROL_WEB_ORIGIN', 'http://127.0.0.1:3008'),
         gpt_researcher_external_path=os.getenv('GPT_RESEARCHER_EXTERNAL_PATH'),
         deeptutor_base_url=os.getenv('DEEPTUTOR_BASE_URL'),
     )
