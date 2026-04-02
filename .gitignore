@@ -1,0 +1,53 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+.next/
+out/
+dist/
+
+# Python virtual environments
+.venv/
+venv/
+apps/api/.venv/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Runtime artifacts
+artifacts/
+logs/
+
+# Databases
+*.sqlite
+*.db
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+
+# IDE
+.vscode/
+.idea/
+
+# Test coverage
+coverage/
+htmlcov/
+.coverage
+
+# Python build artifacts
+*.egg-info/
+
+# Next.js auto-generated
+next-env.d.ts
+
+# Codex / AI agent working dirs
+.codex/
