@@ -51,3 +51,12 @@ next-env.d.ts
 
 # Codex / AI agent working dirs
 .codex/
+
+# Security & Keys (Prevent accidental leaks)
+*.pem
+*.key
+*.cert
+*.crt
+*secret*.json
+*credentials*.json
+*.keystore
