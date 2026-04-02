@@ -52,7 +52,10 @@
 
 ## 7. GPT Researcher 接入说明
 
-通过 direct import 接入 `/tmp/008-discovery/gpt-researcher`，并由 008 侧注入 LLM / embedding / retriever 配置。本地文档研究改用 008 自己提取文本后交给 GPT Researcher report writer 的方式。
+通过 direct import 接入 `/tmp/008-discovery/gpt-researcher`，并由 008 侧注入 LLM / embedding / retriever 配置。
+
+- 本地文档研究：008 自己提取文本，再交给 GPT Researcher report writer。
+- 深度研究补强：当提供 `sourceUrls` 且 `useWeb=false` 时，008 会先抓取来源正文，再以 source-grounded static mode 生成研究报告，避免完全依赖外部搜索引擎。
 
 ## 8. Fast 知识库接入说明
 
@@ -81,10 +84,13 @@ make dev
 
 已完成：
 
-- backend pytest
+- backend pytest（`8 passed`）
 - frontend lint/build
-- 真实 knowledge_qa API 链路
-- 其余能力通过 `make verify-connectivity` 持续生成证据
+- 前端真实 knowledge_qa 端到端链路：`5e778a1c468340cf895846ffa3a3d146`
+- API 深度研究成功链路：`0a76e1d975e2453c8fa263c6aa280412`
+- API 文档研究成功链路：`7f0fc83965e94a66874e00b96e5a03ee`
+- API 审查辅助成功链路：`23a57bd1d3a94454965452143325018b`
+- 证据汇总：`artifacts/verification/task-matrix.json`
 
 ## 12. 联通验证说明
 
@@ -95,11 +101,14 @@ make dev
 - DeepTutor health + chat
 - DeepResearchRuntime → FastGPT → DeepTutor API 任务链路
 - GPT Researcher import/health
+- GPT Researcher local-doc research
+- GPT Researcher source-grounded deep research
+- 前端页面截图证据：`artifacts/verification/end-to-end-ui-or-api.png`
 
 ## 13. 已知限制
 
 - DeepTutor 为轻量 bridge，不是官方全量平台镜像
-- GPT Researcher 首次/长任务耗时较高
+- GPT Researcher 首次/长任务耗时较高；`useWeb=true` 或未提供 `sourceUrls` 时，仍更依赖外部搜索质量
 - FastGPT Mode B 依赖 collectionId
 - 当前前端进度更新采用轮询
 

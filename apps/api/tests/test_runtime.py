@@ -3,7 +3,9 @@ from __future__ import annotations
 import json
 from datetime import datetime, timezone
 from pathlib import Path
+from types import SimpleNamespace
 
+from src.adapters.gpt_researcher_adapter import GPTResearcherAdapter
 from src.domain.models import TaskRecord
 from src.orchestrator.deepresearch_runtime import DeepResearchRuntime
 from src.repositories.sqlite_store import SQLiteTaskStore
@@ -171,3 +173,61 @@ async def test_runtime_review_assist_aggregates_fixture_and_deeptutor(tmp_path: 
     assert 'llm_gateway' in saved.result['capabilitiesUsed']
     assert saved.result['notice'].startswith('这是辅助审查结果')
     assert len(saved.result['artifacts']) >= 2
+
+
+class FakeSourceURLResearcher:
+    last_instance = None
+
+    def __init__(self, **kwargs):
+        self.kwargs = kwargs
+        self.conduct_called = False
+        self.ext_context = None
+        FakeSourceURLResearcher.last_instance = self
+
+    async def conduct_research(self):
+        self.conduct_called = True
+
+    async def write_report(self, ext_context=None):
+        self.ext_context = ext_context
+        return f"REPORT::{self.kwargs['report_type']}::{self.kwargs['report_source']}"
+
+    def get_research_sources(self):
+        return [{'title': 'live-source'}]
+
+
+async def test_gpt_researcher_source_urls_use_static_context(monkeypatch):
+    adapter = GPTResearcherAdapter(external_path='/tmp/unused')
+
+    def fake_prepare_import():
+        return (
+            FakeSourceURLResearcher,
+            SimpleNamespace(
+                ResearchReport=SimpleNamespace(value='research_report'),
+                DeepResearch=SimpleNamespace(value='deep_research'),
+            ),
+            SimpleNamespace(
+                Static=SimpleNamespace(value='static'),
+                Web=SimpleNamespace(value='web'),
+            ),
+            SimpleNamespace(Analytical='analytical'),
+        )
+
+    async def fake_build_source_url_context(source_urls):
+        assert source_urls == ['https://example.com/a']
+        return 'STATIC_CONTEXT', [{'url': source_urls[0], 'preview': 'demo'}]
+
+    monkeypatch.setattr(adapter, '_prepare_import', fake_prepare_import)
+    monkeypatch.setattr(adapter, '_build_source_url_context', fake_build_source_url_context)
+
+    result = await adapter.run_deep_research(
+        '比较三种能力的角色差异',
+        use_web=False,
+        source_urls=['https://example.com/a'],
+    )
+
+    assert result['meta']['reportSource'] == 'static_source_urls'
+    assert result['meta']['sourceUrlCount'] == 1
+    assert result['sources'][0]['url'] == 'https://example.com/a'
+    assert FakeSourceURLResearcher.last_instance is not None
+    assert FakeSourceURLResearcher.last_instance.conduct_called is False
+    assert FakeSourceURLResearcher.last_instance.ext_context == 'STATIC_CONTEXT'

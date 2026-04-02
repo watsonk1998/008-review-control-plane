@@ -7,6 +7,7 @@
 2. **GPT Researcher 依赖较重**
    - 已经通过 direct import + env bridge 打通。
    - 但完整 web/local research 调用延迟可能较高，首次运行会明显慢于普通问答。
+   - 为了提升稳定性，008 对 `sourceUrls + useWeb=false` 增加了 static-source fallback；但若用户要求纯 web research，仍受外部搜索和抓取质量影响。
 
 3. **FastGPT Mode B 依赖 collectionId**
    - 若没有明确 collectionId，只能优先走 Mode A。

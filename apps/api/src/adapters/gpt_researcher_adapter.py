@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 from contextlib import contextmanager
 from pathlib import Path
 import importlib
@@ -7,6 +8,8 @@ import os
 import sys
 import tempfile
 from typing import Any
+from urllib.parse import urlparse
+from urllib.request import Request, urlopen
 
 from src.config.llm import resolve_embedding_config, resolve_llm_config
 from src.services.document_loader import DocumentLoader
@@ -151,8 +154,68 @@ class GPTResearcherAdapter:
             )
         return '\n\n---\n\n'.join(context_parts), sources
 
+    def _fetch_source_url_text(self, url: str, timeout: int = 20) -> str:
+        request = Request(url, headers={'User-Agent': '008-review-control-plane/1.0'})
+        with urlopen(request, timeout=timeout) as response:
+            raw = response.read()
+            charset = response.headers.get_content_charset() or 'utf-8'
+        return raw.decode(charset, errors='ignore')
+
+    async def _build_source_url_context(self, source_urls: list[str]) -> tuple[str, list[dict[str, str]]]:
+        context_parts: list[str] = []
+        sources: list[dict[str, str]] = []
+        for url in source_urls:
+            try:
+                text = await asyncio.to_thread(self._fetch_source_url_text, url)
+            except Exception as exc:
+                sources.append(
+                    {
+                        'type': 'external_url',
+                        'title': url,
+                        'url': url,
+                        'error': str(exc),
+                    }
+                )
+                continue
+            trimmed = text[:20000]
+            title = Path(urlparse(url).path).name or url
+            context_parts.append(f"来源：{title}\nURL: {url}\n\n{trimmed}")
+            sources.append(
+                {
+                    'type': 'external_url',
+                    'title': title,
+                    'url': url,
+                    'preview': trimmed[:600],
+                }
+            )
+        if not context_parts:
+            raise ValueError('No sourceUrls could be fetched for static deep research')
+        return '\n\n---\n\n'.join(context_parts), sources
+
     async def run_deep_research(self, query: str, *, use_web: bool, source_urls: list[str] | None = None) -> dict[str, Any]:
         GPTResearcher, ReportType, ReportSource, Tone = self._prepare_import()
+        if source_urls and not use_web:
+            ext_context, sources = await self._build_source_url_context(source_urls)
+            researcher = GPTResearcher(
+                query=query,
+                report_type=ReportType.ResearchReport.value,
+                report_source=ReportSource.Static.value,
+                tone=Tone.Analytical,
+                agent='source_grounded_researcher',
+                role='你是一名研究分析师。请严格依据给定外部来源内容生成深度研究报告，不要杜撰未提供的事实。',
+                verbose=False,
+            )
+            report = await researcher.write_report(ext_context=ext_context)
+            return {
+                'report': report,
+                'sources': sources,
+                'meta': {
+                    'reportType': ReportType.ResearchReport.value,
+                    'reportSource': 'static_source_urls',
+                    'sourceUrlCount': len(source_urls),
+                    'fetchedSourceCount': len([item for item in sources if 'preview' in item]),
+                },
+            }
         researcher = GPTResearcher(
             query=query,
             report_type=ReportType.DeepResearch.value,
