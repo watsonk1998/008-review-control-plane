@@ -60,3 +60,6 @@ next-env.d.ts
 *secret*.json
 *credentials*.json
 *.keystore
+
+# Fixtures
+fixtures/任务书/
