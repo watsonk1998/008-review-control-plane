@@ -1,0 +1,14 @@
+{
+  "issues": [
+    {
+      "title": "章节结构存在重复标题，正式审查定位不稳定",
+      "layer": "L1",
+      "severity": "medium",
+      "findingType": "hard_evidence",
+      "requiredPolicyRefs": [
+        "construction_org_structure"
+      ],
+      "manualReviewNeeded": false
+    }
+  ]
+}

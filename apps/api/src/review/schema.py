@@ -4,16 +4,16 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
-from src.domain.models import AttachmentVisibility, ConfidenceLevel, EvidenceSpan, FindingType, ReviewIssue, ReviewLayer
-
-
-ReviewDocumentType = Literal[
-    'construction_org',
-    'construction_scheme',
-    'hazardous_special_scheme',
-    'supervision_plan',
-    'review_support_material',
-]
+from src.domain.models import (
+    AttachmentVisibility,
+    ConfidenceLevel,
+    EvidenceSpan,
+    FindingType,
+    ReviewDocumentType,
+    ReviewIssue,
+    ReviewLayer,
+    TaskArtifact,
+)
 
 
 class StructuredReviewTask(BaseModel):
@@ -26,6 +26,16 @@ class StructuredReviewTask(BaseModel):
     sourceDocumentPath: str
     sourceFixtureId: str | None = None
     useAssistArtifacts: bool = False
+
+
+class ResolvedReviewProfile(BaseModel):
+    requestedDocumentType: ReviewDocumentType | None = None
+    requestedDisciplineTags: list[str] = Field(default_factory=list)
+    requestedPolicyPackIds: list[str] = Field(default_factory=list)
+    documentType: ReviewDocumentType
+    disciplineTags: list[str] = Field(default_factory=list)
+    policyPackIds: list[str] = Field(default_factory=list)
+    strictMode: bool = True
 
 
 class PolicyClause(BaseModel):
@@ -46,6 +56,7 @@ class PolicyPack(BaseModel):
     ruleIds: list[str] = Field(default_factory=list)
     evidencePackIds: list[str] = Field(default_factory=list)
     defaultEnabled: bool = True
+    description: str = ''
 
 
 class EvidencePack(BaseModel):
@@ -55,6 +66,8 @@ class EvidencePack(BaseModel):
     forceLevel: Literal['must', 'should', 'guidance'] = 'guidance'
     applicability: str = ''
     severityMapping: dict[str, str] = Field(default_factory=dict)
+    ruleIds: list[str] = Field(default_factory=list)
+    docTypes: list[str] = Field(default_factory=list)
 
 
 class DocumentParseResult(BaseModel):
@@ -117,9 +130,53 @@ class FinalIssue(ReviewIssue):
     whetherManualReviewNeeded: bool = False
 
 
+class HazardIdentificationMatrix(BaseModel):
+    values: dict[str, Any] = Field(default_factory=dict)
+
+
+class RuleHitMatrixRow(BaseModel):
+    ruleId: str
+    packId: str
+    status: str
+    layerHint: str
+    severityHint: str
+    matchType: str
+
+
+class ConflictMatrix(BaseModel):
+    values: dict[str, Any] = Field(default_factory=dict)
+
+
+class AttachmentVisibilityMatrixItem(BaseModel):
+    id: str
+    attachmentNumber: str
+    title: str
+    visibility: AttachmentVisibility
+    parseState: str
+    referenceBlockIds: list[str] = Field(default_factory=list)
+    titleBlockId: str | None = None
+
+
+class SectionStructureMatrixItem(BaseModel):
+    id: str
+    title: str
+    level: int
+    parentId: str | None = None
+    duplicate: bool = False
+
+
+class StructuredReviewMatrices(BaseModel):
+    hazardIdentification: HazardIdentificationMatrix
+    ruleHits: list[RuleHitMatrixRow] = Field(default_factory=list)
+    conflicts: ConflictMatrix
+    attachmentVisibility: list[AttachmentVisibilityMatrixItem] = Field(default_factory=list)
+    sectionStructure: list[SectionStructureMatrixItem] = Field(default_factory=list)
+    issueLayerCounts: dict[str, int] = Field(default_factory=dict)
+
+
 class StructuredReviewSummary(BaseModel):
     overallConclusion: str
-    documentType: str
+    documentType: ReviewDocumentType
     selectedPacks: list[str] = Field(default_factory=list)
     manualReviewNeeded: bool = False
     issueCount: int = 0
@@ -129,8 +186,10 @@ class StructuredReviewSummary(BaseModel):
 
 class StructuredReviewResult(BaseModel):
     summary: StructuredReviewSummary
+    resolvedProfile: ResolvedReviewProfile
     issues: list[FinalIssue] = Field(default_factory=list)
-    matrices: dict[str, Any] = Field(default_factory=dict)
+    matrices: StructuredReviewMatrices
+    artifactIndex: list[TaskArtifact] = Field(default_factory=list)
     reportMarkdown: str = ''
     artifacts: list[str] = Field(default_factory=list)
     plan: dict[str, Any] | None = None

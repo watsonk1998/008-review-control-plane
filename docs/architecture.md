@@ -18,6 +18,15 @@
 
 runtime 仍然只是 orchestration / coordination 层；正式审查判断下沉到 `apps/api/src/review/`。
 
+P1 起，`structured_review` 的入口 profile 显式化：
+
+- `documentType`
+- `disciplineTags`
+- `strictMode`
+- `policyPackIds`
+
+最终生效值统一回写到 `result.resolvedProfile`，避免“用户指定 / 路由推断 / 实际执行”三套口径不一致。
+
 ## 分层
 
 ### 1. 前端层
@@ -39,6 +48,7 @@ runtime 仍然只是 orchestration / coordination 层；正式审查判断下沉
 职责：
 
 - 任务创建、查询、结果查询、事件查询
+- artifact 列表与下载接口
 - health / capabilities / fixtures 暴露
 
 ### 3. Orchestrator 层（DeepResearchAgent 兼容层）
@@ -65,10 +75,11 @@ runtime 仍然只是 orchestration / coordination 层；正式审查判断下沉
 
 - 结构化文档解析（sections / blocks / tables / attachments / visibility）
 - 事实抽取（project / hazard / schedule / resources / emergency）
-- 规则命中（duplicate sections / attachment visibility / special scheme gap / schedule-resource pressure）
+- policy/evidence pack registry
+- 规则命中（duplicate sections / attachment visibility / special scheme gap / schedule-resource pressure / hazardous special scheme checks）
 - 证据归档（docEvidence / policyEvidence）
 - 正式报告与矩阵构建
-- evaluation harness / golden case 回归
+- evaluation harness / golden case / ablations / cross-pack / cross-model 回归
 
 ### 5. Adapter 层
 
@@ -117,9 +128,10 @@ flowchart TD
     C --> R[Review Pipeline]
     R --> R1[Parser]
     R --> R2[Extractors]
-    R --> R3[Rule Engine]
-    R --> R4[Evidence Builder]
-    R --> R5[Report Builder]
+    R --> R3[Pack Registry]
+    R --> R4[Rule Engine]
+    R --> R5[Evidence Builder]
+    R --> R6[Report Builder]
     F --> J[FastGPT Chunks]
     G --> K[DeepTutor Bridge]
     H --> L[GPT Researcher Runtime]
@@ -144,6 +156,40 @@ flowchart TD
 - 高风险作业专项方案挂接检查
 - 应急预案针对性检查
 - 停机窗口 / 人力 / 高风险工序并行压力提示
+- 危大专项方案核心章节完整性
+- 危大专项方案验算依据检查
+- 危大专项方案措施-监测闭环检查
+
+## P1 pack / evidence 体系
+
+- `construction_org.base`
+- `hazardous_special_scheme.base`
+- placeholder base packs：
+  - `construction_scheme.base`
+  - `supervision_plan.base`
+  - `review_support_material.base`
+- scenario packs：
+  - `lifting_operations.base`
+  - `temporary_power.base`
+  - `hot_work.base`
+  - `gas_area_ops.base`
+  - `special_equipment.base`
+  - `working_at_height.base`
+
+evidence packs 继续用 Python/Pydantic registry 管理，不进入 YAML/DSL 平台化。
+
+## P1 评测门
+
+- CI 稳定子集：12 cases
+- 本地完整评测池：20 cases
+- 主指标：
+  - `issue_recall`
+  - `l1_hit_rate`
+  - `pack_selection_accuracy`
+  - `policy_ref_accuracy`
+  - `attachment_visibility_accuracy`
+  - `severity_accuracy`
+  - `manual_review_flag_accuracy`
 
 ## 可扩展方向
 

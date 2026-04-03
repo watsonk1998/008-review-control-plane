@@ -260,6 +260,10 @@ async def test_runtime_structured_review_generates_formal_result(tmp_path: Path)
         capabilityMode='auto',
         query='对该施工组织设计执行正式结构化审查',
         fixtureId='sample-doc',
+        documentType='construction_org',
+        disciplineTags=['lifting_operations', 'temporary_power', 'hot_work'],
+        strictMode=True,
+        policyPackIds=['construction_org.base'],
     )
     store.create_task(task)
 
@@ -270,6 +274,10 @@ async def test_runtime_structured_review_generates_formal_result(tmp_path: Path)
     assert saved.status == 'succeeded'
     assert saved.result is not None
     assert saved.result['summary']['documentType'] == 'construction_org'
+    assert saved.result['resolvedProfile']['documentType'] == 'construction_org'
+    assert saved.result['resolvedProfile']['strictMode'] is True
+    assert 'construction_org.base' in saved.result['resolvedProfile']['policyPackIds']
     assert saved.result['summary']['manualReviewNeeded'] is True
     assert any(issue['title'] == '附件处于可视域缺口，需人工复核原件' for issue in saved.result['issues'])
     assert any(path.endswith('.md') for path in saved.result['artifacts'])
+    assert any(artifact['fileName'].endswith('.md') for artifact in saved.result['artifactIndex'])

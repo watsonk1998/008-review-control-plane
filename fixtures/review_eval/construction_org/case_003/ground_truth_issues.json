@@ -1,0 +1,34 @@
+{
+  "issues": [
+    {
+      "title": "附件处于可视域缺口，需人工复核原件",
+      "layer": "L1",
+      "severity": "medium",
+      "findingType": "visibility_gap",
+      "requiredPolicyRefs": [
+        "review_visibility_gap"
+      ],
+      "manualReviewNeeded": true
+    },
+    {
+      "title": "高风险作业已识别，但专项方案挂接不清",
+      "layer": "L1",
+      "severity": "high",
+      "findingType": "hard_evidence",
+      "requiredPolicyRefs": [
+        "dangerous_special_scheme"
+      ],
+      "manualReviewNeeded": true
+    },
+    {
+      "title": "应急预案针对性不足",
+      "layer": "L2",
+      "severity": "medium",
+      "findingType": "hard_evidence",
+      "requiredPolicyRefs": [
+        "emergency_plan_targeted"
+      ],
+      "manualReviewNeeded": false
+    }
+  ]
+}

@@ -9,6 +9,14 @@ from typing import Any
 from src.domain.models import TaskEvent, TaskRecord
 
 
+_TASK_EXTRA_COLUMNS = {
+    'document_type': 'TEXT',
+    'discipline_tags_json': 'TEXT',
+    'strict_mode': 'INTEGER',
+    'policy_pack_ids_json': 'TEXT',
+}
+
+
 class SQLiteTaskStore:
     def __init__(self, database_path):
         self.database_path = str(database_path)
@@ -48,6 +56,7 @@ class SQLiteTaskStore:
                 )
                 '''
             )
+            self._ensure_task_columns(conn)
             conn.execute(
                 '''
                 CREATE TABLE IF NOT EXISTS task_events (
@@ -65,15 +74,23 @@ class SQLiteTaskStore:
                 '''
             )
 
+    def _ensure_task_columns(self, conn: sqlite3.Connection):
+        rows = conn.execute('PRAGMA table_info(tasks)').fetchall()
+        existing = {row['name'] for row in rows}
+        for column, column_type in _TASK_EXTRA_COLUMNS.items():
+            if column not in existing:
+                conn.execute(f'ALTER TABLE tasks ADD COLUMN {column} {column_type}')
+
     def create_task(self, task: TaskRecord) -> TaskRecord:
         with self._connect() as conn:
             conn.execute(
                 '''
                 INSERT INTO tasks (
                     id, task_type, capability_mode, query, dataset_id, collection_id, fixture_id,
-                    use_web, debug, source_urls, status, plan_json, result_json, error_json,
+                    use_web, debug, source_urls, document_type, discipline_tags_json, strict_mode,
+                    policy_pack_ids_json, status, plan_json, result_json, error_json,
                     created_at, updated_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ''',
                 (
                     task.id,
@@ -86,6 +103,10 @@ class SQLiteTaskStore:
                     int(task.useWeb),
                     int(task.debug),
                     json.dumps(task.sourceUrls, ensure_ascii=False),
+                    task.documentType,
+                    json.dumps(task.disciplineTags, ensure_ascii=False),
+                    int(task.strictMode) if task.strictMode is not None else None,
+                    json.dumps(task.policyPackIds, ensure_ascii=False),
                     task.status,
                     json.dumps(task.plan, ensure_ascii=False) if task.plan is not None else None,
                     json.dumps(task.result, ensure_ascii=False) if task.result is not None else None,
@@ -112,6 +133,10 @@ class SQLiteTaskStore:
             'fixtureId': 'fixture_id',
             'useWeb': 'use_web',
             'sourceUrls': 'source_urls',
+            'documentType': 'document_type',
+            'disciplineTags': 'discipline_tags_json',
+            'strictMode': 'strict_mode',
+            'policyPackIds': 'policy_pack_ids_json',
             'createdAt': 'created_at',
             'updatedAt': 'updated_at',
         }
@@ -119,10 +144,12 @@ class SQLiteTaskStore:
             column = mapping.get(key, key)
             if column in {'plan', 'result', 'error'}:
                 serialized[f'{column}_json'] = json.dumps(value, ensure_ascii=False) if value is not None else None
-            elif column == 'source_urls':
+            elif column in {'source_urls', 'discipline_tags_json', 'policy_pack_ids_json'}:
                 serialized[column] = json.dumps(value or [], ensure_ascii=False)
             elif column in {'use_web', 'debug'}:
                 serialized[column] = int(bool(value))
+            elif column == 'strict_mode':
+                serialized[column] = int(value) if value is not None else None
             elif column in {'created_at', 'updated_at'} and isinstance(value, datetime):
                 serialized[column] = value.isoformat()
             else:
@@ -188,6 +215,10 @@ class SQLiteTaskStore:
             useWeb=bool(row['use_web']),
             debug=bool(row['debug']),
             sourceUrls=json.loads(row['source_urls']) if row['source_urls'] else [],
+            documentType=row['document_type'],
+            disciplineTags=json.loads(row['discipline_tags_json']) if row['discipline_tags_json'] else [],
+            strictMode=bool(row['strict_mode']) if row['strict_mode'] is not None else None,
+            policyPackIds=json.loads(row['policy_pack_ids_json']) if row['policy_pack_ids_json'] else [],
             status=row['status'],
             plan=json.loads(row['plan_json']) if row['plan_json'] else None,
             result=json.loads(row['result_json']) if row['result_json'] else None,

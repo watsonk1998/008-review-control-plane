@@ -1,0 +1,20 @@
+{
+  "caseId": "construction_org_md_explicit_scheme_004",
+  "fixtureId": "construction_org_md_explicit_scheme_004",
+  "sourcePath": "/Users/lucas/repos/review/008-review-control-plane/fixtures/review_eval/construction_org/case_004/source.md",
+  "query": "对该施工组织设计执行正式结构化审查",
+  "docType": "construction_org",
+  "disciplineTags": [
+    "lifting_operations",
+    "temporary_power"
+  ],
+  "strictMode": true,
+  "policyPackIds": [],
+  "expectedPacks": [
+    "construction_org.base",
+    "lifting_operations.base",
+    "temporary_power.base"
+  ],
+  "manualReviewCases": [],
+  "ciEnabled": true
+}

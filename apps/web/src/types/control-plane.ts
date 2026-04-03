@@ -2,6 +2,7 @@ export type TaskType = "knowledge_qa" | "deep_research" | "document_research" | 
 export type CapabilityMode = "auto" | "deeptutor" | "gpt_researcher" | "fast" | "llm_only";
 export type TaskStatus = "created" | "planned" | "running" | "waiting_external" | "succeeded" | "failed" | "partial";
 export type ReviewLayer = "L1" | "L2" | "L3";
+export type ReviewDocumentType = "construction_org" | "construction_scheme" | "hazardous_special_scheme" | "supervision_plan" | "review_support_material";
 export type AttachmentVisibility = "parsed" | "attachment_unparsed" | "referenced_only" | "missing" | "unknown";
 export type FindingType = "hard_evidence" | "engineering_inference" | "visibility_gap" | "suggestion_enhancement";
 export type ConfidenceLevel = "low" | "medium" | "high";
@@ -64,7 +65,7 @@ export interface ReviewIssue {
 
 export interface StructuredReviewSummary {
   overallConclusion: string;
-  documentType: string;
+  documentType: ReviewDocumentType;
   selectedPacks: string[];
   manualReviewNeeded: boolean;
   issueCount: number;
@@ -72,19 +73,74 @@ export interface StructuredReviewSummary {
   stats: Record<string, unknown>;
 }
 
+export interface ResolvedReviewProfile {
+  requestedDocumentType?: ReviewDocumentType | null;
+  requestedDisciplineTags: string[];
+  requestedPolicyPackIds: string[];
+  documentType: ReviewDocumentType;
+  disciplineTags: string[];
+  policyPackIds: string[];
+  strictMode: boolean;
+}
+
+export interface TaskArtifact {
+  name: string;
+  fileName: string;
+  mediaType: string;
+  sizeBytes: number;
+  downloadUrl: string;
+}
+
+export interface HazardIdentificationMatrix {
+  values: Record<string, unknown>;
+}
+
+export interface RuleHitMatrixRow {
+  ruleId: string;
+  packId: string;
+  status: string;
+  layerHint: string;
+  severityHint: string;
+  matchType: string;
+}
+
+export interface ConflictMatrix {
+  values: Record<string, unknown>;
+}
+
+export interface AttachmentVisibilityMatrixItem {
+  id: string;
+  attachmentNumber: string;
+  title: string;
+  visibility: AttachmentVisibility;
+  parseState: string;
+  referenceBlockIds: string[];
+  titleBlockId?: string | null;
+}
+
+export interface SectionStructureMatrixItem {
+  id: string;
+  title: string;
+  level: number;
+  parentId?: string | null;
+  duplicate: boolean;
+}
+
 export interface StructuredReviewMatrices {
-  hazardIdentification: Record<string, unknown>;
-  ruleHits: Array<Record<string, unknown>>;
-  conflicts: Record<string, unknown>;
-  attachmentVisibility: Array<Record<string, unknown>>;
-  sectionStructure: Array<Record<string, unknown>>;
+  hazardIdentification: HazardIdentificationMatrix;
+  ruleHits: RuleHitMatrixRow[];
+  conflicts: ConflictMatrix;
+  attachmentVisibility: AttachmentVisibilityMatrixItem[];
+  sectionStructure: SectionStructureMatrixItem[];
   issueLayerCounts?: Record<string, number>;
 }
 
 export interface StructuredReviewResult {
   summary: StructuredReviewSummary;
+  resolvedProfile: ResolvedReviewProfile;
   issues: ReviewIssue[];
   matrices: StructuredReviewMatrices;
+  artifactIndex: TaskArtifact[];
   reportMarkdown: string;
   artifacts: string[];
   plan?: Record<string, unknown> | null;
@@ -106,6 +162,10 @@ export interface TaskRecord {
   useWeb: boolean;
   debug: boolean;
   sourceUrls: string[];
+  documentType?: ReviewDocumentType | null;
+  disciplineTags: string[];
+  strictMode?: boolean | null;
+  policyPackIds: string[];
   status: TaskStatus;
   plan?: Record<string, unknown> | null;
   result?: Record<string, unknown> | StructuredReviewResult | null;
@@ -131,4 +191,8 @@ export interface CreateTaskRequest {
   useWeb: boolean;
   debug: boolean;
   sourceUrls?: string[];
+  documentType?: ReviewDocumentType;
+  disciplineTags?: string[];
+  strictMode?: boolean;
+  policyPackIds?: string[];
 }

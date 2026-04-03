@@ -1,0 +1,54 @@
+{
+  "issues": [
+    {
+      "title": "危大专项方案核心章节不完整",
+      "layer": "L1",
+      "severity": "high",
+      "findingType": "hard_evidence",
+      "requiredPolicyRefs": [
+        "hazardous_scheme_structure"
+      ],
+      "manualReviewNeeded": false
+    },
+    {
+      "title": "专项方案附件处于可视域缺口，需人工复核原件",
+      "layer": "L1",
+      "severity": "medium",
+      "findingType": "visibility_gap",
+      "requiredPolicyRefs": [
+        "review_visibility_gap"
+      ],
+      "manualReviewNeeded": true
+    },
+    {
+      "title": "专项方案缺少可追溯验算依据",
+      "layer": "L2",
+      "severity": "high",
+      "findingType": "hard_evidence",
+      "requiredPolicyRefs": [
+        "hazardous_scheme_calculation"
+      ],
+      "manualReviewNeeded": false
+    },
+    {
+      "title": "专项方案应急处置安排针对性不足",
+      "layer": "L2",
+      "severity": "medium",
+      "findingType": "hard_evidence",
+      "requiredPolicyRefs": [
+        "emergency_plan_targeted"
+      ],
+      "manualReviewNeeded": false
+    },
+    {
+      "title": "主要危险源、控制措施与监测监控闭环不足",
+      "layer": "L3",
+      "severity": "medium",
+      "findingType": "engineering_inference",
+      "requiredPolicyRefs": [
+        "hazardous_scheme_measures"
+      ],
+      "manualReviewNeeded": false
+    }
+  ]
+}

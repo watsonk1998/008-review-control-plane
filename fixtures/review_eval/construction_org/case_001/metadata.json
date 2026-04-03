@@ -1,16 +1,30 @@
 {
-  "caseId": "construction_org_cold_rolling_001",
-  "fixtureId": "supervision-cold-rolling-construction-plan",
+  "caseId": "construction_org_real_docx_001",
+  "fixtureId": "construction_org_real_docx_001",
   "sourcePath": "/Users/lucas/repos/review/008-review-control-plane/fixtures/copied/supervision/230235-冷轧厂2030单元三台行车电气系统改造-施工组织设计.docx",
   "query": "对该施工组织设计执行正式结构化审查",
   "docType": "construction_org",
-  "disciplineTags": ["lifting_operations", "temporary_power", "hot_work", "gas_area_ops", "special_equipment"],
+  "disciplineTags": [
+    "lifting_operations",
+    "temporary_power",
+    "hot_work",
+    "gas_area_ops",
+    "special_equipment"
+  ],
+  "strictMode": true,
+  "policyPackIds": [],
   "expectedPacks": [
     "construction_org.base",
     "lifting_operations.base",
     "temporary_power.base",
     "hot_work.base",
     "gas_area_ops.base",
-    "special_equipment.base"
-  ]
+    "special_equipment.base",
+    "working_at_height.base"
+  ],
+  "manualReviewCases": [
+    "附件处于可视域缺口，需人工复核原件",
+    "高风险作业已识别，但专项方案挂接不清"
+  ],
+  "ciEnabled": true
 }

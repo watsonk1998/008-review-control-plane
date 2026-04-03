@@ -62,3 +62,31 @@ def test_structured_review_executor_returns_expected_issue_titles():
     assert '高风险作业已识别，但专项方案挂接不清' in issue_titles
     assert '停机窗口、投入人力与高风险工序并行存在组织压力' in issue_titles
     assert result['summary']['manualReviewNeeded'] is True
+
+
+def test_structured_review_executor_supports_hazardous_special_scheme(tmp_path: Path):
+    sample = tmp_path / 'hazardous_special_scheme.md'
+    sample.write_text(
+        '# 危大专项施工方案\n\n'
+        '## 工程概况\n项目名称：危大专项测试\n'
+        '## 编制依据\n依据专项审查要求编制。\n'
+        '起重吊装作业。\n'
+        '附件1：吊装平面图\n',
+        encoding='utf-8',
+    )
+    executor = StructuredReviewExecutor(document_loader=DocumentLoader(), llm_gateway=DummyLLM(), fast_adapter=None)
+    result = executor.run_sync(
+        task_id='hazardous-review-test',
+        query='对该危大专项方案执行正式结构化审查',
+        source_document_path=str(sample),
+        fixture_id='hazardous-review-fixture',
+        document_type='hazardous_special_scheme',
+        discipline_tags=['lifting_operations'],
+    )
+
+    issue_titles = {issue['title'] for issue in result['issues']}
+    assert result['summary']['documentType'] == 'hazardous_special_scheme'
+    assert 'hazardous_special_scheme.base' in result['resolvedProfile']['policyPackIds']
+    assert '危大专项方案核心章节不完整' in issue_titles
+    assert '专项方案附件处于可视域缺口，需人工复核原件' in issue_titles
+    assert '专项方案缺少可追溯验算依据' in issue_titles

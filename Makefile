@@ -1,7 +1,7 @@
 SHELL := /bin/bash
 ROOT := /Users/lucas/repos/review/008-review-control-plane
 
-.PHONY: bootstrap dev-bridge dev-api dev-web dev test test-review-unit test-review-integration smoke verify-connectivity eval-review
+.PHONY: bootstrap dev-bridge dev-api dev-web dev test test-review-unit test-review-integration smoke verify-connectivity eval-review eval-review-ablations eval-review-cross-pack eval-review-cross-model
 
 bootstrap:
 	$(ROOT)/scripts/bootstrap.sh
@@ -30,6 +30,15 @@ test-review-integration:
 
 eval-review:
 	cd $(ROOT)/apps/api && . .venv/bin/activate && python -m src.review.evaluation.harness
+
+eval-review-ablations:
+	cd $(ROOT)/apps/api && . .venv/bin/activate && python -m src.review.evaluation.harness --mode ablations
+
+eval-review-cross-pack:
+	cd $(ROOT)/apps/api && . .venv/bin/activate && python -m src.review.evaluation.harness --mode cross-pack
+
+eval-review-cross-model:
+	cd $(ROOT)/apps/api && . .venv/bin/activate && python -m src.review.evaluation.harness --mode cross-model
 
 smoke:
 	$(ROOT)/scripts/smoke.sh

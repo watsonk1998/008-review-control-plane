@@ -1,0 +1,14 @@
+{
+  "issues": [
+    {
+      "title": "危大专项方案核心章节不完整",
+      "layer": "L1",
+      "severity": "high",
+      "findingType": "hard_evidence",
+      "requiredPolicyRefs": [
+        "hazardous_scheme_structure"
+      ],
+      "manualReviewNeeded": false
+    }
+  ]
+}

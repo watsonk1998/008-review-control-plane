@@ -30,11 +30,17 @@ npm run build
 make test-review-unit
 make test-review-integration
 make eval-review
+make eval-review-ablations
+make eval-review-cross-pack
+make eval-review-cross-model
 ```
 
 - `test-review-unit`：跑 `tests/test_structured_review.py`
 - `test-review-integration`：跑 runtime 中 `structured_review` 分支
-- `eval-review`：执行 `fixtures/review_eval/` 下的 golden cases
+- `eval-review`：执行 `fixtures/review_eval/` 下的 CI 稳定子集，并校验指标阈值与数据集规模门槛
+- `eval-review-ablations`：输出 parser / visibility / rule engine / llm explanation 的消融结果
+- `eval-review-cross-pack`：对比自动 pack 选择与强制 expected packs 的结果
+- `eval-review-cross-model`：固定 facts/rules，仅替换 explanation model
 
 ## 功能测试矩阵
 
@@ -81,21 +87,35 @@ make eval-review
 
 目标链路：DocumentLoader / review parser → facts → rules → evidence → report
 
-当前最小 golden case：
+当前 P1 数据集：
 
-- `fixtures/review_eval/construction_org/case_001`
+- CI 稳定子集：12 cases
+- 本地完整评测池：20 cases
+- 覆盖：
+  - `construction_org`
+  - `hazardous_special_scheme`
+  - `construction_scheme`
+  - `supervision_plan`
+  - `review_support_material`
 
 验收要点：
 
-- 能输出 `summary / issues / matrices / reportMarkdown / artifacts`
+- 能输出 `summary / resolvedProfile / issues / matrices / artifactIndex / reportMarkdown`
 - 能识别重复章节、附件可视域缺口、专项方案挂接不清、停机窗口与资源压力
+- 能识别危大专项方案核心章节缺口、验算依据缺口、措施-监测闭环问题
 - 能区分 `attachment_unparsed` 与可直接证实的正文缺陷
+- artifact API 可列出和下载工件
 - 详情页能展示 issues / matrices / 原始 JSON
 
-## 当前 golden case 目标指标
+## P1 主门槛
 
-- issue recall ≥ `0.75`
-- attachment visibility accuracy = `1.0`
+- issue recall ≥ `0.80`
+- l1 hit rate ≥ `0.80`
+- pack selection accuracy ≥ `0.85`
+- policy ref accuracy ≥ `0.85`
+- attachment visibility accuracy ≥ `0.90`
+- severity accuracy ≥ `0.75`
+- manual review flag accuracy ≥ `0.85`
 - `review_assist` 回归失败数 = `0`
 
 ## 推荐回归命令
@@ -105,6 +125,9 @@ make test
 make test-review-unit
 make test-review-integration
 make eval-review
+make eval-review-ablations
+make eval-review-cross-pack
+make eval-review-cross-model
 make smoke
 make verify-connectivity
 ```

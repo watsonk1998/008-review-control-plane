@@ -1,0 +1,15 @@
+{
+  "caseId": "construction_scheme_placeholder_001",
+  "fixtureId": "construction_scheme_placeholder_001",
+  "sourcePath": "/Users/lucas/repos/review/008-review-control-plane/fixtures/review_eval/construction_scheme/case_001/source.md",
+  "query": "对该施工方案执行正式结构化审查",
+  "docType": "construction_scheme",
+  "disciplineTags": [],
+  "strictMode": true,
+  "policyPackIds": [],
+  "expectedPacks": [
+    "construction_scheme.base"
+  ],
+  "manualReviewCases": [],
+  "ciEnabled": false
+}

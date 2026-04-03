@@ -1,0 +1,15 @@
+{
+  "caseId": "supervision_plan_placeholder_001",
+  "fixtureId": "supervision_plan_placeholder_001",
+  "sourcePath": "/Users/lucas/repos/review/008-review-control-plane/fixtures/review_eval/supervision_plan/case_001/source.md",
+  "query": "对该监理规划执行正式结构化审查",
+  "docType": "supervision_plan",
+  "disciplineTags": [],
+  "strictMode": true,
+  "policyPackIds": [],
+  "expectedPacks": [
+    "supervision_plan.base"
+  ],
+  "manualReviewCases": [],
+  "ciEnabled": false
+}

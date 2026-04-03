@@ -1,8 +1,44 @@
 {
-  "expectedTitles": [
-    "章节结构存在重复标题，正式审查定位不稳定",
-    "附件处于可视域缺口，需人工复核原件",
-    "高风险作业已识别，但专项方案挂接不清",
-    "停机窗口、投入人力与高风险工序并行存在组织压力"
+  "issues": [
+    {
+      "title": "章节结构存在重复标题，正式审查定位不稳定",
+      "layer": "L1",
+      "severity": "medium",
+      "findingType": "hard_evidence",
+      "requiredPolicyRefs": [
+        "construction_org_structure"
+      ],
+      "manualReviewNeeded": false
+    },
+    {
+      "title": "附件处于可视域缺口，需人工复核原件",
+      "layer": "L1",
+      "severity": "medium",
+      "findingType": "visibility_gap",
+      "requiredPolicyRefs": [
+        "review_visibility_gap"
+      ],
+      "manualReviewNeeded": true
+    },
+    {
+      "title": "高风险作业已识别，但专项方案挂接不清",
+      "layer": "L1",
+      "severity": "high",
+      "findingType": "hard_evidence",
+      "requiredPolicyRefs": [
+        "dangerous_special_scheme"
+      ],
+      "manualReviewNeeded": true
+    },
+    {
+      "title": "停机窗口、投入人力与高风险工序并行存在组织压力",
+      "layer": "L3",
+      "severity": "medium",
+      "findingType": "engineering_inference",
+      "requiredPolicyRefs": [
+        "construction_org_schedule_resource"
+      ],
+      "manualReviewNeeded": false
+    }
   ]
 }

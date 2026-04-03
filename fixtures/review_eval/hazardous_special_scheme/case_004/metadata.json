@@ -1,0 +1,15 @@
+{
+  "caseId": "hazardous_special_scheme_md_clean_004",
+  "fixtureId": "hazardous_special_scheme_md_clean_004",
+  "sourcePath": "/Users/lucas/repos/review/008-review-control-plane/fixtures/review_eval/hazardous_special_scheme/case_004/source.md",
+  "query": "对该危大专项方案执行正式结构化审查",
+  "docType": "hazardous_special_scheme",
+  "disciplineTags": [],
+  "strictMode": true,
+  "policyPackIds": [],
+  "expectedPacks": [
+    "hazardous_special_scheme.base"
+  ],
+  "manualReviewCases": [],
+  "ciEnabled": true
+}

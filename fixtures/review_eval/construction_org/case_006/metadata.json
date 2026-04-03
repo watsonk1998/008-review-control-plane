@@ -1,0 +1,15 @@
+{
+  "caseId": "construction_org_md_duplicate_only_006",
+  "fixtureId": "construction_org_md_duplicate_only_006",
+  "sourcePath": "/Users/lucas/repos/review/008-review-control-plane/fixtures/review_eval/construction_org/case_006/source.md",
+  "query": "对该施工组织设计执行正式结构化审查",
+  "docType": "construction_org",
+  "disciplineTags": [],
+  "strictMode": true,
+  "policyPackIds": [],
+  "expectedPacks": [
+    "construction_org.base"
+  ],
+  "manualReviewCases": [],
+  "ciEnabled": true
+}

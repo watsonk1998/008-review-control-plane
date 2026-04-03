@@ -1,0 +1,18 @@
+{
+  "caseId": "hazardous_special_scheme_md_complete_lifting_002",
+  "fixtureId": "hazardous_special_scheme_md_complete_lifting_002",
+  "sourcePath": "/Users/lucas/repos/review/008-review-control-plane/fixtures/review_eval/hazardous_special_scheme/case_002/source.md",
+  "query": "对该危大专项方案执行正式结构化审查",
+  "docType": "hazardous_special_scheme",
+  "disciplineTags": [
+    "lifting_operations"
+  ],
+  "strictMode": true,
+  "policyPackIds": [],
+  "expectedPacks": [
+    "hazardous_special_scheme.base",
+    "lifting_operations.base"
+  ],
+  "manualReviewCases": [],
+  "ciEnabled": true
+}

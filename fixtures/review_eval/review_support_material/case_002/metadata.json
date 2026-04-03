@@ -1,0 +1,18 @@
+{
+  "caseId": "review_support_material_placeholder_002",
+  "fixtureId": "review_support_material_placeholder_002",
+  "sourcePath": "/Users/lucas/repos/review/008-review-control-plane/fixtures/review_eval/review_support_material/case_002/source.md",
+  "query": "对该审查支持材料执行正式结构化审查",
+  "docType": "review_support_material",
+  "disciplineTags": [
+    "gas_area_ops"
+  ],
+  "strictMode": true,
+  "policyPackIds": [],
+  "expectedPacks": [
+    "review_support_material.base",
+    "gas_area_ops.base"
+  ],
+  "manualReviewCases": [],
+  "ciEnabled": false
+}

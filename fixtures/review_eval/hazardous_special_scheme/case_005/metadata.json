@@ -1,0 +1,17 @@
+{
+  "caseId": "hazardous_special_scheme_md_attachment_gap_005",
+  "fixtureId": "hazardous_special_scheme_md_attachment_gap_005",
+  "sourcePath": "/Users/lucas/repos/review/008-review-control-plane/fixtures/review_eval/hazardous_special_scheme/case_005/source.md",
+  "query": "对该危大专项方案执行正式结构化审查",
+  "docType": "hazardous_special_scheme",
+  "disciplineTags": [],
+  "strictMode": true,
+  "policyPackIds": [],
+  "expectedPacks": [
+    "hazardous_special_scheme.base"
+  ],
+  "manualReviewCases": [
+    "专项方案附件处于可视域缺口，需人工复核原件"
+  ],
+  "ciEnabled": true
+}

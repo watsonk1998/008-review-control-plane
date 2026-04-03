@@ -42,7 +42,14 @@ class TaskPlanner:
             },
         }
         if task.taskType == 'structured_review':
-            review_profile = choose_structured_review_profile(task.query, fixture_title)
+            review_profile = choose_structured_review_profile(
+                task.query,
+                fixture_title,
+                requested_document_type=task.documentType,
+                requested_discipline_tags=task.disciplineTags,
+                requested_policy_pack_ids=task.policyPackIds,
+                strict_mode=task.strictMode,
+            )
             plan['goal'] = 'Execute formal structured review through the review domain pipeline'
             plan['reviewProfile'] = review_profile
             plan['execution'] = [

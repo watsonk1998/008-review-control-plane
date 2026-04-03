@@ -1,0 +1,14 @@
+{
+  "issues": [
+    {
+      "title": "专项方案应急处置安排针对性不足",
+      "layer": "L2",
+      "severity": "medium",
+      "findingType": "hard_evidence",
+      "requiredPolicyRefs": [
+        "emergency_plan_targeted"
+      ],
+      "manualReviewNeeded": false
+    }
+  ]
+}

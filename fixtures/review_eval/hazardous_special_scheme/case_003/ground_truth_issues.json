@@ -1,0 +1,24 @@
+{
+  "issues": [
+    {
+      "title": "专项方案应急处置安排针对性不足",
+      "layer": "L2",
+      "severity": "medium",
+      "findingType": "hard_evidence",
+      "requiredPolicyRefs": [
+        "emergency_plan_targeted"
+      ],
+      "manualReviewNeeded": false
+    },
+    {
+      "title": "主要危险源、控制措施与监测监控闭环不足",
+      "layer": "L3",
+      "severity": "medium",
+      "findingType": "engineering_inference",
+      "requiredPolicyRefs": [
+        "hazardous_scheme_measures"
+      ],
+      "manualReviewNeeded": false
+    }
+  ]
+}

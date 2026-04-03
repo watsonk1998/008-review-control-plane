@@ -4,7 +4,7 @@ import asyncio
 from pathlib import Path
 from typing import Any, Callable
 
-from src.domain.models import AttachmentVisibility, ConfidenceLevel, EvidenceSpan, FindingType, ReviewLayer
+from src.domain.models import AttachmentVisibility, ConfidenceLevel, EvidenceSpan, TaskArtifact
 from src.review.evidence.evidence_builder import EvidenceBuilder
 from src.review.extractors.hazard_facts import extract_hazard_facts
 from src.review.extractors.project_facts import extract_project_facts
@@ -14,7 +14,13 @@ from src.review.report.matrices import build_review_matrices
 from src.review.report.report_builder import StructuredReviewReportBuilder
 from src.review.rules.engine import ReviewRuleEngine
 from src.review.rules.packs import select_policy_packs
-from src.review.schema import DocumentParseResult, ExtractedFacts, StructuredReviewResult, StructuredReviewTask
+from src.review.schema import (
+    DocumentParseResult,
+    ExtractedFacts,
+    ResolvedReviewProfile,
+    StructuredReviewResult,
+    StructuredReviewTask,
+)
 
 
 class StructuredReviewExecutor:
@@ -34,12 +40,32 @@ class StructuredReviewExecutor:
         source_document_path: str,
         fixture_id: str | None = None,
         plan: dict[str, Any] | None = None,
+        document_type: str | None = None,
+        discipline_tags: list[str] | None = None,
+        strict_mode: bool | None = None,
+        policy_pack_ids: list[str] | None = None,
         emit: Callable[..., Any] | None = None,
         write_json_artifact: Callable[[str, Any], str] | None = None,
         write_text_artifact: Callable[[str, str, str], str] | None = None,
+        execution_options: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
-        structured_task = self._build_task(task_id=task_id, query=query, source_document_path=source_document_path, fixture_id=fixture_id, plan=plan)
+        options = execution_options or {}
+        requested_document_type = document_type
+        requested_discipline_tags = list(discipline_tags or [])
+        requested_policy_pack_ids = list(policy_pack_ids or [])
+        structured_task = self._build_task(
+            task_id=task_id,
+            query=query,
+            source_document_path=source_document_path,
+            fixture_id=fixture_id,
+            plan=plan,
+            document_type=document_type,
+            discipline_tags=discipline_tags,
+            strict_mode=strict_mode,
+            policy_pack_ids=policy_pack_ids,
+        )
         parse_result = self.document_loader.parse_document(source_document_path)
+        parse_result = self._apply_execution_options(parse_result, options)
         parse_artifact = write_json_artifact('structured-review-parse', parse_result.model_dump(mode='json')) if write_json_artifact else None
         if emit:
             emit('parse', 'structured_review', 'completed', 'Document parsed for structured review', artifact_path=parse_artifact)
@@ -49,9 +75,24 @@ class StructuredReviewExecutor:
         if emit:
             emit('extract', 'structured_review', 'completed', 'Structured facts extracted', artifact_path=facts_artifact)
 
-        discipline_tags = self._infer_discipline_tags(facts)
-        packs = select_policy_packs(structured_task.documentType, discipline_tags)
-        rule_hits = self.rule_engine.run(facts, packs, parse_result)
+        resolved_profile = self._resolve_profile(
+            structured_task,
+            facts,
+            plan,
+            requested_document_type=requested_document_type,
+            requested_discipline_tags=requested_discipline_tags,
+            requested_policy_pack_ids=requested_policy_pack_ids,
+        )
+        packs = select_policy_packs(
+            resolved_profile.documentType,
+            resolved_profile.disciplineTags,
+            requested_pack_ids=resolved_profile.requestedPolicyPackIds,
+        )
+        resolved_profile.policyPackIds = [pack.id for pack in packs]
+        if options.get('disable_rule_engine'):
+            rule_hits = []
+        else:
+            rule_hits = self.rule_engine.run(facts, packs, parse_result)
         rules_artifact = write_json_artifact('structured-review-rule-hits', [hit.model_dump(mode='json') for hit in rule_hits]) if write_json_artifact else None
         if emit:
             emit('rules', 'structured_review', 'completed', 'Rule engine finished', artifact_path=rules_artifact, debug={'selectedPacks': [pack.id for pack in packs]})
@@ -61,16 +102,23 @@ class StructuredReviewExecutor:
         if emit:
             emit('evidence', 'structured_review', 'completed', 'Evidence candidates assembled', artifact_path=evidence_artifact)
 
-        final_issues = await finalize_issues(candidates, llm_gateway=self.llm_gateway)
+        llm_gateway = None if options.get('disable_llm_explanation') else self.llm_gateway
+        final_issues = await finalize_issues(candidates, llm_gateway=llm_gateway)
         matrices = build_review_matrices(parse_result, facts, rule_hits, final_issues)
         summary = self.report_builder.build_summary(
-            document_type=structured_task.documentType,
-            selected_packs=[pack.id for pack in packs],
+            document_type=resolved_profile.documentType,
+            selected_packs=resolved_profile.policyPackIds,
             issues=final_issues,
             matrices=matrices,
             visibility_report=parse_result.visibilityReport,
         )
-        report_markdown = self.report_builder.render(summary=summary, issues=final_issues, matrices=matrices, parse_result=parse_result)
+        report_markdown = self.report_builder.render(
+            summary=summary,
+            resolved_profile=resolved_profile,
+            issues=final_issues,
+            matrices=matrices,
+            parse_result=parse_result,
+        )
         if emit:
             emit('report', 'structured_review', 'completed', 'Structured review report assembled')
 
@@ -78,26 +126,30 @@ class StructuredReviewExecutor:
         if write_json_artifact:
             report_artifacts.append(write_json_artifact('structured-review-result', {
                 'summary': summary.model_dump(mode='json'),
+                'resolvedProfile': resolved_profile.model_dump(mode='json'),
                 'issues': [issue.model_dump(mode='json') for issue in final_issues],
-                'matrices': matrices,
+                'matrices': matrices.model_dump(mode='json'),
             }))
-            report_artifacts.append(write_json_artifact('hazard-identification-matrix', matrices['hazardIdentification']))
-            report_artifacts.append(write_json_artifact('rule-hit-matrix', matrices['ruleHits']))
-            report_artifacts.append(write_json_artifact('conflict-matrix', matrices['conflicts']))
-            report_artifacts.append(write_json_artifact('attachment-visibility-matrix', matrices['attachmentVisibility']))
-            report_artifacts.append(write_json_artifact('section-structure-matrix', matrices['sectionStructure']))
+            report_artifacts.append(write_json_artifact('hazard-identification-matrix', matrices.hazardIdentification.model_dump(mode='json')))
+            report_artifacts.append(write_json_artifact('rule-hit-matrix', [item.model_dump(mode='json') for item in matrices.ruleHits]))
+            report_artifacts.append(write_json_artifact('conflict-matrix', matrices.conflicts.model_dump(mode='json')))
+            report_artifacts.append(write_json_artifact('attachment-visibility-matrix', [item.model_dump(mode='json') for item in matrices.attachmentVisibility]))
+            report_artifacts.append(write_json_artifact('section-structure-matrix', [item.model_dump(mode='json') for item in matrices.sectionStructure]))
         if write_text_artifact:
             report_artifacts.append(write_text_artifact('structured-review-report', report_markdown, '.md'))
+        artifact_index = self._build_artifact_index(task_id, report_artifacts)
 
         capabilities_used = ['structured_review_executor']
-        if self.llm_gateway is not None:
+        if llm_gateway is not None:
             capabilities_used.append('llm_gateway')
         result = StructuredReviewResult(
             summary=summary,
+            resolvedProfile=resolved_profile,
             issues=final_issues,
             matrices=matrices,
+            artifactIndex=artifact_index,
             reportMarkdown=report_markdown,
-            artifacts=report_artifacts,
+            artifacts=[artifact.downloadUrl for artifact in artifact_index],
             plan=plan,
             capabilitiesUsed=capabilities_used,
             finalAnswer=report_markdown,
@@ -105,21 +157,85 @@ class StructuredReviewExecutor:
         )
         return result.model_dump(mode='json')
 
-    def run_sync(self, *, task_id: str, query: str, source_document_path: str, fixture_id: str | None = None, plan: dict[str, Any] | None = None) -> dict[str, Any]:
-        return asyncio.run(self.run(task_id=task_id, query=query, source_document_path=source_document_path, fixture_id=fixture_id, plan=plan))
+    def run_sync(
+        self,
+        *,
+        task_id: str,
+        query: str,
+        source_document_path: str,
+        fixture_id: str | None = None,
+        plan: dict[str, Any] | None = None,
+        document_type: str | None = None,
+        discipline_tags: list[str] | None = None,
+        strict_mode: bool | None = None,
+        policy_pack_ids: list[str] | None = None,
+        execution_options: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        return asyncio.run(
+            self.run(
+                task_id=task_id,
+                query=query,
+                source_document_path=source_document_path,
+                fixture_id=fixture_id,
+                plan=plan,
+                document_type=document_type,
+                discipline_tags=discipline_tags,
+                strict_mode=strict_mode,
+                policy_pack_ids=policy_pack_ids,
+                execution_options=execution_options,
+            )
+        )
 
-    def _build_task(self, *, task_id: str, query: str, source_document_path: str, fixture_id: str | None, plan: dict[str, Any] | None) -> StructuredReviewTask:
-        document_type = 'construction_org' if '施工组织设计' in query or 'construction_org' in str(plan or {}) else 'review_support_material'
+    def _build_task(
+        self,
+        *,
+        task_id: str,
+        query: str,
+        source_document_path: str,
+        fixture_id: str | None,
+        plan: dict[str, Any] | None,
+        document_type: str | None,
+        discipline_tags: list[str] | None,
+        strict_mode: bool | None,
+        policy_pack_ids: list[str] | None,
+    ) -> StructuredReviewTask:
+        plan_profile = dict((plan or {}).get('reviewProfile') or {})
+        resolved_document_type = document_type or plan_profile.get('documentType') or 'construction_org'
         return StructuredReviewTask(
             taskId=task_id,
             requestId=task_id,
-            documentType=document_type,
-            disciplineTags=[],
-            policyPackIds=[],
-            strictMode=True,
+            documentType=resolved_document_type,
+            disciplineTags=list(discipline_tags or plan_profile.get('disciplineTags') or []),
+            policyPackIds=list(policy_pack_ids or plan_profile.get('policyPackIds') or []),
+            strictMode=True if strict_mode is None else strict_mode,
             sourceDocumentPath=source_document_path,
             sourceFixtureId=fixture_id,
             useAssistArtifacts=False,
+        )
+
+    def _resolve_profile(
+        self,
+        structured_task: StructuredReviewTask,
+        facts: ExtractedFacts,
+        plan: dict[str, Any] | None,
+        *,
+        requested_document_type: str | None,
+        requested_discipline_tags: list[str] | None,
+        requested_policy_pack_ids: list[str] | None,
+    ) -> ResolvedReviewProfile:
+        requested_discipline_tags = list(requested_discipline_tags or [])
+        requested_policy_pack_ids = list(requested_policy_pack_ids or [])
+        inferred_document_type = facts.projectFacts.get('documentTypeHint') or structured_task.documentType
+        document_type = structured_task.documentType or inferred_document_type or 'construction_org'
+        discipline_tags = list(dict.fromkeys([*requested_discipline_tags, *self._infer_discipline_tags(facts)]))
+        return ResolvedReviewProfile(
+            requestedDocumentType=requested_document_type,
+            requestedDisciplineTags=requested_discipline_tags,
+            requestedPolicyPackIds=requested_policy_pack_ids,
+            documentType=document_type,
+            disciplineTags=discipline_tags,
+            policyPackIds=list(requested_policy_pack_ids),
+            strictMode=structured_task.strictMode,
         )
 
     def _extract_facts(self, parse_result: DocumentParseResult) -> ExtractedFacts:
@@ -198,4 +314,47 @@ class StructuredReviewExecutor:
             tags.append('gas_area_ops')
         if facts.projectFacts.get('specialEquipmentMentioned'):
             tags.append('special_equipment')
+        if 'working_at_height' in (facts.hazardFacts.get('highRiskCategories') or []):
+            tags.append('working_at_height')
         return tags
+
+    def _apply_execution_options(self, parse_result: DocumentParseResult, options: dict[str, Any]) -> DocumentParseResult:
+        if options.get('disable_normalizer'):
+            parse_result.normalizedText = '\n'.join(str(block.get('text') or '') for block in parse_result.blocks)
+            parse_result.preview = parse_result.normalizedText[:4000]
+            parse_result.parseWarnings.append('disable_normalizer')
+        if options.get('disable_visibility_check'):
+            for attachment in parse_result.attachments:
+                attachment['visibility'] = 'parsed'
+                attachment['parseState'] = 'parsed'
+            parse_result.visibilityReport = {
+                **parse_result.visibilityReport,
+                'manualReviewNeeded': False,
+                'counts': {
+                    'parsed': len(parse_result.attachments),
+                    'attachment_unparsed': 0,
+                    'referenced_only': 0,
+                    'missing': 0,
+                    'unknown': 0,
+                },
+            }
+            parse_result.parseWarnings.append('disable_visibility_check')
+        return parse_result
+
+    def _build_artifact_index(self, task_id: str, artifact_paths: list[str]) -> list[TaskArtifact]:
+        index: list[TaskArtifact] = []
+        for raw_path in artifact_paths:
+            path = Path(raw_path)
+            if not path.exists():
+                continue
+            media_type = 'text/markdown' if path.suffix == '.md' else 'application/json'
+            index.append(
+                TaskArtifact(
+                    name=path.stem,
+                    fileName=path.name,
+                    mediaType=media_type,
+                    sizeBytes=path.stat().st_size,
+                    downloadUrl=f'/api/tasks/{task_id}/artifacts/{path.name}',
+                )
+            )
+        return index

@@ -10,6 +10,13 @@ TaskType = Literal['knowledge_qa', 'deep_research', 'document_research', 'review
 CapabilityMode = Literal['auto', 'deeptutor', 'gpt_researcher', 'fast', 'llm_only']
 TaskStatus = Literal['created', 'planned', 'running', 'waiting_external', 'succeeded', 'failed', 'partial']
 EventStatus = Literal['started', 'completed', 'failed', 'info']
+ReviewDocumentType = Literal[
+    'construction_org',
+    'construction_scheme',
+    'hazardous_special_scheme',
+    'supervision_plan',
+    'review_support_material',
+]
 
 
 class AttachmentVisibility(str, Enum):
@@ -49,6 +56,10 @@ class CreateTaskRequest(BaseModel):
     useWeb: bool = False
     debug: bool = False
     sourceUrls: list[str] | None = None
+    documentType: ReviewDocumentType | None = None
+    disciplineTags: list[str] | None = None
+    strictMode: bool | None = None
+    policyPackIds: list[str] | None = None
 
 
 class EvidenceSpan(BaseModel):
@@ -68,6 +79,14 @@ class ReviewIssue(BaseModel):
     findingType: FindingType
     summary: str
     manualReviewNeeded: bool = False
+
+
+class TaskArtifact(BaseModel):
+    name: str
+    fileName: str
+    mediaType: str
+    sizeBytes: int
+    downloadUrl: str
 
 
 class TaskEvent(BaseModel):
@@ -92,6 +111,10 @@ class TaskRecord(BaseModel):
     useWeb: bool = False
     debug: bool = False
     sourceUrls: list[str] = Field(default_factory=list)
+    documentType: ReviewDocumentType | None = None
+    disciplineTags: list[str] = Field(default_factory=list)
+    strictMode: bool | None = None
+    policyPackIds: list[str] = Field(default_factory=list)
     status: TaskStatus = 'created'
     plan: dict[str, Any] | None = None
     result: dict[str, Any] | None = None

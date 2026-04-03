@@ -1,4 +1,4 @@
-import type { CreateTaskRequest, FixtureRecord, HealthResponse, TaskEvent, TaskRecord } from "@/types/control-plane";
+import type { CreateTaskRequest, FixtureRecord, HealthResponse, TaskArtifact, TaskEvent, TaskRecord } from "@/types/control-plane";
 
 const DEFAULT_API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8018";
 
@@ -6,8 +6,13 @@ export function getApiBaseUrl() {
   return DEFAULT_API_BASE_URL.replace(/\/$/, "");
 }
 
+export function resolveApiUrl(path: string) {
+  if (/^https?:\/\//.test(path)) return path;
+  return `${getApiBaseUrl()}${path.startsWith("/") ? path : `/${path}`}`;
+}
+
 async function fetchJson<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(`${getApiBaseUrl()}${path}`, {
+  const response = await fetch(resolveApiUrl(path), {
     ...init,
     cache: "no-store",
     headers: {
@@ -45,4 +50,12 @@ export function fetchTask(taskId: string) {
 
 export function fetchTaskEvents(taskId: string) {
   return fetchJson<TaskEvent[]>(`/api/tasks/${taskId}/events`);
+}
+
+export function fetchTaskArtifacts(taskId: string) {
+  return fetchJson<TaskArtifact[]>(`/api/tasks/${taskId}/artifacts`);
+}
+
+export function getTaskArtifactUrl(taskId: string, fileName: string) {
+  return resolveApiUrl(`/api/tasks/${taskId}/artifacts/${encodeURIComponent(fileName)}`);
 }

@@ -1,0 +1,14 @@
+{
+  "issues": [
+    {
+      "title": "专项方案附件处于可视域缺口，需人工复核原件",
+      "layer": "L1",
+      "severity": "medium",
+      "findingType": "visibility_gap",
+      "requiredPolicyRefs": [
+        "review_visibility_gap"
+      ],
+      "manualReviewNeeded": true
+    }
+  ]
+}

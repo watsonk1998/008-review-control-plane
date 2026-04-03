@@ -18,6 +18,26 @@
 - `review_assist`：保留为快速辅助总结，结果里明确声明“不等于正式审查结论”
 - `structured_review`：新增为正式结构化审查，输出 issues / matrices / Markdown report / JSON artifacts
 
+## P1 结构化审查能力
+
+P1 开始，`structured_review` 不再只靠后端隐式推断，而是支持显式参数化请求：
+
+- `documentType`
+- `disciplineTags`
+- `strictMode`
+- `policyPackIds`
+
+同时结果契约升级为稳定 DTO：
+
+- `summary`
+- `resolvedProfile`
+- `issues`
+- `matrices`
+- `artifactIndex`
+- `reportMarkdown`
+
+前端会基于 `artifactIndex` 调用只读 artifact API，不再直接消费本地绝对路径。
+
 ## 目录结构
 
 ```text
@@ -68,9 +88,32 @@ make test
 make test-review-unit
 make test-review-integration
 make eval-review
+make eval-review-ablations
+make eval-review-cross-pack
+make eval-review-cross-model
 make smoke
 make verify-connectivity
 ```
+
+## structured_review 请求示例
+
+```json
+{
+  "taskType": "structured_review",
+  "capabilityMode": "auto",
+  "query": "对该危大专项方案执行正式结构化审查",
+  "fixtureId": "hazardous-special-scheme-demo",
+  "documentType": "hazardous_special_scheme",
+  "disciplineTags": ["lifting_operations"],
+  "strictMode": true,
+  "policyPackIds": []
+}
+```
+
+## artifact API
+
+- `GET /api/tasks/{taskId}/artifacts`
+- `GET /api/tasks/{taskId}/artifacts/{artifactName}`
 
 ## 配置原则
 
@@ -83,6 +126,7 @@ make verify-connectivity
 
 - 资产勘查：`/Users/lucas/repos/review/008-review-control-plane/docs/discovery.md`
 - 架构说明：`/Users/lucas/repos/review/008-review-control-plane/docs/architecture.md`
+- 正式审查说明：`/Users/lucas/repos/review/008-review-control-plane/docs/formal-review.md`
 - 运行说明：`/Users/lucas/repos/review/008-review-control-plane/docs/runbook.md`
 - 测试记录：`/Users/lucas/repos/review/008-review-control-plane/docs/testing.md`
 - 最终交付：`/Users/lucas/repos/review/008-review-control-plane/DELIVERY_REPORT.md`

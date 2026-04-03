@@ -3,11 +3,19 @@ from __future__ import annotations
 from collections import Counter
 import json
 
-from src.review.schema import StructuredReviewSummary
+from src.review.schema import ResolvedReviewProfile, StructuredReviewMatrices, StructuredReviewSummary
 
 
 class StructuredReviewReportBuilder:
-    def build_summary(self, *, document_type: str, selected_packs: list[str], issues, matrices, visibility_report):
+    def build_summary(
+        self,
+        *,
+        document_type: str,
+        selected_packs: list[str],
+        issues,
+        matrices: StructuredReviewMatrices,
+        visibility_report,
+    ):
         layer_counts = Counter(issue.layer.value for issue in issues)
         manual_review_needed = visibility_report.get('manualReviewNeeded', False) or any(issue.whetherManualReviewNeeded for issue in issues)
         high_risk_issue = any(issue.layer.value == 'L1' and issue.severity in {'high', 'medium'} for issue in issues)
@@ -20,12 +28,12 @@ class StructuredReviewReportBuilder:
             issueCount=len(issues),
             layerCounts=dict(layer_counts),
             stats={
-                'attachmentCount': len(matrices.get('attachmentVisibility', [])),
-                'ruleHitCount': sum(1 for item in matrices.get('ruleHits', []) if item['status'] in {'hit', 'manual_review_needed'}),
+                'attachmentCount': len(matrices.attachmentVisibility),
+                'ruleHitCount': sum(1 for item in matrices.ruleHits if item.status in {'hit', 'manual_review_needed'}),
             },
         )
 
-    def render(self, *, summary: StructuredReviewSummary, issues, matrices, parse_result) -> str:
+    def render(self, *, summary: StructuredReviewSummary, resolved_profile: ResolvedReviewProfile, issues, matrices: StructuredReviewMatrices, parse_result) -> str:
         lines = [
             '# Structured Review Report',
             '',
@@ -34,6 +42,13 @@ class StructuredReviewReportBuilder:
             f'- 文档类型：{summary.documentType}',
             f'- 选用 packs：{", ".join(summary.selectedPacks) or "无"}',
             f'- 需人工复核：{"是" if summary.manualReviewNeeded else "否"}',
+            '',
+            '## 生效审查参数',
+            f'- requested documentType：{resolved_profile.requestedDocumentType or "auto"}',
+            f'- requested disciplineTags：{", ".join(resolved_profile.requestedDisciplineTags) or "auto"}',
+            f'- requested policyPackIds：{", ".join(resolved_profile.requestedPolicyPackIds) or "auto"}',
+            f'- resolved disciplineTags：{", ".join(resolved_profile.disciplineTags) or "无"}',
+            f'- strictMode：{"true" if resolved_profile.strictMode else "false"}',
             '',
             '## 可视域与人工复核提示',
             f'- 附件数量：{summary.stats.get("attachmentCount", 0)}',
@@ -63,27 +78,27 @@ class StructuredReviewReportBuilder:
             [
                 '## 危大识别矩阵',
                 '```json',
-                json.dumps(matrices['hazardIdentification'], ensure_ascii=False, indent=2),
+                json.dumps(matrices.hazardIdentification.model_dump(mode='json'), ensure_ascii=False, indent=2),
                 '```',
                 '',
                 '## 规则命中矩阵',
                 '```json',
-                json.dumps(matrices['ruleHits'], ensure_ascii=False, indent=2),
+                json.dumps([item.model_dump(mode='json') for item in matrices.ruleHits], ensure_ascii=False, indent=2),
                 '```',
                 '',
                 '## 冲突矩阵',
                 '```json',
-                json.dumps(matrices['conflicts'], ensure_ascii=False, indent=2),
+                json.dumps(matrices.conflicts.model_dump(mode='json'), ensure_ascii=False, indent=2),
                 '```',
                 '',
                 '## 附件可视域矩阵',
                 '```json',
-                json.dumps(matrices['attachmentVisibility'], ensure_ascii=False, indent=2),
+                json.dumps([item.model_dump(mode='json') for item in matrices.attachmentVisibility], ensure_ascii=False, indent=2),
                 '```',
                 '',
                 '## 章节结构图',
                 '```json',
-                json.dumps(matrices['sectionStructure'], ensure_ascii=False, indent=2),
+                json.dumps([item.model_dump(mode='json') for item in matrices.sectionStructure], ensure_ascii=False, indent=2),
                 '```',
                 '',
                 '## 证据索引与人工复核说明',

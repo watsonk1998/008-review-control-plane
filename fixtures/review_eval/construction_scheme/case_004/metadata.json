@@ -1,0 +1,18 @@
+{
+  "caseId": "construction_scheme_placeholder_004",
+  "fixtureId": "construction_scheme_placeholder_004",
+  "sourcePath": "/Users/lucas/repos/review/008-review-control-plane/fixtures/review_eval/construction_scheme/case_004/source.md",
+  "query": "对该施工方案执行正式结构化审查",
+  "docType": "construction_scheme",
+  "disciplineTags": [
+    "hot_work"
+  ],
+  "strictMode": true,
+  "policyPackIds": [],
+  "expectedPacks": [
+    "construction_scheme.base",
+    "hot_work.base"
+  ],
+  "manualReviewCases": [],
+  "ciEnabled": false
+}

@@ -11,6 +11,11 @@ def _fallback_recommendations(candidate: IssueCandidate) -> list[str]:
         'construction_org_special_scheme_gap': ['针对识别出的起重吊装/动火/施工用电等高风险作业，明确专项方案或专项技术措施的正文挂接位置。'],
         'construction_org_emergency_plan_targeted': ['按主要危险源补齐对应事故类型、联络链路和现场处置动作。'],
         'construction_org_shutdown_resource_conflict': ['复核停机窗口、班组组织与交叉作业顺序，必要时拆分作业面或增加错峰安排。'],
+        'hazardous_special_scheme_core_sections': ['补齐专项方案的工程概况、编制依据、施工工艺、安全措施、应急处置与验算章节。'],
+        'hazardous_special_scheme_attachment_visibility': ['补充专项方案附件原件或图纸正文，并将人工复核结论写回正式报告。'],
+        'hazardous_special_scheme_calculation_evidence': ['补充与起重/稳定性相关的验算书、设备选型依据和关键参数来源。'],
+        'hazardous_special_scheme_emergency_targeted': ['围绕主要危险源补齐专项方案的应急处置流程、联络链路和现场动作。'],
+        'hazardous_special_scheme_measure_linkage': ['将危险源、控制措施、监测监控和停工条件形成可执行闭环。'],
     }
     return mapping.get(candidate.candidateId, ['结合证据补充整改措施。'])
 
@@ -65,4 +70,14 @@ def _build_summary(candidate: IssueCandidate) -> str:
         return '应急预案数量或类型与主要危险源不完全匹配，针对性不足。'
     if candidate.candidateId == 'construction_org_shutdown_resource_conflict':
         return '停机窗口紧、作业并行度高且投入人力较大，存在组织与交叉作业压力。'
+    if candidate.candidateId == 'hazardous_special_scheme_core_sections':
+        return '危大专项方案缺少核心章节，难以支撑工艺、控制措施与人工复核。'
+    if candidate.candidateId == 'hazardous_special_scheme_attachment_visibility':
+        return '专项方案存在附件或图纸可视域缺口，当前只能标记人工复核。'
+    if candidate.candidateId == 'hazardous_special_scheme_calculation_evidence':
+        return '专项方案识别到吊装/稳定性场景，但未看到可追溯的验算或计算依据。'
+    if candidate.candidateId == 'hazardous_special_scheme_emergency_targeted':
+        return '专项方案的应急处置安排与主要危险源匹配不足。'
+    if candidate.candidateId == 'hazardous_special_scheme_measure_linkage':
+        return '危险源、控制措施与监测监控未形成完整闭环，现场执行风险较高。'
     return candidate.title

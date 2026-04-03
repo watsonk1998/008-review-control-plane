@@ -9,6 +9,7 @@ import {
   fetchHealth,
   getApiBaseUrl,
 } from "@/lib/api";
+import { StructuredReviewForm } from "@/components/structured-review-form";
 import type {
   CapabilityHealth,
   CapabilityMode,
@@ -102,6 +103,7 @@ export function HomeDashboard() {
   const [submitting, setSubmitting] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [sourceUrlInput, setSourceUrlInput] = useState("");
+  const [policyPackInput, setPolicyPackInput] = useState("");
   const [form, setForm] = useState<CreateTaskRequest>({
     taskType: "knowledge_qa",
     capabilityMode: "auto",
@@ -112,6 +114,10 @@ export function HomeDashboard() {
     useWeb: false,
     debug: true,
     sourceUrls: [],
+    documentType: "construction_org",
+    disciplineTags: [],
+    strictMode: true,
+    policyPackIds: [],
   });
 
   async function refresh() {
@@ -152,6 +158,10 @@ export function HomeDashboard() {
     setSubmitting(true);
     setError(null);
     try {
+      const structuredPolicyPackIds = policyPackInput
+        .split(/[\n,]+/)
+        .map((item) => item.trim())
+        .filter(Boolean);
       const task = await createTask({
         ...form,
         fixtureId: form.fixtureId || undefined,
@@ -161,6 +171,22 @@ export function HomeDashboard() {
           .split(/\n+/)
           .map((item) => item.trim())
           .filter(Boolean),
+        documentType:
+          form.taskType === "structured_review"
+            ? form.documentType || "construction_org"
+            : undefined,
+        disciplineTags:
+          form.taskType === "structured_review"
+            ? form.disciplineTags || []
+            : undefined,
+        strictMode:
+          form.taskType === "structured_review"
+            ? form.strictMode ?? true
+            : undefined,
+        policyPackIds:
+          form.taskType === "structured_review"
+            ? structuredPolicyPackIds
+            : undefined,
       });
       router.push(`/tasks/${task.id}`);
     } catch (err) {
@@ -345,6 +371,13 @@ export function HomeDashboard() {
             </select>
             <small>document_research / review_assist 推荐选择 docx fixture。</small>
           </label>
+
+          <StructuredReviewForm
+            form={form}
+            setForm={setForm}
+            policyPackInput={policyPackInput}
+            setPolicyPackInput={setPolicyPackInput}
+          />
 
           <label className="field">
             <span>Source URLs（可选，多行）</span>

@@ -3,16 +3,18 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 
-import { fetchTask, fetchTaskEvents } from "@/lib/api";
+import { fetchTask, fetchTaskArtifacts, fetchTaskEvents, resolveApiUrl } from "@/lib/api";
 import type {
   EvidenceSpan,
   ReviewIssue,
   StructuredReviewResult,
+  TaskArtifact,
   TaskEvent,
   TaskRecord,
 } from "@/types/control-plane";
 
 const TERMINAL_STATES = new Set(["succeeded", "failed", "partial"]);
+const REVIEW_LAYERS = ["L1", "L2", "L3"] as const;
 
 function renderJson(data: unknown) {
   return JSON.stringify(data, null, 2);
@@ -24,7 +26,8 @@ function isStructuredReviewResult(result: unknown): result is StructuredReviewRe
       typeof result === "object" &&
       "summary" in result &&
       "issues" in result &&
-      "matrices" in result,
+      "matrices" in result &&
+      "resolvedProfile" in result,
   );
 }
 
@@ -54,9 +57,31 @@ function renderEvidenceList(title: string, evidence: EvidenceSpan[]) {
   );
 }
 
+function ArtifactList({ artifacts }: { artifacts: TaskArtifact[] }) {
+  if (!artifacts.length) {
+    return <p className="muted">暂无工件。</p>;
+  }
+  return (
+    <div className="artifact-list">
+      {artifacts.map((artifact) => (
+        <a
+          className="ghost-button"
+          href={resolveApiUrl(artifact.downloadUrl)}
+          key={artifact.fileName}
+          rel="noreferrer"
+          target="_blank"
+        >
+          {artifact.fileName}
+        </a>
+      ))}
+    </div>
+  );
+}
+
 export function TaskDetail({ taskId }: { taskId: string }) {
   const [task, setTask] = useState<TaskRecord | null>(null);
   const [events, setEvents] = useState<TaskEvent[]>([]);
+  const [artifacts, setArtifacts] = useState<TaskArtifact[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -66,9 +91,12 @@ export function TaskDetail({ taskId }: { taskId: string }) {
     async function load() {
       try {
         const [taskData, eventData] = await Promise.all([fetchTask(taskId), fetchTaskEvents(taskId)]);
+        const artifactData =
+          taskData.taskType === "structured_review" ? await fetchTaskArtifacts(taskId).catch(() => []) : [];
         if (cancelled) return true;
         setTask(taskData);
         setEvents(eventData);
+        setArtifacts(artifactData);
         setError(null);
         setLoading(false);
         return TERMINAL_STATES.has(taskData.status);
@@ -108,6 +136,19 @@ export function TaskDetail({ taskId }: { taskId: string }) {
     if (!task?.result || !isStructuredReviewResult(task.result)) return null;
     return task.result;
   }, [task]);
+
+  const structuredArtifacts = useMemo(() => {
+    if (!structuredResult) return [];
+    return structuredResult.artifactIndex?.length ? structuredResult.artifactIndex : artifacts;
+  }, [artifacts, structuredResult]);
+
+  const issuesByLayer = useMemo(() => {
+    if (!structuredResult) return { L1: [], L2: [], L3: [] } as Record<string, ReviewIssue[]>;
+    return REVIEW_LAYERS.reduce<Record<string, ReviewIssue[]>>((acc, layer) => {
+      acc[layer] = structuredResult.issues.filter((issue) => issue.layer === layer);
+      return acc;
+    }, { L1: [], L2: [], L3: [] });
+  }, [structuredResult]);
 
   return (
     <main className="shell stack-xl">
@@ -216,8 +257,11 @@ export function TaskDetail({ taskId }: { taskId: string }) {
                     <p>{structuredResult.summary.overallConclusion}</p>
                   </div>
                   <div className="callout">
-                    <strong>Selected Packs</strong>
-                    <p>{structuredResult.summary.selectedPacks.join(" → ") || "暂无"}</p>
+                    <strong>Resolved Profile</strong>
+                    <p>documentType：{structuredResult.resolvedProfile.documentType}</p>
+                    <p>disciplineTags：{structuredResult.resolvedProfile.disciplineTags.join("，") || "auto"}</p>
+                    <p>policyPackIds：{structuredResult.resolvedProfile.policyPackIds.join(" → ") || "auto"}</p>
+                    <p>strictMode：{structuredResult.resolvedProfile.strictMode ? "true" : "false"}</p>
                   </div>
                   <div className="callout">
                     <strong>人工复核</strong>
@@ -229,36 +273,50 @@ export function TaskDetail({ taskId }: { taskId: string }) {
 
                 <article className="card stack-lg">
                   <div>
-                    <p className="eyebrow">Issues</p>
-                    <h2>问题清单</h2>
+                    <p className="eyebrow">Artifacts</p>
+                    <h2>审查工件</h2>
                   </div>
-                  <div className="stack-md">
-                    {structuredResult.issues.map((issue: ReviewIssue) => (
-                      <article className="boundary-item" key={issue.id}>
-                        <div className="section-heading compact">
-                          <div>
-                            <h3>{issue.id} · {issue.title}</h3>
-                            <p className="muted small">{issue.layer} / {issue.findingType}</p>
-                          </div>
-                          <span className={`status-pill ${severityTone(issue.severity)}`}>{issue.severity}</span>
-                        </div>
-                        <p>{issue.summary}</p>
-                        {issue.whetherManualReviewNeeded ? <p className="error-text">需要人工复核该问题的可视域或附件证据。</p> : null}
-                        <div className="stack-sm">
-                          <strong>整改建议</strong>
-                          <ul>
-                            {issue.recommendation.map((item) => (
-                              <li key={item}>{item}</li>
-                            ))}
-                          </ul>
-                        </div>
-                        {renderEvidenceList("文档证据", issue.docEvidence)}
-                        {renderEvidenceList("规范证据", issue.policyEvidence)}
-                      </article>
-                    ))}
-                  </div>
+                  <ArtifactList artifacts={structuredArtifacts} />
                 </article>
               </section>
+
+              {REVIEW_LAYERS.map((layer) => (
+                <section className="card stack-lg" key={layer}>
+                  <div>
+                    <p className="eyebrow">Issues · {layer}</p>
+                    <h2>{layer} 问题</h2>
+                  </div>
+                  {issuesByLayer[layer].length ? (
+                    <div className="stack-md">
+                      {issuesByLayer[layer].map((issue: ReviewIssue) => (
+                        <article className="boundary-item" key={issue.id}>
+                          <div className="section-heading compact">
+                            <div>
+                              <h3>{issue.id} · {issue.title}</h3>
+                              <p className="muted small">{issue.layer} / {issue.findingType}</p>
+                            </div>
+                            <span className={`status-pill ${severityTone(issue.severity)}`}>{issue.severity}</span>
+                          </div>
+                          <p>{issue.summary}</p>
+                          {issue.whetherManualReviewNeeded ? <p className="error-text">需要人工复核该问题的可视域或附件证据。</p> : null}
+                          <div className="stack-sm">
+                            <strong>整改建议</strong>
+                            <ul>
+                              {issue.recommendation.map((item) => (
+                                <li key={item}>{item}</li>
+                              ))}
+                            </ul>
+                          </div>
+                          {renderEvidenceList("文档证据", issue.docEvidence)}
+                          {renderEvidenceList("规范证据", issue.policyEvidence)}
+                        </article>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="muted">该层暂无问题。</p>
+                  )}
+                </section>
+              ))}
 
               <section className="grid two-up">
                 <article className="card stack-lg">
@@ -269,7 +327,7 @@ export function TaskDetail({ taskId }: { taskId: string }) {
                   <div className="stack-md">
                     <div>
                       <strong>Hazard Identification</strong>
-                      <pre className="code-block compact">{renderJson(structuredResult.matrices.hazardIdentification)}</pre>
+                      <pre className="code-block compact">{renderJson(structuredResult.matrices.hazardIdentification.values)}</pre>
                     </div>
                     <div>
                       <strong>Rule Hits</strong>
@@ -277,7 +335,7 @@ export function TaskDetail({ taskId }: { taskId: string }) {
                     </div>
                     <div>
                       <strong>Conflicts</strong>
-                      <pre className="code-block compact">{renderJson(structuredResult.matrices.conflicts)}</pre>
+                      <pre className="code-block compact">{renderJson(structuredResult.matrices.conflicts.values)}</pre>
                     </div>
                   </div>
                 </article>
@@ -298,6 +356,15 @@ export function TaskDetail({ taskId }: { taskId: string }) {
                     </div>
                   </div>
                 </article>
+              </section>
+
+              <section className="card stack-lg">
+                <div>
+                  <p className="eyebrow">Artifacts & Debug</p>
+                  <h2>工件 / 原始 JSON</h2>
+                </div>
+                <ArtifactList artifacts={structuredArtifacts} />
+                <pre className="code-block">{renderJson(structuredResult)}</pre>
               </section>
             </>
           ) : (
@@ -352,21 +419,6 @@ export function TaskDetail({ taskId }: { taskId: string }) {
               </article>
             </section>
           )}
-
-          {structuredResult ? (
-            <section className="card stack-lg">
-              <div>
-                <p className="eyebrow">Artifacts & Debug</p>
-                <h2>工件 / 原始 JSON</h2>
-              </div>
-              <div className="artifact-list">
-                {structuredResult.artifacts.map((artifact) => (
-                  <code key={artifact}>{artifact}</code>
-                ))}
-              </div>
-              <pre className="code-block">{renderJson(structuredResult)}</pre>
-            </section>
-          ) : null}
         </>
       ) : null}
     </main>
