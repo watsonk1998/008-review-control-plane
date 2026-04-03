@@ -77,11 +77,13 @@ class StructuredReviewReportBuilder:
             f'- strictMode：{"true" if resolved_profile.strictMode else "false"}',
             '',
             '## 可视域与人工复核提示',
-            f'- 附件数量：{summary.visibilitySummary.attachmentCount}',
-            f'- 可视域计数：{json.dumps(summary.visibilitySummary.counts, ensure_ascii=False)}',
-            f'- 可视域原因计数：{json.dumps(summary.visibilitySummary.reasonCounts, ensure_ascii=False)}',
-            f'- duplicate sections：{", ".join(summary.visibilitySummary.duplicateSectionTitles) or "无"}',
-            f'- parse warnings：{", ".join(summary.visibilitySummary.parseWarnings) or "无"}',
+            f'- 附件数量：{parse_result.visibility.attachmentCount}',
+            f'- parser limited：{"yes" if parse_result.visibility.parserLimited else "no"}',
+            f'- file type：{parse_result.visibility.fileType or parse_result.fileType}',
+            f'- 可视域计数：{json.dumps(parse_result.visibility.counts, ensure_ascii=False)}',
+            f'- 可视域原因计数：{json.dumps(parse_result.visibility.reasonCounts, ensure_ascii=False)}',
+            f'- duplicate sections：{", ".join(parse_result.visibility.duplicateSectionTitles) or "无"}',
+            f'- parse warnings：{", ".join(parse_result.parseWarnings) or "无"}',
             '',
         ]
         if unresolved_facts:

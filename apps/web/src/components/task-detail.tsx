@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 
+import { ReviewDecisionPanel } from "@/components/review-decision-panel";
 import {
   fetchTask,
   fetchTaskArtifacts,
@@ -79,6 +80,12 @@ function renderEvidenceList(title: string, evidence: EvidenceSpan[]) {
       </ul>
     </div>
   );
+}
+
+function findingTone(findingType: string) {
+  if (findingType === "hard_evidence") return "is-unhealthy";
+  if (findingType === "visibility_gap") return "is-warning";
+  return "is-neutral";
 }
 
 function ArtifactList({ artifacts }: { artifacts: TaskArtifact[] }) {
@@ -366,6 +373,8 @@ export function TaskDetail({ taskId }: { taskId: string }) {
     return structuredResult.artifactIndex?.length ? structuredResult.artifactIndex : artifacts;
   }, [artifacts, structuredResult]);
 
+  const reviewerDecision = task?.reviewerDecision || null;
+
   const issuesByLayer = useMemo(() => {
     if (!structuredResult) return { L1: [], L2: [], L3: [] } as Record<string, ReviewIssue[]>;
     return REVIEW_LAYERS.reduce<Record<string, ReviewIssue[]>>((acc, layer) => {
@@ -520,6 +529,23 @@ export function TaskDetail({ taskId }: { taskId: string }) {
 
           {structuredResult ? (
             <>
+              <ReviewDecisionPanel
+                taskId={task.id}
+                issues={structuredResult.issues}
+                attachments={structuredResult.matrices.attachmentVisibility}
+                decision={reviewerDecision}
+                onSaved={(nextDecision) =>
+                  setTask((current) =>
+                    current
+                      ? {
+                          ...current,
+                          reviewerDecision: nextDecision,
+                        }
+                      : current,
+                  )
+                }
+              />
+
               <section className="grid two-up">
                 <article className="card stack-lg">
                   <div>
@@ -586,6 +612,10 @@ export function TaskDetail({ taskId }: { taskId: string }) {
                           ) : null}
                           {issue.evidenceMissing ? <p className="muted small">证据状态：当前存在 evidence gap，需补齐文档或条文证据。</p> : null}
                           <div className="stack-sm">
+                            <div className="artifact-list">
+                              <span className={`status-pill ${findingTone(issue.findingType)}`}>{issue.findingType}</span>
+                              <span className={`status-pill ${severityTone(issue.severity)}`}>{issue.severity}</span>
+                            </div>
                             <strong>整改建议</strong>
                             <ul>
                               {issue.recommendation.map((item) => (
@@ -611,11 +641,14 @@ export function TaskDetail({ taskId }: { taskId: string }) {
                     <h2>可视域与解析降级</h2>
                   </div>
                   <div className="callout">
-                    <strong>Visibility Summary</strong>
-                    <p>附件数量：{structuredResult.summary.visibilitySummary.attachmentCount}</p>
-                    <p>状态计数：{renderJson(structuredResult.summary.visibilitySummary.counts)}</p>
-                    <p>原因计数：{renderJson(structuredResult.summary.visibilitySummary.reasonCounts)}</p>
-                    <p>重复章节：{structuredResult.summary.visibilitySummary.duplicateSectionTitles.join("，") || "无"}</p>
+                    <strong>Canonical Visibility</strong>
+                    <p>parserLimited：{structuredResult.visibility.parserLimited ? "true" : "false"}</p>
+                    <p>fileType：{structuredResult.visibility.fileType || "unknown"}</p>
+                    <p>附件数量：{structuredResult.visibility.attachmentCount}</p>
+                    <p>状态计数：{renderJson(structuredResult.visibility.counts)}</p>
+                    <p>原因计数：{renderJson(structuredResult.visibility.reasonCounts)}</p>
+                    <p>重复章节：{structuredResult.visibility.duplicateSectionTitles.join("，") || "无"}</p>
+                    <p>需人工复核：{structuredResult.visibility.manualReviewNeeded ? "true" : "false"}</p>
                     <p>parse warnings：{structuredResult.summary.visibilitySummary.parseWarnings.join("，") || "无"}</p>
                   </div>
                   <pre className="code-block compact">{renderJson(structuredResult.matrices.attachmentVisibility)}</pre>
@@ -633,7 +666,23 @@ export function TaskDetail({ taskId }: { taskId: string }) {
                     </div>
                     <div>
                       <strong>Rule Hits</strong>
-                      <pre className="code-block compact">{renderJson(structuredResult.matrices.ruleHits)}</pre>
+                      {structuredResult.matrices.ruleHits.length ? (
+                        <ul className="source-list">
+                          {structuredResult.matrices.ruleHits.map((row) => (
+                            <li key={`${row.packId}-${row.ruleId}`}>
+                              <strong>{row.ruleId}</strong>
+                              <p className="muted small">
+                                pack={row.packId} · readiness={row.packReadiness} · status={row.status}
+                              </p>
+                              <p className="muted small">
+                                layer={row.layerHint} · severity={row.severityHint} · match={row.matchType}
+                              </p>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="muted">暂无规则命中。</p>
+                      )}
                     </div>
                     <div>
                       <strong>Conflicts</strong>
@@ -653,8 +702,8 @@ export function TaskDetail({ taskId }: { taskId: string }) {
 
               <section className="card stack-lg">
                 <div>
-                  <p className="eyebrow">Artifacts & Debug</p>
-                  <h2>工件 / 原始 JSON</h2>
+                  <p className="eyebrow">Artifacts & Facts</p>
+                  <h2>工件 / 未决事实</h2>
                 </div>
                 {structuredResult.unresolvedFacts.length ? (
                   <div className="callout warning-callout">
@@ -669,7 +718,10 @@ export function TaskDetail({ taskId }: { taskId: string }) {
                   </div>
                 ) : null}
                 <ArtifactList artifacts={structuredArtifacts} />
-                <pre className="code-block">{renderJson(structuredResult)}</pre>
+                <details>
+                  <summary>查看原始 JSON</summary>
+                  <pre className="code-block">{renderJson(structuredResult)}</pre>
+                </details>
               </section>
             </>
           ) : (

@@ -8,6 +8,7 @@ from docx import Document
 
 from src.review.parser.attachment_indexer import build_attachment_index
 from src.review.parser.docx_parser import parse_docx_document
+from src.review.parser.pdf_parser import parse_pdf_document
 from src.review.parser.normalizer import clean_text, detect_heading_level, normalize_lines_with_metadata, section_key
 from src.review.schema import DocumentParseResult
 
@@ -37,7 +38,9 @@ class DocumentLoader:
         suffix = path.suffix.lower()
         if suffix == '.docx':
             return DocumentParseResult.model_validate(parse_docx_document(path))
-        if suffix in {'.md', '.txt', '.pdf'}:
+        if suffix == '.pdf':
+            return DocumentParseResult.model_validate(parse_pdf_document(path))
+        if suffix in {'.md', '.txt'}:
             return DocumentParseResult.model_validate(self._parse_text_document(path, self.extract_text(path), markdown=suffix == '.md'))
         raise ValueError(f'Unsupported document type: {path.suffix}')
 
@@ -97,10 +100,8 @@ class DocumentLoader:
                 }
             )
 
-        parser_limited = path.suffix.lower() == '.pdf'
-        if path.suffix.lower() == '.pdf':
-            parse_mode = 'pdf_text_only'
-        elif markdown:
+        parser_limited = False
+        if markdown:
             parse_mode = 'markdown_text'
         else:
             parse_mode = 'plain_text'
@@ -122,16 +123,7 @@ class DocumentLoader:
                 duplicate_titles.append(key)
         visibility_report['duplicateSectionTitles'] = duplicate_titles
         visibility_report['normalization'] = normalization_meta
-        if path.suffix.lower() == '.pdf':
-            parse_warnings.extend(
-                [
-                    'pdf_text_extraction_only',
-                    'pdf_tables_not_preserved',
-                    'pdf_attachment_visibility_may_be_unknown',
-                    'pdf_figures_images_not_parsed',
-                ]
-            )
-        elif path.suffix.lower() in {'.txt', '.md'}:
+        if path.suffix.lower() in {'.txt', '.md'}:
             parse_warnings.extend(
                 [
                     'text_tables_not_preserved',

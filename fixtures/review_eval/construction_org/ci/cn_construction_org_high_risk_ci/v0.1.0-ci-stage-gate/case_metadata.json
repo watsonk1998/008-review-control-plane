@@ -8,7 +8,10 @@
     "hot_work"
   ],
   "expected_packs": [
-    "construction_org.base"
+    "construction_org.base",
+    "lifting_operations.base",
+    "temporary_power.base",
+    "hot_work.base"
   ],
   "ci_enabled": true,
   "label_status": "stage_gate_curated",

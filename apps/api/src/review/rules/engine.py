@@ -7,6 +7,7 @@ from src.review.schema import ExtractedFacts, PolicyPack, RuleHit
 class ReviewRuleEngine:
     def run(self, facts: ExtractedFacts, packs: list[PolicyPack], parse_result) -> list[RuleHit]:
         pack_by_rule: dict[str, tuple[str, str]] = {}
+        selected_pack_ids = {pack.id for pack in packs}
         for pack in packs:
             for rule_id in pack.ruleIds:
                 pack_by_rule.setdefault(rule_id, (pack.id, pack.readiness))
@@ -14,6 +15,9 @@ class ReviewRuleEngine:
         hits: list[RuleHit] = []
         hits.extend(self._construction_org_hits(facts, pack_by_rule))
         hits.extend(self._hazardous_special_scheme_hits(facts, pack_by_rule))
+        hits.extend(self._lifting_operations_hits(facts, pack_by_rule, selected_pack_ids))
+        hits.extend(self._temporary_power_hits(facts, pack_by_rule, selected_pack_ids))
+        hits.extend(self._hot_work_hits(facts, pack_by_rule, selected_pack_ids))
         return hits
 
     def _construction_org_hits(self, facts: ExtractedFacts, pack_by_rule: dict[str, tuple[str, str]]) -> list[RuleHit]:
@@ -248,3 +252,117 @@ class ReviewRuleEngine:
             )
         )
         return hits
+
+    def _lifting_operations_hits(
+        self,
+        facts: ExtractedFacts,
+        pack_by_rule: dict[str, tuple[str, str]],
+        selected_pack_ids: set[str],
+    ) -> list[RuleHit]:
+        if 'lifting_operations.base' not in selected_pack_ids:
+            return []
+        hits: list[RuleHit] = []
+        if 'construction_org.base' in selected_pack_ids:
+            special_scheme_status = facts.hazardFacts.get('specialSchemePlanStatus')
+            if special_scheme_status == 'explicit_section':
+                special_scheme_result = 'pass'
+            elif special_scheme_status == 'generic_mention_only':
+                special_scheme_result = 'manual_review_needed'
+            else:
+                special_scheme_result = 'hit'
+            pack_id, pack_readiness = pack_by_rule.get('lifting_operations_special_scheme_linkage', ('lifting_operations.base', 'ready'))
+            hits.append(
+                RuleHit(
+                    ruleId='lifting_operations_special_scheme_linkage',
+                    packId=pack_id,
+                    packReadiness=pack_readiness,
+                    matchType='direct_hit',
+                    status=special_scheme_result,
+                    layerHint=ReviewLayer.L1,
+                    severityHint='high',
+                    factRefs=['hazard.liftingOperation', 'hazard.specialSchemePlanStatus'],
+                    evidenceRefs=['policy:dangerous_special_scheme'],
+                    rationale='起重吊装场景需明确专项方案/专项技术措施的正文挂接和适用边界。',
+                )
+            )
+        if facts.hazardFacts.get('liftingOperation'):
+            calc_present = bool(facts.hazardFacts.get('calculationEvidencePresent'))
+            pack_id, pack_readiness = pack_by_rule.get('lifting_operations_calculation_traceability', ('lifting_operations.base', 'ready'))
+            hits.append(
+                RuleHit(
+                    ruleId='lifting_operations_calculation_traceability',
+                    packId=pack_id,
+                    packReadiness=pack_readiness,
+                    matchType='direct_hit',
+                    status='pass' if calc_present else 'hit',
+                    layerHint=ReviewLayer.L2,
+                    severityHint='high',
+                    factRefs=['hazard.liftingOperation', 'hazard.calculationEvidencePresent', 'hazard.craneCapacityTon', 'hazard.calculatedLiftWeightTon'],
+                    evidenceRefs=['policy:hazardous_scheme_calculation'],
+                    rationale='起重吊装至少应有设备参数、起重量或验算依据可追溯。',
+                )
+            )
+        return hits
+
+    def _temporary_power_hits(
+        self,
+        facts: ExtractedFacts,
+        pack_by_rule: dict[str, tuple[str, str]],
+        selected_pack_ids: set[str],
+    ) -> list[RuleHit]:
+        if 'temporary_power.base' not in selected_pack_ids or 'construction_org.base' not in selected_pack_ids:
+            return []
+        if not facts.hazardFacts.get('temporaryPower'):
+            return []
+        targeted_titles = facts.emergencyFacts.get('planTitles') or []
+        has_power_title = self._contains_keywords(targeted_titles, ('触电', '停送电', '临电', '用电'))
+        measures_ready = bool(facts.hazardFacts.get('measureSectionPresent'))
+        monitoring_ready = bool(facts.hazardFacts.get('monitoringSectionPresent'))
+        status = 'pass' if measures_ready and monitoring_ready and has_power_title else 'hit'
+        pack_id, pack_readiness = pack_by_rule.get('temporary_power_control_linkage', ('temporary_power.base', 'ready'))
+        return [
+            RuleHit(
+                ruleId='temporary_power_control_linkage',
+                packId=pack_id,
+                packReadiness=pack_readiness,
+                matchType='inferred_risk',
+                status=status,
+                layerHint=ReviewLayer.L2,
+                severityHint='medium',
+                factRefs=['hazard.temporaryPower', 'hazard.measureSectionPresent', 'hazard.monitoringSectionPresent', 'emergency.planTitles'],
+                evidenceRefs=['policy:hazardous_scheme_measures', 'policy:emergency_plan_targeted'],
+                rationale='临时用电/停送电作业应同时落到控制措施、监测监控和触电类应急处置。',
+            )
+        ]
+
+    def _hot_work_hits(
+        self,
+        facts: ExtractedFacts,
+        pack_by_rule: dict[str, tuple[str, str]],
+        selected_pack_ids: set[str],
+    ) -> list[RuleHit]:
+        if 'hot_work.base' not in selected_pack_ids or 'construction_org.base' not in selected_pack_ids:
+            return []
+        if not facts.hazardFacts.get('hotWork'):
+            return []
+        targeted_titles = facts.emergencyFacts.get('planTitles') or []
+        has_fire_title = self._contains_keywords(targeted_titles, ('火灾', '动火', '爆燃', '爆炸'))
+        status = 'pass' if has_fire_title else 'hit'
+        pack_id, pack_readiness = pack_by_rule.get('hot_work_emergency_targeted', ('hot_work.base', 'ready'))
+        return [
+            RuleHit(
+                ruleId='hot_work_emergency_targeted',
+                packId=pack_id,
+                packReadiness=pack_readiness,
+                matchType='direct_hit',
+                status=status,
+                layerHint=ReviewLayer.L2,
+                severityHint='medium',
+                factRefs=['hazard.hotWork', 'emergency.planTitles'],
+                evidenceRefs=['policy:emergency_plan_targeted'],
+                rationale='动火场景至少应看到火灾/爆燃类应急处置标题或明确联动安排。',
+            )
+        ]
+
+    def _contains_keywords(self, values: list[str], keywords: tuple[str, ...]) -> bool:
+        return any(any(keyword in str(value) for keyword in keywords) for value in values)

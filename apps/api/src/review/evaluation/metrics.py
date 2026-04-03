@@ -26,7 +26,7 @@ def _pack_accuracy(expected: set[str], actual: set[str]) -> float:
     return len(expected & actual) / len(union) if union else 1.0
 
 
-def _normalize_ready_pack_ids(pack_ids: set[str]) -> set[str]:
+def _normalize_ready_pack_ids(pack_ids: set[str], *, document_type: str | None = None) -> set[str]:
     registry = get_policy_pack_registry()
     normalized: set[str] = set()
     for pack_id in pack_ids:
@@ -34,6 +34,8 @@ def _normalize_ready_pack_ids(pack_ids: set[str]) -> set[str]:
         if pack is None:
             continue
         if pack.readiness != 'ready':
+            continue
+        if document_type and pack.docTypes and document_type not in pack.docTypes:
             continue
         normalized.add(pack_id)
     return normalized
@@ -80,7 +82,7 @@ def _build_actual_rule_hit_map(result: dict[str, Any]) -> dict[str, dict[str, An
 
 def _build_fact_snapshot(result: dict[str, Any]) -> dict[str, Any]:
     hazard_values = result.get('matrices', {}).get('hazardIdentification', {}).get('values', {})
-    visibility = result.get('summary', {}).get('visibilitySummary', {})
+    visibility = result.get('visibility') or result.get('summary', {}).get('visibilitySummary', {})
     attachment_titles = {item.get('attachmentNumber') or item.get('title') for item in result.get('matrices', {}).get('attachmentVisibility', [])}
     duplicate_titles = set(visibility.get('duplicateSectionTitles', []))
     return {
@@ -187,8 +189,11 @@ def compute_metrics(case: dict[str, Any], result: dict[str, Any]) -> dict[str, f
         }
         policy_hits += sum(1 for ref in required_refs if ref in actual_refs)
 
-    expected_packs = _normalize_ready_pack_ids(set(case.get('expectedPacks', [])))
-    actual_packs = _normalize_ready_pack_ids(set((result.get('resolvedProfile') or {}).get('policyPackIds', [])))
+    expected_packs = _normalize_ready_pack_ids(set(case.get('expectedPacks', [])), document_type=case.get('docType'))
+    actual_packs = _normalize_ready_pack_ids(
+        set((result.get('resolvedProfile') or {}).get('policyPackIds', [])),
+        document_type=case.get('docType'),
+    )
 
     expected_visibility_items = case.get('groundTruthVisibility', {}).get('attachments', [])
     actual_visibility_by_id, actual_visibility_by_title = _build_actual_visibility_maps(result)

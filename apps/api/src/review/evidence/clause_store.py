@@ -17,6 +17,10 @@ _RULE_TO_CLAUSE_IDS = {
     'hazardous_special_scheme_calculation_evidence': ['hazardous_scheme_calculation'],
     'hazardous_special_scheme_emergency_targeted': ['emergency_plan_targeted'],
     'hazardous_special_scheme_measure_linkage': ['hazardous_scheme_measures'],
+    'lifting_operations_special_scheme_linkage': ['dangerous_special_scheme'],
+    'lifting_operations_calculation_traceability': ['hazardous_scheme_calculation'],
+    'temporary_power_control_linkage': ['hazardous_scheme_measures', 'emergency_plan_targeted'],
+    'hot_work_emergency_targeted': ['emergency_plan_targeted'],
 }
 
 

@@ -23,6 +23,7 @@
 P0 的稳定结果字段：
 
 - `summary`
+- `visibility`
 - `resolvedProfile`
 - `issues`
 - `matrices`
@@ -34,7 +35,8 @@ P0 的稳定结果字段：
 
 - `artifactIndex` 与 `GET /api/tasks/{taskId}/artifacts` 共享同一套官方 catalog
 - parse 结果内部使用 typed `visibility`、`parseMode`、`parserLimited`
-- `summary.visibilitySummary` 负责总览；`matrices.attachmentVisibility` 负责结构化明细
+- `result.visibility` 是 top-level canonical visibility 对象
+- `summary.visibilitySummary` 仅负责总览；`matrices.attachmentVisibility` 负责结构化明细
 
 ## 当前正式支持的文档类型
 
@@ -59,9 +61,9 @@ P0 的稳定结果字段：
 
 ### scenario packs
 
-- `lifting_operations.base`（placeholder）
-- `temporary_power.base`（placeholder）
-- `hot_work.base`（placeholder）
+- `lifting_operations.base`（ready）
+- `temporary_power.base`（ready）
+- `hot_work.base`（ready）
 - `gas_area_ops.base`（placeholder）
 - `special_equipment.base`（placeholder）
 - `working_at_height.base`（placeholder）
@@ -95,6 +97,7 @@ LLM 不负责：
 - `GET /api/tasks/support-scope`
 - `GET /api/tasks/{taskId}/artifacts`
 - `GET /api/tasks/{taskId}/artifacts/{artifactName}`
+- `PUT /api/tasks/{taskId}/reviewer-decision`
 
 典型工件包括：
 
@@ -115,7 +118,9 @@ LLM 不负责：
 - `manualReviewNeeded` 是唯一 canonical 布尔语义
 - `whetherManualReviewNeeded` 仅保留兼容 alias
 - `FinalIssue` 会保留 `evidenceMissing` 与 `manualReviewReason`
+- `result.visibility` 是唯一 canonical visibility contract
 - `summary.visibilitySummary` 会统一输出附件计数、状态计数、reason counts、重复章节与 parse warnings
+- reviewer decision 以单个 task-scoped JSON 保存：`taskState + note + issues[] + attachments[] + updatedAt`
 
 以下情况必须保留人工复核标记：
 

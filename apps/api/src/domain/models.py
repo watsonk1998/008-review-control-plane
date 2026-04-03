@@ -10,6 +10,8 @@ TaskType = Literal['knowledge_qa', 'deep_research', 'document_research', 'review
 CapabilityMode = Literal['auto', 'deeptutor', 'gpt_researcher', 'fast', 'llm_only']
 TaskStatus = Literal['created', 'planned', 'running', 'waiting_external', 'succeeded', 'failed', 'partial']
 EventStatus = Literal['started', 'completed', 'failed', 'info']
+ReviewerTaskState = Literal['pending', 'accepted', 'rejected', 'needs_attachment']
+ReviewerItemState = Literal['pending', 'confirmed', 'dismissed', 'needs_attachment']
 ReviewDocumentType = Literal[
     'construction_org',
     'construction_scheme',
@@ -159,6 +161,33 @@ class TaskEvent(BaseModel):
     artifactPath: str | None = None
 
 
+class ReviewerIssueDecision(BaseModel):
+    issueId: str
+    state: ReviewerItemState = 'pending'
+    note: str | None = None
+
+
+class ReviewerAttachmentDecision(BaseModel):
+    attachmentId: str
+    state: ReviewerItemState = 'pending'
+    note: str | None = None
+
+
+class ReviewerDecision(BaseModel):
+    taskState: ReviewerTaskState = 'pending'
+    note: str | None = None
+    issues: list[ReviewerIssueDecision] = Field(default_factory=list)
+    attachments: list[ReviewerAttachmentDecision] = Field(default_factory=list)
+    updatedAt: datetime | None = None
+
+
+class ReviewerDecisionUpdateRequest(BaseModel):
+    taskState: ReviewerTaskState = 'pending'
+    note: str | None = None
+    issues: list[ReviewerIssueDecision] = Field(default_factory=list)
+    attachments: list[ReviewerAttachmentDecision] = Field(default_factory=list)
+
+
 class TaskRecord(BaseModel):
     id: str
     taskType: TaskType
@@ -178,6 +207,7 @@ class TaskRecord(BaseModel):
     status: TaskStatus = 'created'
     plan: dict[str, Any] | None = None
     result: dict[str, Any] | None = None
+    reviewerDecision: ReviewerDecision | None = None
     error: dict[str, Any] | None = None
     createdAt: datetime
     updatedAt: datetime

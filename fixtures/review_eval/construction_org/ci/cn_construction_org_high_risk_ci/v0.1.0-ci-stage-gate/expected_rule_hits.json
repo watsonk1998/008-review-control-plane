@@ -8,5 +8,25 @@
     "rule_id": "construction_org_special_scheme_gap",
     "expected_status": "manual_review_needed",
     "expected_match_type": "direct_hit"
+  },
+  {
+    "rule_id": "lifting_operations_special_scheme_linkage",
+    "expected_status": "manual_review_needed",
+    "expected_match_type": "direct_hit"
+  },
+  {
+    "rule_id": "lifting_operations_calculation_traceability",
+    "expected_status": "hit",
+    "expected_match_type": "direct_hit"
+  },
+  {
+    "rule_id": "temporary_power_control_linkage",
+    "expected_status": "hit",
+    "expected_match_type": "inferred_risk"
+  },
+  {
+    "rule_id": "hot_work_emergency_targeted",
+    "expected_status": "hit",
+    "expected_match_type": "direct_hit"
   }
 ]

@@ -35,7 +35,7 @@ def _build_legacy_case(root: Path) -> None:
             'disciplineTags': ['lifting_operations'],
             'strictMode': True,
             'policyPackIds': [],
-            'expectedPacks': ['hazardous_special_scheme.base'],
+            'expectedPacks': ['hazardous_special_scheme.base', 'lifting_operations.base'],
             'ciEnabled': True,
         },
     )
@@ -76,7 +76,7 @@ def _build_versioned_case(root: Path, *, ci_enabled: bool = False) -> None:
             'case_version': 'v0.1.0-seed',
             'doc_type': 'hazardous_special_scheme',
             'discipline_tags': ['lifting'],
-            'expected_packs': ['hazardous_special_scheme.base'],
+            'expected_packs': ['hazardous_special_scheme.base', 'lifting_operations.base'],
             'ci_enabled': ci_enabled,
         },
     )

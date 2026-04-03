@@ -15,6 +15,7 @@ _TASK_EXTRA_COLUMNS = {
     'strict_mode': 'INTEGER',
     'policy_pack_ids_json': 'TEXT',
     'source_document_ref_json': 'TEXT',
+    'reviewer_decision_json': 'TEXT',
 }
 
 
@@ -89,9 +90,9 @@ class SQLiteTaskStore:
                 INSERT INTO tasks (
                     id, task_type, capability_mode, query, dataset_id, collection_id, fixture_id,
                     source_document_ref_json, use_web, debug, source_urls, document_type, discipline_tags_json, strict_mode,
-                    policy_pack_ids_json, status, plan_json, result_json, error_json,
+                    policy_pack_ids_json, reviewer_decision_json, status, plan_json, result_json, error_json,
                     created_at, updated_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ''',
                 (
                     task.id,
@@ -109,6 +110,7 @@ class SQLiteTaskStore:
                     json.dumps(task.disciplineTags, ensure_ascii=False),
                     int(task.strictMode) if task.strictMode is not None else None,
                     json.dumps(task.policyPackIds, ensure_ascii=False),
+                    json.dumps(task.reviewerDecision.model_dump(mode='json'), ensure_ascii=False) if task.reviewerDecision is not None else None,
                     task.status,
                     json.dumps(task.plan, ensure_ascii=False) if task.plan is not None else None,
                     json.dumps(task.result, ensure_ascii=False) if task.result is not None else None,
@@ -168,6 +170,7 @@ class SQLiteTaskStore:
             'disciplineTags': 'discipline_tags_json',
             'strictMode': 'strict_mode',
             'policyPackIds': 'policy_pack_ids_json',
+            'reviewerDecision': 'reviewer_decision_json',
             'createdAt': 'created_at',
             'updatedAt': 'updated_at',
         }
@@ -178,6 +181,8 @@ class SQLiteTaskStore:
             elif column in {'source_urls', 'discipline_tags_json', 'policy_pack_ids_json'}:
                 serialized[column] = json.dumps(value or [], ensure_ascii=False)
             elif column == 'source_document_ref_json':
+                serialized[column] = json.dumps(value.model_dump(mode='json'), ensure_ascii=False) if value is not None else None
+            elif column == 'reviewer_decision_json':
                 serialized[column] = json.dumps(value.model_dump(mode='json'), ensure_ascii=False) if value is not None else None
             elif column in {'use_web', 'debug'}:
                 serialized[column] = int(bool(value))
@@ -256,6 +261,7 @@ class SQLiteTaskStore:
             status=row['status'],
             plan=json.loads(row['plan_json']) if row['plan_json'] else None,
             result=json.loads(row['result_json']) if row['result_json'] else None,
+            reviewerDecision=json.loads(row['reviewer_decision_json']) if row['reviewer_decision_json'] else None,
             error=json.loads(row['error_json']) if row['error_json'] else None,
             createdAt=datetime.fromisoformat(row['created_at']),
             updatedAt=datetime.fromisoformat(row['updated_at']),

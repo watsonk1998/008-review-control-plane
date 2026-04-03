@@ -13,7 +13,7 @@ from src.review.schema import (
 
 
 def build_review_matrices(parse_result, facts, rule_hits, final_issues) -> StructuredReviewMatrices:
-    duplicate_keys = set(parse_result.visibilityReport.get('duplicateSectionTitles', []))
+    duplicate_keys = set(parse_result.visibility.duplicateSectionTitles)
     section_structure = [
         SectionStructureMatrixItem(
             id=str(section['id']),
@@ -46,6 +46,7 @@ def build_review_matrices(parse_result, facts, rule_hits, final_issues) -> Struc
         RuleHitMatrixRow(
             ruleId=hit.ruleId,
             packId=hit.packId,
+            packReadiness=hit.packReadiness,
             status=hit.status,
             layerHint=hit.layerHint.value,
             severityHint=hit.severityHint,

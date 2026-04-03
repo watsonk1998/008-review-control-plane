@@ -77,12 +77,20 @@ def get_evidence_pack_registry() -> dict[str, EvidencePack]:
             severityMapping={
                 'hazardous_special_scheme_core_sections': 'high',
                 'hazardous_special_scheme_calculation_evidence': 'high',
+                'lifting_operations_special_scheme_linkage': 'high',
+                'lifting_operations_calculation_traceability': 'high',
+                'temporary_power_control_linkage': 'medium',
+                'hot_work_emergency_targeted': 'medium',
                 'hazardous_special_scheme_measure_linkage': 'medium',
                 'hazardous_special_scheme_emergency_targeted': 'medium',
             },
             ruleIds=[
                 'hazardous_special_scheme_core_sections',
                 'hazardous_special_scheme_calculation_evidence',
+                'lifting_operations_special_scheme_linkage',
+                'lifting_operations_calculation_traceability',
+                'temporary_power_control_linkage',
+                'hot_work_emergency_targeted',
                 'hazardous_special_scheme_measure_linkage',
                 'hazardous_special_scheme_emergency_targeted',
             ],
@@ -126,7 +134,14 @@ def get_evidence_pack_registry() -> dict[str, EvidencePack]:
             severityMapping={
                 'construction_org_emergency_plan_targeted': 'medium',
                 'hazardous_special_scheme_emergency_targeted': 'medium',
+                'temporary_power_control_linkage': 'medium',
+                'hot_work_emergency_targeted': 'medium',
             },
-            ruleIds=['construction_org_emergency_plan_targeted', 'hazardous_special_scheme_emergency_targeted'],
+            ruleIds=[
+                'construction_org_emergency_plan_targeted',
+                'hazardous_special_scheme_emergency_targeted',
+                'temporary_power_control_linkage',
+                'hot_work_emergency_targeted',
+            ],
         ),
     }

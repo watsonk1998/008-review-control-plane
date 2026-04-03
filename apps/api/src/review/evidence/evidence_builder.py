@@ -20,6 +20,10 @@ class EvidenceBuilder:
             'hazardous_special_scheme_calculation_evidence': '专项方案缺少可追溯验算依据',
             'hazardous_special_scheme_emergency_targeted': '专项方案应急处置安排针对性不足',
             'hazardous_special_scheme_measure_linkage': '主要危险源、控制措施与监测监控闭环不足',
+            'lifting_operations_special_scheme_linkage': '起重吊装场景专项方案挂接不清',
+            'lifting_operations_calculation_traceability': '起重吊装关键参数或验算依据不可追溯',
+            'temporary_power_control_linkage': '临时用电/停送电控制链路不完整',
+            'hot_work_emergency_targeted': '动火作业缺少火灾类针对性应急安排',
         }
         self._finding_types = {
             'construction_org_structure_completeness': FindingType.hard_evidence,
@@ -33,11 +37,16 @@ class EvidenceBuilder:
             'hazardous_special_scheme_calculation_evidence': FindingType.hard_evidence,
             'hazardous_special_scheme_emergency_targeted': FindingType.hard_evidence,
             'hazardous_special_scheme_measure_linkage': FindingType.engineering_inference,
+            'lifting_operations_special_scheme_linkage': FindingType.hard_evidence,
+            'lifting_operations_calculation_traceability': FindingType.hard_evidence,
+            'temporary_power_control_linkage': FindingType.engineering_inference,
+            'hot_work_emergency_targeted': FindingType.hard_evidence,
         }
         self._manual_review_reasons = {
             'construction_org_attachment_visibility': 'visibility_gap',
             'hazardous_special_scheme_attachment_visibility': 'visibility_gap',
             'construction_org_special_scheme_gap': 'special_scheme_reference_requires_manual_confirmation',
+            'lifting_operations_special_scheme_linkage': 'special_scheme_reference_requires_manual_confirmation',
         }
 
     def build(self, rule_hits: list[RuleHit], facts: ExtractedFacts, parse_result, packs) -> list[IssueCandidate]:

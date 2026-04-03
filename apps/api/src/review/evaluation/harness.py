@@ -118,6 +118,7 @@ def _run_cases(
     llm,
     execution_options: dict[str, Any] | None = None,
     force_policy_pack_ids: list[str] | None = None,
+    run_label: str | None = None,
 ) -> list[dict[str, Any]]:
     executor = StructuredReviewExecutor(document_loader=DocumentLoader(), llm_gateway=llm, fast_adapter=None)
     summaries = []
@@ -143,6 +144,8 @@ def _run_cases(
                 'metrics': metrics,
                 'resolvedProfile': result.get('resolvedProfile', {}),
                 'summary': result.get('summary', {}),
+                'executionOptions': execution_options or {},
+                'runLabel': run_label,
             }
         )
     return summaries
@@ -175,8 +178,8 @@ def run_main(case_root: Path) -> tuple[int, dict[str, Any]]:
             'versionedDiagnostics': [],
             'error': 'review evaluation dataset is below the required size gate',
         }
-    stable_summaries = _run_cases(stable_cases, llm=DeterministicLLM())
-    versioned_summaries = _run_cases(versioned_cases, llm=DeterministicLLM()) if versioned_cases else []
+    stable_summaries = _run_cases(stable_cases, llm=DeterministicLLM(), run_label='main-stable')
+    versioned_summaries = _run_cases(versioned_cases, llm=DeterministicLLM(), run_label='main-versioned') if versioned_cases else []
     aggregate = _aggregate(stable_summaries)
     versioned_gate_cases = [
         summary
@@ -218,10 +221,12 @@ def run_ablations(case_root: Path) -> tuple[int, dict[str, Any]]:
     }
     results = {}
     for name, options in variants.items():
-        case_summaries = _run_cases(cases, llm=DeterministicLLM(), execution_options=options)
+        case_summaries = _run_cases(cases, llm=DeterministicLLM(), execution_options=options, run_label=name)
         results[name] = {
             'aggregate': _aggregate(case_summaries),
             'cases': case_summaries,
+            'executionOptions': options,
+            'ablationMode': name != 'baseline',
         }
     passed = bool(results)
     return 0 if passed else 1, {'mode': 'ablations', 'passed': passed, 'datasetCounts': counts, 'variants': results}
@@ -230,14 +235,14 @@ def run_ablations(case_root: Path) -> tuple[int, dict[str, Any]]:
 def run_cross_pack(case_root: Path) -> tuple[int, dict[str, Any]]:
     _, stable_cases, versioned_cases, counts = _dataset_guard(case_root)
     cases = [*stable_cases, *versioned_cases]
-    auto_case_summaries = _run_cases(cases, llm=DeterministicLLM())
+    auto_case_summaries = _run_cases(cases, llm=DeterministicLLM(), run_label='cross-pack:auto')
     forced_case_summaries = []
     for case in cases:
         forced_pack_ids = _filter_cross_pack_ids(case.get('expectedPacks', []))
         if not forced_pack_ids:
             continue
         forced_case_summaries.extend(
-            _run_cases([case], llm=DeterministicLLM(), force_policy_pack_ids=forced_pack_ids)
+            _run_cases([case], llm=DeterministicLLM(), force_policy_pack_ids=forced_pack_ids, run_label='cross-pack:expected_packs_forced')
         )
     payload = {
         'mode': 'cross-pack',

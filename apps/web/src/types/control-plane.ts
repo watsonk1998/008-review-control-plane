@@ -142,6 +142,7 @@ export interface HazardIdentificationMatrix {
 export interface RuleHitMatrixRow {
   ruleId: string;
   packId: string;
+  packReadiness: "ready" | "placeholder";
   status: string;
   layerHint: string;
   severityHint: string;
@@ -183,6 +184,7 @@ export interface StructuredReviewMatrices {
 
 export interface StructuredReviewResult {
   summary: StructuredReviewSummary;
+  visibility: VisibilityAssessment;
   resolvedProfile: ResolvedReviewProfile;
   issues: ReviewIssue[];
   matrices: StructuredReviewMatrices;
@@ -200,6 +202,26 @@ export interface StructuredReviewResult {
   notice?: string | null;
   fixture?: FixtureRecord;
   steps?: TaskEvent[];
+}
+
+export interface ReviewerIssueDecision {
+  issueId: string;
+  state: "pending" | "confirmed" | "dismissed" | "needs_attachment";
+  note?: string | null;
+}
+
+export interface ReviewerAttachmentDecision {
+  attachmentId: string;
+  state: "pending" | "confirmed" | "dismissed" | "needs_attachment";
+  note?: string | null;
+}
+
+export interface ReviewerDecision {
+  taskState: "pending" | "accepted" | "rejected" | "needs_attachment";
+  note?: string | null;
+  issues: ReviewerIssueDecision[];
+  attachments: ReviewerAttachmentDecision[];
+  updatedAt?: string | null;
 }
 
 export interface TaskRecord {
@@ -221,6 +243,7 @@ export interface TaskRecord {
   status: TaskStatus;
   plan?: Record<string, unknown> | null;
   result?: Record<string, unknown> | StructuredReviewResult | null;
+  reviewerDecision?: ReviewerDecision | null;
   error?: Record<string, unknown> | null;
   createdAt: string;
   updatedAt: string;
@@ -308,6 +331,13 @@ export interface CreateTaskRequest {
   disciplineTags?: string[];
   strictMode?: boolean;
   policyPackIds?: string[];
+}
+
+export interface ReviewerDecisionUpdateRequest {
+  taskState: "pending" | "accepted" | "rejected" | "needs_attachment";
+  note?: string | null;
+  issues: ReviewerIssueDecision[];
+  attachments: ReviewerAttachmentDecision[];
 }
 
 export interface SupportScopeResponse {

@@ -122,6 +122,7 @@ class HazardIdentificationMatrix(BaseModel):
 class RuleHitMatrixRow(BaseModel):
     ruleId: str
     packId: str
+    packReadiness: Literal['ready', 'placeholder'] = 'ready'
     status: str
     layerHint: str
     severityHint: str
@@ -252,6 +253,7 @@ class StructuredReviewSummary(BaseModel):
 
 class StructuredReviewResult(BaseModel):
     summary: StructuredReviewSummary
+    visibility: VisibilityAssessment = Field(default_factory=VisibilityAssessment)
     resolvedProfile: ResolvedReviewProfile
     issues: list[FinalIssue] = Field(default_factory=list)
     matrices: StructuredReviewMatrices
@@ -263,3 +265,23 @@ class StructuredReviewResult(BaseModel):
     capabilitiesUsed: list[str] = Field(default_factory=list)
     finalAnswer: str = ''
     notice: str | None = None
+
+    @model_validator(mode='before')
+    @classmethod
+    def _load_visibility(cls, data: Any):
+        if not isinstance(data, dict):
+            return data
+        if data.get('visibility') is not None:
+            return data
+        summary = data.get('summary') or {}
+        visibility_summary = summary.get('visibilitySummary') or {}
+        data['visibility'] = {
+            'attachmentCount': visibility_summary.get('attachmentCount', 0),
+            'counts': visibility_summary.get('counts', {}),
+            'reasonCounts': visibility_summary.get('reasonCounts', {}),
+            'duplicateSectionTitles': visibility_summary.get('duplicateSectionTitles', []),
+            'manualReviewNeeded': visibility_summary.get('manualReviewNeeded', False),
+            'fileType': None,
+            'parserLimited': False,
+        }
+        return data

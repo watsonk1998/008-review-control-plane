@@ -2,6 +2,9 @@ from __future__ import annotations
 
 from src.review.rules.packs.construction_org import get_construction_org_base_pack
 from src.review.rules.packs.hazardous_special_scheme import get_hazardous_special_scheme_base_pack
+from src.review.rules.packs.hot_work import get_hot_work_pack
+from src.review.rules.packs.lifting_operations import get_lifting_operations_pack
+from src.review.rules.packs.temporary_power import get_temporary_power_pack
 from src.review.schema import PolicyPack
 
 
@@ -59,8 +62,13 @@ def get_policy_pack_registry() -> dict[str, PolicyPack]:
         'construction_scheme.base': _make_placeholder_pack('construction_scheme.base', 'construction_scheme'),
         'supervision_plan.base': _make_placeholder_pack('supervision_plan.base', 'supervision_plan'),
         'review_support_material.base': _make_placeholder_pack('review_support_material.base', 'review_support_material'),
+        'lifting_operations.base': get_lifting_operations_pack(),
+        'temporary_power.base': get_temporary_power_pack(),
+        'hot_work.base': get_hot_work_pack(),
     }
     for discipline_tag, pack_id in _SCENARIO_TAGS.items():
+        if pack_id in registry:
+            continue
         registry[pack_id] = _make_scenario_pack(pack_id, discipline_tag)
     return registry
 
@@ -73,9 +81,15 @@ def select_policy_packs(document_type: str, discipline_tags: list[str], requeste
         selected_ids.append(base_pack_id)
     for tag in discipline_tags:
         pack_id = _SCENARIO_TAGS.get(tag)
-        if pack_id and pack_id in registry and pack_id not in selected_ids:
+        pack = registry.get(pack_id) if pack_id else None
+        if pack and _pack_supports_document_type(pack, document_type) and pack_id not in selected_ids:
             selected_ids.append(pack_id)
     for pack_id in requested_pack_ids or []:
-        if pack_id in registry and pack_id not in selected_ids:
+        pack = registry.get(pack_id)
+        if pack and _pack_supports_document_type(pack, document_type) and pack_id not in selected_ids:
             selected_ids.append(pack_id)
     return [registry[pack_id] for pack_id in selected_ids]
+
+
+def _pack_supports_document_type(pack: PolicyPack, document_type: str) -> bool:
+    return not pack.docTypes or document_type in pack.docTypes

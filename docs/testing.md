@@ -105,14 +105,15 @@ make eval-review-cross-model
 - 能输出 `summary / resolvedProfile / issues / matrices / artifactIndex / reportMarkdown`
 - `structured_review` 同时支持 `fixtureId` 与 `sourceDocumentRef`
 - public API 不接受 `disable_visibility_check`
-- `summary.visibilitySummary` 与 `unresolvedFacts` 可被 API/UI/eval 一致消费
+- `result.visibility` 与 `unresolvedFacts` 可被 API/UI/eval 一致消费
+- `summary.visibilitySummary` 仅作为 display summary 保留
 - 能识别重复章节、附件可视域缺口、专项方案挂接不清、停机窗口与资源压力
 - 能识别施工组织设计核心章节完整性缺口
 - 能识别危大专项方案核心章节缺口、验算依据缺口、措施-监测闭环问题
 - 能区分 `attachment_unparsed / referenced_only / unknown / missing`
 - `missing` 只在有明确证据时产出
 - artifact API 可列出和下载工件，且与 `result.artifactIndex` 同口径
-- 详情页能展示 L0 visibility / issues / matrices / 原始 JSON
+- 详情页能展示 top-level visibility / issues / rule-hit trace / reviewer decision / 原始 JSON
 
 ## P1 主门槛
 

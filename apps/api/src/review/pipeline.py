@@ -21,15 +21,14 @@ from src.review.evidence.evidence_builder import EvidenceBuilder
 from src.review.extractors.hazard_facts import extract_hazard_facts
 from src.review.extractors.project_facts import extract_project_facts
 from src.review.extractors.schedule_resource_facts import extract_schedule_resource_facts
+from src.review.profile_resolver import resolve_review_profile
 from src.review.report.issue_builder import finalize_issues
 from src.review.report.matrices import build_review_matrices
 from src.review.report.report_builder import StructuredReviewReportBuilder
 from src.review.rules.engine import ReviewRuleEngine
-from src.review.rules.packs import select_policy_packs
 from src.review.schema import (
     DocumentParseResult,
     ExtractedFacts,
-    ResolvedReviewProfile,
     StructuredReviewResult,
     StructuredReviewTask,
     UnresolvedFact,
@@ -65,9 +64,6 @@ class StructuredReviewExecutor:
         execution_options: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         options = execution_options or {}
-        requested_document_type = document_type
-        requested_discipline_tags = list(discipline_tags or [])
-        requested_policy_pack_ids = list(policy_pack_ids or [])
         artifact_records: list[dict[str, Any]] = []
         structured_task = self._build_task(
             task_id=task_id,
@@ -94,21 +90,11 @@ class StructuredReviewExecutor:
         if emit:
             emit('extract', 'structured_review', 'completed', 'Structured facts extracted', artifact_path=facts_artifact)
 
-        resolved_profile = self._resolve_profile(
+        resolved_profile, packs, executable_packs = resolve_review_profile(
             structured_task,
             facts,
             plan,
-            requested_document_type=requested_document_type,
-            requested_discipline_tags=requested_discipline_tags,
-            requested_policy_pack_ids=requested_policy_pack_ids,
         )
-        packs = select_policy_packs(
-            resolved_profile.documentType,
-            resolved_profile.disciplineTags,
-            requested_pack_ids=resolved_profile.requestedPolicyPackIds,
-        )
-        executable_packs = [pack for pack in packs if pack.readiness == 'ready']
-        resolved_profile.policyPackIds = [pack.id for pack in executable_packs]
         if options.get('disable_rule_engine'):
             rule_hits = []
         else:
@@ -161,10 +147,12 @@ class StructuredReviewExecutor:
         if write_json_artifact:
             report_artifacts.append(write_json_artifact('structured-review-result', {
                 'summary': summary.model_dump(mode='json'),
+                'visibility': parse_result.visibility.model_dump(mode='json'),
                 'resolvedProfile': resolved_profile.model_dump(mode='json'),
                 'issues': [issue.model_dump(mode='json') for issue in final_issues],
                 'matrices': matrices.model_dump(mode='json'),
                 'unresolvedFacts': [item.model_dump(mode='json') for item in facts.unresolvedFacts],
+                'executionOptions': options,
             }))
             report_artifacts.append(write_json_artifact('hazard-identification-matrix', matrices.hazardIdentification.model_dump(mode='json')))
             report_artifacts.append(write_json_artifact('rule-hit-matrix', [item.model_dump(mode='json') for item in matrices.ruleHits]))
@@ -186,6 +174,7 @@ class StructuredReviewExecutor:
             capabilities_used.append('llm_gateway')
         result = StructuredReviewResult(
             summary=summary,
+            visibility=parse_result.visibility,
             resolvedProfile=resolved_profile,
             issues=final_issues,
             matrices=matrices,
@@ -269,40 +258,6 @@ class StructuredReviewExecutor:
             useAssistArtifacts=False,
         )
 
-    def _resolve_profile(
-        self,
-        structured_task: StructuredReviewTask,
-        facts: ExtractedFacts,
-        plan: dict[str, Any] | None,
-        *,
-        requested_document_type: str | None,
-        requested_discipline_tags: list[str] | None,
-        requested_policy_pack_ids: list[str] | None,
-    ) -> ResolvedReviewProfile:
-        plan_profile = dict((plan or {}).get('reviewProfile') or {})
-        requested_discipline_tags = list(requested_discipline_tags or [])
-        requested_policy_pack_ids = list(requested_policy_pack_ids or [])
-        inferred_document_type = facts.projectFacts.get('documentTypeHint') or plan_profile.get('documentTypeHint') or structured_task.documentType
-        document_type = requested_document_type or inferred_document_type or 'construction_org'
-        discipline_tags = list(
-            dict.fromkeys(
-                [
-                    *requested_discipline_tags,
-                    *(plan_profile.get('disciplineTagHints') or []),
-                    *self._infer_discipline_tags(facts),
-                ]
-            )
-        )
-        return ResolvedReviewProfile(
-            requestedDocumentType=requested_document_type,
-            requestedDisciplineTags=requested_discipline_tags,
-            requestedPolicyPackIds=requested_policy_pack_ids,
-            documentType=document_type,
-            disciplineTags=discipline_tags,
-            policyPackIds=list(requested_policy_pack_ids),
-            strictMode=structured_task.strictMode,
-        )
-
     def _extract_facts(self, parse_result: DocumentParseResult) -> ExtractedFacts:
         project_facts, project_refs, project_unresolved = extract_project_facts(parse_result)
         hazard_facts, hazard_refs, hazard_unresolved = extract_hazard_facts(parse_result)
@@ -366,22 +321,6 @@ class StructuredReviewExecutor:
                     )
                 )
         return spans
-
-    def _infer_discipline_tags(self, facts: ExtractedFacts) -> list[str]:
-        tags: list[str] = []
-        if facts.hazardFacts.get('liftingOperation'):
-            tags.append('lifting_operations')
-        if facts.hazardFacts.get('temporaryPower'):
-            tags.append('temporary_power')
-        if facts.hazardFacts.get('hotWork'):
-            tags.append('hot_work')
-        if facts.hazardFacts.get('gasArea'):
-            tags.append('gas_area_ops')
-        if facts.projectFacts.get('specialEquipmentMentioned'):
-            tags.append('special_equipment')
-        if 'working_at_height' in (facts.hazardFacts.get('highRiskCategories') or []):
-            tags.append('working_at_height')
-        return tags
 
     def _apply_execution_options(self, parse_result: DocumentParseResult, options: dict[str, Any]) -> DocumentParseResult:
         if options.get('disable_normalizer'):

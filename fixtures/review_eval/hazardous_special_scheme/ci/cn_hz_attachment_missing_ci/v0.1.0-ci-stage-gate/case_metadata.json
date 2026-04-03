@@ -6,7 +6,8 @@
     "lifting_operations"
   ],
   "expected_packs": [
-    "hazardous_special_scheme.base"
+    "hazardous_special_scheme.base",
+    "lifting_operations.base"
   ],
   "ci_enabled": true,
   "label_status": "stage_gate_curated",

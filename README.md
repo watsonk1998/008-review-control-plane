@@ -35,6 +35,7 @@
 同时结果契约升级为稳定 DTO：
 
 - `summary`
+- `visibility`
 - `resolvedProfile`
 - `issues`
 - `matrices`
@@ -46,6 +47,7 @@
 
 - `artifactIndex` 与 `GET /api/tasks/{taskId}/artifacts` 共享同一套官方 catalog
 - `manualReviewNeeded` 是 canonical 字段；`whetherManualReviewNeeded` 仅在 API 兼容层输出
+- `visibility` 是结构化结果中的 top-level canonical 可视域对象；`summary.visibilitySummary` 仅保留为展示摘要
 - `strictMode` 当前保留为兼容字段，状态为 `reserved / no-op`
 
 当前 P0 正式支持文档类型仅包括：
@@ -144,6 +146,7 @@ make verify-connectivity
 - `GET /api/tasks/support-scope`
 - `GET /api/tasks/{taskId}/artifacts`
 - `GET /api/tasks/{taskId}/artifacts/{artifactName}`
+- `PUT /api/tasks/{taskId}/reviewer-decision`
 
 ## structured_review 结果约束
 
@@ -151,7 +154,9 @@ make verify-connectivity
 - `whetherManualReviewNeeded` 仅为兼容 alias，不再作为第二真相源
 - issue 结果会保留 `evidenceMissing` 与 `manualReviewReason`
 - parse 结果会保留 typed `visibility` / `parseMode` / `parserLimited`
-- `summary.visibilitySummary` 统一表达附件状态计数、重复章节、parse warnings 与 visibility reason counts
+- `result.visibility` 是唯一 canonical visibility contract
+- `summary.visibilitySummary` 统一表达附件状态计数、重复章节、parse warnings 与 visibility reason counts，但不再作为第二事实源
+- 任务详情现在支持最小 reviewer decision：task-level / issue-level / attachment-level 复核状态与备注
 - 系统不得把“未解析附件 / 当前不可视”直接写成“文档缺失”
 
 ## 配置原则

@@ -11,6 +11,9 @@ from src.review.pipeline import StructuredReviewExecutor
 SAMPLE_DOC = Path(
     '/Users/lucas/repos/review/008-review-control-plane/fixtures/supervision/施工组织设计-冷轧厂2030单元三台行车电气系统改造.docx'
 )
+SAMPLE_PDF = Path(
+    '/Users/lucas/repos/review/008-review-control-plane/fixtures/review_eval/hazardous_special_scheme/ci/cn_hz_pdf_unknown_visibility_ci/v0.1.0-ci-stage-gate/source.pdf'
+)
 
 
 class DummyLLM:
@@ -72,6 +75,7 @@ def test_structured_review_executor_returns_expected_issue_titles():
     assert '高风险作业已识别，但专项方案挂接不清' in issue_titles
     assert '停机窗口、投入人力与高风险工序并行存在组织压力' in issue_titles
     assert result['summary']['manualReviewNeeded'] is True
+    assert result['visibility']['manualReviewNeeded'] is True
     assert result['summary']['visibilitySummary']['attachmentCount'] >= 1
     assert result['summary']['visibilitySummary']['counts']['attachment_unparsed'] >= 1
     assert isinstance(result['unresolvedFacts'], list)
@@ -80,6 +84,7 @@ def test_structured_review_executor_returns_expected_issue_titles():
     assert attachment_issue['manualReviewReason'] == 'visibility_gap'
     assert 'whetherManualReviewNeeded' not in attachment_issue
     assert 'evidenceMissing' in attachment_issue
+    assert all('packReadiness' in row for row in result['matrices']['ruleHits'])
 
 
 def test_structured_review_executor_supports_hazardous_special_scheme(tmp_path: Path):
@@ -109,6 +114,18 @@ def test_structured_review_executor_supports_hazardous_special_scheme(tmp_path: 
     assert '专项方案附件处于可视域缺口，需人工复核原件' in issue_titles
     assert '专项方案缺少可追溯验算依据' in issue_titles
     assert result['summary']['visibilitySummary']['manualReviewNeeded'] is True
+
+
+def test_document_loader_parse_pdf_document_uses_explicit_pdf_parser():
+    loader = DocumentLoader()
+    result = loader.parse_document(SAMPLE_PDF)
+
+    assert result.fileType == 'pdf'
+    assert result.parseMode == 'pdf_text_only'
+    assert result.parserLimited is True
+    assert result.visibility.parserLimited is True
+    assert any(warning.startswith('pdf_source_pages:') for warning in result.parseWarnings)
+    assert any(warning.startswith('pdf_extracted_pages:') for warning in result.parseWarnings)
 
 
 def test_structured_review_executor_builds_full_artifact_catalog(tmp_path: Path):

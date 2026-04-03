@@ -282,13 +282,19 @@ async def test_runtime_structured_review_generates_formal_result(tmp_path: Path)
     assert 'construction_org.base' in saved.result['resolvedProfile']['policyPackIds']
     assert saved.result['summary']['manualReviewNeeded'] is True
     assert saved.result['summary']['visibilitySummary']['manualReviewNeeded'] is True
+    assert saved.result['visibility']['manualReviewNeeded'] is True
     assert any(issue['title'] == '附件处于可视域缺口，需人工复核原件' for issue in saved.result['issues'])
     attachment_issue = next(issue for issue in saved.result['issues'] if issue['title'] == '附件处于可视域缺口，需人工复核原件')
     assert attachment_issue['manualReviewNeeded'] is True
     assert attachment_issue['manualReviewReason'] == 'visibility_gap'
     assert any(path.endswith('.md') for path in saved.result['artifacts'])
     assert any(artifact['fileName'].endswith('.md') for artifact in saved.result['artifactIndex'])
-    assert saved.result['summary']['selectedPacks'] == ['construction_org.base']
+    assert saved.result['summary']['selectedPacks'] == [
+        'construction_org.base',
+        'lifting_operations.base',
+        'temporary_power.base',
+        'hot_work.base',
+    ]
     assert {'parse', 'facts', 'rule_hits', 'candidates', 'result', 'matrix', 'report'}.issubset(
         {artifact['category'] for artifact in saved.result['artifactIndex']}
     )

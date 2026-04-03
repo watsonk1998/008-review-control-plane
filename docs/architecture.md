@@ -28,6 +28,7 @@ P0 当前，`structured_review` 的入口 profile 已显式化：
 
 planner/router 只保留 provisional hints；最终生效值统一回写到 `result.resolvedProfile`，避免“用户指定 / 路由推断 / 实际执行”三套口径不一致。
 `strictMode` 当前仅作兼容透传，状态为 `reserved / no-op`。
+`result.visibility` 是结构化结果中的 top-level canonical visibility contract；`summary.visibilitySummary` 仅保留为展示摘要。
 
 ## 分层
 
@@ -41,7 +42,7 @@ planner/router 只保留 provisional hints；最终生效值统一回写到 `res
 - 创建任务
 - 通过 SSE 实时流查看状态与步骤日志，断流时回退轮询
 - 展示结果 / chunks / 引用 / 调试信息
-- 对 `structured_review` 结果渲染 issues / matrices / report
+- 对 `structured_review` 结果渲染 issues / matrices / report / reviewer decision
 
 ### 2. API 层
 
@@ -52,6 +53,7 @@ planner/router 只保留 provisional hints；最终生效值统一回写到 `res
 - 任务创建、查询、结果查询、事件查询
 - `support-scope` 与单文件 upload 入口
 - artifact 列表与下载接口
+- reviewer decision 更新接口
 - health / capabilities / fixtures 暴露
 
 ### 3. Orchestrator 层（DeepResearchAgent 兼容层）
@@ -181,9 +183,9 @@ flowchart TD
   - `supervision_plan.base`
   - `review_support_material.base`
 - scenario packs：
-  - `lifting_operations.base`
-  - `temporary_power.base`
-  - `hot_work.base`
+  - `lifting_operations.base`（ready）
+  - `temporary_power.base`（ready）
+  - `hot_work.base`（ready）
   - `gas_area_ops.base`
   - `special_equipment.base`
   - `working_at_height.base`

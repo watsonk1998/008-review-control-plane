@@ -14,9 +14,11 @@
   ],
   "expected_packs": [
     "construction_org.base",
-    "electromech_installation.base",
     "lifting_operations.base",
-    "gas_area_ops.base"
+    "temporary_power.base",
+    "hot_work.base",
+    "gas_area_ops.base",
+    "electromech_installation.base"
   ],
   "label_source": "gemini_deepresearch",
   "label_status": "seeded_unreviewed",

@@ -278,9 +278,147 @@ def test_task_routes_accept_structured_review_fields_and_serve_artifacts(monkeyp
     result_response = client.get('/api/tasks/task-route-1/result')
     assert result_response.status_code == 200
     result_payload = result_response.json()['result']
+    assert result_payload['visibility']['attachmentCount'] == 1
     assert result_payload['issues'][0]['manualReviewNeeded'] is True
     assert result_payload['issues'][0]['whetherManualReviewNeeded'] is True
     assert result_payload['artifactIndex'] == artifacts_response.json()
+
+
+def test_task_routes_update_reviewer_decision(monkeypatch):
+    now = datetime.now(timezone.utc)
+
+    class FakeService:
+        def __init__(self):
+            self.last_payload = None
+
+        def update_reviewer_decision(self, task_id: str, payload):
+            self.last_payload = payload
+            return TaskRecord(
+                id=task_id,
+                taskType='structured_review',
+                capabilityMode='auto',
+                query='query',
+                fixtureId='fixture-1',
+                sourceDocumentRef=None,
+                sourceUrls=[],
+                documentType='construction_org',
+                disciplineTags=['lifting_operations'],
+                strictMode=True,
+                policyPackIds=['construction_org.base'],
+                reviewerDecision={
+                    'taskState': 'accepted',
+                    'note': 'checked',
+                    'issues': [
+                        {'issueId': 'ISSUE-001', 'state': 'confirmed', 'note': 'ok'},
+                    ],
+                    'attachments': [
+                        {'attachmentId': 'attachment-1', 'state': 'needs_attachment', 'note': 'need original'},
+                    ],
+                    'updatedAt': now.isoformat(),
+                },
+                status='succeeded',
+                result={
+                    'summary': {
+                        'overallConclusion': 'demo',
+                        'documentType': 'construction_org',
+                        'selectedPacks': ['construction_org.base'],
+                        'manualReviewNeeded': True,
+                        'issueCount': 1,
+                        'layerCounts': {'L1': 1},
+                        'stats': {},
+                        'visibilitySummary': {
+                            'attachmentCount': 1,
+                            'counts': {'attachment_unparsed': 1},
+                            'duplicateSectionTitles': [],
+                            'parseWarnings': [],
+                            'reasonCounts': {'title_detected_without_attachment_body': 1},
+                            'manualReviewNeeded': True,
+                        },
+                    },
+                    'visibility': {
+                        'attachmentCount': 1,
+                        'counts': {'attachment_unparsed': 1},
+                        'duplicateSectionTitles': [],
+                        'reasonCounts': {'title_detected_without_attachment_body': 1},
+                        'manualReviewNeeded': True,
+                        'parserLimited': False,
+                        'fileType': 'docx',
+                    },
+                    'resolvedProfile': {
+                        'requestedDocumentType': 'construction_org',
+                        'requestedDisciplineTags': ['lifting_operations'],
+                        'requestedPolicyPackIds': [],
+                        'documentType': 'construction_org',
+                        'disciplineTags': ['lifting_operations'],
+                        'policyPackIds': ['construction_org.base'],
+                        'strictMode': True,
+                    },
+                    'issues': [
+                        {
+                            'id': 'ISSUE-001',
+                            'title': '附件处于可视域缺口，需人工复核原件',
+                            'layer': 'L1',
+                            'severity': 'medium',
+                            'findingType': 'visibility_gap',
+                            'summary': '附件处于可视域缺口，需人工复核原件',
+                            'manualReviewNeeded': True,
+                            'evidenceMissing': True,
+                            'manualReviewReason': 'visibility_gap',
+                            'docEvidence': [],
+                            'policyEvidence': [],
+                            'recommendation': [],
+                            'confidence': 'medium',
+                        }
+                    ],
+                    'matrices': {
+                        'hazardIdentification': {'values': {}},
+                        'ruleHits': [],
+                        'conflicts': {'values': {}},
+                        'attachmentVisibility': [
+                            {
+                                'id': 'attachment-1',
+                                'attachmentNumber': '1',
+                                'title': '附件1',
+                                'visibility': 'attachment_unparsed',
+                                'parseState': 'attachment_unparsed',
+                                'manualReviewNeeded': True,
+                                'reason': 'title_detected_without_attachment_body',
+                                'referenceBlockIds': [],
+                                'titleBlockId': None,
+                            }
+                        ],
+                        'sectionStructure': [],
+                        'issueLayerCounts': {'L1': 1},
+                    },
+                    'artifactIndex': [],
+                    'reportMarkdown': '# demo',
+                    'artifacts': [],
+                    'unresolvedFacts': [],
+                    'capabilitiesUsed': ['llm_gateway'],
+                    'finalAnswer': 'demo',
+                },
+                createdAt=now,
+                updatedAt=now,
+            )
+
+    fake_service = FakeService()
+    monkeypatch.setattr(tasks_route, 'get_task_service', lambda: fake_service)
+    client = TestClient(app)
+
+    response = client.put(
+        '/api/tasks/task-route-1/reviewer-decision',
+        json={
+            'taskState': 'accepted',
+            'note': 'checked',
+            'issues': [{'issueId': 'ISSUE-001', 'state': 'confirmed', 'note': 'ok'}],
+            'attachments': [{'attachmentId': 'attachment-1', 'state': 'needs_attachment', 'note': 'need original'}],
+        },
+    )
+    assert response.status_code == 200
+    payload = response.json()
+    assert fake_service.last_payload is not None
+    assert payload['reviewerDecision']['taskState'] == 'accepted'
+    assert payload['reviewerDecision']['issues'][0]['issueId'] == 'ISSUE-001'
 
 
 def test_task_routes_accept_source_document_ref_without_fixture(monkeypatch):

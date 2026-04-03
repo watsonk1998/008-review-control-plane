@@ -17,6 +17,10 @@ def _fallback_recommendations(candidate: IssueCandidate) -> list[str]:
         'hazardous_special_scheme_calculation_evidence': ['补充与起重/稳定性相关的验算书、设备选型依据和关键参数来源。'],
         'hazardous_special_scheme_emergency_targeted': ['围绕主要危险源补齐专项方案的应急处置流程、联络链路和现场动作。'],
         'hazardous_special_scheme_measure_linkage': ['将危险源、控制措施、监测监控和停工条件形成可执行闭环。'],
+        'lifting_operations_special_scheme_linkage': ['在起重吊装相关章节明确专项方案、专项技术措施或附录挂接位置，并标注适用作业面。'],
+        'lifting_operations_calculation_traceability': ['补齐吊装设备参数、计算起重量或验算书来源，并在正文中建立可追溯引用。'],
+        'temporary_power_control_linkage': ['将临时用电/停送电作业的控制措施、监测要求和触电类应急处置串成同一条执行链。'],
+        'hot_work_emergency_targeted': ['围绕动火作业补齐火灾/爆燃类应急标题、处置动作和联络链路。'],
     }
     return mapping.get(candidate.candidateId, ['结合证据补充整改措施。'])
 
@@ -84,4 +88,12 @@ def _build_summary(candidate: IssueCandidate) -> str:
         return '专项方案的应急处置安排与主要危险源匹配不足。'
     if candidate.candidateId == 'hazardous_special_scheme_measure_linkage':
         return '危险源、控制措施与监测监控未形成完整闭环，现场执行风险较高。'
+    if candidate.candidateId == 'lifting_operations_special_scheme_linkage':
+        return '已识别起重吊装场景，但当前专项方案/专项技术措施挂接位置仍不稳定或需人工确认。'
+    if candidate.candidateId == 'lifting_operations_calculation_traceability':
+        return '起重吊装涉及的吨位、起重量或验算依据缺少稳定引用，后续复核难以追溯。'
+    if candidate.candidateId == 'temporary_power_control_linkage':
+        return '临时用电/停送电相关控制措施、监测要求与触电类应急处置没有形成稳定闭环。'
+    if candidate.candidateId == 'hot_work_emergency_targeted':
+        return '已识别动火作业，但未看到足够明确的火灾/爆燃类针对性应急安排。'
     return candidate.title

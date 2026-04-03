@@ -6,9 +6,10 @@ import mimetypes
 from pathlib import Path
 import uuid
 
-from src.domain.models import CreateTaskRequest, SourceDocumentRef, TaskArtifact, TaskRecord
+from src.domain.models import CreateTaskRequest, ReviewerDecisionUpdateRequest, SourceDocumentRef, TaskArtifact, TaskRecord
 from src.orchestrator.deepresearch_runtime import DeepResearchRuntime
 from src.repositories.sqlite_store import SQLiteTaskStore
+from src.review.reviewer_decision import merge_reviewer_decision
 
 
 class TaskService:
@@ -78,6 +79,15 @@ class TaskService:
         if task is None:
             return None
         return task.result
+
+    def update_reviewer_decision(self, task_id: str, payload: ReviewerDecisionUpdateRequest) -> TaskRecord:
+        task = self.store.get_task(task_id)
+        if task is None:
+            raise KeyError(f'Task not found: {task_id}')
+        if task.taskType != 'structured_review':
+            raise ValueError('reviewer decision is only supported for structured_review tasks')
+        decision = merge_reviewer_decision(task, payload)
+        return self.store.update_task(task_id, reviewerDecision=decision)
 
     def list_task_artifacts(self, task_id: str) -> list[TaskArtifact]:
         task = self.store.get_task(task_id)

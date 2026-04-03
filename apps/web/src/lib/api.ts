@@ -4,6 +4,7 @@ import type {
   HealthResponse,
   HeartbeatResponse,
   RecentTaskSummary,
+  ReviewerDecisionUpdateRequest,
   SourceDocumentRef,
   SupportScopeResponse,
   TaskArtifact,
@@ -79,6 +80,13 @@ export function uploadDocument(file: File) {
 
 export function fetchTask(taskId: string) {
   return fetchJson<TaskRecord>(`/api/tasks/${taskId}`);
+}
+
+export function updateReviewerDecision(taskId: string, payload: ReviewerDecisionUpdateRequest) {
+  return fetchJson<TaskRecord>(`/api/tasks/${taskId}/reviewer-decision`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
 }
 
 export function fetchTaskEvents(taskId: string) {

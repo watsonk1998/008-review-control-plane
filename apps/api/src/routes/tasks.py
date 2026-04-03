@@ -7,8 +7,9 @@ import json
 from fastapi import APIRouter, HTTPException, Query, Request
 from fastapi.responses import FileResponse, StreamingResponse
 
-from src.domain.models import CreateTaskRequest
+from src.domain.models import CreateTaskRequest, ReviewerDecisionUpdateRequest
 from src.main_dependencies import get_task_service
+from src.review.reviewer_decision import resolve_reviewer_decision
 from src.review.support_scope import get_support_scope_payload
 
 router = APIRouter(prefix='/api/tasks', tags=['tasks'])
@@ -22,6 +23,17 @@ def _serialize_structured_review_result(result):
     if not {'summary', 'issues', 'matrices', 'resolvedProfile'}.issubset(result.keys()):
         return result
     payload = dict(result)
+    if payload.get('visibility') is None:
+        visibility_summary = ((payload.get('summary') or {}).get('visibilitySummary') or {})
+        payload['visibility'] = {
+            'attachmentCount': visibility_summary.get('attachmentCount', 0),
+            'counts': visibility_summary.get('counts', {}),
+            'reasonCounts': visibility_summary.get('reasonCounts', {}),
+            'duplicateSectionTitles': visibility_summary.get('duplicateSectionTitles', []),
+            'manualReviewNeeded': visibility_summary.get('manualReviewNeeded', False),
+            'parserLimited': False,
+            'fileType': None,
+        }
     payload['issues'] = [
         {
             **issue,
@@ -34,6 +46,8 @@ def _serialize_structured_review_result(result):
 
 def _serialize_task(task):
     payload = task.model_dump(mode='json')
+    if task.taskType == 'structured_review':
+        payload['reviewerDecision'] = resolve_reviewer_decision(task).model_dump(mode='json')
     payload['result'] = _serialize_structured_review_result(payload.get('result'))
     return payload
 
@@ -176,6 +190,18 @@ async def get_task_result(task_id: str):
         'result': _serialize_structured_review_result(task.result),
         'error': task.error,
     }
+
+
+@router.put('/{task_id}/reviewer-decision')
+async def update_reviewer_decision(task_id: str, request: ReviewerDecisionUpdateRequest):
+    service = get_task_service()
+    try:
+        task = service.update_reviewer_decision(task_id, request)
+    except KeyError:
+        raise HTTPException(status_code=404, detail='Task not found') from None
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return _serialize_task(task)
 
 
 @router.get('/{task_id}/events')
