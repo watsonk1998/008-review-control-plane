@@ -113,7 +113,19 @@ def extract_hazard_facts(parse_result) -> tuple[dict[str, Any], dict[str, list[s
     }
     unresolved = []
     if facts['liftingOperation'] and not facts['craneCapacityTon']:
-        unresolved.append('hazard.craneCapacityTon')
+        unresolved.append(
+            {
+                'code': 'missing_crane_capacity_ton',
+                'factKey': 'hazard.craneCapacityTon',
+                'summary': '已识别起重吊装作业，但未解析到汽车吊吨位参数。',
+            }
+        )
     if facts['liftingOperation'] and not facts['calculatedLiftWeightTon']:
-        unresolved.append('hazard.calculatedLiftWeightTon')
+        unresolved.append(
+            {
+                'code': 'missing_calculated_lift_weight_ton',
+                'factKey': 'hazard.calculatedLiftWeightTon',
+                'summary': '已识别起重吊装作业，但未解析到计算起重量参数。',
+            }
+        )
     return facts, block_refs, unresolved

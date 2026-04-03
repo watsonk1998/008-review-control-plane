@@ -79,7 +79,7 @@ def extract_schedule_resource_facts(parse_result) -> tuple[dict[str, Any], dict[
             emergency_titles.append(content[:80])
             refs['emergency.planTitles'].append(block['id'])
 
-    attachment_refs = [attachment['id'] for attachment in parse_result.attachments]
+    attachment_refs = [attachment.id for attachment in parse_result.attachments]
     refs['schedule.attachmentRefs'] = attachment_refs.copy()
 
     facts = {
@@ -98,9 +98,27 @@ def extract_schedule_resource_facts(parse_result) -> tuple[dict[str, Any], dict[
     }
     unresolved = []
     if not shutdown_match:
-        unresolved.append('schedule.shutdownWindowDays')
+        unresolved.append(
+            {
+                'code': 'missing_shutdown_window_days',
+                'factKey': 'schedule.shutdownWindowDays',
+                'summary': '未解析到停机窗口时长，需人工确认工期窗口。',
+            }
+        )
     if labor_total is None:
-        unresolved.append('resource.laborTotal')
+        unresolved.append(
+            {
+                'code': 'missing_labor_total',
+                'factKey': 'resource.laborTotal',
+                'summary': '未解析到劳动力合计人数，需人工确认资源投入。',
+            }
+        )
     if not emergency_titles:
-        unresolved.append('emergency.planTitles')
+        unresolved.append(
+            {
+                'code': 'missing_emergency_plan_titles',
+                'factKey': 'emergency.planTitles',
+                'summary': '未解析到针对性应急预案标题，需人工确认应急安排。',
+            }
+        )
     return facts, refs, unresolved

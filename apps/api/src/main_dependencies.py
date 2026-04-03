@@ -68,7 +68,7 @@ def get_runtime() -> DeepResearchRuntime:
 
 @lru_cache(maxsize=1)
 def get_task_service() -> TaskService:
-    return TaskService(get_store(), get_runtime(), get_settings().tasks_dir)
+    return TaskService(get_store(), get_runtime(), get_settings().tasks_dir, get_fixture_service())
 
 
 async def get_capability_health():

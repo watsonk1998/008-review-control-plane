@@ -6,7 +6,7 @@ import json
 import sqlite3
 from typing import Any
 
-from src.domain.models import TaskEvent, TaskRecord
+from src.domain.models import SourceDocumentRef, TaskEvent, TaskRecord
 
 
 _TASK_EXTRA_COLUMNS = {
@@ -14,6 +14,7 @@ _TASK_EXTRA_COLUMNS = {
     'discipline_tags_json': 'TEXT',
     'strict_mode': 'INTEGER',
     'policy_pack_ids_json': 'TEXT',
+    'source_document_ref_json': 'TEXT',
 }
 
 
@@ -87,10 +88,10 @@ class SQLiteTaskStore:
                 '''
                 INSERT INTO tasks (
                     id, task_type, capability_mode, query, dataset_id, collection_id, fixture_id,
-                    use_web, debug, source_urls, document_type, discipline_tags_json, strict_mode,
+                    source_document_ref_json, use_web, debug, source_urls, document_type, discipline_tags_json, strict_mode,
                     policy_pack_ids_json, status, plan_json, result_json, error_json,
                     created_at, updated_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ''',
                 (
                     task.id,
@@ -100,6 +101,7 @@ class SQLiteTaskStore:
                     task.datasetId,
                     task.collectionId,
                     task.fixtureId,
+                    json.dumps(task.sourceDocumentRef.model_dump(mode='json'), ensure_ascii=False) if task.sourceDocumentRef else None,
                     int(task.useWeb),
                     int(task.debug),
                     json.dumps(task.sourceUrls, ensure_ascii=False),
@@ -159,6 +161,7 @@ class SQLiteTaskStore:
             'datasetId': 'dataset_id',
             'collectionId': 'collection_id',
             'fixtureId': 'fixture_id',
+            'sourceDocumentRef': 'source_document_ref_json',
             'useWeb': 'use_web',
             'sourceUrls': 'source_urls',
             'documentType': 'document_type',
@@ -174,6 +177,8 @@ class SQLiteTaskStore:
                 serialized[f'{column}_json'] = json.dumps(value, ensure_ascii=False) if value is not None else None
             elif column in {'source_urls', 'discipline_tags_json', 'policy_pack_ids_json'}:
                 serialized[column] = json.dumps(value or [], ensure_ascii=False)
+            elif column == 'source_document_ref_json':
+                serialized[column] = json.dumps(value.model_dump(mode='json'), ensure_ascii=False) if value is not None else None
             elif column in {'use_web', 'debug'}:
                 serialized[column] = int(bool(value))
             elif column == 'strict_mode':
@@ -240,6 +245,7 @@ class SQLiteTaskStore:
             datasetId=row['dataset_id'],
             collectionId=row['collection_id'],
             fixtureId=row['fixture_id'],
+            sourceDocumentRef=SourceDocumentRef.model_validate(json.loads(row['source_document_ref_json'])) if row['source_document_ref_json'] else None,
             useWeb=bool(row['use_web']),
             debug=bool(row['debug']),
             sourceUrls=json.loads(row['source_urls']) if row['source_urls'] else [],

@@ -98,6 +98,12 @@ class DocumentLoader:
             )
 
         parser_limited = path.suffix.lower() == '.pdf'
+        if path.suffix.lower() == '.pdf':
+            parse_mode = 'pdf_text_only'
+        elif markdown:
+            parse_mode = 'markdown_text'
+        else:
+            parse_mode = 'plain_text'
         attachments, visibility_report = build_attachment_index(
             blocks,
             parser_limited=parser_limited,
@@ -136,6 +142,8 @@ class DocumentLoader:
             'documentId': path.stem,
             'filePath': str(path),
             'fileType': path.suffix.lower().lstrip('.'),
+            'parseMode': parse_mode,
+            'parserLimited': parser_limited,
             'sections': sections,
             'blocks': blocks,
             'tables': [],
@@ -143,6 +151,7 @@ class DocumentLoader:
             'figures': figures,
             'normalizedText': normalized_text,
             'preview': normalized_text[:4000],
+            'visibility': visibility_report,
             'visibilityReport': visibility_report,
             'parseWarnings': parse_warnings,
         }

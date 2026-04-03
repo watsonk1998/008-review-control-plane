@@ -9,10 +9,33 @@ from fastapi.responses import FileResponse, StreamingResponse
 
 from src.domain.models import CreateTaskRequest
 from src.main_dependencies import get_task_service
+from src.review.support_scope import get_support_scope_payload
 
 router = APIRouter(prefix='/api/tasks', tags=['tasks'])
 TASK_STREAM_POLL_SECONDS = 1.0
 TASK_STREAM_HEARTBEAT_SECONDS = 10.0
+
+
+def _serialize_structured_review_result(result):
+    if not isinstance(result, dict):
+        return result
+    if not {'summary', 'issues', 'matrices', 'resolvedProfile'}.issubset(result.keys()):
+        return result
+    payload = dict(result)
+    payload['issues'] = [
+        {
+            **issue,
+            'whetherManualReviewNeeded': issue.get('manualReviewNeeded', False),
+        }
+        for issue in payload.get('issues', [])
+    ]
+    return payload
+
+
+def _serialize_task(task):
+    payload = task.model_dump(mode='json')
+    payload['result'] = _serialize_structured_review_result(payload.get('result'))
+    return payload
 
 
 def _task_summary_payload(task):
@@ -23,6 +46,7 @@ def _task_summary_payload(task):
         'status': task.status,
         'query': task.query,
         'fixtureId': task.fixtureId,
+        'sourceDocumentRef': task.sourceDocumentRef.model_dump(mode='json') if task.sourceDocumentRef else None,
         'documentType': task.documentType,
         'createdAt': task.createdAt.isoformat(),
         'updatedAt': task.updatedAt.isoformat(),
@@ -38,7 +62,12 @@ async def create_task(request: CreateTaskRequest):
     service = get_task_service()
     task = service.create_task(request)
     service.schedule_task(task.id)
-    return task.model_dump(mode='json')
+    return _serialize_task(task)
+
+
+@router.get('/support-scope')
+async def get_support_scope():
+    return get_support_scope_payload()
 
 
 @router.get('')
@@ -54,7 +83,7 @@ async def get_task(task_id: str):
     task = service.get_task(task_id)
     if task is None:
         raise HTTPException(status_code=404, detail='Task not found')
-    return task.model_dump(mode='json')
+    return _serialize_task(task)
 
 
 @router.get('/{task_id}/stream')
@@ -77,7 +106,7 @@ async def stream_task(task_id: str, request: Request):
         yield _sse_event(
             'snapshot',
             {
-                'task': current_task.model_dump(mode='json') if current_task else None,
+                'task': _serialize_task(current_task) if current_task else None,
                 'events': [event.model_dump(mode='json') for event in current_events],
                 'artifacts': last_artifact_payload,
             },
@@ -96,7 +125,7 @@ async def stream_task(task_id: str, request: Request):
             task_updated_at = current_task.updatedAt.isoformat()
             if task_updated_at != last_task_updated_at:
                 last_task_updated_at = task_updated_at
-                yield _sse_event('task', current_task.model_dump(mode='json'))
+                yield _sse_event('task', _serialize_task(current_task))
 
             current_events = service.get_task_events(task_id)
             if len(current_events) > last_event_count:
@@ -144,7 +173,7 @@ async def get_task_result(task_id: str):
     return {
         'taskId': task_id,
         'status': task.status,
-        'result': task.result,
+        'result': _serialize_structured_review_result(task.result),
         'error': task.error,
     }
 

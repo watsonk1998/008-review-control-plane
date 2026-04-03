@@ -1,10 +1,22 @@
 from __future__ import annotations
 
 import asyncio
+import mimetypes
 from pathlib import Path
 from typing import Any, Callable
 
-from src.domain.models import AttachmentVisibility, ConfidenceLevel, EvidenceSpan, TaskArtifact
+from src.domain.models import (
+    ArtifactCategory,
+    AttachmentLocator,
+    AttachmentVisibility,
+    BlockLocator,
+    ConfidenceLevel,
+    EvidenceSpan,
+    SectionLocator,
+    SourceDocumentRef,
+    TableLocator,
+    TaskArtifact,
+)
 from src.review.evidence.evidence_builder import EvidenceBuilder
 from src.review.extractors.hazard_facts import extract_hazard_facts
 from src.review.extractors.project_facts import extract_project_facts
@@ -20,6 +32,8 @@ from src.review.schema import (
     ResolvedReviewProfile,
     StructuredReviewResult,
     StructuredReviewTask,
+    UnresolvedFact,
+    VisibilityAssessment,
 )
 
 
@@ -38,6 +52,7 @@ class StructuredReviewExecutor:
         task_id: str,
         query: str,
         source_document_path: str,
+        source_document_ref: SourceDocumentRef | None = None,
         fixture_id: str | None = None,
         plan: dict[str, Any] | None = None,
         document_type: str | None = None,
@@ -53,10 +68,12 @@ class StructuredReviewExecutor:
         requested_document_type = document_type
         requested_discipline_tags = list(discipline_tags or [])
         requested_policy_pack_ids = list(policy_pack_ids or [])
+        artifact_records: list[dict[str, Any]] = []
         structured_task = self._build_task(
             task_id=task_id,
             query=query,
             source_document_path=source_document_path,
+            source_document_ref=source_document_ref,
             fixture_id=fixture_id,
             plan=plan,
             document_type=document_type,
@@ -67,11 +84,13 @@ class StructuredReviewExecutor:
         parse_result = self.document_loader.parse_document(source_document_path)
         parse_result = self._apply_execution_options(parse_result, options)
         parse_artifact = write_json_artifact('structured-review-parse', parse_result.model_dump(mode='json')) if write_json_artifact else None
+        self._record_artifact(artifact_records, parse_artifact, category='parse', stage='parse')
         if emit:
             emit('parse', 'structured_review', 'completed', 'Document parsed for structured review', artifact_path=parse_artifact)
 
         facts = self._extract_facts(parse_result)
         facts_artifact = write_json_artifact('structured-review-facts', facts.model_dump(mode='json')) if write_json_artifact else None
+        self._record_artifact(artifact_records, facts_artifact, category='facts', stage='extract')
         if emit:
             emit('extract', 'structured_review', 'completed', 'Structured facts extracted', artifact_path=facts_artifact)
 
@@ -88,17 +107,30 @@ class StructuredReviewExecutor:
             resolved_profile.disciplineTags,
             requested_pack_ids=resolved_profile.requestedPolicyPackIds,
         )
-        resolved_profile.policyPackIds = [pack.id for pack in packs]
+        executable_packs = [pack for pack in packs if pack.readiness == 'ready']
+        resolved_profile.policyPackIds = [pack.id for pack in executable_packs]
         if options.get('disable_rule_engine'):
             rule_hits = []
         else:
-            rule_hits = self.rule_engine.run(facts, packs, parse_result)
+            rule_hits = self.rule_engine.run(facts, executable_packs, parse_result)
         rules_artifact = write_json_artifact('structured-review-rule-hits', [hit.model_dump(mode='json') for hit in rule_hits]) if write_json_artifact else None
+        self._record_artifact(artifact_records, rules_artifact, category='rule_hits', stage='rules')
         if emit:
-            emit('rules', 'structured_review', 'completed', 'Rule engine finished', artifact_path=rules_artifact, debug={'selectedPacks': [pack.id for pack in packs]})
+            emit(
+                'rules',
+                'structured_review',
+                'completed',
+                'Rule engine finished',
+                artifact_path=rules_artifact,
+                debug={
+                    'selectedPacks': [pack.id for pack in executable_packs],
+                    'requestedPlaceholderPacks': [pack.id for pack in packs if pack.readiness != 'ready'],
+                },
+            )
 
-        candidates = self.evidence_builder.build(rule_hits, facts, parse_result, packs)
+        candidates = self.evidence_builder.build(rule_hits, facts, parse_result, executable_packs)
         evidence_artifact = write_json_artifact('structured-review-candidates', [candidate.model_dump(mode='json') for candidate in candidates]) if write_json_artifact else None
+        self._record_artifact(artifact_records, evidence_artifact, category='candidates', stage='evidence')
         if emit:
             emit('evidence', 'structured_review', 'completed', 'Evidence candidates assembled', artifact_path=evidence_artifact)
 
@@ -110,7 +142,7 @@ class StructuredReviewExecutor:
             selected_packs=resolved_profile.policyPackIds,
             issues=final_issues,
             matrices=matrices,
-            visibility_report=parse_result.visibilityReport,
+            visibility=parse_result.visibility,
             parse_warnings=parse_result.parseWarnings,
             unresolved_facts=facts.unresolvedFacts,
         )
@@ -132,7 +164,7 @@ class StructuredReviewExecutor:
                 'resolvedProfile': resolved_profile.model_dump(mode='json'),
                 'issues': [issue.model_dump(mode='json') for issue in final_issues],
                 'matrices': matrices.model_dump(mode='json'),
-                'unresolvedFacts': facts.unresolvedFacts,
+                'unresolvedFacts': [item.model_dump(mode='json') for item in facts.unresolvedFacts],
             }))
             report_artifacts.append(write_json_artifact('hazard-identification-matrix', matrices.hazardIdentification.model_dump(mode='json')))
             report_artifacts.append(write_json_artifact('rule-hit-matrix', [item.model_dump(mode='json') for item in matrices.ruleHits]))
@@ -141,7 +173,13 @@ class StructuredReviewExecutor:
             report_artifacts.append(write_json_artifact('section-structure-matrix', [item.model_dump(mode='json') for item in matrices.sectionStructure]))
         if write_text_artifact:
             report_artifacts.append(write_text_artifact('structured-review-report', report_markdown, '.md'))
-        artifact_index = self._build_artifact_index(task_id, report_artifacts)
+        if report_artifacts:
+            self._record_artifact(artifact_records, report_artifacts[0], category='result', stage='report')
+        for path in report_artifacts[1:-1]:
+            self._record_artifact(artifact_records, path, category='matrix', stage='report')
+        if write_text_artifact and report_artifacts:
+            self._record_artifact(artifact_records, report_artifacts[-1], category='report', stage='report', primary=True)
+        artifact_index = self._build_artifact_index(task_id, artifact_records)
 
         capabilities_used = ['structured_review_executor']
         if llm_gateway is not None:
@@ -168,6 +206,7 @@ class StructuredReviewExecutor:
         task_id: str,
         query: str,
         source_document_path: str,
+        source_document_ref: SourceDocumentRef | None = None,
         fixture_id: str | None = None,
         plan: dict[str, Any] | None = None,
         document_type: str | None = None,
@@ -181,6 +220,7 @@ class StructuredReviewExecutor:
                 task_id=task_id,
                 query=query,
                 source_document_path=source_document_path,
+                source_document_ref=source_document_ref,
                 fixture_id=fixture_id,
                 plan=plan,
                 document_type=document_type,
@@ -197,14 +237,25 @@ class StructuredReviewExecutor:
         task_id: str,
         query: str,
         source_document_path: str,
+        source_document_ref: SourceDocumentRef | None,
         fixture_id: str | None,
         plan: dict[str, Any] | None,
         document_type: str | None,
         discipline_tags: list[str] | None,
         strict_mode: bool | None,
         policy_pack_ids: list[str] | None,
-    ) -> StructuredReviewTask:
+        ) -> StructuredReviewTask:
         plan_profile = dict((plan or {}).get('reviewProfile') or {})
+        resolved_source_document_ref = source_document_ref or SourceDocumentRef(
+            refId=fixture_id or task_id,
+            sourceType='fixture' if fixture_id else 'upload',
+            fileName=Path(source_document_path).name,
+            fileType=Path(source_document_path).suffix.lower().lstrip('.') or 'unknown',
+            storagePath=source_document_path,
+            displayName=Path(source_document_path).name,
+            fixtureId=fixture_id,
+            mediaType=mimetypes.guess_type(source_document_path)[0],
+        )
         return StructuredReviewTask(
             taskId=task_id,
             requestId=task_id,
@@ -212,6 +263,7 @@ class StructuredReviewExecutor:
             disciplineTags=list(discipline_tags or plan_profile.get('requestedDisciplineTags') or []),
             policyPackIds=list(policy_pack_ids or plan_profile.get('requestedPolicyPackIds') or []),
             strictMode=True if strict_mode is None else strict_mode,
+            sourceDocumentRef=resolved_source_document_ref,
             sourceDocumentPath=source_document_path,
             sourceFixtureId=fixture_id,
             useAssistArtifacts=False,
@@ -263,19 +315,19 @@ class StructuredReviewExecutor:
             scheduleFacts=schedule_bundle.get('scheduleFacts', {}),
             resourceFacts=schedule_bundle.get('resourceFacts', {}),
             attachmentFacts={
-                'attachments': parse_result.attachments,
-                'visibilityReport': parse_result.visibilityReport,
+                'attachments': [item.model_dump(mode='json') for item in parse_result.attachments],
+                'visibility': parse_result.visibility.model_dump(mode='json'),
             },
             emergencyFacts=schedule_bundle.get('emergencyFacts', {}),
             factEvidence=fact_evidence,
-            unresolvedFacts=list(dict.fromkeys(project_unresolved + hazard_unresolved + schedule_unresolved)),
+            unresolvedFacts=self._dedupe_unresolved_facts(project_unresolved + hazard_unresolved + schedule_unresolved),
         )
 
     def _build_spans(self, parse_result: DocumentParseResult, refs: list[str]) -> list[EvidenceSpan]:
         spans: list[EvidenceSpan] = []
         block_index = {block['id']: block for block in parse_result.blocks}
         table_index = {table['id']: table for table in parse_result.tables}
-        attachment_index = {attachment['id']: attachment for attachment in parse_result.attachments}
+        attachment_index = {attachment.id: attachment for attachment in parse_result.attachments}
         for ref in refs:
             if not ref:
                 continue
@@ -285,7 +337,7 @@ class StructuredReviewExecutor:
                     EvidenceSpan(
                         sourceType='document',
                         sourceId=parse_result.documentId,
-                        locator={'blockId': block['id'], 'sectionId': block.get('sectionId')},
+                        locator=BlockLocator(blockId=block['id'], sectionId=block.get('sectionId')),
                         excerpt=str(block.get('text') or '')[:400],
                         confidence=ConfidenceLevel.high,
                     )
@@ -296,7 +348,7 @@ class StructuredReviewExecutor:
                     EvidenceSpan(
                         sourceType='document',
                         sourceId=parse_result.documentId,
-                        locator={'tableId': table['id'], 'sectionId': table.get('sectionId')},
+                        locator=TableLocator(tableId=table['id'], sectionId=table.get('sectionId')),
                         excerpt=str(table.get('preview') or '')[:400],
                         confidence=ConfidenceLevel.high,
                     )
@@ -307,9 +359,9 @@ class StructuredReviewExecutor:
                     EvidenceSpan(
                         sourceType='document',
                         sourceId=parse_result.documentId,
-                        locator={'attachmentId': attachment['id']},
-                        excerpt=attachment.get('title', ''),
-                        visibility=AttachmentVisibility(attachment['visibility']),
+                        locator=AttachmentLocator(attachmentId=attachment.id),
+                        excerpt=attachment.title,
+                        visibility=attachment.visibility,
                         confidence=ConfidenceLevel.medium,
                     )
                 )
@@ -338,32 +390,56 @@ class StructuredReviewExecutor:
             parse_result.parseWarnings.append('disable_normalizer')
         if options.get('disable_visibility_check'):
             for attachment in parse_result.attachments:
-                attachment['visibility'] = 'parsed'
-                attachment['parseState'] = 'parsed'
-                attachment['manualReviewNeeded'] = False
-                attachment['reason'] = None
-            parse_result.visibilityReport = {
-                **parse_result.visibilityReport,
-                'manualReviewNeeded': False,
-                'counts': {
+                attachment.visibility = AttachmentVisibility.parsed
+                attachment.parseState = 'parsed'
+                attachment.manualReviewNeeded = False
+                attachment.reason = None
+            parse_result.visibility = VisibilityAssessment(
+                parserLimited=parse_result.parserLimited,
+                fileType=parse_result.fileType,
+                attachmentCount=len(parse_result.attachments),
+                counts={
                     'parsed': len(parse_result.attachments),
                     'attachment_unparsed': 0,
                     'referenced_only': 0,
                     'missing': 0,
                     'unknown': 0,
                 },
-                'reasonCounts': {},
-            }
+                reasonCounts={},
+                duplicateSectionTitles=list(parse_result.visibility.duplicateSectionTitles),
+                manualReviewNeeded=False,
+            )
+            parse_result.visibilityReport = parse_result.visibility.model_dump(mode='json')
             parse_result.parseWarnings.append('disable_visibility_check')
         return parse_result
 
-    def _build_artifact_index(self, task_id: str, artifact_paths: list[str]) -> list[TaskArtifact]:
+    def _record_artifact(
+        self,
+        artifact_records: list[dict[str, Any]],
+        artifact_path: str | None,
+        *,
+        category: ArtifactCategory,
+        stage: str,
+        primary: bool = False,
+    ) -> None:
+        if not artifact_path:
+            return
+        artifact_records.append(
+            {
+                'path': artifact_path,
+                'category': category,
+                'stage': stage,
+                'primary': primary,
+            }
+        )
+
+    def _build_artifact_index(self, task_id: str, artifact_records: list[dict[str, Any]]) -> list[TaskArtifact]:
         index: list[TaskArtifact] = []
-        for raw_path in artifact_paths:
-            path = Path(raw_path)
+        for record in artifact_records:
+            path = Path(record['path'])
             if not path.exists():
                 continue
-            media_type = 'text/markdown' if path.suffix == '.md' else 'application/json'
+            media_type = mimetypes.guess_type(path.name)[0] or ('text/markdown' if path.suffix == '.md' else 'application/json')
             index.append(
                 TaskArtifact(
                     name=path.stem,
@@ -371,6 +447,16 @@ class StructuredReviewExecutor:
                     mediaType=media_type,
                     sizeBytes=path.stat().st_size,
                     downloadUrl=f'/api/tasks/{task_id}/artifacts/{path.name}',
+                    category=record.get('category'),
+                    stage=record.get('stage'),
+                    primary=bool(record.get('primary', False)),
                 )
             )
         return index
+
+    def _dedupe_unresolved_facts(self, items: list[dict[str, Any]]) -> list[UnresolvedFact]:
+        deduped: dict[tuple[str, str], UnresolvedFact] = {}
+        for item in items:
+            unresolved = UnresolvedFact.model_validate(item)
+            deduped[(unresolved.code, unresolved.factKey)] = unresolved
+        return list(deduped.values())

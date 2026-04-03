@@ -8,7 +8,7 @@ from src.adapters.deeptutor_adapter import DeepTutorAdapter
 from src.adapters.fastgpt_adapter import FastGPTAdapter, FastGPTResponseParseError
 from src.adapters.gpt_researcher_adapter import GPTResearcherAdapter
 from src.adapters.llm_gateway import LLMGateway
-from src.domain.models import TaskEvent, TaskRecord
+from src.domain.models import SourceDocumentRef, TaskEvent, TaskRecord
 from src.orchestrator.planner import TaskPlanner
 from src.orchestrator.router import infer_default_dataset
 from src.repositories.sqlite_store import SQLiteTaskStore
@@ -50,7 +50,12 @@ class DeepResearchRuntime:
         if task is None:
             raise KeyError(f'Task not found: {task_id}')
         fixture = self.fixture_service.get_fixture(task.fixtureId) if task.fixtureId else None
-        plan = self.planner.build_plan(task, has_fixture=fixture is not None, fixture_title=fixture.title if fixture else None)
+        plan = self.planner.build_plan(
+            task,
+            has_fixture=fixture is not None,
+            fixture_title=fixture.title if fixture else None,
+            has_source_document=task.sourceDocumentRef is not None,
+        )
         self.store.update_task(task_id, status='planned', plan=plan)
         self._emit(task_id, 'planning', 'deepresearch_runtime', 'completed', 'Execution plan created', debug=plan)
         self.store.update_task(task_id, status='running')
@@ -205,14 +210,16 @@ class DeepResearchRuntime:
         }
 
     async def _run_structured_review(self, task: TaskRecord, plan: dict, fixture) -> dict:
-        if fixture is None:
-            raise ValueError('structured_review requires a fixtureId')
+        source_document_ref, source_document_path, resolved_fixture = self._resolve_source_document(task, fixture)
+        if source_document_ref is None or source_document_path is None:
+            raise ValueError('structured_review requires a fixtureId or sourceDocumentRef')
 
         result = await self.structured_review.run(
             task_id=task.id,
             query=task.query,
-            source_document_path=fixture.copiedPath,
-            fixture_id=fixture.id,
+            source_document_path=source_document_path,
+            source_document_ref=source_document_ref,
+            fixture_id=resolved_fixture.id if resolved_fixture else None,
             plan=plan,
             document_type=task.documentType,
             discipline_tags=task.disciplineTags,
@@ -222,7 +229,8 @@ class DeepResearchRuntime:
             write_json_artifact=lambda name, payload: self._write_task_artifact(task.id, name, payload),
             write_text_artifact=lambda name, content, suffix='.md': self._write_text_artifact(task.id, name, content, suffix=suffix),
         )
-        result['fixture'] = fixture.model_dump()
+        if resolved_fixture is not None:
+            result['fixture'] = resolved_fixture.model_dump()
         result['steps'] = [event.model_dump(mode='json') for event in self.store.list_events(task.id)]
         return result
 
@@ -280,3 +288,38 @@ class DeepResearchRuntime:
             }
             for chunk in chunks[:10]
         ]
+
+    def _resolve_source_document(self, task: TaskRecord, fixture) -> tuple[SourceDocumentRef | None, str | None, object | None]:
+        if task.sourceDocumentRef is not None:
+            return task.sourceDocumentRef, task.sourceDocumentRef.storagePath, fixture
+        if fixture is not None:
+            return (
+                SourceDocumentRef(
+                    refId=fixture.id,
+                    sourceType='fixture',
+                    fileName=Path(fixture.copiedPath).name,
+                    fileType=fixture.fileType,
+                    storagePath=fixture.copiedPath,
+                    displayName=fixture.title,
+                    fixtureId=fixture.id,
+                ),
+                fixture.copiedPath,
+                fixture,
+            )
+        if task.fixtureId:
+            resolved_fixture = self.fixture_service.get_fixture(task.fixtureId)
+            if resolved_fixture is not None:
+                return (
+                    SourceDocumentRef(
+                        refId=resolved_fixture.id,
+                        sourceType='fixture',
+                        fileName=Path(resolved_fixture.copiedPath).name,
+                        fileType=resolved_fixture.fileType,
+                        storagePath=resolved_fixture.copiedPath,
+                        displayName=resolved_fixture.title,
+                        fixtureId=resolved_fixture.id,
+                    ),
+                    resolved_fixture.copiedPath,
+                    resolved_fixture,
+                )
+        return None, None, fixture

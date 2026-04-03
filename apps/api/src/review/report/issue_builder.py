@@ -56,7 +56,6 @@ def _fallback_issue_payloads(candidates: list[IssueCandidate]) -> list[dict]:
                 'policyEvidence': [span.model_dump(mode='json') for span in candidate.policyEvidence],
                 'recommendation': _fallback_recommendations(candidate),
                 'confidence': ConfidenceLevel.low if candidate.manualReviewNeeded else ConfidenceLevel.medium,
-                'whetherManualReviewNeeded': candidate.manualReviewNeeded,
             }
         )
     return payloads

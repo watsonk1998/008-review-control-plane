@@ -21,4 +21,5 @@ def get_construction_org_base_pack() -> PolicyPack:
         evidencePackIds=['construction_org.base', 'hazardous_special_scheme.base', 'review.visibility', 'review.emergency'],
         defaultEnabled=True,
         description='施工组织设计基础 pack，覆盖结构完整性、危大挂接、附件可视域和资源窗口冲突。',
+        readiness='ready',
     )

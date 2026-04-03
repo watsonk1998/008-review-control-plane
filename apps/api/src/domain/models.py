@@ -4,7 +4,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Any, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 TaskType = Literal['knowledge_qa', 'deep_research', 'document_research', 'review_assist', 'structured_review']
 CapabilityMode = Literal['auto', 'deeptutor', 'gpt_researcher', 'fast', 'llm_only']
@@ -46,13 +46,59 @@ class ConfidenceLevel(str, Enum):
     high = 'high'
 
 
+ArtifactCategory = Literal['parse', 'facts', 'rule_hits', 'candidates', 'result', 'matrix', 'report', 'generic']
+SourceDocumentType = Literal['fixture', 'upload']
+
+
+class BlockLocator(BaseModel):
+    blockId: str
+    sectionId: str | None = None
+
+
+class TableLocator(BaseModel):
+    tableId: str
+    sectionId: str | None = None
+
+
+class AttachmentLocator(BaseModel):
+    attachmentId: str
+
+
+class ClauseLocator(BaseModel):
+    clauseId: str
+
+
+class SectionLocator(BaseModel):
+    sectionId: str
+
+
+EvidenceLocator = BlockLocator | TableLocator | AttachmentLocator | ClauseLocator | SectionLocator
+
+
+class SourceDocumentRef(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+
+    refId: str
+    sourceType: SourceDocumentType
+    fileName: str
+    fileType: str
+    storagePath: str
+    displayName: str | None = None
+    mediaType: str | None = None
+    fixtureId: str | None = None
+    uploadedAt: datetime | None = None
+
+
 class CreateTaskRequest(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+
     taskType: TaskType
     capabilityMode: CapabilityMode = 'auto'
     query: str = Field(min_length=1)
     datasetId: str | None = None
     collectionId: str | None = None
     fixtureId: str | None = None
+    sourceDocumentRef: SourceDocumentRef | None = None
     useWeb: bool = False
     debug: bool = False
     sourceUrls: list[str] | None = None
@@ -61,11 +107,19 @@ class CreateTaskRequest(BaseModel):
     strictMode: bool | None = None
     policyPackIds: list[str] | None = None
 
+    @model_validator(mode='after')
+    def _validate_structured_review_source(self):
+        if self.taskType != 'structured_review':
+            return self
+        if bool(self.fixtureId) == bool(self.sourceDocumentRef):
+            raise ValueError('structured_review requires exactly one of fixtureId or sourceDocumentRef')
+        return self
+
 
 class EvidenceSpan(BaseModel):
     sourceType: Literal['document', 'policy', 'artifact']
     sourceId: str
-    locator: dict[str, Any]
+    locator: EvidenceLocator
     excerpt: str
     visibility: AttachmentVisibility | None = None
     confidence: ConfidenceLevel = ConfidenceLevel.medium
@@ -89,6 +143,9 @@ class TaskArtifact(BaseModel):
     mediaType: str
     sizeBytes: int
     downloadUrl: str
+    category: ArtifactCategory | None = None
+    stage: str | None = None
+    primary: bool = False
 
 
 class TaskEvent(BaseModel):
@@ -110,6 +167,7 @@ class TaskRecord(BaseModel):
     datasetId: str | None = None
     collectionId: str | None = None
     fixtureId: str | None = None
+    sourceDocumentRef: SourceDocumentRef | None = None
     useWeb: bool = False
     debug: bool = False
     sourceUrls: list[str] = Field(default_factory=list)

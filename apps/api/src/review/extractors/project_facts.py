@@ -140,9 +140,21 @@ def extract_project_facts(parse_result) -> tuple[dict[str, Any], dict[str, list[
         'project.specialEquipmentMentioned': special_equipment_blocks,
         **section_presence_refs,
     }
-    unresolved = [
-        key
-        for key, value in [('project.projectName', project_name), ('project.projectCode', project_code)]
-        if not value
-    ]
+    unresolved = []
+    if not project_name:
+        unresolved.append(
+            {
+                'code': 'missing_project_name',
+                'factKey': 'project.projectName',
+                'summary': '未解析到项目名称，需人工确认文档基础信息。',
+            }
+        )
+    if not project_code:
+        unresolved.append(
+            {
+                'code': 'missing_project_code',
+                'factKey': 'project.projectCode',
+                'summary': '未解析到项目编号，需人工确认文档标识信息。',
+            }
+        )
     return facts, refs, unresolved

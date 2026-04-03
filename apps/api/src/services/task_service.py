@@ -6,16 +6,17 @@ import mimetypes
 from pathlib import Path
 import uuid
 
-from src.domain.models import CreateTaskRequest, TaskArtifact, TaskRecord
+from src.domain.models import CreateTaskRequest, SourceDocumentRef, TaskArtifact, TaskRecord
 from src.orchestrator.deepresearch_runtime import DeepResearchRuntime
 from src.repositories.sqlite_store import SQLiteTaskStore
 
 
 class TaskService:
-    def __init__(self, store: SQLiteTaskStore, runtime: DeepResearchRuntime, tasks_dir: Path | None = None):
+    def __init__(self, store: SQLiteTaskStore, runtime: DeepResearchRuntime, tasks_dir: Path | None = None, fixture_service=None):
         self.store = store
         self.runtime = runtime
         self.tasks_dir = tasks_dir or runtime.tasks_dir
+        self.fixture_service = fixture_service
         self._running_tasks: dict[str, asyncio.Task] = {}
 
     def create_task(self, request: CreateTaskRequest) -> TaskRecord:
@@ -23,6 +24,20 @@ class TaskService:
         strict_mode = request.strictMode
         if request.taskType == 'structured_review' and strict_mode is None:
             strict_mode = True
+        source_document_ref = request.sourceDocumentRef
+        if request.taskType == 'structured_review' and source_document_ref is None and request.fixtureId and self.fixture_service is not None:
+            fixture = self.fixture_service.get_fixture(request.fixtureId)
+            if fixture is not None:
+                source_document_ref = SourceDocumentRef(
+                    refId=fixture.id,
+                    sourceType='fixture',
+                    fileName=Path(fixture.copiedPath).name,
+                    fileType=fixture.fileType,
+                    storagePath=fixture.copiedPath,
+                    displayName=fixture.title,
+                    fixtureId=fixture.id,
+                    mediaType=mimetypes.guess_type(fixture.copiedPath)[0],
+                )
         task = TaskRecord(
             id=uuid.uuid4().hex,
             taskType=request.taskType,
@@ -31,6 +46,7 @@ class TaskService:
             datasetId=request.datasetId,
             collectionId=request.collectionId,
             fixtureId=request.fixtureId,
+            sourceDocumentRef=source_document_ref,
             useWeb=request.useWeb,
             debug=request.debug,
             sourceUrls=request.sourceUrls or [],
@@ -67,6 +83,11 @@ class TaskService:
         task = self.store.get_task(task_id)
         if task is None:
             raise KeyError(f'Task not found: {task_id}')
+        artifact_index = ((task.result or {}).get('artifactIndex') if isinstance(task.result, dict) else None) or []
+        catalog = [self._coerce_artifact(item) for item in artifact_index]
+        catalog = [item for item in catalog if item is not None]
+        if catalog:
+            return catalog
         task_dir = self.tasks_dir / task_id
         if not task_dir.exists():
             return []
@@ -82,6 +103,9 @@ class TaskService:
                     mediaType=media_type or 'application/octet-stream',
                     sizeBytes=path.stat().st_size,
                     downloadUrl=f'/api/tasks/{task_id}/artifacts/{path.name}',
+                    category=self._infer_artifact_category(path.name),
+                    stage='generated',
+                    primary=path.suffix == '.md',
                 )
             )
         return artifacts
@@ -98,3 +122,25 @@ class TaskService:
         if not path.exists() or not path.is_file():
             raise FileNotFoundError(artifact_name)
         return path
+
+    def _coerce_artifact(self, item) -> TaskArtifact | None:
+        if not isinstance(item, dict):
+            return None
+        return TaskArtifact.model_validate(item)
+
+    def _infer_artifact_category(self, file_name: str) -> str:
+        if 'parse' in file_name:
+            return 'parse'
+        if 'fact' in file_name:
+            return 'facts'
+        if 'rule' in file_name:
+            return 'rule_hits'
+        if 'candidate' in file_name:
+            return 'candidates'
+        if 'matrix' in file_name:
+            return 'matrix'
+        if file_name.endswith('.md'):
+            return 'report'
+        if 'result' in file_name:
+            return 'result'
+        return 'generic'

@@ -96,7 +96,7 @@ class EvidenceBuilder:
             for span in facts.factEvidence.get(fact_ref, []):
                 key = (
                     span.sourceId,
-                    tuple(sorted(span.locator.items())) if isinstance(span.locator, dict) else str(span.locator),
+                    tuple(sorted(span.locator.model_dump(mode='json').items())),
                     span.excerpt,
                 )
                 if key in seen:

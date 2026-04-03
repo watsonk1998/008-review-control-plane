@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from src.config.settings import get_settings
 from src.routes.system import router as system_router
 from src.routes.tasks import router as tasks_router
+from src.routes.uploads import router as uploads_router
 
 
 app = FastAPI(title='008 Review Control Plane API', version='0.1.0')
@@ -26,6 +27,7 @@ app.add_middleware(
 )
 app.include_router(system_router)
 app.include_router(tasks_router)
+app.include_router(uploads_router)
 
 
 @app.get('/')

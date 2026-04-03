@@ -2,17 +2,24 @@ from __future__ import annotations
 
 from typing import Any, Literal
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from src.domain.models import (
     AttachmentVisibility,
+    AttachmentLocator,
+    BlockLocator,
+    ClauseLocator,
     ConfidenceLevel,
     EvidenceSpan,
+    EvidenceLocator,
     FindingType,
     ReviewDocumentType,
     ReviewIssue,
     ReviewLayer,
+    SectionLocator,
+    SourceDocumentRef,
     TaskArtifact,
+    TableLocator,
 )
 
 
@@ -23,6 +30,7 @@ class StructuredReviewTask(BaseModel):
     disciplineTags: list[str] = Field(default_factory=list)
     policyPackIds: list[str] = Field(default_factory=list)
     strictMode: bool = True
+    sourceDocumentRef: SourceDocumentRef
     sourceDocumentPath: str
     sourceFixtureId: str | None = None
     useAssistArtifacts: bool = False
@@ -57,6 +65,7 @@ class PolicyPack(BaseModel):
     evidencePackIds: list[str] = Field(default_factory=list)
     defaultEnabled: bool = True
     description: str = ''
+    readiness: Literal['ready', 'placeholder'] = 'ready'
 
 
 class EvidencePack(BaseModel):
@@ -70,35 +79,10 @@ class EvidencePack(BaseModel):
     docTypes: list[str] = Field(default_factory=list)
 
 
-class DocumentParseResult(BaseModel):
-    documentId: str
-    filePath: str
-    fileType: str
-    sections: list[dict[str, Any]] = Field(default_factory=list)
-    blocks: list[dict[str, Any]] = Field(default_factory=list)
-    tables: list[dict[str, Any]] = Field(default_factory=list)
-    attachments: list[dict[str, Any]] = Field(default_factory=list)
-    figures: list[dict[str, Any]] = Field(default_factory=list)
-    normalizedText: str = ''
-    preview: str = ''
-    visibilityReport: dict[str, Any] = Field(default_factory=dict)
-    parseWarnings: list[str] = Field(default_factory=list)
-
-
-class ExtractedFacts(BaseModel):
-    projectFacts: dict[str, Any] = Field(default_factory=dict)
-    hazardFacts: dict[str, Any] = Field(default_factory=dict)
-    scheduleFacts: dict[str, Any] = Field(default_factory=dict)
-    resourceFacts: dict[str, Any] = Field(default_factory=dict)
-    attachmentFacts: dict[str, Any] = Field(default_factory=dict)
-    emergencyFacts: dict[str, Any] = Field(default_factory=dict)
-    factEvidence: dict[str, list[EvidenceSpan]] = Field(default_factory=dict)
-    unresolvedFacts: list[str] = Field(default_factory=list)
-
-
 class RuleHit(BaseModel):
     ruleId: str
     packId: str
+    packReadiness: Literal['ready', 'placeholder'] = 'ready'
     matchType: Literal['direct_hit', 'inferred_risk', 'visibility_gap']
     status: Literal['hit', 'pass', 'not_applicable', 'manual_review_needed']
     layerHint: ReviewLayer
@@ -123,29 +107,12 @@ class IssueCandidate(BaseModel):
 
 
 class FinalIssue(ReviewIssue):
+    model_config = ConfigDict(extra='ignore')
+
     docEvidence: list[EvidenceSpan] = Field(default_factory=list)
     policyEvidence: list[EvidenceSpan] = Field(default_factory=list)
     recommendation: list[str] = Field(default_factory=list)
     confidence: ConfidenceLevel = ConfidenceLevel.medium
-    whetherManualReviewNeeded: bool | None = None
-
-    @model_validator(mode='before')
-    @classmethod
-    def _sync_manual_review_alias(cls, data: Any):
-        if not isinstance(data, dict):
-            return data
-        manual_value = data.get('manualReviewNeeded')
-        alias_value = data.get('whetherManualReviewNeeded')
-        if manual_value is None and alias_value is not None:
-            data['manualReviewNeeded'] = alias_value
-        if alias_value is None and manual_value is not None:
-            data['whetherManualReviewNeeded'] = manual_value
-        return data
-
-    @model_validator(mode='after')
-    def _canonicalize_manual_review_alias(self):
-        self.whetherManualReviewNeeded = self.manualReviewNeeded
-        return self
 
 
 class HazardIdentificationMatrix(BaseModel):
@@ -175,6 +142,75 @@ class AttachmentVisibilityMatrixItem(BaseModel):
     reason: str | None = None
     referenceBlockIds: list[str] = Field(default_factory=list)
     titleBlockId: str | None = None
+
+
+class VisibilityAssessment(BaseModel):
+    parserLimited: bool = False
+    fileType: str | None = None
+    attachmentCount: int = 0
+    counts: dict[str, int] = Field(default_factory=dict)
+    reasonCounts: dict[str, int] = Field(default_factory=dict)
+    duplicateSectionTitles: list[str] = Field(default_factory=list)
+    manualReviewNeeded: bool = False
+
+
+class DocumentParseResult(BaseModel):
+    documentId: str
+    filePath: str
+    fileType: str
+    parseMode: Literal['docx_structured', 'pdf_text_only', 'markdown_text', 'plain_text']
+    parserLimited: bool = False
+    sections: list[dict[str, Any]] = Field(default_factory=list)
+    blocks: list[dict[str, Any]] = Field(default_factory=list)
+    tables: list[dict[str, Any]] = Field(default_factory=list)
+    attachments: list[AttachmentVisibilityMatrixItem] = Field(default_factory=list)
+    figures: list[dict[str, Any]] = Field(default_factory=list)
+    normalizedText: str = ''
+    preview: str = ''
+    visibility: VisibilityAssessment = Field(default_factory=VisibilityAssessment)
+    visibilityReport: dict[str, Any] = Field(default_factory=dict)
+    parseWarnings: list[str] = Field(default_factory=list)
+
+    @model_validator(mode='before')
+    @classmethod
+    def _load_visibility(cls, data: Any):
+        if not isinstance(data, dict):
+            return data
+        visibility = data.get('visibility')
+        visibility_report = data.get('visibilityReport') or {}
+        if visibility is None:
+            visibility = {
+                **visibility_report,
+                'parserLimited': data.get('parserLimited', visibility_report.get('parserLimited', False)),
+                'fileType': data.get('fileType', visibility_report.get('fileType')),
+            }
+        data['visibility'] = visibility
+        if 'parserLimited' not in data:
+            data['parserLimited'] = visibility.get('parserLimited', False)
+        return data
+
+    @model_validator(mode='after')
+    def _sync_visibility_report(self):
+        self.parserLimited = self.visibility.parserLimited
+        self.visibilityReport = self.visibility.model_dump(mode='json')
+        return self
+
+
+class UnresolvedFact(BaseModel):
+    code: str
+    factKey: str
+    summary: str
+
+
+class ExtractedFacts(BaseModel):
+    projectFacts: dict[str, Any] = Field(default_factory=dict)
+    hazardFacts: dict[str, Any] = Field(default_factory=dict)
+    scheduleFacts: dict[str, Any] = Field(default_factory=dict)
+    resourceFacts: dict[str, Any] = Field(default_factory=dict)
+    attachmentFacts: dict[str, Any] = Field(default_factory=dict)
+    emergencyFacts: dict[str, Any] = Field(default_factory=dict)
+    factEvidence: dict[str, list[EvidenceSpan]] = Field(default_factory=dict)
+    unresolvedFacts: list[UnresolvedFact] = Field(default_factory=list)
 
 
 class SectionStructureMatrixItem(BaseModel):
@@ -222,7 +258,7 @@ class StructuredReviewResult(BaseModel):
     artifactIndex: list[TaskArtifact] = Field(default_factory=list)
     reportMarkdown: str = ''
     artifacts: list[str] = Field(default_factory=list)
-    unresolvedFacts: list[str] = Field(default_factory=list)
+    unresolvedFacts: list[UnresolvedFact] = Field(default_factory=list)
     plan: dict[str, Any] | None = None
     capabilitiesUsed: list[str] = Field(default_factory=list)
     finalAnswer: str = ''

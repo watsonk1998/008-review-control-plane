@@ -19,21 +19,21 @@ class StructuredReviewReportBuilder:
         selected_packs: list[str],
         issues,
         matrices: StructuredReviewMatrices,
-        visibility_report,
+        visibility,
         parse_warnings: list[str],
-        unresolved_facts: list[str],
+        unresolved_facts,
     ):
         layer_counts = Counter(issue.layer.value for issue in issues)
-        manual_review_needed = visibility_report.get('manualReviewNeeded', False) or any(issue.manualReviewNeeded for issue in issues)
+        manual_review_needed = visibility.manualReviewNeeded or any(issue.manualReviewNeeded for issue in issues)
         high_risk_issue = any(issue.layer.value == 'L1' and issue.severity in {'high', 'medium'} for issue in issues)
         overall = '修改后重新报审' if high_risk_issue or manual_review_needed else '可进入人工复核'
         visibility_summary = StructuredReviewVisibilitySummary(
-            attachmentCount=visibility_report.get('attachmentCount', 0),
-            counts=visibility_report.get('counts', {}),
-            duplicateSectionTitles=visibility_report.get('duplicateSectionTitles', []),
+            attachmentCount=visibility.attachmentCount,
+            counts=visibility.counts,
+            duplicateSectionTitles=visibility.duplicateSectionTitles,
             parseWarnings=parse_warnings,
-            reasonCounts=visibility_report.get('reasonCounts', {}),
-            manualReviewNeeded=visibility_report.get('manualReviewNeeded', False),
+            reasonCounts=visibility.reasonCounts,
+            manualReviewNeeded=visibility.manualReviewNeeded,
         )
         return StructuredReviewSummary(
             overallConclusion=overall,
@@ -58,7 +58,7 @@ class StructuredReviewReportBuilder:
         issues,
         matrices: StructuredReviewMatrices,
         parse_result,
-        unresolved_facts: list[str],
+        unresolved_facts,
     ) -> str:
         lines = [
             '# Structured Review Report',
@@ -88,7 +88,7 @@ class StructuredReviewReportBuilder:
             lines.extend(
                 [
                     '## 未决 facts / 待人工确认',
-                    *[f'- {item}' for item in unresolved_facts],
+                    *[f'- {item.code} · {item.summary}' for item in unresolved_facts],
                     '',
                 ]
             )

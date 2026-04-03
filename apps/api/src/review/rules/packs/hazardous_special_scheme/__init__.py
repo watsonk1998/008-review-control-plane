@@ -20,4 +20,5 @@ def get_hazardous_special_scheme_base_pack() -> PolicyPack:
         evidencePackIds=['hazardous_special_scheme.base', 'review.visibility', 'review.emergency'],
         defaultEnabled=True,
         description='危大专项方案基础 pack，覆盖核心章节、验算证据、风险措施与应急闭环。',
+        readiness='ready',
     )

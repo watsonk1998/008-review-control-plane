@@ -33,6 +33,7 @@ def _make_placeholder_pack(pack_id: str, doc_type: str) -> PolicyPack:
         evidencePackIds=['review.visibility'],
         defaultEnabled=True,
         description=f'{doc_type} placeholder pack for P1 registry coverage.',
+        readiness='placeholder',
     )
 
 
@@ -47,6 +48,7 @@ def _make_scenario_pack(pack_id: str, discipline_tag: str) -> PolicyPack:
         evidencePackIds=[],
         defaultEnabled=False,
         description=f'Scenario pack for {discipline_tag}.',
+        readiness='placeholder',
     )
 
 

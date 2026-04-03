@@ -5,7 +5,7 @@ from src.orchestrator.router import choose_capability_chain, choose_structured_r
 
 
 class TaskPlanner:
-    def build_plan(self, task: TaskRecord, has_fixture: bool, fixture_title: str | None = None) -> dict:
+    def build_plan(self, task: TaskRecord, has_fixture: bool, fixture_title: str | None = None, has_source_document: bool = False) -> dict:
         dataset_id = infer_default_dataset(task.query, task.taskType, task.datasetId)
         capability_chain = choose_capability_chain(task.taskType, task.capabilityMode, has_fixture)
         notes: list[str] = []
@@ -15,8 +15,8 @@ class TaskPlanner:
             notes.append('用户提供了 sourceUrls，可在没有搜索 API key 时为 GPT Researcher 提供外部来源。')
         if task.taskType == 'deep_research' and not task.useWeb and not task.sourceUrls:
             notes.append('deep_research 未启用 useWeb，建议通过 sourceUrls 或 fixture 提供来源。')
-        if task.taskType == 'structured_review' and not has_fixture:
-            notes.append('structured_review 当前要求 fixtureId，以便进入结构化解析和证据归档流程。')
+        if task.taskType == 'structured_review' and not (has_fixture or has_source_document):
+            notes.append('structured_review 需要 fixtureId 或 sourceDocumentRef，以便进入结构化解析和证据归档流程。')
 
         execution = [
             {'stage': 'plan', 'owner': 'deepresearch_runtime'},

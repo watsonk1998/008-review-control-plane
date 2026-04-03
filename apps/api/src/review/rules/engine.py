@@ -6,18 +6,18 @@ from src.review.schema import ExtractedFacts, PolicyPack, RuleHit
 
 class ReviewRuleEngine:
     def run(self, facts: ExtractedFacts, packs: list[PolicyPack], parse_result) -> list[RuleHit]:
-        pack_by_rule: dict[str, str] = {}
+        pack_by_rule: dict[str, tuple[str, str]] = {}
         for pack in packs:
             for rule_id in pack.ruleIds:
-                pack_by_rule.setdefault(rule_id, pack.id)
+                pack_by_rule.setdefault(rule_id, (pack.id, pack.readiness))
 
         hits: list[RuleHit] = []
         hits.extend(self._construction_org_hits(facts, pack_by_rule))
         hits.extend(self._hazardous_special_scheme_hits(facts, pack_by_rule))
         return hits
 
-    def _construction_org_hits(self, facts: ExtractedFacts, pack_by_rule: dict[str, str]) -> list[RuleHit]:
-        if 'construction_org_structure_completeness' not in pack_by_rule and 'construction_org.base' not in pack_by_rule.values():
+    def _construction_org_hits(self, facts: ExtractedFacts, pack_by_rule: dict[str, tuple[str, str]]) -> list[RuleHit]:
+        if 'construction_org_structure_completeness' not in pack_by_rule and not any(pack_id == 'construction_org.base' for pack_id, _ in pack_by_rule.values()):
             return []
         hits: list[RuleHit] = []
         section_presence = facts.projectFacts.get('sectionPresence') or {}
@@ -34,10 +34,12 @@ class ReviewRuleEngine:
             ]
             if not section_presence.get(key)
         ]
+        base_pack_id, base_pack_readiness = pack_by_rule.get('construction_org_structure_completeness', ('construction_org.base', 'ready'))
         hits.append(
             RuleHit(
                 ruleId='construction_org_structure_completeness',
-                packId=pack_by_rule.get('construction_org_structure_completeness', 'construction_org.base'),
+                packId=base_pack_id,
+                packReadiness=base_pack_readiness,
                 matchType='direct_hit',
                 status='hit' if missing_core_sections else 'pass',
                 layerHint=ReviewLayer.L1,
@@ -49,10 +51,12 @@ class ReviewRuleEngine:
         )
 
         duplicate_sections = facts.projectFacts.get('duplicateSections') or []
+        duplicate_pack_id, duplicate_pack_readiness = pack_by_rule.get('construction_org_duplicate_sections', ('construction_org.base', 'ready'))
         hits.append(
             RuleHit(
                 ruleId='construction_org_duplicate_sections',
-                packId=pack_by_rule.get('construction_org_duplicate_sections', 'construction_org.base'),
+                packId=duplicate_pack_id,
+                packReadiness=duplicate_pack_readiness,
                 matchType='direct_hit',
                 status='hit' if duplicate_sections else 'pass',
                 layerHint=ReviewLayer.L1,
@@ -65,10 +69,12 @@ class ReviewRuleEngine:
 
         attachment_items = facts.attachmentFacts.get('attachments') or []
         attachment_gap = [item for item in attachment_items if item.get('visibility') != 'parsed']
+        attachment_pack_id, attachment_pack_readiness = pack_by_rule.get('construction_org_attachment_visibility', ('construction_org.base', 'ready'))
         hits.append(
             RuleHit(
                 ruleId='construction_org_attachment_visibility',
-                packId=pack_by_rule.get('construction_org_attachment_visibility', 'construction_org.base'),
+                packId=attachment_pack_id,
+                packReadiness=attachment_pack_readiness,
                 matchType='visibility_gap',
                 status='manual_review_needed' if attachment_gap else 'pass',
                 layerHint=ReviewLayer.L1,
@@ -90,10 +96,12 @@ class ReviewRuleEngine:
             special_scheme_result = 'hit'
         else:
             special_scheme_result = 'not_applicable'
+        special_pack_id, special_pack_readiness = pack_by_rule.get('construction_org_special_scheme_gap', ('construction_org.base', 'ready'))
         hits.append(
             RuleHit(
                 ruleId='construction_org_special_scheme_gap',
-                packId=pack_by_rule.get('construction_org_special_scheme_gap', 'construction_org.base'),
+                packId=special_pack_id,
+                packReadiness=special_pack_readiness,
                 matchType='direct_hit',
                 status=special_scheme_result,
                 layerHint=ReviewLayer.L1,
@@ -106,10 +114,12 @@ class ReviewRuleEngine:
 
         emergency_plan_count = facts.emergencyFacts.get('targetedPlanCount') or 0
         emergency_status = 'pass' if emergency_plan_count >= 2 else ('hit' if high_risk_categories else 'not_applicable')
+        emergency_pack_id, emergency_pack_readiness = pack_by_rule.get('construction_org_emergency_plan_targeted', ('construction_org.base', 'ready'))
         hits.append(
             RuleHit(
                 ruleId='construction_org_emergency_plan_targeted',
-                packId=pack_by_rule.get('construction_org_emergency_plan_targeted', 'construction_org.base'),
+                packId=emergency_pack_id,
+                packReadiness=emergency_pack_readiness,
                 matchType='direct_hit',
                 status=emergency_status,
                 layerHint=ReviewLayer.L2,
@@ -123,10 +133,12 @@ class ReviewRuleEngine:
         shutdown_days = facts.scheduleFacts.get('shutdownWindowDays')
         labor_total = facts.resourceFacts.get('laborTotal')
         inferred_risk = bool(shutdown_days and labor_total and shutdown_days <= 7 and labor_total >= 35 and len(high_risk_categories) >= 3)
+        resource_pack_id, resource_pack_readiness = pack_by_rule.get('construction_org_shutdown_resource_conflict', ('construction_org.base', 'ready'))
         hits.append(
             RuleHit(
                 ruleId='construction_org_shutdown_resource_conflict',
-                packId=pack_by_rule.get('construction_org_shutdown_resource_conflict', 'construction_org.base'),
+                packId=resource_pack_id,
+                packReadiness=resource_pack_readiness,
                 matchType='inferred_risk',
                 status='hit' if inferred_risk else 'pass',
                 layerHint=ReviewLayer.L3,
@@ -138,8 +150,8 @@ class ReviewRuleEngine:
         )
         return hits
 
-    def _hazardous_special_scheme_hits(self, facts: ExtractedFacts, pack_by_rule: dict[str, str]) -> list[RuleHit]:
-        if 'hazardous_special_scheme_core_sections' not in pack_by_rule and 'hazardous_special_scheme.base' not in pack_by_rule.values():
+    def _hazardous_special_scheme_hits(self, facts: ExtractedFacts, pack_by_rule: dict[str, tuple[str, str]]) -> list[RuleHit]:
+        if 'hazardous_special_scheme_core_sections' not in pack_by_rule and not any(pack_id == 'hazardous_special_scheme.base' for pack_id, _ in pack_by_rule.values()):
             return []
         hits: list[RuleHit] = []
         section_presence = facts.projectFacts.get('sectionPresence') or {}
@@ -148,10 +160,12 @@ class ReviewRuleEngine:
             for key in ['engineeringOverview', 'preparationBasis', 'constructionPlan', 'processMethod', 'safetyMeasures', 'emergencyPlan', 'calculationBook']
             if not section_presence.get(key)
         ]
+        core_pack_id, core_pack_readiness = pack_by_rule.get('hazardous_special_scheme_core_sections', ('hazardous_special_scheme.base', 'ready'))
         hits.append(
             RuleHit(
                 ruleId='hazardous_special_scheme_core_sections',
-                packId=pack_by_rule.get('hazardous_special_scheme_core_sections', 'hazardous_special_scheme.base'),
+                packId=core_pack_id,
+                packReadiness=core_pack_readiness,
                 matchType='direct_hit',
                 status='hit' if missing_core_sections else 'pass',
                 layerHint=ReviewLayer.L1,
@@ -164,10 +178,12 @@ class ReviewRuleEngine:
 
         attachment_items = facts.attachmentFacts.get('attachments') or []
         attachment_gap = [item for item in attachment_items if item.get('visibility') != 'parsed']
+        hz_attachment_pack_id, hz_attachment_pack_readiness = pack_by_rule.get('hazardous_special_scheme_attachment_visibility', ('hazardous_special_scheme.base', 'ready'))
         hits.append(
             RuleHit(
                 ruleId='hazardous_special_scheme_attachment_visibility',
-                packId=pack_by_rule.get('hazardous_special_scheme_attachment_visibility', 'hazardous_special_scheme.base'),
+                packId=hz_attachment_pack_id,
+                packReadiness=hz_attachment_pack_readiness,
                 matchType='visibility_gap',
                 status='manual_review_needed' if attachment_gap else 'pass',
                 layerHint=ReviewLayer.L1,
@@ -181,10 +197,12 @@ class ReviewRuleEngine:
         has_lifting = bool(facts.hazardFacts.get('liftingOperation'))
         calc_present = bool(facts.hazardFacts.get('calculationEvidencePresent'))
         calc_status = 'pass' if (not has_lifting or calc_present) else 'hit'
+        calc_pack_id, calc_pack_readiness = pack_by_rule.get('hazardous_special_scheme_calculation_evidence', ('hazardous_special_scheme.base', 'ready'))
         hits.append(
             RuleHit(
                 ruleId='hazardous_special_scheme_calculation_evidence',
-                packId=pack_by_rule.get('hazardous_special_scheme_calculation_evidence', 'hazardous_special_scheme.base'),
+                packId=calc_pack_id,
+                packReadiness=calc_pack_readiness,
                 matchType='direct_hit',
                 status=calc_status,
                 layerHint=ReviewLayer.L2,
@@ -197,10 +215,12 @@ class ReviewRuleEngine:
 
         emergency_plan_count = facts.emergencyFacts.get('targetedPlanCount') or 0
         emergency_status = 'pass' if emergency_plan_count >= 1 else ('hit' if facts.hazardFacts.get('highRiskCategories') else 'not_applicable')
+        hz_emergency_pack_id, hz_emergency_pack_readiness = pack_by_rule.get('hazardous_special_scheme_emergency_targeted', ('hazardous_special_scheme.base', 'ready'))
         hits.append(
             RuleHit(
                 ruleId='hazardous_special_scheme_emergency_targeted',
-                packId=pack_by_rule.get('hazardous_special_scheme_emergency_targeted', 'hazardous_special_scheme.base'),
+                packId=hz_emergency_pack_id,
+                packReadiness=hz_emergency_pack_readiness,
                 matchType='direct_hit',
                 status=emergency_status,
                 layerHint=ReviewLayer.L2,
@@ -212,10 +232,12 @@ class ReviewRuleEngine:
         )
 
         measure_status = 'pass' if facts.hazardFacts.get('measureSectionPresent') and facts.hazardFacts.get('monitoringSectionPresent') else ('hit' if facts.hazardFacts.get('highRiskCategories') else 'not_applicable')
+        measure_pack_id, measure_pack_readiness = pack_by_rule.get('hazardous_special_scheme_measure_linkage', ('hazardous_special_scheme.base', 'ready'))
         hits.append(
             RuleHit(
                 ruleId='hazardous_special_scheme_measure_linkage',
-                packId=pack_by_rule.get('hazardous_special_scheme_measure_linkage', 'hazardous_special_scheme.base'),
+                packId=measure_pack_id,
+                packReadiness=measure_pack_readiness,
                 matchType='inferred_risk',
                 status=measure_status,
                 layerHint=ReviewLayer.L3,

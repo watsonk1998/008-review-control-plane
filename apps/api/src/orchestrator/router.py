@@ -74,6 +74,7 @@ def choose_structured_review_profile(
             discipline_tags,
             requested_pack_ids=requested_policy_pack_ids or [],
         )
+        if pack.readiness == 'ready'
     ]
     return {
         'authority': 'provisional_router_hint',

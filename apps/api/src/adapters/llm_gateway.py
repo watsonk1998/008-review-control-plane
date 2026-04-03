@@ -144,7 +144,6 @@ class LLMGateway:
                     'policyEvidence': [span.model_dump(mode='json') for span in candidate.policyEvidence],
                     'recommendation': self._fallback_recommendations(candidate),
                     'confidence': 'low' if candidate.manualReviewNeeded else 'medium',
-                    'whetherManualReviewNeeded': candidate.manualReviewNeeded,
                 }
             )
         return payloads

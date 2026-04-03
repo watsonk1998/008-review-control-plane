@@ -37,7 +37,6 @@ class DeterministicLLM:
                     'policyEvidence': [span.model_dump(mode='json') for span in candidate.policyEvidence],
                     'recommendation': ['按证据链补齐正式审查材料。'],
                     'confidence': 'medium',
-                    'whetherManualReviewNeeded': candidate.manualReviewNeeded,
                 }
             )
         return payloads
@@ -62,7 +61,6 @@ class FallbackLLM:
                     'policyEvidence': [span.model_dump(mode='json') for span in candidate.policyEvidence],
                     'recommendation': ['fallback'],
                     'confidence': 'low' if candidate.manualReviewNeeded else 'medium',
-                    'whetherManualReviewNeeded': candidate.manualReviewNeeded,
                 }
             )
         return payloads

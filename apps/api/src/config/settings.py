@@ -12,6 +12,7 @@ class Settings:
     artifacts_dir: Path
     verification_dir: Path
     tasks_dir: Path
+    uploads_dir: Path
     database_path: Path
     fixture_manifest_path: Path
     api_host: str
@@ -27,13 +28,16 @@ def get_settings() -> Settings:
     artifacts_dir = project_root / 'artifacts'
     verification_dir = artifacts_dir / 'verification'
     tasks_dir = artifacts_dir / 'tasks'
+    uploads_dir = artifacts_dir / 'uploads'
     verification_dir.mkdir(parents=True, exist_ok=True)
     tasks_dir.mkdir(parents=True, exist_ok=True)
+    uploads_dir.mkdir(parents=True, exist_ok=True)
     return Settings(
         project_root=project_root,
         artifacts_dir=artifacts_dir,
         verification_dir=verification_dir,
         tasks_dir=tasks_dir,
+        uploads_dir=uploads_dir,
         database_path=tasks_dir / 'runtime.sqlite',
         fixture_manifest_path=project_root / 'fixtures' / 'manifest.json',
         api_host=os.getenv('REVIEW_CONTROL_API_HOST', '127.0.0.1'),

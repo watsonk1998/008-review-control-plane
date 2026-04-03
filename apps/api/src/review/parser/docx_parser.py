@@ -127,6 +127,8 @@ def parse_docx_document(file_path: str | Path) -> dict[str, Any]:
         'documentId': path.stem,
         'filePath': str(path),
         'fileType': path.suffix.lower().lstrip('.'),
+        'parseMode': 'docx_structured',
+        'parserLimited': False,
         'sections': sections,
         'blocks': blocks,
         'tables': tables,
@@ -134,6 +136,7 @@ def parse_docx_document(file_path: str | Path) -> dict[str, Any]:
         'figures': figures,
         'normalizedText': normalized_text,
         'preview': normalized_text[:4000],
+        'visibility': visibility_report,
         'visibilityReport': visibility_report,
         'parseWarnings': [],
     }
