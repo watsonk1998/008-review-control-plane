@@ -1,98 +1,92 @@
-下面这版可以直接交给研究型 AI。
-我按“越复杂越好、越能拉高回答质量”的思路写成了**完整版主 Prompt**，重点是：
+你现在的角色不是普通的“方案顾问”“:contentReference[oaicite:0]{index=0}人 + 工程文档作者**
 
-* 只以**当前仓库**为事实源
-* 把**已删除的旧仓库**彻底排除
-* 要它先做 **As-Is 真实盘点**
-* 再做 **Gap Analysis**
-* 最后输出 **完整产品架构设计书 / 演进设计书**
-* 强制绑定你已有的 round1 材料、改进建议、golden pool 指导书
-* 强制落到模块、文件、对象、评测、路线图、DoD 粒度
+你的任务不是再写一篇泛泛分析，也不是继续比较某个模型和某个系统谁更强。  
+你的任务是：
 
-你可以直接复制下面全文。
+> **基于当前真实存在的仓库与我提供的材料，输出一份完整、严谨、详尽、可执行、可验证的产品架构设计书。**
 
 ---
 
-# 可直接投喂研究型 AI 的完整版 Prompt
+# 一、绝对前提（必须严格遵守）
 
-你现在的角色不是“泛泛的方案顾问”或“评论者”，而是：
-
-**资深技术负责人 + Staff Engineer + 平台架构师 + 产品架构师 + 交付经理 + 评测负责人 + 审查系统方法论设计者**
-
-你的任务不是再写一篇普通分析，也不是再比较某个模型和某个系统谁更强。
-你要做的是：**基于当前真实存在的仓库和我提供的材料，输出一份完整、详尽、面向下一阶段持续演进的产品架构设计书。**
-
----
-
-# 一、最重要的事实前提（必须严格遵守）
-
-## 1）旧仓库已经删除，视为不存在
+## 1. 已删除旧仓库，视为完全不存在
 
 下面这个仓库：
 
 `https://github.com/watsonk1998/watson-agent-squad/tree/pr-monorepo-migration/008-review-control-plane`
 
-**已经删除，请完全当它不存在。**
+**已经删除。请把它视为完全不存在。**
 
-禁止行为：
+这不是“尽量不要依赖”，而是**禁止作为事实源**。
 
-* 不要引用它
-* 不要假设它还存在
-* 不要把它当作事实源
-* 不要把它的代码结构、文件路径、实现状态当成当前事实
-* 不要写“旧仓库里如何如何”来支撑当前判断
+### 你必须遵守以下限制
 
-如果我之前提供过基于旧仓库写的材料，那些材料也只能作为：
+- 不要引用这个仓库
+- 不要假设它还存在
+- 不要把它的目录、文件、模块、实现状态写成当前事实
+- 不要写“旧仓库中如何如何，因此当前系统如何如何”
+- 不要把基于旧仓库得出的结论直接当成当前 repo 的事实判断
 
-* 历史需求背景
-* 设计约束
-* 对系统目标的表达
-* 过往判断的参考
+如果我提供给你的某些材料是基于那个旧仓库写的，那么这些材料只能被视为：
+
+- 历史需求背景
+- 产品目标表达
+- 设计约束
+- 过往问题意识
+- 对 formal review / structured_review 的期待
 
 **不能作为当前代码事实。**
 
 ---
 
-## 2）当前唯一仓库事实源
+## 2. 当前唯一有效的代码事实源
 
-你必须以这个仓库为唯一代码事实源：
+你必须以这个仓库作为唯一代码事实源：
 
 `https://github.com/watsonk1998/008-review-control-plane`
 
-你所有关于代码、架构、模块、目录、对象、状态、实现程度的判断，都必须优先来自：
+你所有关于以下内容的判断，都必须优先来自当前仓库真实内容：
 
-* 当前仓库代码
-* 当前仓库 README
-* 当前仓库 docs
-* 当前仓库测试与 fixtures
-* 当前仓库前后端真实实现
+- 项目定位
+- README / docs
+- 目录结构
+- 模块职责
+- planner / router / runtime
+- domain models / task types / DTO
+- review 子域
+- adapters
+- frontend 类型与页面
+- fixtures / evaluation / tests
+- artifact API
+- golden pool / review_eval / regression 基础设施
 
 ---
 
-## 3）你将同时获得一批背景材料
+## 3. 我会同时提供你一组背景材料
 
-我会同时提供你一些材料，可能包括但不限于：
+我可能会给你以下材料中的一部分或大部分：
 
-1. 原始施组文档 / 施工组织设计文档
-2. Gemini deepresearch 生成的审查结果
-3. 当前 008 项目生成的审查结果
-4. 我之前写的 round1 prompt
-5. 修复任务书
-6. 改进建议
-7. golden pool / mini golden cases 指导书
-8. 其他与 structured review、formal review、评测样本池相关的说明文档
+1. 原始施组 / 施工组织设计文档 地址：`https://github.com/watsonk1998/008-review-control-plane/blob/main/fixtures/supervision/施工组织设计-培花初期雨水调蓄池建设工程.pdf` 和  `https://github.com/watsonk1998/008-review-control-plane/blob/main/fixtures/supervision/施工组织设计-冷轧厂2030单元三台行车电气系统改造.docx`
+2. Gemini deepresearch 审查结果 地址：`https://github.com/watsonk1998/008-review-control-plane/blob/main/fixtures/supervision/gemini-deepresearch审查结果-施工组织设计-冷轧厂2030单元三台行车电气系统改造.md` 和  `https://github.com/watsonk1998/008-review-control-plane/blob/main/fixtures/supervision/gemini-deepresearch审查结果-施工组织设计-培花初期雨水调蓄池建设工程.md`
+3. 当前 008 项目生成的审查结果 地址：`https://github.com/watsonk1998/008-review-control-plane/blob/main/fixtures/supervision/review-control-plane审查结果-施工组织设计-冷轧厂2030单元三台行车电气系统改造.md` 和  `https://github.com/watsonk1998/008-review-control-plane/blob/main/fixtures/supervision/review-control-plane审查结果-施工组织设计培花初期雨水调蓄池建设工程.md`
+4. 我此前写的 round1 prompt 地址：`https://github.com/watsonk1998/008-review-control-plane/blob/main/fixtures/任务书/改进建议-round1.md`
+5. 修复任务书 地址：`https://github.com/watsonk1998/008-review-control-plane/blob/main/fixtures/任务书/出具修复任务书的prompt-round1.md`
+6. 改进建议 地址：`https://github.com/watsonk1998/008-review-control-plane/blob/main/fixtures/任务书/修复任务书-round1.md`
+7. golden pool / mini golden cases 指导书 地址：`https://github.com/watsonk1998/008-review-control-plane/blob/main/fixtures/golden pool/golden pool指导书.md`
+8. 其他与 structured review / formal review / evaluation 相关的材料
 
 这些材料的用途是：
 
-* 让你理解项目真实业务目标
-* 让你理解我对 formal review 的预期
-* 让你做 gap analysis
-* 让你判断哪些旧建议已经被当前 repo 吸收，哪些还没落地
+- 帮助你理解真实业务目标
+- 帮助你理解我对 formal review 的预期
+- 帮助你做 gap analysis
+- 帮助你判断哪些旧建议已经被当前 repo 吸收，哪些还未落地
 
 但再次强调：
 
-> **这些材料不是当前 repo 代码事实源。**
-> 你必须先看当前 repo，再把这些材料作为约束和对照输入。
+> **这些材料不是当前 repo 的代码事实源。**
+
+你必须先基于当前 repo 进行真实盘点，再拿这些材料做差异对照与演进设计。
 
 ---
 
@@ -102,190 +96,415 @@
 
 # 008-review-control-plane 产品架构设计书（当前态盘点 + 下一阶段演进版）
 
-这份设计书必须同时完成以下三件事：
+这份文档不是普通分析报告，也不是白皮书，而是一份：
+
+- 面向下一阶段持续改造的正式设计书
+- 能指导工程实现与任务拆分的设计书
+- 能支撑 Codex / 工程师继续改仓库的设计书
+- 兼顾产品定位、系统边界、工程路径、评测闭环的设计书
+
+它必须同时完成三件事：
 
 ---
 
-## A. 真实盘点当前仓库（As-Is）
+## 目标 A：真实盘点当前仓库现状（As-Is）
 
-你必须基于当前仓库真实代码和 docs，回答：
+你必须基于当前仓库真实存在的 README、docs、代码、tests、fixtures、前后端实现，回答：
 
-* 这个项目现在到底是什么定位？
-* 它到底是 review control plane、formal reviewer、还是二者之间的某种过渡形态？
-* 当前有哪些能力已经实现？
-* 哪些能力只是骨架 / scaffold？
-* 哪些能力只是接口、DTO、README、docs 层面出现，但仍未真正做实？
-* 当前 `review_assist` 的边界是什么？
-* 当前 `structured_review` 的边界是什么？
-* 当前“正式结构化审查能力”到底是：
+- 这个项目现在到底是什么定位？
+- 它是 review control plane、formal reviewer、还是二者之间的过渡形态？
+- 当前有哪些能力已经真实落地？
+- 哪些能力只是骨架 / scaffold / skeleton？
+- 哪些能力只是 DTO / schema / interface 存在？
+- 哪些能力只是 README / docs 中被宣告了？
+- 哪些能力只在 testing / fixture 口径中出现？
+- 哪些能力仍明显未落地？
 
-  * 概念占位
-  * 初始骨架
-  * 最小可用路径
-  * 半成型系统
-  * 还是已具备稳定正式审查能力
-
-你必须给出清晰判断，而不是模糊表述。
+你不能只说“有/没有”，必须给出成熟度判断。
 
 ---
 
-## B. 做 Gap Analysis（当前仓库 vs 历史材料/目标预期）
+## 目标 B：对照历史材料做 Gap Analysis
 
-你必须对照我提供的这些背景材料，判断：
+你必须把我提供的历史材料视为：
 
-* 哪些诉求在当前 repo 已经落地
-* 哪些只落地了一半
-* 哪些仍明显缺失
-* 哪些旧版 round1 结论已经过时
-* 哪些旧版建议仍然成立
-* 哪些东西原本只是“设计目标”，现在已经进入真实代码
-* 哪些东西在 README 里有，但在代码里没有
-* 哪些东西在测试口径里有，但运行时还不够实
+- 需求背景
+- 产品目标
+- 历史判断
+- 对 formal review 的约束表达
+- 评测建设思路
 
-你必须专门写一节分析：
+然后分析：
 
-# 当前 repo 与旧版 round1 任务书 / 改进建议之间的关系
+- 哪些历史诉求已经被当前 repo 吸收
+- 哪些只吸收了一半
+- 哪些还明显没有落地
+- 哪些旧版 round1 判断今天已经不适用
+- 哪些判断今天仍成立
+- 哪些建议已经从“概念/文档”进入了代码
+- 哪些仍停留在命名或口号层
+- 哪些下一阶段不该再重复提出
+- 哪些下一阶段仍然应是优先事项
 
-至少回答：
+必须专门有一节：
 
-* round1 里哪些判断今天仍成立
-* 哪些判断现在需要修正
-* 哪些建议已经被吸收到当前 repo
-* 哪些建议只是“名义上吸收”，实现仍偏浅
-* 下一阶段不应该再重复哪些“已经做了的事”
-* 下一阶段真正该做的重点是什么
+# 当前 repo 与历史 round1 任务书 / 改进建议 / golden pool 指导材料的差异对照
 
 ---
 
-## C. 给出下一阶段的 To-Be 设计
+## 目标 C：给出下一阶段 To-Be 设计
 
-你的目标不是从 0 发明一个新系统，而是：
+你不能从 0 发明一个新系统。  
+你必须：
 
-> **基于当前已经存在的 repo，设计下一阶段的产品架构演进方案。**
+> **基于当前真实存在的 repo 状态，设计下一阶段如何继续演进。**
 
 也就是说，你要回答：
 
-* 当前这套系统下一阶段应该演进成什么？
-* 产品定位如何表述更准确？
-* `review_assist` 与 `structured_review` 的关系如何稳定下来？
-* formal review 到底应该由哪些层组成？
-* 当前哪些薄弱点最值得优先补强？
-* 哪些部分要保留，哪些部分要重构，哪些部分要新增？
-* 哪些改造适合 P0，哪些适合 P1，哪些适合 P2？
-* 如何避免为单案例打补丁？
-* 如何让系统变得可解释、可评测、可回归，而不是只会生成更长的报告？
+- 下一阶段这个产品应该如何定义？
+- `review_assist` 与 `structured_review` 的边界如何稳定下来？
+- formal review 到底应该由哪些层构成？
+- 当前最值得优先补强的真实短板是什么？
+- 哪些部分应该保留、哪些应该重构、哪些应该新增？
+- 哪些工作属于 P0、哪些属于 P1、哪些属于 P2？
+- 如何避免为单案例打补丁？
+- 如何让系统变得可解释、可评测、可回归，而不是只会生成更长报告？
 
 ---
 
-# 三、你必须遵守的核心原则（非协商）
+# 三、研究流程要求（你必须按这个流程工作）
 
-## 原则 1：不要把当前仓库写成“从零开始”
+你不能只浏览 README 后直接写方案。  
+你必须严格按下面的顺序研究和输出。
+
+---
+
+## 第 1 步：先做当前仓库真实盘点
+
+你必须先识别：
+
+- 关键目录
+- 关键模块
+- 关键文件
+- 关键对象
+- 关键 API
+- 关键 task types
+- 关键 artifacts
+- 关键 tests / fixtures / eval assets
+
+你必须先回答“现在有什么”，再回答“未来该做什么”。
+
+---
+
+## 第 2 步：对关键能力做成熟度判定
+
+对每项能力，你不能只说“存在”。  
+你必须使用以下成熟度标签之一：
+
+- **已实现（working implementation）**
+- **初步可用（minimally working）**
+- **有骨架（scaffold only）**
+- **仅 DTO / schema 存在（DTO only）**
+- **仅 README / docs 声明（docs only）**
+- **仅测试口径存在（test-only evidence）**
+- **尚未落地（not landed）**
+
+并解释你的判定依据。
+
+---
+
+## 第 3 步：再对照历史材料
+
+你必须明确对照以下东西（如果我提供了）：
+
+- round1 prompt
+- 修复任务书
+- 改进建议
+- golden pool 指导书
+- 原始施组
+- Gemini 结果
+- 008 当前结果
+
+你必须判断：
+
+- 哪些旧诉求已被当前 repo 吸收
+- 哪些旧判断已过时
+- 哪些还值得继续推进
+
+---
+
+## 第 4 步：最后输出 To-Be 设计
+
+只有完成前 3 步后，才可以开始写下一阶段设计。  
+不能跳过 As-Is 和 Gap Analysis，直接凭想象写 To-Be。
+
+---
+
+# 四、你必须重点检查的真实文件 / 模块
+
+你必须优先检查并绑定真实路径。  
+至少覆盖以下内容。
+
+---
+
+## A. 仓库顶层与文档
+
+- `README.md`
+- `DELIVERY_REPORT.md`
+- `docs/architecture.md`
+- `docs/formal-review.md`
+- `docs/testing.md`
+- `docs/known-limitations.md`
+- 其他与 review / structured_review / artifacts / evaluation / fixtures 强相关的 docs
+
+---
+
+## B. 后端 API / Domain / Runtime
+
+- `apps/api/src/domain/models.py`
+- `apps/api/src/routes/tasks.py`
+- `apps/api/src/repositories/sqlite_store.py`
+- `apps/api/src/services/document_loader.py`
+- `apps/api/src/orchestrator/planner.py`
+- `apps/api/src/orchestrator/router.py`
+- `apps/api/src/orchestrator/deepresearch_runtime.py`
+
+---
+
+## C. Adapters
+
+- `apps/api/src/adapters/llm_gateway.py`
+- `apps/api/src/adapters/gpt_researcher_adapter.py`
+- `apps/api/src/adapters/fastgpt_adapter.py`
+- 其他与结果生成、研究、证据、摘要、检索相关的 adapter
+
+---
+
+## D. Review 子域（如存在）
+
+- `apps/api/src/review/`
+- 其下的：
+  - parser
+  - extractors
+  - rules
+  - evidence
+  - report
+  - evaluation
+  - schema
+  - pipeline
+  - pack registry
+  - issue builder
+  - report builder
+  - matrices / artifact builder
+
+---
+
+## E. 前端
+
+- `apps/web/src/types/control-plane.ts`
+- `apps/web/src/components/home-dashboard.tsx`
+- `apps/web/src/components/task-detail.tsx`
+- 其他与 task type、structured review 创建、结果渲染、artifact 展示、issue/matrices 展示相关的文件
+
+---
+
+## F. Fixtures / Evaluation / Tests
+
+- `fixtures/review_eval/`（如存在）
+- `fixtures/copied/` 中与审查相关的样本
+- review/evaluation 相关 schema、case metadata、ground truth、expected facts、expected rule hits
+- review/evaluation harness
+- tests / smoke / regression / ablations / cross-pack / cross-model 相关资产
+
+---
+
+# 五、你必须回答的核心问题（不得遗漏）
+
+请在文中逐项明确回答以下问题。
+
+---
+
+## 1. 当前项目真实定位是什么？
+
+你必须结合以下维度综合判断：
+
+- README 中的定位
+- architecture docs 中的边界
+- planner / router / runtime 职责
+- review 子域是否存在及其职责
+- frontend 是否已经区分 `review_assist` / `structured_review`
+- testing / eval 是否已支持 formal review
+
+不能只用一句 slogan 回答。
+
+---
+
+## 2. 当前 `structured_review` 到什么成熟度？
+
+你必须明确判断它更像以下哪一类：
+
+- 名义存在
+- DTO 存在
+- 流程骨架存在
+- 最小可用路径
+- 半成型系统
+- 能较稳定承担正式审查
+- 仍只是 P1 级原型
+
+并必须给出证据。
+
+---
+
+## 3. 当前 repo 与历史 round1 材料有哪些关键不一致？
+
+必须专门写一节，逐项指出：
+
+- 历史材料中的旧版假设是什么
+- 当前 repo 的真实状态是什么
+- 哪些旧结论已经不适用
+- 哪些旧建议已经被吸收
+- 哪些只吸收了一半
+- 这些差异如何改变下一阶段设计书写法
+
+---
+
+## 4. 当前最大的真实短板在哪里？
+
+你必须分别分析：
+
+- 输入对象定义问题
+- parser 深度问题
+- facts 抽取覆盖不足
+- rules / packs 过浅
+- evidence linking 不足
+- issue schema / result contract 不足
+- report builder 不足
+- UI 展示与人工复核不足
+- golden pool / evaluation 不足
+- runtime 职责边界不清
+- legacy `review_assist` 对整体产品认知的干扰
+
+---
+
+## 5. 下一阶段最值得做的 P0 / P1 / P2 是什么？
+
+必须是：
+
+> **基于当前 repo 真实状态继续演进**
+
+不是重新写一版“从 0 到 1 引入 structured_review”的旧方案。
+
+如果某能力当前已经存在，但你认为做得太浅，那么你必须明确表述为：
+
+- 做实
+- 补强
+- 收敛
+- 解耦
+- 规范化
+- 稳定化
+- 评测化
+
+而不是笼统写“新增”。
+
+---
+
+# 六、核心原则（非协商）
+
+---
+
+## 原则 1：不能把当前仓库写成“空白系统”
 
 你必须承认并处理这个现实：
 
-* 当前 repo 已经不是最早的空白 control plane
-* 当前 repo 里很可能已经有 `structured_review`、review schema、review pipeline、testing、fixtures、DTO、artifact 之类内容
-* 因此这次设计书不能按“仓库里完全没有这些能力”的方式来写
-
-也就是说：
-
-> 你不能再输出一份“新增 structured_review、引入 review 子域、加 TaskType”的老版从 0 到 1 任务书，除非你已经核实当前 repo 里真的没有这些东西。
+- 当前 repo 很可能已经出现 `structured_review`
+- 已经可能存在 review schema / DTO / pipeline / artifacts / fixtures / eval / UI type
+- 因此这份设计书不能按“仓库里完全没有这些东西”的方式来写
 
 ---
 
 ## 原则 2：必须区分“已实现 / 已声明 / 已部分实现 / 未落地”
 
-你对每项能力都必须显式判定状态，例如：
+至少对以下能力逐项标状态：
 
-* 已实现（working implementation）
-* 已有骨架（scaffold only）
-* 文档已声明但实现不完整
-* 测试口径存在但未稳定
-* 仅 DTO / 接口存在
-* 尚未落地
-
-至少覆盖以下能力：
-
-* `review_assist`
-* `structured_review`
-* task/request/result DTO
-* `DocumentLoader`
-* parse / extract / rules / evidence / report
-* policy pack
-* evidence pack
-* artifacts
-* frontend task entry / detail rendering
-* evaluation harness
-* golden pool / mini golden cases
-* 模块级消融
-* 跨模型评测
-* 跨 pack 评测
-* visibility / attachment / manual review 机制
+- `review_assist`
+- `structured_review`
+- request / response DTO
+- `DocumentLoader`
+- parse / extract / rules / evidence / report
+- policy packs
+- evidence packs
+- artifacts
+- frontend task entry / detail rendering
+- evaluation harness
+- golden pool / mini golden cases
+- 模块级消融
+- 跨模型评测
+- 跨 pack 评测
+- visibility / attachment / manual review 机制
 
 ---
 
-## 原则 3：坚持双轨制，但不要假装当前仓库还没开始双轨
+## 原则 3：坚持双轨制，但不要假装当前 repo 还没开始双轨
 
-你必须显式分析：
+你必须分析：
 
-* `review_assist` 是否仍然是辅助审查总结
-* `structured_review` 是否已经开始承担正式结构化审查
-* 当前双轨制是“概念已明确”还是“代码已初步成立”
-* 下一阶段核心问题，不是“要不要双轨”，而是“如何把这条双轨做稳、做深、做清晰”
-
----
-
-## 原则 4：正式审查不能被写成一个大 prompt
-
-你必须围绕以下六层流水线来分析和设计，并对每一层分别判断当前状态与下一阶段建议：
-
-* 文档解析层
-* 事实抽取层
-* 规则命中层
-* 证据归档层
-* LLM 解释层
-* 报告组装层
-
-你必须回答：
-
-* 当前 repo 里哪些层已经真实存在
-* 哪些层只是名字存在
-* 哪些层仍严重依赖 LLM 粗综合
-* 哪些层已经开始结构化
-* 下一阶段最该加强哪几层
+- `review_assist` 是否仍然是辅助审查总结
+- `structured_review` 是否已经开始承担正式结构化审查
+- 当前双轨制是“概念已明确”还是“代码已初步成立”
+- 下一阶段真正的问题不是“要不要双轨”，而是“如何把这条双轨做稳、做深、做清晰”
 
 ---
 
-## 原则 5：不能把“换更强模型”当核心方案
+## 原则 4：正式审查不是一个大 prompt
+
+你必须围绕以下六层流水线来分析和设计：
+
+- 文档解析层
+- 事实抽取层
+- 规则命中层
+- 证据归档层
+- LLM 解释层
+- 报告组装层
+
+对每一层都要回答：
+
+- 当前 repo 是否已有对应实现
+- 是真实实现、部分实现、还是只是命名/接口
+- 这一层目前主要依赖确定性逻辑，还是仍高度依赖 LLM
+- 下一阶段最应该如何补强
+
+---
+
+## 原则 5：不能把换模型当主答案
 
 你必须明确反对以下伪改进：
 
-* 只换更大模型
-* 只加更长 prompt
-* 只增加上下文
-* 只模仿 Gemini 文风
-* 只把输出改成 L1/L2/L3 样式
-* 为单一案例硬编码若干特征
-* 把工程增强建议伪装成强制性缺陷
-* 把“系统没看到”当成“文档没有”
+- 只换更大模型
+- 只加更长 prompt
+- 只扩大上下文
+- 只模仿 Gemini 文风
+- 只把输出改成 L1/L2/L3 样式
+- 为当前案例硬编码 patch
+- 把建议性工程增强伪装成强制性缺陷
+- 把“系统没看到”当成“文档没有”
 
 ---
 
-## 原则 6：必须继续强化 visibility / attachment / manual review
+## 原则 6：必须显式分析 visibility / attachment / manual review
 
 你必须专门分析以下概念在当前 repo 中的真实落地情况：
 
-* `visibility_gap`
-* `attachment_unparsed`
-* `evidence_missing`
-* `manual_review_needed`
+- `visibility_gap`
+- `attachment_unparsed`
+- `evidence_missing`
+- `manual_review_needed`
 
 并判断：
 
-* 当前 repo 是否已经有这些概念或其等价物
-* 是只存在 schema / DTO 里，还是已经进入运行时逻辑
-* 哪些地方仍然可能把“未解析”误判成“缺失”
-* 哪些地方需要继续补齐
+- 当前 repo 是否已经有这些概念或其等价物
+- 是只存在 schema / DTO 里，还是已经进入 runtime / rule / report / UI 逻辑
+- 哪些地方仍可能把“未解析”误判成“缺失”
+- 下一阶段如何补齐
 
 ---
 
@@ -293,137 +512,17 @@
 
 你必须结合我提供的 golden pool / mini golden cases 指导材料，分析：
 
-* 当前 repo 是否已经有 `fixtures/review_eval/`、seed cases、schema、evaluation harness 等基础设施
-* 当前评测资产到底是 bootstrap、seed、内部回归集、还是稳定 golden pool
-* 当前评测设计能否真正支撑 formal review 的持续演进
-* 下一阶段如何从 mini golden cases 走向稳定 golden pool
-* 如何把 facts / rule hits / visibility / final issues 全部纳入评测
+- 当前 repo 是否已经有 `fixtures/review_eval/`、schema、seed cases、expected facts、expected rule hits、evaluation harness
+- 当前评测资产是 bootstrap、seed、mini golden cases、内部回归集还是稳定 golden pool
+- 当前评测设计能否真正支撑 formal review 演进
+- 下一阶段如何从 mini golden cases 走向正式 golden pool
+- 如何把 facts / rule hits / visibility / final issues 全部纳入评测
 
 ---
 
-# 四、你必须重点检查的真实文件 / 模块
+# 七、你必须给出的输出结构（不得省略）
 
-你必须优先检查并绑定真实路径。至少覆盖：
-
-## 仓库顶层 / 文档
-
-* `README.md`
-* `docs/architecture.md`
-* `docs/testing.md`
-* 其他与 review / structured_review / evaluation / fixtures 有关的 docs
-
-## 后端 API / Domain / Runtime
-
-* `apps/api/src/domain/models.py`
-* `apps/api/src/routes/tasks.py`
-* `apps/api/src/repositories/sqlite_store.py`
-* `apps/api/src/services/document_loader.py`
-* `apps/api/src/orchestrator/planner.py`
-* `apps/api/src/orchestrator/router.py`
-* `apps/api/src/orchestrator/deepresearch_runtime.py`
-
-## Adapters
-
-* `apps/api/src/adapters/llm_gateway.py`
-* `apps/api/src/adapters/gpt_researcher_adapter.py`
-* `apps/api/src/adapters/fastgpt_adapter.py`
-* 其他与 review 输出直接相关的 adapter（如存在）
-
-## Review 子域（如存在）
-
-* `apps/api/src/review/`
-* 其下的 parser / extractors / rules / evidence / report / evaluation
-* 其 schema / pipeline / result builder / artifacts
-
-## 前端
-
-* `apps/web/src/types/control-plane.ts`
-* `apps/web/src/components/home-dashboard.tsx`
-* `apps/web/src/components/task-detail.tsx`
-* 其他与 task type、structured review 展示、artifact 渲染相关的文件
-
-## Fixtures / Evaluation / Tests
-
-* `fixtures/review_eval/`（如存在）
-* `fixtures/copied/` 中与审查相关的样本（如存在）
-* review/evaluation 相关脚本、schema、测试
-* 其他能体现当前评测体系的目录
-
----
-
-# 五、你必须回答的核心问题
-
-请在文中逐项明确回答以下问题，不得遗漏：
-
-## 1）当前项目真实定位是什么？
-
-不是口号，要结合 README、架构文档、planner/router/runtime 边界、review 子域和 UI 来判断。
-
----
-
-## 2）当前 `structured_review` 到什么成熟度？
-
-你必须清晰判断它更像：
-
-* 名义存在
-* DTO 存在
-* 流程骨架存在
-* 最小可用路径
-* 半成型系统
-* 还是可以稳定承担正式审查
-
-并且必须说明判断依据。
-
----
-
-## 3）当前 repo 与我历史 round1 材料有哪些关键不一致？
-
-必须专门列一节，逐项指出：
-
-* 旧版假设
-* 当前 repo 真实状态
-* 哪些旧结论已经不适用
-* 这会如何改变下一阶段设计书的写法
-
----
-
-## 4）当前最大的真实短板在哪里？
-
-你必须区分并分别分析：
-
-* 输入对象定义问题
-* parser 深度问题
-* facts 抽取覆盖不足
-* rules / packs 不足
-* evidence linking 不足
-* issue schema / result contract 不足
-* report builder 不足
-* UI 展示和人工复核链路不足
-* golden pool / eval 不足
-* runtime 职责边界不清
-* legacy `review_assist` 对整体认知的干扰
-
----
-
-## 5）下一阶段最值得做的 P0 / P1 / P2 是什么？
-
-这里的路线图必须是：
-
-> **基于当前仓库已有实现继续演进**
-
-不是再写一份老版“从 0 加 structured_review”的计划。
-
-你必须避免重复提出那些已经在当前 repo 里做了的事情，除非你的判断是：
-
-* 它虽然出现了，但实现过浅
-* 仍然不能满足下一阶段目标
-* 所以要“做实”而不是“新增”
-
----
-
-# 六、你必须输出的章节结构（不得省略）
-
-你的最终文档必须包含以下章节，并按此顺序组织：
+你的最终文档必须按以下顺序输出。
 
 ---
 
@@ -431,10 +530,10 @@
 
 要求：
 
-* 300~600 字
-* 明确说明：这份文档是基于**当前真实存在的 main 仓库**做的下一阶段演进设计
-* 明确指出：已删除旧仓库不再作为事实源
-* 明确总结当前状态、核心差距、下一阶段方向
+- 300~600 字
+- 明确说明：本设计书基于当前真实存在的仓库
+- 明确说明：已删除旧仓库不再作为事实源
+- 总结当前状态、核心差距、下一阶段方向
 
 ---
 
@@ -442,333 +541,619 @@
 
 要求：
 
-* 逐模块、逐关键文件盘点
-* 给出“当前职责 / 当前状态 / 当前限制 / 对 formal review 的意义”
-* 不能泛泛而谈，必须绑定真实路径和真实实现
+- 逐模块、逐关键文件盘点
+- 写清：
+  - 当前职责
+  - 当前实现状态
+  - 当前限制
+  - 对 formal review 的意义
+- 必须绑定真实路径
+- 不得泛泛描述
 
 ---
 
-## C. 与历史材料的差异对照（Gap Analysis Against Historical Materials）
+## C. 能力成熟度总表（Capability Maturity Matrix）
+
+这一章必须单独存在，并至少提供一张总表。
+
+### 表格列建议
+
+- 能力名称
+- 所属层（runtime / review / UI / eval / data / artifact）
+- 当前状态（已实现 / 初步可用 / scaffold / DTO only / docs only / not landed）
+- 证据文件
+- 当前主要问题
+- 下一阶段动作建议
+
+### 至少覆盖以下能力
+
+- task types
+- review_assist
+- structured_review
+- document parsing
+- facts extraction
+- rule matching
+- evidence linking
+- report building
+- artifact generation
+- UI rendering
+- fixtures / review_eval
+- evaluation harness
+- regression baseline
+- pack selection
+- manual review flow
+
+---
+
+## D. 与历史材料的差异对照（Gap Analysis Against Historical Materials）
 
 要求：
 
-* 专门分析我给你的历史材料与当前 repo 的关系
-* 明确指出：
-
-  * 哪些已吸收
-  * 哪些只吸收了一半
-  * 哪些尚未落地
-  * 哪些旧版判断已过时
-* 这一章必须非常清晰，因为它决定你后续设计书不能再沿用旧前提
+- 明确对照我给你的：
+  - round1 prompt
+  - 修复任务书
+  - 改进建议
+  - golden pool 指导书
+  - 原始施组 / Gemini / 008 当前结果（如提供）
+- 逐项指出：
+  - 已吸收
+  - 已部分吸收
+  - 仍未落地
+  - 已过时
+- 必须说明这些差异如何影响后续设计
 
 ---
 
-## D. 当前能力边界（Capability Boundary）
+## E. 当前能力边界（Capability Boundary）
 
 要求：
 
 必须清晰区分：
 
-* `review_assist`
-* `structured_review`
-* orchestrator / runtime
-* adapters
-* review domain
-* frontend
-* evaluation
+- `review_assist`
+- `structured_review`
+- orchestrator / runtime
+- adapters
+- review domain
+- frontend
+- evaluation / fixtures
 
-并回答：
+必须回答：
 
-* 谁负责辅助总结
-* 谁负责正式结构化审查
-* 谁负责证据
-* 谁负责结果组装
-* 谁负责评测
-* 哪些边界仍然混淆
-
----
-
-## E. 关键问题与真实风险
-
-要求：
-
-* 不是抽象风险清单
-* 必须基于当前实现写
-* 要覆盖：
-
-  * 输入解析
-  * visibility
-  * facts
-  * rules
-  * evidence
-  * report
-  * UI
-  * eval
-  * regression
-  * pack overfitting
-  * legacy chain interference
+- 谁负责辅助总结
+- 谁负责正式结构化审查
+- 谁负责 pack / rule / evidence
+- 谁负责 artifacts
+- 谁负责 UI 呈现
+- 谁负责评测与回归
+- 哪些边界仍然混淆
 
 ---
 
-## F. 目标产品定位（To-Be Product Positioning）
+## F. 关键问题与真实风险
 
 要求：
 
-* 回答下一阶段这个产品到底应如何定义
-* 不要只是重复 README
-* 要从“产品能力边界”和“用户预期管理”两个角度来写
-* 必须体现双轨制
+不能写成泛泛风险清单。  
+必须基于当前实现写，并至少覆盖：
+
+- 输入解析风险
+- visibility 误判风险
+- facts 漏抽 / 错抽风险
+- rules / packs 过浅风险
+- evidence 链条不完整风险
+- LLM 越权判断风险
+- report builder 过度摘要风险
+- UI / 人工复核链路不足风险
+- regression 体系不足风险
+- single-case overfitting 风险
+- legacy `review_assist` 持续干扰产品认知的风险
 
 ---
 
-## G. 目标架构设计（To-Be Architecture）
+## G. 目标产品定位（To-Be Product Positioning）
 
 要求：
 
-* 仍围绕 review pipeline 来组织
-* 但必须基于当前 repo 的真实现状来提出增强设计
-* 必须说明：
+- 从产品能力边界和用户预期管理两个角度来写
+- 明确说明下一阶段这个项目应该如何定义
+- 必须体现双轨制：
+  - `review_assist`
+  - `structured_review`
 
-  * 哪些层保留
-  * 哪些层做实
-  * 哪些层新增
-  * 哪些层解耦
-  * 哪些职责应该继续留在 runtime
-  * 哪些职责必须下沉到 review 子域
+你必须解释：
+
+- 什么应该继续归属于 `review_assist`
+- 什么必须归属于 `structured_review`
+- 为什么这种划分符合 control plane 的长期定位
 
 ---
 
-## H. 核心对象与结果契约设计（Core Models & Result Contract）
+## H. 目标架构设计（To-Be Architecture）
 
 要求：
 
-至少覆盖这些对象及其状态判断：
+你必须以工程实现视角描述下一阶段架构，不要只写概念。
 
-* `TaskType`
-* `StructuredReviewTask`
-* `DocumentParseResult`
-* `AttachmentVisibility`
-* `ExtractedFacts`
-* `RuleHit`
-* `IssueCandidate`
-* `FinalIssue`
-* `ReviewLayer`
-* `FindingType`
-* `EvidenceSpan`
-* `artifactIndex`
-* `reportMarkdown`
-* `manualReviewNeeded`
-* `visibilityGap`
-* 其他你认为已存在或应补强的关键对象
+必须覆盖：
+
+- runtime 与 review domain 的边界
+- parser / extractors / rules / evidence / report / evaluation
+- pack 机制
+- artifact 机制
+- result contract
+- UI consumption contract
+- regression / evaluation assets
+
+必须明确：
+
+- 哪些层保留
+- 哪些层做实
+- 哪些层新增
+- 哪些层解耦
+- 哪些职责继续留在 runtime
+- 哪些职责必须下沉到 review 子域
+
+---
+
+## I. 核心对象与结果契约设计（Core Models & Result Contract）
+
+要求：
+
+至少覆盖以下对象，并逐项分析：
+
+- `TaskType`
+- `StructuredReviewTask`
+- `DocumentParseResult`
+- `AttachmentVisibility`
+- `ExtractedFacts`
+- `RuleHit`
+- `IssueCandidate`
+- `FinalIssue`
+- `ReviewLayer`
+- `FindingType`
+- `EvidenceSpan`
+- `artifactIndex`
+- `reportMarkdown`
+- `manualReviewNeeded`
+- `visibilityGap`
 
 对每个对象至少回答：
 
-* 当前 repo 是否已经有
-* 若有，是在哪个文件
-* 是完整实现、部分实现、还是仅 DTO
-* 下一阶段建议如何调整
+- 当前 repo 是否已有
+- 若已有，在哪个文件
+- 是完整实现 / 部分实现 / DTO only / docs only
+- 下一阶段是否需要扩展、收敛、拆分、前后端对齐
+
+如合适，请给出 JSON Schema / Pydantic / TS type 级别的结构草图。
 
 ---
 
-## I. 下一阶段分期路线图（P0 / P1 / P2）
+## J. 六层流水线与 L0/L1/L2/L3 的映射分析
 
 要求：
 
-* 必须基于当前状态继续演进
-* 不能重复“新增早已存在的概念”
-* 每阶段都要明确：
+必须专门写一节，清晰说明：
 
-  * 目标
-  * 范围
-  * 文件/模块
-  * 交付产物
-  * 风险
-  * 验收标准
+### 六层流水线
+- 文档解析层
+- 事实抽取层
+- 规则命中层
+- 证据归档层
+- LLM 解释层
+- 报告组装层
 
-建议你用下面这种思路：
+### L0/L1/L2/L3
+- L0 可视域检查
+- L1 硬证据与强规则
+- L2 条文适用与规范差距
+- L3 工程推理与整改编排
 
-* **P0：把当前已有骨架做实，形成稳定最小可用 formal review 路径**
-* **P1：补齐 pack / evidence / matrices / UI / eval / regression**
-* **P2：增强复杂工程推理、多模态、运营化与闭环能力**
+请说明：
 
-但不要机械照搬，必须以当前 repo 真实状态为准。
+- 当前 repo 中哪些已经存在
+- 哪些是概念上存在
+- 哪些仍然混在一起
+- 如何在下一阶段把两套视角真正映射清楚
 
 ---
 
-## J. 文件级改造矩阵（File-level Engineering Plan）
+## K. 下一阶段分期路线图（P0 / P1 / P2）
 
 要求：
 
-必须细到可以分配给工程师 / Codex 的粒度。
+必须基于当前 repo 已有能力继续演进。  
+不要重复提出那些已经落地的概念，除非你的判断是“它们需要被做实”。
 
-至少包含列：
+每个阶段都必须明确：
 
-* 优先级（P0/P1/P2）
-* 模块
-* 当前文件
-* 新增文件
-* 修改目的
-* 具体改动点
-* 依赖关系
-* 风险
-* 验收标准
+- 目标
+- 范围
+- 涉及模块 / 文件
+- 交付产物
+- 风险
+- 验收标准
 
-必须尽量覆盖：
+建议逻辑可参考但不得机械照搬：
 
-* `document_loader.py`
-* `planner.py`
-* `router.py`
-* `deepresearch_runtime.py`
-* `llm_gateway.py`
-* `gpt_researcher_adapter.py`
-* `domain/models.py`
-* `routes/tasks.py`
-* `sqlite_store.py`
-* `apps/web/src/types/control-plane.ts`
-* `home-dashboard.tsx`
-* `task-detail.tsx`
-* `review/` 子域相关文件
-* `fixtures/review_eval/`、schema、evaluation harness
-* 其他关键文件
+### P0
+把当前已有骨架做实，形成稳定的最小可用 formal review 路径
+
+### P1
+补齐 pack / evidence / matrices / UI / eval / regression / result contract
+
+### P2
+增强复杂工程推理、多模态、运营化、人工复核闭环与平台化 pack 运营
 
 ---
 
-## K. 评测与 golden pool 演进方案（Evaluation & Golden Pool Roadmap）
+## L. 文件级改造矩阵（File-level Engineering Plan）
 
 要求：
 
-必须写清楚：
+这一章必须足够细，达到可以直接分配给工程师或 Codex 的粒度。
 
-### 1）当前状态是什么
+必须至少给出一张表，包含：
 
-* 是 seed cases？
-* bootstrap？
-* mini golden cases？
-* 还是稳定 golden pool？
+- 优先级（P0 / P1 / P2）
+- 模块
+- 当前文件
+- 新增文件
+- 修改目的
+- 具体改动点
+- 依赖关系
+- 风险
+- 验收标准
 
-### 2）当前问题是什么
+必须尽量覆盖以下文件：
 
-* facts 没纳入评测？
-* visibility 没纳入评测？
-* 只看最终报告？
-* 缺乏模块级回归？
-* 缺乏跨 pack / 跨模型对照？
+- `apps/api/src/services/document_loader.py`
+- `apps/api/src/orchestrator/planner.py`
+- `apps/api/src/orchestrator/router.py`
+- `apps/api/src/orchestrator/deepresearch_runtime.py`
+- `apps/api/src/adapters/llm_gateway.py`
+- `apps/api/src/adapters/gpt_researcher_adapter.py`
+- `apps/api/src/adapters/fastgpt_adapter.py`
+- `apps/api/src/domain/models.py`
+- `apps/api/src/routes/tasks.py`
+- `apps/api/src/repositories/sqlite_store.py`
+- `apps/web/src/types/control-plane.ts`
+- `apps/web/src/components/home-dashboard.tsx`
+- `apps/web/src/components/task-detail.tsx`
+- `apps/api/src/review/` 下核心文件
+- `fixtures/review_eval/` 下 schema / case / evaluation 相关文件
+- 其他你认为必须纳入改造计划的关键文件
 
-### 3）下一阶段怎么演进
+---
 
+## M. 评测与 golden pool 演进方案（Evaluation & Golden Pool Roadmap）
+
+要求：
+
+必须详细写清楚以下内容。
+
+### 1）当前评测状态
+- 当前 repo 的评测资产处于什么状态？
+- 属于 bootstrap、seed、mini golden cases、内部回归集、还是稳定 golden pool？
+
+### 2）当前主要问题
+- 是否只看最终报告？
+- 是否缺 facts 评测？
+- 是否缺 rule hits 评测？
+- 是否缺 visibility 评测？
+- 是否缺模块级回归？
+- 是否缺跨模型 / 跨 pack 对照？
+
+### 3）下一阶段演进方案
 至少覆盖：
 
-* 端到端评测
-* parser / extractors / rules / evidence / report 模块消融
-* 跨模型对照
-* 跨 pack 对照
-* facts / rule hits / visibility / final issues 分层评测
-* regression baseline
-* stable golden pool 的版本化机制
+- 端到端评测
+- parser / extractors / rules / evidence / report 的模块消融
+- 跨模型对照
+- 跨 pack 对照
+- facts / rule hits / visibility / final issues 分层评测
+- regression baseline
+- stable golden pool 版本化机制
 
 ### 4）样本池覆盖要求
-
 至少要求覆盖：
 
-* 施工组织设计
-* 一般施工方案
-* 危大专项方案
-* 监理规划 / 审查辅助材料
-* 机电安装类
-* 土建类
-* 钢结构类
-* 临电类
-* 起重吊装类
+- 施工组织设计
+- 一般施工方案
+- 危大专项方案
+- 监理规划 / 审查辅助材料
+- 机电安装类
+- 土建类
+- 钢结构类
+- 临电类
+- 起重吊装类
+
+### 5）防过拟合要求
+必须单列说明如何避免：
+
+- 冷轧厂样本特征硬编码
+- 只围绕单一行业样本优化
+- 只围绕 Gemini 风格优化
+- 工程增强建议伪装成硬缺陷
+- visibility 错误被带入 golden truth
 
 ---
 
-## L. 非目标与禁止事项（Non-goals & Anti-patterns）
+## N. 非目标与禁止事项（Non-goals & Anti-patterns）
 
 要求：
 
 必须单列并写透，至少包括：
 
-* 不为单案例硬编码
-* 不只靠 prompt
-* 不只靠更强模型
-* 不把系统没读到当成文档缺失
-* 不只模仿 Gemini 文风
-* 不把建议性工程增强伪装成强制性缺陷
-* 不先做一个庞大而空泛的多模态平台
-* 不把 `review_assist` 强行包装成 formal review
+- 不为单案例硬编码
+- 不只靠 prompt
+- 不只靠更强模型
+- 不把系统没读到当成文档缺失
+- 不只模仿 Gemini 文风
+- 不把建议性工程增强伪装成强制性缺陷
+- 不先做一个庞大而空泛的多模态平台
+- 不把 `review_assist` 强行包装成 formal review
 
 ---
 
-## M. Definition of Done
+## O. Definition of Done
 
 要求：
 
-必须明确写出下一阶段完成的判断标准。
+必须明确写出下一阶段完成的判断标准。  
 至少包含：
 
-* 功能 DoD
-* 数据契约 DoD
-* 评测 DoD
-* 回归 DoD
-* UI / artifact DoD
-* 文档 DoD
-* 风险边界 DoD
+- 功能 DoD
+- 数据契约 DoD
+- 结果可解释性 DoD
+- 评测 DoD
+- 回归 DoD
+- UI / artifact DoD
+- 文档 DoD
+- 风险边界 DoD
 
 ---
 
-# 七、分析方法要求（你必须这样做）
+# 八、你必须输出的表格（不得省略）
 
-你不能只浏览 README 然后写方案。
-你必须采用下面的方法：
-
-## 第一步：先做真实代码与 docs 盘点
-
-先识别当前仓库的真实结构和关键模块职责。
-
-## 第二步：给每项能力判定成熟度
-
-不是只说“有/没有”，而要说：
-
-* 完整
-* 初步
-* 骨架
-* 名义存在
-* 尚未落地
-
-## 第三步：再对照历史材料
-
-判断哪些历史判断已被当前 repo 吸收，哪些还没吸收。
-
-## 第四步：最后再输出 To-Be 设计
-
-不能跳过 As-Is 和 Gap Analysis，直接空想下一阶段。
+为了提高可执行性，你的文档必须至少包含以下表格。
 
 ---
 
-# 八、写作要求
+## 表 1：能力成熟度总表
+
+列建议：
+
+- 能力
+- 所属层
+- 当前状态
+- 证据文件
+- 当前问题
+- 下一步动作
+
+---
+
+## 表 2：历史材料 vs 当前 repo 差异表
+
+列建议：
+
+- 历史诉求 / 旧判断
+- 当前 repo 状态
+- 结论（已吸收 / 部分吸收 / 未落地 / 过时）
+- 对后续设计的影响
+
+---
+
+## 表 3：文件级改造矩阵
+
+列建议：
+
+- 优先级
+- 模块
+- 当前文件
+- 新增文件
+- 修改目的
+- 具体改动点
+- 风险
+- 验收标准
+
+---
+
+## 表 4：P0 / P1 / P2 路线表
+
+列建议：
+
+- 阶段
+- 目标
+- 核心任务
+- 依赖
+- 风险
+- 验收
+
+---
+
+## 表 5：评测演进表
+
+列建议：
+
+- 评测层
+- 当前状态
+- 问题
+- 下一阶段建设动作
+- 产物
+
+---
+
+# 九、证据与引用规则（必须遵守）
+
+为了避免你写成“听起来合理但未被仓库证实”的方案，你必须遵守以下规则。
+
+---
+
+## 1. 每一个关键判断都要尽量有依据
+
+你的关键判断必须尽量绑定以下证据之一：
+
+- README
+- docs
+- 代码文件
+- fixtures / tests / evaluation assets
+- 我提供的背景材料
+
+---
+
+## 2. 必须区分三类信息
+
+在文中尽量显式区分：
+
+- **已确认事实**
+- **合理推断**
+- **建议新增设计**
+
+---
+
+## 3. 不得把“推断”伪装成“当前实现事实”
+
+例如：
+
+- 如果某个对象在 README 中出现，但代码中没有足够证据，你不能写成“当前系统已实现”
+- 如果某个能力看起来应该存在，但你没有确认，也不能写成既成事实
+
+---
+
+## 4. 若 README / docs 有声明，但代码证据不足
+
+必须写成：
+
+- “文档已声明，但代码侧落地证据不足”
+- “schema 已出现，但系统级能力尚未完全贯通”
+- “存在概念或接口，但未见充分运行时证据”
+
+而不能偷换成“已完成”。
+
+---
+
+## 5. 对历史材料的使用方式
+
+历史材料只能用于：
+
+- 解释需求背景
+- 解释为何要做某项设计
+- 与当前 repo 做差异对照
+
+不能用于：
+
+- 伪造当前 repo 已有实现
+- 替代当前代码事实
+- 直接把旧版结论写成当前判断
+
+---
+
+# 十、你必须避免的常见失败模式
+
+请在分析和写作过程中主动避免以下失败模式。
+
+---
+
+## 失败模式 1：只看 README 就开始写方案
+你必须查看实际代码、docs、tests、fixtures、frontend。
+
+---
+
+## 失败模式 2：把旧版 round1 任务书当当前事实
+严格禁止。
+
+---
+
+## 失败模式 3：把 DTO / schema 存在误判为能力已落地
+你必须区分：
+
+- DTO 已有
+- runtime 已消费
+- report 已生成
+- UI 已渲染
+- eval 已纳入
+- regression 已覆盖
+
+---
+
+## 失败模式 4：把 `review_assist` 的能力误当成 `structured_review` 的成熟度
+你必须严格区分这两条链路。
+
+---
+
+## 失败模式 5：只讨论未来想要什么，不讨论现在已经有什么
+这份文档必须是：
+
+- As-Is
+- Gap Analysis
+- To-Be
+
+三部分都强。
+
+---
+
+## 失败模式 6：把“文本风格像 formal review”误当成“系统已经是 formal review”
+你必须关注：
+
+- 输入对象
+- facts
+- rules
+- evidence
+- matrices
+- artifacts
+- eval
+- regression
+- manual review
+
+而不是只看最终文本长相。
+
+---
+
+# 十一、你必须给出的结论形式
+
+在文档最后，你必须明确给出一段总结性结论，回答以下问题：
+
+1. 当前 repo 到底处于什么阶段？
+2. 当前 repo 最真实的优势是什么？
+3. 当前 repo 最真实的短板是什么？
+4. 下一阶段最值得投入的 3～5 件事是什么？
+5. 这 3～5 件事中，哪些属于：
+   - 做实已有骨架
+   - 解耦现有职责
+   - 新增能力
+   - 评测补齐
+6. 如果只能优先做一个阶段，你最建议先做哪个阶段，为什么？
+
+---
+
+# 十二、你的文风要求
 
 你的文风必须：
 
-* 专业
-* 克制
-* 工程化
-* 可执行
-* 结构化
-* 不宣传
-* 不口号化
-* 不写成论文腔空谈
+- 专业
+- 克制
+- 工程化
+- 结构化
+- 可执行
+- 可验证
+- 不宣传
+- 不口号化
+- 不写成泛泛论文
+- 不写成产品宣传稿
 
 你必须做到：
 
-* 明确区分“已确认事实 / 合理推断 / 建议新增设计”
-* 优先引用真实文件路径、真实模块、真实职责
-* 不得凭空虚构系统
-* 不得使用已删除旧仓库作为事实依据
-* 不得把历史材料里的说法直接当成当前代码事实
+- 优先引用真实路径、真实模块、真实职责
+- 清晰区分“事实 / 推断 / 建议”
+- 不凭空虚构系统
+- 不把已删除旧仓库作为事实依据
+- 不把历史材料里的说法直接当成当前代码事实
+- 不偷换概念，不把“名义存在”写成“稳定落地”
 
 ---
 
-# 九、特别提醒：你输出的不是哪三种东西
+# 十三、最终提醒：你输出的不是以下三种东西
 
 你输出的**不是**：
 
@@ -778,20 +1163,47 @@
 
 你输出的必须是：
 
-> **基于当前 `https://github.com/watsonk1998/008-review-control-plane` 真实状态的产品架构设计书 / 下一阶段演进设计书。**
+> **一份真正基于当前 `https://github.com/watsonk1998/008-review-control-plane` 真实状态的产品架构设计书 / 下一阶段演进设计书。**
 
 现在开始。
 
----
+附加硬约束：
 
-如果你愿意，我还能继续帮你补一版：
+1. 不得少于以下结构化输出量：
+   - 至少 1 张能力成熟度总表
+   - 至少 1 张历史材料差异表
+   - 至少 1 张文件级改造矩阵
+   - 至少 1 张 P0/P1/P2 路线表
+   - 至少 1 张评测演进表
 
-**“给研究型 AI 的附加要求清单”**
-专门强制它输出更狠一点，比如：
+2. 对每个“当前已实现”的判断，必须尽量给出代码或文档证据。
+   若证据不足，必须降级为：
+   - 初步可用
+   - scaffold only
+   - DTO only
+   - docs only
+   之一。
 
-* 先列出“已实现 / 骨架 / 未落地”总表
-* 必须给出 1 张文件级改造矩阵总表
-* 必须给出 1 张 P0/P1/P2 路线表
-* 必须给出 1 张当前 repo vs 历史 round1 的差异表
+3. 对每个“下一阶段建议”，尽量说明它属于：
+   - 做实已有骨架
+   - 解耦职责
+   - 新增能力
+   - 评测补齐
+   - UI / contract 对齐
+   中的哪一类。
 
-这样通常会让回答更稳。
+4. 对每个关键模块，尽量回答：
+   - 当前职责
+   - 当前成熟度
+   - 当前问题
+   - 下一阶段动作
+   - 为什么它优先级是 P0/P1/P2
+
+5. 若你发现某项能力在 README 中出现，但代码未见充分实现证据：
+   你必须显式指出“文档存在领先于实现”的情况。
+
+6. 若你发现某个 DTO / schema 已出现，但 runtime、UI、eval 没有形成闭环：
+   你必须显式指出“契约存在，但系统级能力未完全贯通”。
+
+7. 若你对某一部分无法确认：
+   必须诚实写出不确定性来源，而不是补全想象。
