@@ -1,0 +1,16 @@
+{
+  "attachments": [
+    {
+      "name": "附件1：施工网络进度表",
+      "expected_visibility": "referenced_only",
+      "manual_review_needed": true,
+      "notes": "原文目录已引用，但当前 seed case 不包含附件正文内容。"
+    },
+    {
+      "name": "附件2：施工总平面布置图",
+      "expected_visibility": "referenced_only",
+      "manual_review_needed": true,
+      "notes": "原文目录已引用，但当前 seed case 不包含附件正文内容。"
+    }
+  ]
+}

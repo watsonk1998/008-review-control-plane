@@ -1,0 +1,32 @@
+{
+  "case_id": "cn_puhua_rainwater_storage_pool",
+  "case_version": "v0.1.0-gemini-seed",
+  "schema_version": "v1",
+  "title": "施工组织设计-培花初期雨水调蓄池建设工程",
+  "doc_type": "construction_org",
+  "discipline_tags": [
+    "municipal",
+    "deep_excavation",
+    "foundation_pit",
+    "support_system",
+    "dewatering",
+    "pipe_jacking"
+  ],
+  "expected_packs": [
+    "construction_org.base",
+    "deep_excavation.base",
+    "dewatering.base",
+    "pipe_jacking.base"
+  ],
+  "label_source": "gemini_deepresearch",
+  "label_status": "seeded_unreviewed",
+  "truth_level": "bootstrap",
+  "review_status": "not_final",
+  "source_files": [
+    "fixtures/copied/supervision/施工组织设计-培花初期雨水调蓄池建设工程.pdf"
+  ],
+  "seed_review_files": [
+    "fixtures/copied/supervision/gemini-deepresearch审查结果-施工组织设计-培花初期雨水调蓄池建设工程.md"
+  ],
+  "notes": "本版本既包含 seed 问题，也包含正向 rule hit 预留，用于深基坑/危大识别回归。"
+}

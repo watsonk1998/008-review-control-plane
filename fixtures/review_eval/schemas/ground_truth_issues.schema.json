@@ -1,0 +1,83 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "GroundTruthIssues",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "required": [
+      "id",
+      "title",
+      "layer",
+      "severity",
+      "finding_type",
+      "label_source_type",
+      "doc_supported",
+      "gemini_supported",
+      "manual_review_needed",
+      "status"
+    ],
+    "properties": {
+      "id": {
+        "type": "string"
+      },
+      "title": {
+        "type": "string"
+      },
+      "layer": {
+        "type": "string",
+        "enum": [
+          "L0",
+          "L1",
+          "L2",
+          "L3"
+        ]
+      },
+      "severity": {
+        "type": "string",
+        "enum": [
+          "high",
+          "medium",
+          "low",
+          "info"
+        ]
+      },
+      "finding_type": {
+        "type": "string",
+        "enum": [
+          "hard_evidence",
+          "engineering_inference",
+          "visibility_gap",
+          "suggestion_enhancement"
+        ]
+      },
+      "label_source_type": {
+        "type": "string",
+        "enum": [
+          "doc_fact",
+          "gemini_inference",
+          "visibility_assumption"
+        ]
+      },
+      "doc_supported": {
+        "type": "boolean"
+      },
+      "gemini_supported": {
+        "type": "boolean"
+      },
+      "manual_review_needed": {
+        "type": "boolean"
+      },
+      "status": {
+        "type": "string",
+        "enum": [
+          "seeded_unreviewed",
+          "reviewed",
+          "deprecated"
+        ]
+      },
+      "notes": {
+        "type": "string"
+      }
+    }
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "case_id": "cn_baosteel_coldrolling_crane_230235",
+  "case_version": "v0.1.0-gemini-seed",
+  "schema_version": "v1",
+  "title": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+  "doc_type": "construction_org",
+  "discipline_tags": [
+    "electromechanical",
+    "lifting",
+    "gas_area",
+    "temporary_power",
+    "hot_work",
+    "special_equipment"
+  ],
+  "expected_packs": [
+    "construction_org.base",
+    "electromech_installation.base",
+    "lifting_operations.base",
+    "gas_area_ops.base"
+  ],
+  "label_source": "gemini_deepresearch",
+  "label_status": "seeded_unreviewed",
+  "truth_level": "bootstrap",
+  "review_status": "not_final",
+  "source_files": [
+    "fixtures/copied/supervision/施工组织设计-冷轧厂2030单元三台行车电气系统改造.docx"
+  ],
+  "seed_review_files": [
+    "fixtures/copied/supervision/gemini-deepresearch审查结果-施工组织设计-冷轧厂2030单元三台行车电气系统改造.md"
+  ],
+  "notes": "本版本基于原始施组与 Gemini deepresearch 结果生成，不等同于专家确认 gold truth。"
+}

@@ -1,0 +1,74 @@
+{
+  "facts": [
+    {
+      "key": "project_id",
+      "value": "230235",
+      "value_type": "string",
+      "support_type": "doc_fact",
+      "notes": "项目编号。"
+    },
+    {
+      "key": "contains_gas_area",
+      "value": true,
+      "value_type": "boolean",
+      "support_type": "doc_fact",
+      "notes": "工程特点中明确写有煤气区域。"
+    },
+    {
+      "key": "major_equipment_motor_count",
+      "value": 22,
+      "value_type": "integer",
+      "support_type": "doc_fact",
+      "notes": "原文写明共有22台电动机。"
+    },
+    {
+      "key": "single_crane_shutdown_days",
+      "value": 7,
+      "value_type": "integer",
+      "support_type": "doc_fact",
+      "notes": "单台行车停机改造时间为7天。"
+    },
+    {
+      "key": "has_attachment_1",
+      "value": true,
+      "value_type": "boolean",
+      "support_type": "doc_fact",
+      "notes": "目录中有附件1。"
+    },
+    {
+      "key": "has_attachment_2",
+      "value": true,
+      "value_type": "boolean",
+      "support_type": "doc_fact",
+      "notes": "目录中有附件2。"
+    },
+    {
+      "key": "duplicate_section_title",
+      "value": "防火安全",
+      "value_type": "string",
+      "support_type": "doc_fact",
+      "notes": "目录中第五节与第七节标题重复。"
+    },
+    {
+      "key": "construction_dates_have_dual_basis",
+      "value": true,
+      "value_type": "boolean",
+      "support_type": "doc_fact",
+      "notes": "既写固定开工日期，又写以批准开工报告为准。"
+    },
+    {
+      "key": "dangerous_work_special_plan_missing",
+      "value": true,
+      "value_type": "boolean",
+      "support_type": "gemini_inference",
+      "notes": "Gemini 明确指出危大工程专项方案缺失。"
+    },
+    {
+      "key": "gas_area_risk_identification_insufficient",
+      "value": true,
+      "value_type": "boolean",
+      "support_type": "gemini_inference",
+      "notes": "Gemini 指出煤气区域重大风险辨识不足。"
+    }
+  ]
+}

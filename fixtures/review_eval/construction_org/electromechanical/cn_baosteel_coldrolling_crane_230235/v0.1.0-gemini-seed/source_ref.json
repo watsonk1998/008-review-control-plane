@@ -1,0 +1,15 @@
+{
+  "source_document": {
+    "absolute_path": "/Users/lucas/repos/review/008-review-control-plane/fixtures/copied/supervision/施工组织设计-冷轧厂2030单元三台行车电气系统改造.docx",
+    "relative_path": "fixtures/copied/supervision/施工组织设计-冷轧厂2030单元三台行车电气系统改造.docx",
+    "doc_type": "construction_org",
+    "file_kind": "docx"
+  },
+  "review_seed_documents": [
+    {
+      "absolute_path": "/Users/lucas/repos/review/008-review-control-plane/fixtures/copied/supervision/gemini-deepresearch审查结果-施工组织设计-冷轧厂2030单元三台行车电气系统改造.md",
+      "relative_path": "fixtures/copied/supervision/gemini-deepresearch审查结果-施工组织设计-冷轧厂2030单元三台行车电气系统改造.md",
+      "source_type": "gemini_deepresearch_markdown"
+    }
+  ]
+}

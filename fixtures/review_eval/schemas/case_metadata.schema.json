@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "CaseMetadata",
+  "type": "object",
+  "required": [
+    "case_id",
+    "case_version",
+    "schema_version",
+    "title",
+    "doc_type",
+    "discipline_tags",
+    "expected_packs",
+    "label_source",
+    "label_status",
+    "truth_level",
+    "review_status",
+    "source_files",
+    "seed_review_files"
+  ],
+  "properties": {
+    "case_id": {
+      "type": "string"
+    },
+    "case_version": {
+      "type": "string"
+    },
+    "schema_version": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    },
+    "doc_type": {
+      "type": "string"
+    },
+    "discipline_tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "expected_packs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "label_source": {
+      "type": "string"
+    },
+    "label_status": {
+      "type": "string"
+    },
+    "truth_level": {
+      "type": "string"
+    },
+    "review_status": {
+      "type": "string"
+    },
+    "source_files": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "seed_review_files": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "notes": {
+      "type": "string"
+    }
+  }
+}

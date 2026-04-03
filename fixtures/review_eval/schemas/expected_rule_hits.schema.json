@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ExpectedRuleHits",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "required": [
+      "rule_id",
+      "expected_status",
+      "expected_match_type"
+    ],
+    "properties": {
+      "rule_id": {
+        "type": "string"
+      },
+      "expected_status": {
+        "type": "string",
+        "enum": [
+          "hit",
+          "pass",
+          "manual_review_needed"
+        ]
+      },
+      "expected_match_type": {
+        "type": "string",
+        "enum": [
+          "direct_hit",
+          "inferred_risk",
+          "visibility_gap"
+        ]
+      },
+      "notes": {
+        "type": "string"
+      }
+    }
+  }
+}

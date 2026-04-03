@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ExpectedFacts",
+  "type": "object",
+  "required": [
+    "facts"
+  ],
+  "properties": {
+    "facts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "key",
+          "value",
+          "value_type",
+          "support_type"
+        ],
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "value": {},
+          "value_type": {
+            "type": "string"
+          },
+          "support_type": {
+            "type": "string",
+            "enum": [
+              "doc_fact",
+              "gemini_inference",
+              "derived"
+            ]
+          },
+          "notes": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

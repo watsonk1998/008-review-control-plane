@@ -1,0 +1,32 @@
+[
+  {
+    "rule_id": "construction_org.has_hazardous_work_section",
+    "expected_status": "hit",
+    "expected_match_type": "direct_hit",
+    "notes": "7.7 危大工程清单及安全管理措施存在。"
+  },
+  {
+    "rule_id": "construction_org.scheme_plan_present",
+    "expected_status": "hit",
+    "expected_match_type": "direct_hit",
+    "notes": "4.5 施工方案编制计划存在。"
+  },
+  {
+    "rule_id": "deep_excavation.max_depth_over_5m",
+    "expected_status": "hit",
+    "expected_match_type": "direct_hit",
+    "notes": "局部 22.05m。"
+  },
+  {
+    "rule_id": "pipe_jacking.special_scheme_required",
+    "expected_status": "hit",
+    "expected_match_type": "direct_hit",
+    "notes": "微顶管属于高风险专项施工内容。"
+  },
+  {
+    "rule_id": "construction_org.cost_management_plan_present",
+    "expected_status": "manual_review_needed",
+    "expected_match_type": "inferred_risk",
+    "notes": "Gemini 指出成本管理计划缺失，但当前原文需进一步复核。"
+  }
+]

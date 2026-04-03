@@ -1,0 +1,7 @@
+{
+  "seed_source": "gemini_deepresearch",
+  "absolute_path": "/Users/lucas/repos/review/008-review-control-plane/fixtures/copied/supervision/gemini-deepresearch审查结果-施工组织设计-冷轧厂2030单元三台行车电气系统改造.md",
+  "relative_path": "fixtures/copied/supervision/gemini-deepresearch审查结果-施工组织设计-冷轧厂2030单元三台行车电气系统改造.md",
+  "status": "used_as_seed_only",
+  "notes": "仅作为 bootstrap labels 来源，不能视作最终专家金标准。"
+}

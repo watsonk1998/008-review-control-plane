@@ -1,0 +1,15 @@
+{
+  "source_document": {
+    "absolute_path": "/Users/lucas/repos/review/008-review-control-plane/fixtures/copied/supervision/施工组织设计-培花初期雨水调蓄池建设工程.pdf",
+    "relative_path": "fixtures/copied/supervision/施工组织设计-培花初期雨水调蓄池建设工程.pdf",
+    "doc_type": "construction_org",
+    "file_kind": "pdf"
+  },
+  "review_seed_documents": [
+    {
+      "absolute_path": "/Users/lucas/repos/review/008-review-control-plane/fixtures/copied/supervision/gemini-deepresearch审查结果-施工组织设计-培花初期雨水调蓄池建设工程.md",
+      "relative_path": "fixtures/copied/supervision/gemini-deepresearch审查结果-施工组织设计-培花初期雨水调蓄池建设工程.md",
+      "source_type": "gemini_deepresearch_markdown"
+    }
+  ]
+}

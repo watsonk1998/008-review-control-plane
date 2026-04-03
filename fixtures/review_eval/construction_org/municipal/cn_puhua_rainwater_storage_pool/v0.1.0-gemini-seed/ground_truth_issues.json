@@ -1,0 +1,41 @@
+[
+  {
+    "id": "PUHUA-ISSUE-001",
+    "title": "成本管理计划缺失",
+    "layer": "L2",
+    "severity": "low",
+    "finding_type": "suggestion_enhancement",
+    "label_source_type": "gemini_inference",
+    "doc_supported": false,
+    "gemini_supported": true,
+    "manual_review_needed": true,
+    "status": "seeded_unreviewed",
+    "notes": "Gemini seed issue，用作后续目录完整性复核项。"
+  },
+  {
+    "id": "PUHUA-ISSUE-002",
+    "title": "临建防火材质约束未明确到 A 级不燃材料",
+    "layer": "L2",
+    "severity": "medium",
+    "finding_type": "engineering_inference",
+    "label_source_type": "gemini_inference",
+    "doc_supported": false,
+    "gemini_supported": true,
+    "manual_review_needed": true,
+    "status": "seeded_unreviewed",
+    "notes": "Gemini seed issue。"
+  },
+  {
+    "id": "PUHUA-ISSUE-003",
+    "title": "第三方监测主体表述不够刚性",
+    "layer": "L2",
+    "severity": "medium",
+    "finding_type": "engineering_inference",
+    "label_source_type": "gemini_inference",
+    "doc_supported": false,
+    "gemini_supported": true,
+    "manual_review_needed": true,
+    "status": "seeded_unreviewed",
+    "notes": "Gemini seed issue。"
+  }
+]

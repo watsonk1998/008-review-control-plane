@@ -1,0 +1,10 @@
+{
+  "attachments": [
+    {
+      "name": "附图附表",
+      "expected_visibility": "parsed",
+      "manual_review_needed": false,
+      "notes": "PDF 中存在附图附表章节与部分图表可视内容。"
+    }
+  ]
+}

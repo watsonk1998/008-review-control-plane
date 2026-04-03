@@ -1,0 +1,32 @@
+[
+  {
+    "rule_id": "construction_org.section_duplicate_title",
+    "expected_status": "hit",
+    "expected_match_type": "direct_hit",
+    "notes": "重复章节标题。"
+  },
+  {
+    "rule_id": "construction_org.attachment_reference_visible",
+    "expected_status": "manual_review_needed",
+    "expected_match_type": "visibility_gap",
+    "notes": "附件被引用但未纳入当前 seed case 正文。"
+  },
+  {
+    "rule_id": "construction_org.progress_baseline_conflict",
+    "expected_status": "hit",
+    "expected_match_type": "direct_hit",
+    "notes": "固定日期与批准开工报告并存。"
+  },
+  {
+    "rule_id": "lifting_operations.special_plan_required",
+    "expected_status": "manual_review_needed",
+    "expected_match_type": "inferred_risk",
+    "notes": "起重吊装专项方案缺失由 Gemini seed 指出。"
+  },
+  {
+    "rule_id": "gas_area_ops.risk_identification_complete",
+    "expected_status": "manual_review_needed",
+    "expected_match_type": "inferred_risk",
+    "notes": "煤气区域防毒/防窒息辨识需要后续人工复核。"
+  }
+]

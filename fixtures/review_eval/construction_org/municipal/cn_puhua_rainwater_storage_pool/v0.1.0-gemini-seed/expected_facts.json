@@ -1,0 +1,74 @@
+{
+  "facts": [
+    {
+      "key": "storage_volume_m3",
+      "value": 10400,
+      "value_type": "integer",
+      "support_type": "doc_fact",
+      "notes": "调蓄池规模。"
+    },
+    {
+      "key": "max_excavation_depth_m",
+      "value": 22.05,
+      "value_type": "number",
+      "support_type": "doc_fact",
+      "notes": "局部最大开挖深度。"
+    },
+    {
+      "key": "standard_zone_depth_m",
+      "value": 20.05,
+      "value_type": "number",
+      "support_type": "doc_fact",
+      "notes": "标准区开挖深度。"
+    },
+    {
+      "key": "has_hazardous_work_section",
+      "value": true,
+      "value_type": "boolean",
+      "support_type": "doc_fact",
+      "notes": "存在 7.7 危大工程清单及安全管理措施。"
+    },
+    {
+      "key": "has_scheme_plan_section",
+      "value": true,
+      "value_type": "boolean",
+      "support_type": "doc_fact",
+      "notes": "存在 4.5 施工方案编制计划。"
+    },
+    {
+      "key": "foundation_pit_safety_level",
+      "value": "level_1",
+      "value_type": "string",
+      "support_type": "doc_fact",
+      "notes": "主体调蓄池基坑安全等级一级。"
+    },
+    {
+      "key": "has_microtunneling",
+      "value": true,
+      "value_type": "boolean",
+      "support_type": "doc_fact",
+      "notes": "放空管采用微顶管。"
+    },
+    {
+      "key": "microtunneling_length_m",
+      "value": 37,
+      "value_type": "integer",
+      "support_type": "doc_fact",
+      "notes": "微顶管长度约37m。"
+    },
+    {
+      "key": "cost_management_plan_missing",
+      "value": true,
+      "value_type": "boolean",
+      "support_type": "gemini_inference",
+      "notes": "Gemini 指出成本管理计划缺失。"
+    },
+    {
+      "key": "third_party_monitoring_wording_needs_hardening",
+      "value": true,
+      "value_type": "boolean",
+      "support_type": "gemini_inference",
+      "notes": "Gemini 指出第三方监测主体表述仍需增强。"
+    }
+  ]
+}

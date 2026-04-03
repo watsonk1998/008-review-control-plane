@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "GroundTruthVisibility",
+  "type": "object",
+  "required": [
+    "attachments"
+  ],
+  "properties": {
+    "attachments": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "name",
+          "expected_visibility",
+          "manual_review_needed"
+        ],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "expected_visibility": {
+            "type": "string",
+            "enum": [
+              "parsed",
+              "attachment_unparsed",
+              "referenced_only",
+              "missing",
+              "unknown"
+            ]
+          },
+          "manual_review_needed": {
+            "type": "boolean"
+          },
+          "notes": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}
