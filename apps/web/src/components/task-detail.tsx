@@ -370,7 +370,7 @@ export function TaskDetail({ taskId }: { taskId: string }) {
 
   const structuredArtifacts = useMemo(() => {
     if (!structuredResult) return [];
-    return structuredResult.artifactIndex?.length ? structuredResult.artifactIndex : artifacts;
+    return Array.isArray(structuredResult.artifactIndex) ? structuredResult.artifactIndex : artifacts;
   }, [artifacts, structuredResult]);
 
   const reviewerDecision = task?.reviewerDecision || null;
@@ -567,7 +567,7 @@ export function TaskDetail({ taskId }: { taskId: string }) {
                     <strong>人工复核</strong>
                     <p>{structuredResult.summary.manualReviewNeeded ? "需要结合附件原件或可视域缺口做人工复核" : "当前无需额外人工复核"}</p>
                     <p className="muted small">
-                      parse warnings：{structuredResult.summary.visibilitySummary.parseWarnings.join("，") || "无"}
+                      parse warnings：{structuredResult.visibility.parseWarnings.join("，") || "无"}
                     </p>
                   </div>
                   {structuredResult.notice ? <div className="callout warning-callout">{structuredResult.notice}</div> : null}
@@ -649,7 +649,7 @@ export function TaskDetail({ taskId }: { taskId: string }) {
                     <p>原因计数：{renderJson(structuredResult.visibility.reasonCounts)}</p>
                     <p>重复章节：{structuredResult.visibility.duplicateSectionTitles.join("，") || "无"}</p>
                     <p>需人工复核：{structuredResult.visibility.manualReviewNeeded ? "true" : "false"}</p>
-                    <p>parse warnings：{structuredResult.summary.visibilitySummary.parseWarnings.join("，") || "无"}</p>
+                    <p>parse warnings：{structuredResult.visibility.parseWarnings.join("，") || "无"}</p>
                   </div>
                   <pre className="code-block compact">{renderJson(structuredResult.matrices.attachmentVisibility)}</pre>
                 </article>

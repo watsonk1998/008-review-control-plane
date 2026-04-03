@@ -62,6 +62,7 @@ class StructuredReviewExecutor:
         write_json_artifact: Callable[[str, Any], str] | None = None,
         write_text_artifact: Callable[[str, str, str], str] | None = None,
         execution_options: dict[str, Any] | None = None,
+        allow_visibility_ablation: bool = False,
     ) -> dict[str, Any]:
         options = execution_options or {}
         artifact_records: list[dict[str, Any]] = []
@@ -78,7 +79,11 @@ class StructuredReviewExecutor:
             policy_pack_ids=policy_pack_ids,
         )
         parse_result = self.document_loader.parse_document(source_document_path)
-        parse_result = self._apply_execution_options(parse_result, options)
+        parse_result = self._apply_execution_options(
+            parse_result,
+            options,
+            allow_visibility_ablation=allow_visibility_ablation,
+        )
         parse_artifact = write_json_artifact('structured-review-parse', parse_result.model_dump(mode='json')) if write_json_artifact else None
         self._record_artifact(artifact_records, parse_artifact, category='parse', stage='parse')
         if emit:
@@ -164,7 +169,7 @@ class StructuredReviewExecutor:
         if report_artifacts:
             self._record_artifact(artifact_records, report_artifacts[0], category='result', stage='report')
         for path in report_artifacts[1:-1]:
-            self._record_artifact(artifact_records, path, category='matrix', stage='report')
+            self._record_artifact(artifact_records, path, category='matrices', stage='report')
         if write_text_artifact and report_artifacts:
             self._record_artifact(artifact_records, report_artifacts[-1], category='report', stage='report', primary=True)
         artifact_index = self._build_artifact_index(task_id, artifact_records)
@@ -203,6 +208,9 @@ class StructuredReviewExecutor:
         strict_mode: bool | None = None,
         policy_pack_ids: list[str] | None = None,
         execution_options: dict[str, Any] | None = None,
+        allow_visibility_ablation: bool = False,
+        write_json_artifact: Callable[[str, Any], str] | None = None,
+        write_text_artifact: Callable[[str, str, str], str] | None = None,
     ) -> dict[str, Any]:
         return asyncio.run(
             self.run(
@@ -217,6 +225,9 @@ class StructuredReviewExecutor:
                 strict_mode=strict_mode,
                 policy_pack_ids=policy_pack_ids,
                 execution_options=execution_options,
+                allow_visibility_ablation=allow_visibility_ablation,
+                write_json_artifact=write_json_artifact,
+                write_text_artifact=write_text_artifact,
             )
         )
 
@@ -322,12 +333,18 @@ class StructuredReviewExecutor:
                 )
         return spans
 
-    def _apply_execution_options(self, parse_result: DocumentParseResult, options: dict[str, Any]) -> DocumentParseResult:
+    def _apply_execution_options(
+        self,
+        parse_result: DocumentParseResult,
+        options: dict[str, Any],
+        *,
+        allow_visibility_ablation: bool = False,
+    ) -> DocumentParseResult:
         if options.get('disable_normalizer'):
             parse_result.normalizedText = '\n'.join(str(block.get('text') or '') for block in parse_result.blocks)
             parse_result.preview = parse_result.normalizedText[:4000]
             parse_result.parseWarnings.append('disable_normalizer')
-        if options.get('disable_visibility_check'):
+        if options.get('disable_visibility_check') and allow_visibility_ablation:
             for attachment in parse_result.attachments:
                 attachment.visibility = AttachmentVisibility.parsed
                 attachment.parseState = 'parsed'
@@ -346,10 +363,13 @@ class StructuredReviewExecutor:
                 },
                 reasonCounts={},
                 duplicateSectionTitles=list(parse_result.visibility.duplicateSectionTitles),
+                parseWarnings=list(parse_result.visibility.parseWarnings),
                 manualReviewNeeded=False,
             )
-            parse_result.visibilityReport = parse_result.visibility.model_dump(mode='json')
             parse_result.parseWarnings.append('disable_visibility_check')
+        parse_result.visibility.parseWarnings = list(dict.fromkeys(parse_result.parseWarnings))
+        parse_result.parseWarnings = list(parse_result.visibility.parseWarnings)
+        parse_result.visibilityReport = parse_result.visibility.model_dump(mode='json')
         return parse_result
 
     def _record_artifact(

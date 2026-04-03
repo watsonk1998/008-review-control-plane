@@ -23,24 +23,27 @@ def _serialize_structured_review_result(result):
     if not {'summary', 'issues', 'matrices', 'resolvedProfile'}.issubset(result.keys()):
         return result
     payload = dict(result)
-    if payload.get('visibility') is None:
+    is_legacy_payload = payload.get('visibility') is None
+    if is_legacy_payload:
         visibility_summary = ((payload.get('summary') or {}).get('visibilitySummary') or {})
         payload['visibility'] = {
             'attachmentCount': visibility_summary.get('attachmentCount', 0),
             'counts': visibility_summary.get('counts', {}),
             'reasonCounts': visibility_summary.get('reasonCounts', {}),
             'duplicateSectionTitles': visibility_summary.get('duplicateSectionTitles', []),
+            'parseWarnings': visibility_summary.get('parseWarnings', []),
             'manualReviewNeeded': visibility_summary.get('manualReviewNeeded', False),
             'parserLimited': False,
             'fileType': None,
         }
-    payload['issues'] = [
-        {
-            **issue,
-            'whetherManualReviewNeeded': issue.get('manualReviewNeeded', False),
-        }
-        for issue in payload.get('issues', [])
-    ]
+    if is_legacy_payload:
+        payload['issues'] = [
+            {
+                **issue,
+                'whetherManualReviewNeeded': issue.get('manualReviewNeeded', False),
+            }
+            for issue in payload.get('issues', [])
+        ]
     return payload
 
 

@@ -45,19 +45,37 @@ def _normalize_reviewer_decision(task: TaskRecord, decision_like, *, touch_updat
     if strict and unknown_attachment_ids:
         raise ValueError(f'Unknown reviewer decision attachment ids: {", ".join(unknown_attachment_ids)}')
 
+    issues = [
+        issue_map.get(issue_id, ReviewerIssueDecision(issueId=issue_id))
+        for issue_id in issue_ids
+    ]
+    attachments = [
+        attachment_map.get(attachment_id, ReviewerAttachmentDecision(attachmentId=attachment_id))
+        for attachment_id in attachment_ids
+    ]
+    task_state = _derive_task_state(issues, attachments)
+
     return ReviewerDecision(
-        taskState=normalized.taskState,
+        taskState=task_state,
         note=normalized.note,
-        issues=[
-            issue_map.get(issue_id, ReviewerIssueDecision(issueId=issue_id))
-            for issue_id in issue_ids
-        ],
-        attachments=[
-            attachment_map.get(attachment_id, ReviewerAttachmentDecision(attachmentId=attachment_id))
-            for attachment_id in attachment_ids
-        ],
+        issues=issues,
+        attachments=attachments,
         updatedAt=datetime.now(timezone.utc) if touch_updated_at else normalized.updatedAt,
     )
+
+
+def _derive_task_state(
+    issues: list[ReviewerIssueDecision],
+    attachments: list[ReviewerAttachmentDecision],
+) -> str:
+    if any(item.state == 'confirmed' for item in issues):
+        return 'rejected'
+    if any(item.state == 'needs_attachment' for item in [*issues, *attachments]):
+        return 'needs_attachment'
+    if issues or attachments:
+        if all(item.state != 'pending' for item in [*issues, *attachments]):
+            return 'accepted'
+    return 'pending'
 
 
 def _extract_issue_ids(task: TaskRecord) -> list[str]:

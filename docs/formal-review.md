@@ -33,9 +33,9 @@ P0 的稳定结果字段：
 
 其中：
 
-- `artifactIndex` 与 `GET /api/tasks/{taskId}/artifacts` 共享同一套官方 catalog
+- `artifactIndex` 与 `GET /api/tasks/{taskId}/artifacts` 共享同一套官方 catalog；对新任务即使为空也视为 authoritative source
 - parse 结果内部使用 typed `visibility`、`parseMode`、`parserLimited`
-- `result.visibility` 是 top-level canonical visibility 对象
+- `result.visibility` 是 top-level canonical visibility 对象，并直接携带 `parseWarnings`
 - `summary.visibilitySummary` 仅负责总览；`matrices.attachmentVisibility` 负责结构化明细
 
 ## 当前正式支持的文档类型
@@ -116,11 +116,12 @@ LLM 不负责：
 ## manual review 语义
 
 - `manualReviewNeeded` 是唯一 canonical 布尔语义
-- `whetherManualReviewNeeded` 仅保留兼容 alias
+- `whetherManualReviewNeeded` 仅保留给 legacy task replay 的只读兼容层
 - `FinalIssue` 会保留 `evidenceMissing` 与 `manualReviewReason`
 - `result.visibility` 是唯一 canonical visibility contract
-- `summary.visibilitySummary` 会统一输出附件计数、状态计数、reason counts、重复章节与 parse warnings
+- `summary.visibilitySummary` 会统一输出附件计数、状态计数、reason counts、重复章节与 parse warnings，但不再反向生成 canonical visibility
 - reviewer decision 以单个 task-scoped JSON 保存：`taskState + note + issues[] + attachments[] + updatedAt`
+- `disable_visibility_check` 仅保留给 eval / ablation 内部路径
 
 以下情况必须保留人工复核标记：
 

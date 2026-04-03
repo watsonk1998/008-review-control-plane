@@ -54,8 +54,25 @@ def _severity_accuracy(expected_issue: dict[str, Any], actual_issue: dict[str, A
     return 0.0
 
 
+def _artifact_payload(
+    evaluation_artifacts: dict[str, Any] | None,
+    *,
+    category: str | None = None,
+    name: str | None = None,
+) -> Any:
+    if not evaluation_artifacts:
+        return None
+    if name:
+        payload = (evaluation_artifacts.get('byName') or {}).get(name)
+        if payload is not None:
+            return payload
+    if category:
+        return (evaluation_artifacts.get('byCategory') or {}).get(category)
+    return None
+
+
 def _manual_review_value(issue: dict[str, Any]) -> bool:
-    return bool(issue.get('manualReviewNeeded', issue.get('whetherManualReviewNeeded', False)))
+    return bool(issue.get('manualReviewNeeded', False))
 
 
 def _build_actual_visibility_maps(result: dict[str, Any]) -> tuple[dict[str, str], dict[str, str]]:
@@ -72,22 +89,49 @@ def _build_actual_visibility_maps(result: dict[str, Any]) -> tuple[dict[str, str
     return by_id, by_title
 
 
-def _build_actual_rule_hit_map(result: dict[str, Any]) -> dict[str, dict[str, Any]]:
+def _build_actual_rule_hit_map(result: dict[str, Any], evaluation_artifacts: dict[str, Any] | None = None) -> dict[str, dict[str, Any]]:
+    direct_rule_hits = _artifact_payload(
+        evaluation_artifacts,
+        category='rule_hits',
+        name='structured-review-rule-hits',
+    )
+    rows = direct_rule_hits if isinstance(direct_rule_hits, list) else result.get('matrices', {}).get('ruleHits', [])
     return {
         row.get('ruleId') or '': row
-        for row in result.get('matrices', {}).get('ruleHits', [])
+        for row in rows
         if row.get('ruleId')
     }
 
 
-def _build_fact_snapshot(result: dict[str, Any]) -> dict[str, Any]:
-    hazard_values = result.get('matrices', {}).get('hazardIdentification', {}).get('values', {})
-    visibility = result.get('visibility') or result.get('summary', {}).get('visibilitySummary', {})
-    attachment_titles = {item.get('attachmentNumber') or item.get('title') for item in result.get('matrices', {}).get('attachmentVisibility', [])}
+def _build_fact_snapshot(result: dict[str, Any], evaluation_artifacts: dict[str, Any] | None = None) -> dict[str, Any]:
+    direct_facts = _artifact_payload(
+        evaluation_artifacts,
+        category='facts',
+        name='structured-review-facts',
+    )
+    if isinstance(direct_facts, dict):
+        hazard_values = direct_facts.get('hazardFacts', {})
+        schedule_values = direct_facts.get('scheduleFacts', {})
+        attachment_facts = direct_facts.get('attachmentFacts', {})
+        visibility = attachment_facts.get('visibility', {})
+        attachment_titles = {
+            item.get('attachmentNumber') or item.get('title')
+            for item in attachment_facts.get('attachments', [])
+            if isinstance(item, dict)
+        }
+    else:
+        hazard_values = result.get('matrices', {}).get('hazardIdentification', {}).get('values', {})
+        schedule_values = result.get('matrices', {}).get('hazardIdentification', {}).get('values', {})
+        visibility = result.get('visibility', {})
+        attachment_titles = {
+            item.get('attachmentNumber') or item.get('title')
+            for item in result.get('matrices', {}).get('attachmentVisibility', [])
+            if isinstance(item, dict)
+        }
     duplicate_titles = set(visibility.get('duplicateSectionTitles', []))
     return {
         'contains_gas_area': bool(hazard_values.get('gasArea')),
-        'single_crane_shutdown_days': hazard_values.get('shutdownWindowDays'),
+        'single_crane_shutdown_days': schedule_values.get('shutdownWindowDays', hazard_values.get('shutdownWindowDays')),
         'duplicate_section_title': duplicate_titles,
         'has_attachment_1': '1' in attachment_titles,
         'has_attachment_2': '2' in attachment_titles,
@@ -98,16 +142,18 @@ def _build_fact_snapshot(result: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def _fact_accuracy(case: dict[str, Any], result: dict[str, Any]) -> tuple[float, int]:
-    snapshot = _build_fact_snapshot(result)
+def _fact_accuracy(
+    case: dict[str, Any],
+    result: dict[str, Any],
+    evaluation_artifacts: dict[str, Any] | None = None,
+) -> tuple[float, int]:
+    snapshot = _build_fact_snapshot(result, evaluation_artifacts)
     checks = 0
     hits = 0
     for item in case.get('expectedFacts', []):
         key = item.get('key')
-        if key not in snapshot:
-            continue
         checks += 1
-        actual = snapshot[key]
+        actual = snapshot.get(key)
         expected = item.get('value')
         if isinstance(actual, set):
             if expected in actual:
@@ -117,8 +163,12 @@ def _fact_accuracy(case: dict[str, Any], result: dict[str, Any]) -> tuple[float,
     return ((hits / checks) if checks else 1.0, checks)
 
 
-def _rule_hit_accuracy(case: dict[str, Any], result: dict[str, Any]) -> tuple[float, int]:
-    actual_rule_hits = _build_actual_rule_hit_map(result)
+def _rule_hit_accuracy(
+    case: dict[str, Any],
+    result: dict[str, Any],
+    evaluation_artifacts: dict[str, Any] | None = None,
+) -> tuple[float, int]:
+    actual_rule_hits = _build_actual_rule_hit_map(result, evaluation_artifacts)
     checks = 0
     hits = 0
     for expected in case.get('expectedRuleHits', []):
@@ -127,9 +177,9 @@ def _rule_hit_accuracy(case: dict[str, Any], result: dict[str, Any]) -> tuple[fl
             continue
         mapped_rule_id = _RULE_ID_ALIASES.get(expected_rule_id, expected_rule_id)
         actual = actual_rule_hits.get(mapped_rule_id)
+        checks += 1
         if actual is None:
             continue
-        checks += 1
         status_match = actual.get('status') == expected.get('expected_status', expected.get('expectedStatus'))
         match_type_match = actual.get('matchType') == expected.get('expected_match_type', expected.get('expectedMatchType'))
         if status_match and match_type_match:
@@ -137,8 +187,12 @@ def _rule_hit_accuracy(case: dict[str, Any], result: dict[str, Any]) -> tuple[fl
     return ((hits / checks) if checks else 1.0, checks)
 
 
-def _hazard_identification_accuracy(case: dict[str, Any], result: dict[str, Any]) -> tuple[float, int]:
-    snapshot = _build_fact_snapshot(result)
+def _hazard_identification_accuracy(
+    case: dict[str, Any],
+    result: dict[str, Any],
+    evaluation_artifacts: dict[str, Any] | None = None,
+) -> tuple[float, int]:
+    snapshot = _build_fact_snapshot(result, evaluation_artifacts)
     checks = 0
     hits = 0
     for item in case.get('expectedFacts', []):
@@ -151,7 +205,12 @@ def _hazard_identification_accuracy(case: dict[str, Any], result: dict[str, Any]
     return ((hits / checks) if checks else 1.0, checks)
 
 
-def compute_metrics(case: dict[str, Any], result: dict[str, Any]) -> dict[str, float | int]:
+def compute_metrics(
+    case: dict[str, Any],
+    result: dict[str, Any],
+    *,
+    evaluation_artifacts: dict[str, Any] | None = None,
+) -> dict[str, float | int]:
     expected_issues = case.get('groundTruthIssues', {}).get('issues', [])
     actual_issues = _issue_map(result)
     expected_titles = {issue.get('title', '') for issue in expected_issues}
@@ -208,15 +267,13 @@ def compute_metrics(case: dict[str, Any], result: dict[str, Any]) -> dict[str, f
             actual_visibility = actual_visibility_by_id.get(str(expected_id))
         if actual_visibility is None and expected_name:
             actual_visibility = actual_visibility_by_title.get(str(expected_name))
-        if actual_visibility is None:
-            continue
         visibility_checks += 1
         if actual_visibility == expected_visibility:
             matched_visibility += 1
 
-    facts_accuracy, facts_checks = _fact_accuracy(case, result)
-    rule_hit_accuracy, rule_hit_checks = _rule_hit_accuracy(case, result)
-    hazard_accuracy, hazard_checks = _hazard_identification_accuracy(case, result)
+    facts_accuracy, facts_checks = _fact_accuracy(case, result, evaluation_artifacts)
+    rule_hit_accuracy, rule_hit_checks = _rule_hit_accuracy(case, result, evaluation_artifacts)
+    hazard_accuracy, hazard_checks = _hazard_identification_accuracy(case, result, evaluation_artifacts)
 
     issue_recall = len(matched_titles) / len(expected_titles) if expected_titles else 1.0
     l1_hit_rate = l1_matched / len(l1_expected) if l1_expected else 1.0

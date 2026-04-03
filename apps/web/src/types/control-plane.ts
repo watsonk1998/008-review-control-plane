@@ -6,7 +6,7 @@ export type ReviewDocumentType = "construction_org" | "construction_scheme" | "h
 export type AttachmentVisibility = "parsed" | "attachment_unparsed" | "referenced_only" | "missing" | "unknown";
 export type FindingType = "hard_evidence" | "engineering_inference" | "visibility_gap" | "suggestion_enhancement";
 export type ConfidenceLevel = "low" | "medium" | "high";
-export type ArtifactCategory = "parse" | "facts" | "rule_hits" | "candidates" | "result" | "matrix" | "report" | "generic";
+export type ArtifactCategory = "parse" | "facts" | "rule_hits" | "candidates" | "result" | "matrix" | "matrices" | "report" | "generic";
 export type ParseMode = "docx_structured" | "pdf_text_only" | "markdown_text" | "plain_text";
 
 export interface SourceDocumentRef {
@@ -100,6 +100,7 @@ export interface VisibilityAssessment {
   counts: Record<string, number>;
   reasonCounts: Record<string, number>;
   duplicateSectionTitles: string[];
+  parseWarnings: string[];
   manualReviewNeeded: boolean;
 }
 

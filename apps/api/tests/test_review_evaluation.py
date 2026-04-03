@@ -168,6 +168,12 @@ def test_review_eval_harness_reports_stage_metrics_and_versioned_diagnostics(tmp
     assert main_payload['versionedStageThresholds']['facts_accuracy'] == 0.9
     assert main_payload['versionedStageGate']['caseIds'] == ['versioned-hz-001']
     assert main_payload['versionedStageGate']['passed'] is True
+    diagnostics = main_payload['versionedDiagnostics']['cases'][0]['evaluationDiagnostics']
+    assert diagnostics['usedDirectFacts'] is True
+    assert diagnostics['usedDirectRuleHits'] is True
+    assert diagnostics['usedDirectUnresolvedFacts'] is True
+    assert 'structured-review-facts' in diagnostics['artifactNames']
+    assert 'structured-review-rule-hits' in diagnostics['artifactNames']
 
     ablation_code, ablation_payload = run_ablations(tmp_path)
     assert ablation_code == 0

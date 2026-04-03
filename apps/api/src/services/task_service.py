@@ -93,10 +93,11 @@ class TaskService:
         task = self.store.get_task(task_id)
         if task is None:
             raise KeyError(f'Task not found: {task_id}')
-        artifact_index = ((task.result or {}).get('artifactIndex') if isinstance(task.result, dict) else None) or []
-        catalog = [self._coerce_artifact(item) for item in artifact_index]
+        has_artifact_index = isinstance(task.result, dict) and 'artifactIndex' in task.result
+        artifact_index = (task.result or {}).get('artifactIndex') if isinstance(task.result, dict) else None
+        catalog = [self._coerce_artifact(item) for item in (artifact_index or [])]
         catalog = [item for item in catalog if item is not None]
-        if catalog:
+        if has_artifact_index:
             return catalog
         task_dir = self.tasks_dir / task_id
         if not task_dir.exists():
@@ -148,7 +149,7 @@ class TaskService:
         if 'candidate' in file_name:
             return 'candidates'
         if 'matrix' in file_name:
-            return 'matrix'
+            return 'matrices'
         if file_name.endswith('.md'):
             return 'report'
         if 'result' in file_name:

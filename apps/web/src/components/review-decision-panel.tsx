@@ -45,6 +45,22 @@ function buildFallbackDecision(
   };
 }
 
+function deriveTaskState(
+  issues: ReviewerDecisionUpdateRequest["issues"],
+  attachments: ReviewerDecisionUpdateRequest["attachments"],
+): ReviewerDecisionUpdateRequest["taskState"] {
+  if (issues.some((item) => item.state === "confirmed")) {
+    return "rejected";
+  }
+  if ([...issues, ...attachments].some((item) => item.state === "needs_attachment")) {
+    return "needs_attachment";
+  }
+  if ((issues.length || attachments.length) && [...issues, ...attachments].every((item) => item.state !== "pending")) {
+    return "accepted";
+  }
+  return "pending";
+}
+
 export function ReviewDecisionPanel({
   taskId,
   issues,
@@ -167,14 +183,18 @@ export function ReviewDecisionPanel({
                     <select
                       value={current.state}
                       onChange={(event) =>
-                        setForm((formState) => ({
-                          ...formState,
-                          issues: formState.issues.map((item) =>
+                        setForm((formState) => {
+                          const nextIssues = formState.issues.map((item) =>
                             item.issueId === issue.id
                               ? { ...item, state: event.target.value as ReviewerIssueDecision["state"] }
                               : item,
-                          ),
-                        }))
+                          );
+                          return {
+                            ...formState,
+                            taskState: deriveTaskState(nextIssues, formState.attachments),
+                            issues: nextIssues,
+                          };
+                        })
                       }
                     >
                       {ITEM_STATE_OPTIONS.map((option) => (
@@ -237,14 +257,18 @@ export function ReviewDecisionPanel({
                     <select
                       value={current.state}
                       onChange={(event) =>
-                        setForm((formState) => ({
-                          ...formState,
-                          attachments: formState.attachments.map((attachment) =>
+                        setForm((formState) => {
+                          const nextAttachments = formState.attachments.map((attachment) =>
                             attachment.attachmentId === item.id
                               ? { ...attachment, state: event.target.value as ReviewerIssueDecision["state"] }
                               : attachment,
-                          ),
-                        }))
+                          );
+                          return {
+                            ...formState,
+                            taskState: deriveTaskState(formState.issues, nextAttachments),
+                            attachments: nextAttachments,
+                          };
+                        })
                       }
                     >
                       {ITEM_STATE_OPTIONS.map((option) => (

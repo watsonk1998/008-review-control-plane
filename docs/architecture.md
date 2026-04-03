@@ -28,7 +28,7 @@ P0 当前，`structured_review` 的入口 profile 已显式化：
 
 planner/router 只保留 provisional hints；最终生效值统一回写到 `result.resolvedProfile`，避免“用户指定 / 路由推断 / 实际执行”三套口径不一致。
 `strictMode` 当前仅作兼容透传，状态为 `reserved / no-op`。
-`result.visibility` 是结构化结果中的 top-level canonical visibility contract；`summary.visibilitySummary` 仅保留为展示摘要。
+`result.visibility` 是结构化结果中的 top-level canonical visibility contract，并直接携带 `parseWarnings`；`summary.visibilitySummary` 仅保留为展示摘要。
 
 ## 分层
 

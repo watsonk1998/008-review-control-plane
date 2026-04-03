@@ -48,7 +48,7 @@ class ConfidenceLevel(str, Enum):
     high = 'high'
 
 
-ArtifactCategory = Literal['parse', 'facts', 'rule_hits', 'candidates', 'result', 'matrix', 'report', 'generic']
+ArtifactCategory = Literal['parse', 'facts', 'rule_hits', 'candidates', 'result', 'matrix', 'matrices', 'report', 'generic']
 SourceDocumentType = Literal['fixture', 'upload']
 
 

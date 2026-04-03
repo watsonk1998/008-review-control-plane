@@ -94,7 +94,167 @@ def test_task_service_prefers_result_artifact_catalog_over_directory_scan(tmp_pa
     assert artifacts[0].primary is True
 
 
-def test_task_routes_accept_structured_review_fields_and_serve_artifacts(monkeypatch, tmp_path: Path):
+def test_task_service_treats_explicit_empty_artifact_index_as_authoritative(tmp_path: Path):
+    store = SQLiteTaskStore(tmp_path / 'service.sqlite')
+    runtime = StubRuntime(tmp_path / 'artifacts')
+    service = TaskService(store, runtime, runtime.tasks_dir)
+
+    task = service.create_task(
+        CreateTaskRequest(
+            taskType='structured_review',
+            capabilityMode='auto',
+            query='执行正式结构化审查',
+            fixtureId='fixture-1',
+            documentType='construction_org',
+        )
+    )
+
+    task_dir = runtime.tasks_dir / task.id
+    task_dir.mkdir(parents=True, exist_ok=True)
+    (task_dir / 'unexpected-debug.json').write_text('{"debug": true}', encoding='utf-8')
+    store.update_task(task.id, result={'artifactIndex': []})
+
+    artifacts = service.list_task_artifacts(task.id)
+    assert artifacts == []
+
+
+def test_task_service_derives_consistent_reviewer_task_state(tmp_path: Path):
+    store = SQLiteTaskStore(tmp_path / 'service.sqlite')
+    runtime = StubRuntime(tmp_path / 'artifacts')
+    service = TaskService(store, runtime, runtime.tasks_dir)
+
+    task = service.create_task(
+        CreateTaskRequest(
+            taskType='structured_review',
+            capabilityMode='auto',
+            query='执行正式结构化审查',
+            fixtureId='fixture-1',
+            documentType='construction_org',
+        )
+    )
+    store.update_task(
+        task.id,
+        result={
+            'summary': {
+                'overallConclusion': 'demo',
+                'documentType': 'construction_org',
+                'selectedPacks': ['construction_org.base'],
+                'manualReviewNeeded': True,
+                'issueCount': 1,
+                'layerCounts': {'L1': 1},
+                'stats': {},
+                'visibilitySummary': {
+                    'attachmentCount': 1,
+                    'counts': {'attachment_unparsed': 1},
+                    'duplicateSectionTitles': [],
+                    'parseWarnings': [],
+                    'reasonCounts': {'title_detected_without_attachment_body': 1},
+                    'manualReviewNeeded': True,
+                },
+            },
+            'visibility': {
+                'attachmentCount': 1,
+                'counts': {'attachment_unparsed': 1},
+                'duplicateSectionTitles': [],
+                'parseWarnings': [],
+                'reasonCounts': {'title_detected_without_attachment_body': 1},
+                'manualReviewNeeded': True,
+                'parserLimited': False,
+                'fileType': 'md',
+            },
+            'resolvedProfile': {
+                'requestedDocumentType': 'construction_org',
+                'requestedDisciplineTags': [],
+                'requestedPolicyPackIds': [],
+                'documentType': 'construction_org',
+                'disciplineTags': [],
+                'policyPackIds': ['construction_org.base'],
+                'strictMode': True,
+            },
+            'issues': [
+                {
+                    'id': 'ISSUE-001',
+                    'title': '附件处于可视域缺口，需人工复核原件',
+                    'layer': 'L1',
+                    'severity': 'medium',
+                    'findingType': 'visibility_gap',
+                    'summary': '附件处于可视域缺口，需人工复核原件',
+                    'manualReviewNeeded': True,
+                    'evidenceMissing': True,
+                    'manualReviewReason': 'visibility_gap',
+                    'docEvidence': [],
+                    'policyEvidence': [],
+                    'recommendation': [],
+                    'confidence': 'medium',
+                }
+            ],
+            'matrices': {
+                'hazardIdentification': {'values': {}},
+                'ruleHits': [],
+                'conflicts': {'values': {}},
+                'attachmentVisibility': [
+                    {
+                        'id': 'attachment-1',
+                        'attachmentNumber': '1',
+                        'title': '附件1',
+                        'visibility': 'attachment_unparsed',
+                        'parseState': 'attachment_unparsed',
+                        'manualReviewNeeded': True,
+                        'reason': 'title_detected_without_attachment_body',
+                        'referenceBlockIds': [],
+                        'titleBlockId': None,
+                    }
+                ],
+                'sectionStructure': [],
+                'issueLayerCounts': {'L1': 1},
+            },
+            'artifactIndex': [],
+            'reportMarkdown': '# demo',
+            'artifacts': [],
+            'unresolvedFacts': [],
+            'capabilitiesUsed': ['llm_gateway'],
+            'finalAnswer': 'demo',
+        },
+    )
+
+    rejected = service.update_reviewer_decision(
+        task.id,
+        {
+            'taskState': 'accepted',
+            'note': 'checked',
+            'issues': [{'issueId': 'ISSUE-001', 'state': 'confirmed', 'note': 'real defect'}],
+            'attachments': [{'attachmentId': 'attachment-1', 'state': 'needs_attachment', 'note': 'need original'}],
+        },
+    )
+    assert rejected.reviewerDecision is not None
+    assert rejected.reviewerDecision.taskState == 'rejected'
+
+    needs_attachment = service.update_reviewer_decision(
+        task.id,
+        {
+            'taskState': 'accepted',
+            'note': 'checked',
+            'issues': [{'issueId': 'ISSUE-001', 'state': 'dismissed', 'note': 'not applicable'}],
+            'attachments': [{'attachmentId': 'attachment-1', 'state': 'needs_attachment', 'note': 'need original'}],
+        },
+    )
+    assert needs_attachment.reviewerDecision is not None
+    assert needs_attachment.reviewerDecision.taskState == 'needs_attachment'
+
+    accepted = service.update_reviewer_decision(
+        task.id,
+        {
+            'taskState': 'pending',
+            'note': 'checked',
+            'issues': [{'issueId': 'ISSUE-001', 'state': 'dismissed', 'note': 'not applicable'}],
+            'attachments': [{'attachmentId': 'attachment-1', 'state': 'dismissed', 'note': 'seen'}],
+        },
+    )
+    assert accepted.reviewerDecision is not None
+    assert accepted.reviewerDecision.taskState == 'accepted'
+
+
+def test_task_routes_legacy_structured_review_result_keeps_read_only_compatibility(monkeypatch, tmp_path: Path):
     now = datetime.now(timezone.utc)
     artifact_path = tmp_path / 'report.json'
     artifact_path.write_text('{"ok": true}', encoding='utf-8')
@@ -279,9 +439,117 @@ def test_task_routes_accept_structured_review_fields_and_serve_artifacts(monkeyp
     assert result_response.status_code == 200
     result_payload = result_response.json()['result']
     assert result_payload['visibility']['attachmentCount'] == 1
+    assert result_payload['visibility']['parseWarnings'] == []
     assert result_payload['issues'][0]['manualReviewNeeded'] is True
     assert result_payload['issues'][0]['whetherManualReviewNeeded'] is True
     assert result_payload['artifactIndex'] == artifacts_response.json()
+
+
+def test_task_routes_fresh_structured_review_result_uses_canonical_visibility_only(monkeypatch):
+    now = datetime.now(timezone.utc)
+
+    class FakeService:
+        def get_task(self, task_id: str):
+            return TaskRecord(
+                id=task_id,
+                taskType='structured_review',
+                capabilityMode='auto',
+                query='query',
+                fixtureId='fixture-1',
+                sourceDocumentRef=None,
+                sourceUrls=[],
+                documentType='construction_org',
+                disciplineTags=['lifting_operations'],
+                strictMode=True,
+                policyPackIds=['construction_org.base'],
+                status='succeeded',
+                result={
+                    'summary': {
+                        'overallConclusion': 'demo',
+                        'documentType': 'construction_org',
+                        'selectedPacks': ['construction_org.base'],
+                        'manualReviewNeeded': True,
+                        'issueCount': 1,
+                        'layerCounts': {'L1': 1},
+                        'stats': {},
+                        'visibilitySummary': {
+                            'attachmentCount': 1,
+                            'counts': {'attachment_unparsed': 1},
+                            'duplicateSectionTitles': [],
+                            'parseWarnings': ['legacy-summary-warning'],
+                            'reasonCounts': {'title_detected_without_attachment_body': 1},
+                            'manualReviewNeeded': True,
+                        },
+                    },
+                    'visibility': {
+                        'attachmentCount': 1,
+                        'counts': {'attachment_unparsed': 1},
+                        'duplicateSectionTitles': [],
+                        'parseWarnings': ['canonical-visibility-warning'],
+                        'reasonCounts': {'title_detected_without_attachment_body': 1},
+                        'manualReviewNeeded': True,
+                        'parserLimited': False,
+                        'fileType': 'docx',
+                    },
+                    'resolvedProfile': {
+                        'requestedDocumentType': 'construction_org',
+                        'requestedDisciplineTags': ['lifting_operations'],
+                        'requestedPolicyPackIds': ['construction_org.base'],
+                        'documentType': 'construction_org',
+                        'disciplineTags': ['lifting_operations'],
+                        'policyPackIds': ['construction_org.base'],
+                        'strictMode': True,
+                    },
+                    'issues': [
+                        {
+                            'id': 'ISSUE-001',
+                            'title': '附件处于可视域缺口，需人工复核原件',
+                            'layer': 'L1',
+                            'severity': 'medium',
+                            'findingType': 'visibility_gap',
+                            'summary': '附件处于可视域缺口，需人工复核原件',
+                            'manualReviewNeeded': True,
+                            'evidenceMissing': True,
+                            'manualReviewReason': 'visibility_gap',
+                            'docEvidence': [],
+                            'policyEvidence': [],
+                            'recommendation': [],
+                            'confidence': 'medium',
+                        }
+                    ],
+                    'matrices': {
+                        'hazardIdentification': {'values': {}},
+                        'ruleHits': [],
+                        'conflicts': {'values': {}},
+                        'attachmentVisibility': [],
+                        'sectionStructure': [],
+                        'issueLayerCounts': {'L1': 1},
+                    },
+                    'artifactIndex': [],
+                    'reportMarkdown': '# demo',
+                    'artifacts': [],
+                    'unresolvedFacts': [],
+                    'capabilitiesUsed': ['llm_gateway'],
+                    'finalAnswer': 'demo',
+                },
+                createdAt=now,
+                updatedAt=now,
+            )
+
+        def get_task_events(self, task_id: str):
+            return []
+
+        def list_task_artifacts(self, task_id: str):
+            return []
+
+    monkeypatch.setattr(tasks_route, 'get_task_service', lambda: FakeService())
+    client = TestClient(app)
+
+    result_response = client.get('/api/tasks/task-fresh/result')
+    assert result_response.status_code == 200
+    result_payload = result_response.json()['result']
+    assert result_payload['visibility']['parseWarnings'] == ['canonical-visibility-warning']
+    assert 'whetherManualReviewNeeded' not in result_payload['issues'][0]
 
 
 def test_task_routes_update_reviewer_decision(monkeypatch):
@@ -339,6 +607,7 @@ def test_task_routes_update_reviewer_decision(monkeypatch):
                         'attachmentCount': 1,
                         'counts': {'attachment_unparsed': 1},
                         'duplicateSectionTitles': [],
+                        'parseWarnings': [],
                         'reasonCounts': {'title_detected_without_attachment_body': 1},
                         'manualReviewNeeded': True,
                         'parserLimited': False,
@@ -417,7 +686,7 @@ def test_task_routes_update_reviewer_decision(monkeypatch):
     assert response.status_code == 200
     payload = response.json()
     assert fake_service.last_payload is not None
-    assert payload['reviewerDecision']['taskState'] == 'accepted'
+    assert payload['reviewerDecision']['taskState'] == 'rejected'
     assert payload['reviewerDecision']['issues'][0]['issueId'] == 'ISSUE-001'
 
 

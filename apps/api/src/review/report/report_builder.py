@@ -31,7 +31,7 @@ class StructuredReviewReportBuilder:
             attachmentCount=visibility.attachmentCount,
             counts=visibility.counts,
             duplicateSectionTitles=visibility.duplicateSectionTitles,
-            parseWarnings=parse_warnings,
+            parseWarnings=visibility.parseWarnings or parse_warnings,
             reasonCounts=visibility.reasonCounts,
             manualReviewNeeded=visibility.manualReviewNeeded,
         )
@@ -83,7 +83,7 @@ class StructuredReviewReportBuilder:
             f'- 可视域计数：{json.dumps(parse_result.visibility.counts, ensure_ascii=False)}',
             f'- 可视域原因计数：{json.dumps(parse_result.visibility.reasonCounts, ensure_ascii=False)}',
             f'- duplicate sections：{", ".join(parse_result.visibility.duplicateSectionTitles) or "无"}',
-            f'- parse warnings：{", ".join(parse_result.parseWarnings) or "无"}',
+            f'- parse warnings：{", ".join(parse_result.visibility.parseWarnings) or "无"}',
             '',
         ]
         if unresolved_facts:

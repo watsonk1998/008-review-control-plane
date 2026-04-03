@@ -152,6 +152,7 @@ class VisibilityAssessment(BaseModel):
     counts: dict[str, int] = Field(default_factory=dict)
     reasonCounts: dict[str, int] = Field(default_factory=dict)
     duplicateSectionTitles: list[str] = Field(default_factory=list)
+    parseWarnings: list[str] = Field(default_factory=list)
     manualReviewNeeded: bool = False
 
 
@@ -184,6 +185,7 @@ class DocumentParseResult(BaseModel):
                 **visibility_report,
                 'parserLimited': data.get('parserLimited', visibility_report.get('parserLimited', False)),
                 'fileType': data.get('fileType', visibility_report.get('fileType')),
+                'parseWarnings': data.get('parseWarnings', visibility_report.get('parseWarnings', [])),
             }
         data['visibility'] = visibility
         if 'parserLimited' not in data:
@@ -193,6 +195,8 @@ class DocumentParseResult(BaseModel):
     @model_validator(mode='after')
     def _sync_visibility_report(self):
         self.parserLimited = self.visibility.parserLimited
+        self.visibility.parseWarnings = list(dict.fromkeys(self.parseWarnings or self.visibility.parseWarnings))
+        self.parseWarnings = list(self.visibility.parseWarnings)
         self.visibilityReport = self.visibility.model_dump(mode='json')
         return self
 
@@ -253,7 +257,7 @@ class StructuredReviewSummary(BaseModel):
 
 class StructuredReviewResult(BaseModel):
     summary: StructuredReviewSummary
-    visibility: VisibilityAssessment = Field(default_factory=VisibilityAssessment)
+    visibility: VisibilityAssessment
     resolvedProfile: ResolvedReviewProfile
     issues: list[FinalIssue] = Field(default_factory=list)
     matrices: StructuredReviewMatrices
@@ -265,23 +269,3 @@ class StructuredReviewResult(BaseModel):
     capabilitiesUsed: list[str] = Field(default_factory=list)
     finalAnswer: str = ''
     notice: str | None = None
-
-    @model_validator(mode='before')
-    @classmethod
-    def _load_visibility(cls, data: Any):
-        if not isinstance(data, dict):
-            return data
-        if data.get('visibility') is not None:
-            return data
-        summary = data.get('summary') or {}
-        visibility_summary = summary.get('visibilitySummary') or {}
-        data['visibility'] = {
-            'attachmentCount': visibility_summary.get('attachmentCount', 0),
-            'counts': visibility_summary.get('counts', {}),
-            'reasonCounts': visibility_summary.get('reasonCounts', {}),
-            'duplicateSectionTitles': visibility_summary.get('duplicateSectionTitles', []),
-            'manualReviewNeeded': visibility_summary.get('manualReviewNeeded', False),
-            'fileType': None,
-            'parserLimited': False,
-        }
-        return data

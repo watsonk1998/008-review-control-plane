@@ -76,6 +76,7 @@ def test_structured_review_executor_returns_expected_issue_titles():
     assert '停机窗口、投入人力与高风险工序并行存在组织压力' in issue_titles
     assert result['summary']['manualReviewNeeded'] is True
     assert result['visibility']['manualReviewNeeded'] is True
+    assert result['visibility']['parseWarnings'] == result['summary']['visibilitySummary']['parseWarnings']
     assert result['summary']['visibilitySummary']['attachmentCount'] >= 1
     assert result['summary']['visibilitySummary']['counts']['attachment_unparsed'] >= 1
     assert isinstance(result['unresolvedFacts'], list)
@@ -128,6 +129,21 @@ def test_document_loader_parse_pdf_document_uses_explicit_pdf_parser():
     assert any(warning.startswith('pdf_extracted_pages:') for warning in result.parseWarnings)
 
 
+def test_structured_review_executor_ignores_visibility_ablation_without_internal_flag():
+    executor = StructuredReviewExecutor(document_loader=DocumentLoader(), llm_gateway=DummyLLM(), fast_adapter=None)
+    result = executor.run_sync(
+        task_id='structured-review-no-visibility-ablation',
+        query='对该施工组织设计执行正式结构化审查',
+        source_document_path=str(SAMPLE_DOC),
+        fixture_id='supervision-cold-rolling-construction-plan',
+        execution_options={'disable_visibility_check': True},
+    )
+
+    assert result['visibility']['manualReviewNeeded'] is True
+    assert result['summary']['visibilitySummary']['counts']['attachment_unparsed'] >= 1
+    assert 'disable_visibility_check' not in result['visibility']['parseWarnings']
+
+
 def test_structured_review_executor_builds_full_artifact_catalog(tmp_path: Path):
     executor = StructuredReviewExecutor(document_loader=DocumentLoader(), llm_gateway=DummyLLM(), fast_adapter=None)
 
@@ -153,4 +169,4 @@ def test_structured_review_executor_builds_full_artifact_catalog(tmp_path: Path)
     )
 
     artifact_categories = {artifact['category'] for artifact in result['artifactIndex']}
-    assert {'parse', 'facts', 'rule_hits', 'candidates', 'result', 'matrix', 'report'}.issubset(artifact_categories)
+    assert {'parse', 'facts', 'rule_hits', 'candidates', 'result', 'matrices', 'report'}.issubset(artifact_categories)

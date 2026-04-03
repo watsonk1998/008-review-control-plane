@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 import statistics
 import sys
+import tempfile
 from typing import Any
 
 from src.review.evaluation.dataset import load_cases
@@ -123,32 +124,105 @@ def _run_cases(
     executor = StructuredReviewExecutor(document_loader=DocumentLoader(), llm_gateway=llm, fast_adapter=None)
     summaries = []
     for case in cases:
-        result = executor.run_sync(
-            task_id=case['caseId'],
-            query=case.get('query', '对该文件执行正式结构化审查'),
-            source_document_path=case['sourcePath'],
-            fixture_id=case.get('fixtureId'),
-            document_type=case.get('docType'),
-            discipline_tags=case.get('disciplineTags', []),
-            strict_mode=case.get('strictMode', True),
-            policy_pack_ids=force_policy_pack_ids if force_policy_pack_ids is not None else case.get('policyPackIds', []),
-            execution_options=execution_options,
-        )
-        metrics = compute_metrics(case, result)
-        summaries.append(
-            {
-                'caseId': case['caseId'],
-                'docType': case.get('docType'),
-                'versioned': case.get('versioned', False),
-                'passed': True,
-                'metrics': metrics,
-                'resolvedProfile': result.get('resolvedProfile', {}),
-                'summary': result.get('summary', {}),
-                'executionOptions': execution_options or {},
-                'runLabel': run_label,
-            }
-        )
+        with tempfile.TemporaryDirectory(prefix=f"review-eval-{case['caseId']}-") as artifact_dir:
+            artifact_dir_path = Path(artifact_dir)
+
+            def write_json_artifact(name: str, payload: Any) -> str:
+                path = artifact_dir_path / f'{name}.json'
+                path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding='utf-8')
+                return str(path)
+
+            def write_text_artifact(name: str, content: str, suffix: str) -> str:
+                path = artifact_dir_path / f'{name}{suffix}'
+                path.write_text(content, encoding='utf-8')
+                return str(path)
+
+            result = executor.run_sync(
+                task_id=case['caseId'],
+                query=case.get('query', '对该文件执行正式结构化审查'),
+                source_document_path=case['sourcePath'],
+                fixture_id=case.get('fixtureId'),
+                document_type=case.get('docType'),
+                discipline_tags=case.get('disciplineTags', []),
+                strict_mode=case.get('strictMode', True),
+                policy_pack_ids=force_policy_pack_ids if force_policy_pack_ids is not None else case.get('policyPackIds', []),
+                execution_options=execution_options,
+                allow_visibility_ablation=bool((execution_options or {}).get('disable_visibility_check')),
+                write_json_artifact=write_json_artifact,
+                write_text_artifact=write_text_artifact,
+            )
+            evaluation_artifacts = _load_evaluation_artifacts(result, artifact_dir_path)
+            metrics = compute_metrics(case, result, evaluation_artifacts=evaluation_artifacts)
+            summaries.append(
+                {
+                    'caseId': case['caseId'],
+                    'docType': case.get('docType'),
+                    'versioned': case.get('versioned', False),
+                    'passed': True,
+                    'metrics': metrics,
+                    'resolvedProfile': result.get('resolvedProfile', {}),
+                    'summary': result.get('summary', {}),
+                    'executionOptions': execution_options or {},
+                    'runLabel': run_label,
+                    'evaluationDiagnostics': {
+                        'artifactCategories': sorted((evaluation_artifacts.get('byCategory') or {}).keys()),
+                        'artifactNames': sorted((evaluation_artifacts.get('byName') or {}).keys()),
+                        'usedDirectFacts': bool((evaluation_artifacts.get('byCategory') or {}).get('facts')),
+                        'usedDirectRuleHits': bool((evaluation_artifacts.get('byCategory') or {}).get('rule_hits')),
+                        'usedDirectUnresolvedFacts': _has_direct_unresolved_facts(result, evaluation_artifacts),
+                        'unresolvedFactKeys': _extract_unresolved_fact_keys(result, evaluation_artifacts),
+                    },
+                }
+            )
     return summaries
+
+
+def _load_evaluation_artifacts(result: dict[str, Any], artifact_dir: Path) -> dict[str, Any]:
+    by_category: dict[str, Any] = {}
+    by_name: dict[str, Any] = {}
+    for artifact in result.get('artifactIndex', []):
+        if not isinstance(artifact, dict):
+            continue
+        file_name = artifact.get('fileName')
+        if not file_name or not str(file_name).endswith('.json'):
+            continue
+        path = artifact_dir / str(file_name)
+        if not path.exists():
+            continue
+        payload = json.loads(path.read_text(encoding='utf-8'))
+        name = artifact.get('name')
+        category = artifact.get('category')
+        if name:
+            by_name[str(name)] = payload
+        if not category:
+            continue
+        existing = by_category.get(str(category))
+        if existing is None:
+            by_category[str(category)] = payload
+        elif isinstance(existing, list):
+            existing.append(payload)
+        else:
+            by_category[str(category)] = [existing, payload]
+    return {'byCategory': by_category, 'byName': by_name}
+
+
+def _extract_unresolved_fact_keys(result: dict[str, Any], evaluation_artifacts: dict[str, Any]) -> list[str]:
+    by_name = evaluation_artifacts.get('byName') or {}
+    result_payload = by_name.get('structured-review-result')
+    unresolved_items = result_payload.get('unresolvedFacts', []) if isinstance(result_payload, dict) else result.get('unresolvedFacts', [])
+    return sorted(
+        {
+            str(item.get('factKey'))
+            for item in unresolved_items
+            if isinstance(item, dict) and item.get('factKey')
+        }
+    )
+
+
+def _has_direct_unresolved_facts(result: dict[str, Any], evaluation_artifacts: dict[str, Any]) -> bool:
+    by_name = evaluation_artifacts.get('byName') or {}
+    result_payload = by_name.get('structured-review-result')
+    return isinstance(result_payload, dict) and 'unresolvedFacts' in result_payload
 
 
 def _filter_cross_pack_ids(pack_ids: list[str]) -> list[str]:
