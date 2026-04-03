@@ -6,7 +6,7 @@ from pathlib import Path
 from types import SimpleNamespace
 
 from src.adapters.gpt_researcher_adapter import GPTResearcherAdapter
-from src.domain.models import TaskRecord
+from src.domain.models import SourceDocumentRef, TaskRecord
 from src.orchestrator.deepresearch_runtime import DeepResearchRuntime
 from src.repositories.sqlite_store import SQLiteTaskStore
 from src.services.document_loader import DocumentLoader
@@ -142,6 +142,7 @@ def create_task(**overrides) -> TaskRecord:
         'datasetId': None,
         'collectionId': None,
         'fixtureId': None,
+        'sourceDocumentRef': None,
         'useWeb': False,
         'debug': True,
         'sourceUrls': [],
@@ -287,3 +288,54 @@ async def test_runtime_structured_review_generates_formal_result(tmp_path: Path)
     assert attachment_issue['manualReviewReason'] == 'visibility_gap'
     assert any(path.endswith('.md') for path in saved.result['artifacts'])
     assert any(artifact['fileName'].endswith('.md') for artifact in saved.result['artifactIndex'])
+    assert saved.result['summary']['selectedPacks'] == ['construction_org.base']
+    assert {'parse', 'facts', 'rule_hits', 'candidates', 'result', 'matrix', 'report'}.issubset(
+        {artifact['category'] for artifact in saved.result['artifactIndex']}
+    )
+
+
+async def test_runtime_structured_review_accepts_source_document_ref_without_fixture(tmp_path: Path):
+    runtime, store = build_runtime(tmp_path, deeptutor=None)
+    source_document = tmp_path / 'uploaded-structured-review.md'
+    source_document.write_text(
+        '# 施工组织设计\n\n'
+        '## 第一节 工程概况\n项目名称：上传测试项目\n项目编号：UPLOAD-P0\n'
+        '## 第五节 防火安全\n保持消防器材完好。\n'
+        '## 第七节 防火安全\n重复章节用于回归测试。\n'
+        '起重吊装 作业\n施工用电 作业\n动火作业\n'
+        '附件2：施工总平面布置图\n',
+        encoding='utf-8',
+    )
+    task = create_task(
+        id='task-4',
+        taskType='structured_review',
+        capabilityMode='auto',
+        query='对上传文档执行正式结构化审查',
+        fixtureId=None,
+        sourceDocumentRef=SourceDocumentRef(
+            refId='upload-ref-1',
+            sourceType='upload',
+            fileName=source_document.name,
+            fileType='md',
+            storagePath=str(source_document),
+            displayName='上传测试项目',
+        ),
+        documentType='construction_org',
+        disciplineTags=['lifting_operations', 'temporary_power', 'hot_work'],
+        strictMode=True,
+        policyPackIds=['construction_org.base'],
+    )
+    store.create_task(task)
+
+    await runtime.execute_task(task.id)
+
+    saved = store.get_task(task.id)
+    assert saved is not None
+    assert saved.status == 'succeeded'
+    assert saved.sourceDocumentRef is not None
+    assert saved.sourceDocumentRef.sourceType == 'upload'
+    assert saved.result is not None
+    assert saved.result['summary']['documentType'] == 'construction_org'
+    assert saved.result['summary']['manualReviewNeeded'] is True
+    assert 'fixture' not in saved.result
+    assert any(issue['title'] == '附件处于可视域缺口，需人工复核原件' for issue in saved.result['issues'])

@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from src.review.rules.packs import get_policy_pack_registry
+
 
 _SEVERITY_SCORE = {'info': 0, 'low': 1, 'medium': 2, 'high': 3}
 _RULE_ID_ALIASES = {
@@ -22,6 +24,19 @@ def _pack_accuracy(expected: set[str], actual: set[str]) -> float:
         return 0.0
     union = expected | actual
     return len(expected & actual) / len(union) if union else 1.0
+
+
+def _normalize_ready_pack_ids(pack_ids: set[str]) -> set[str]:
+    registry = get_policy_pack_registry()
+    normalized: set[str] = set()
+    for pack_id in pack_ids:
+        pack = registry.get(pack_id)
+        if pack is None:
+            continue
+        if pack.readiness != 'ready':
+            continue
+        normalized.add(pack_id)
+    return normalized
 
 
 def _severity_accuracy(expected_issue: dict[str, Any], actual_issue: dict[str, Any] | None) -> float:
@@ -172,8 +187,8 @@ def compute_metrics(case: dict[str, Any], result: dict[str, Any]) -> dict[str, f
         }
         policy_hits += sum(1 for ref in required_refs if ref in actual_refs)
 
-    expected_packs = set(case.get('expectedPacks', []))
-    actual_packs = set((result.get('resolvedProfile') or {}).get('policyPackIds', []))
+    expected_packs = _normalize_ready_pack_ids(set(case.get('expectedPacks', [])))
+    actual_packs = _normalize_ready_pack_ids(set((result.get('resolvedProfile') or {}).get('policyPackIds', [])))
 
     expected_visibility_items = case.get('groundTruthVisibility', {}).get('attachments', [])
     actual_visibility_by_id, actual_visibility_by_title = _build_actual_visibility_maps(result)

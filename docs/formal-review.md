@@ -4,6 +4,7 @@
 
 `structured_review` 支持以下显式参数：
 
+- `fixtureId` / `sourceDocumentRef`（二选一）
 - `documentType`
 - `disciplineTags`
 - `strictMode`
@@ -11,10 +12,11 @@
 
 其中：
 
+- `fixtureId` 与 `sourceDocumentRef` 会在服务端统一归一化为 `sourceDocumentRef`
 - `documentType` 缺省时允许后端推断，但最终生效值必须写回 `resolvedProfile.documentType`
 - `disciplineTags` 缺省时允许由事实抽取补齐
-- `strictMode` 默认 `true`
-- `policyPackIds` 为空表示自动选 pack；显式传入时会在基础 pack 之外补齐
+- `strictMode` 默认 `true`，但当前状态是 `reserved / no-op`
+- `policyPackIds` 为空表示自动选 pack；显式传入时只会执行 `ready` packs
 
 ## 结果结构
 
@@ -28,7 +30,11 @@ P0 的稳定结果字段：
 - `reportMarkdown`
 - `unresolvedFacts`
 
-其中 `artifactIndex` 是前端下载工件的唯一可信入口，避免 UI 直接依赖本地绝对路径。
+其中：
+
+- `artifactIndex` 与 `GET /api/tasks/{taskId}/artifacts` 共享同一套官方 catalog
+- parse 结果内部使用 typed `visibility`、`parseMode`、`parserLimited`
+- `summary.visibilitySummary` 负责总览；`matrices.attachmentVisibility` 负责结构化明细
 
 ## 当前正式支持的文档类型
 
@@ -45,20 +51,25 @@ P0 的稳定结果字段：
 
 ### base packs
 
-- `construction_org.base`
-- `hazardous_special_scheme.base`
-- `construction_scheme.base`
-- `supervision_plan.base`
-- `review_support_material.base`
+- `construction_org.base`（ready）
+- `hazardous_special_scheme.base`（ready）
+- `construction_scheme.base`（placeholder）
+- `supervision_plan.base`（placeholder）
+- `review_support_material.base`（placeholder）
 
 ### scenario packs
 
-- `lifting_operations.base`
-- `temporary_power.base`
-- `hot_work.base`
-- `gas_area_ops.base`
-- `special_equipment.base`
-- `working_at_height.base`
+- `lifting_operations.base`（placeholder）
+- `temporary_power.base`（placeholder）
+- `hot_work.base`（placeholder）
+- `gas_area_ops.base`（placeholder）
+- `special_equipment.base`（placeholder）
+- `working_at_height.base`（placeholder）
+
+支持范围事实源：
+
+- `GET /api/tasks/support-scope`
+- 前端表单与结果页均消费该接口，而不是各写一套支持范围文案
 
 ## L1 / L2 / L3 语义
 
@@ -80,11 +91,17 @@ LLM 不负责：
 
 ## artifact API
 
+- `POST /api/uploads/documents`
+- `GET /api/tasks/support-scope`
 - `GET /api/tasks/{taskId}/artifacts`
 - `GET /api/tasks/{taskId}/artifacts/{artifactName}`
 
 典型工件包括：
 
+- `structured-review-parse.json`
+- `structured-review-facts.json`
+- `structured-review-rule-hits.json`
+- `structured-review-candidates.json`
 - `structured-review-result.json`
 - `structured-review-report.md`
 - `hazard-identification-matrix.json`
@@ -113,9 +130,20 @@ LLM 不负责：
 
 `fixtures/review_eval/` 当前包含：
 
-- CI 稳定子集：12 cases
-- legacy 完整评测池：20 cases
-- additive versioned bootstrap cases：`construction_org` 2 个、`hazardous_special_scheme` 1 个
+- legacy CI 稳定子集：12 cases
+- 数据集总量：26 cases
+- versioned cases：6 cases
+- 其中 versioned official stage-gate cases：3 cases
+
+当前 `make eval-review` 同时要求：
+
+- legacy 主门禁通过
+- official versioned stage gate 通过：
+  - `facts_accuracy >= 0.90`
+  - `rule_hit_accuracy >= 0.85`
+  - `hazard_identification_accuracy >= 0.90`
+  - `attachment_visibility_accuracy >= 0.90`
+  - `manual_review_flag_accuracy >= 0.80`
 
 主命令：
 

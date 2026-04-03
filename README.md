@@ -20,7 +20,12 @@
 
 ## P0 结构化审查收敛范围
 
-当前 `structured_review` 已做实为 fixture-first 的正式结构化审查入口，显式支持：
+当前 `structured_review` 已做实为正式结构化审查入口，输入支持以下二选一：
+
+- `fixtureId`
+- `sourceDocumentRef`
+
+显式 profile 参数包括：
 
 - `documentType`
 - `disciplineTags`
@@ -37,7 +42,11 @@
 - `reportMarkdown`
 - `unresolvedFacts`
 
-前端会基于 `artifactIndex` 调用只读 artifact API，不再直接消费本地绝对路径。
+其中：
+
+- `artifactIndex` 与 `GET /api/tasks/{taskId}/artifacts` 共享同一套官方 catalog
+- `manualReviewNeeded` 是 canonical 字段；`whetherManualReviewNeeded` 仅在 API 兼容层输出
+- `strictMode` 当前保留为兼容字段，状态为 `reserved / no-op`
 
 当前 P0 正式支持文档类型仅包括：
 
@@ -114,7 +123,14 @@ make verify-connectivity
   "taskType": "structured_review",
   "capabilityMode": "auto",
   "query": "对该危大专项方案执行正式结构化审查",
-  "fixtureId": "hazardous-special-scheme-demo",
+  "sourceDocumentRef": {
+    "refId": "upload-ref-1",
+    "sourceType": "upload",
+    "fileName": "hazardous-special-scheme-demo.pdf",
+    "fileType": "pdf",
+    "storagePath": "/absolute/path/to/artifacts/uploads/upload-ref-1/hazardous-special-scheme-demo.pdf",
+    "displayName": "hazardous-special-scheme-demo.pdf"
+  },
   "documentType": "hazardous_special_scheme",
   "disciplineTags": ["lifting_operations"],
   "strictMode": true,
@@ -124,6 +140,8 @@ make verify-connectivity
 
 ## artifact API
 
+- `POST /api/uploads/documents`
+- `GET /api/tasks/support-scope`
 - `GET /api/tasks/{taskId}/artifacts`
 - `GET /api/tasks/{taskId}/artifacts/{artifactName}`
 
@@ -132,6 +150,7 @@ make verify-connectivity
 - `manualReviewNeeded` 是唯一 canonical 人工复核布尔语义
 - `whetherManualReviewNeeded` 仅为兼容 alias，不再作为第二真相源
 - issue 结果会保留 `evidenceMissing` 与 `manualReviewReason`
+- parse 结果会保留 typed `visibility` / `parseMode` / `parserLimited`
 - `summary.visibilitySummary` 统一表达附件状态计数、重复章节、parse warnings 与 visibility reason counts
 - 系统不得把“未解析附件 / 当前不可视”直接写成“文档缺失”
 

@@ -1,0 +1,20 @@
+{
+  "facts": [
+    {
+      "key": "lifting_operation_identified",
+      "value": true
+    },
+    {
+      "key": "temporary_power_identified",
+      "value": true
+    },
+    {
+      "key": "hot_work_identified",
+      "value": true
+    },
+    {
+      "key": "has_attachment_1",
+      "value": true
+    }
+  ]
+}

@@ -20,9 +20,18 @@
 5. **审查辅助不是正式审查结论**
    - 当前输出是 control plane 级别的辅助整合结果，不能直接替代正式签发审查意见。
 
-6. **structured_review 当前仍是 fixture-first**
-   - P0 先把既有 formal review 骨架做稳，不在本阶段扩成通用上传、多文档批处理或多模态 OCR 平台。
+6. **structured_review 目前只支持最小单文件输入**
+   - 当前支持 `fixtureId` 或单文件 `sourceDocumentRef` 上传。
+   - 仍不支持多文档批处理、外部对象存储或多模态 OCR 平台化链路。
 
 7. **P0 正式支持范围仍有限**
    - 当前正式支持仅 `construction_org` 与 `hazardous_special_scheme`。
    - `construction_scheme`、`supervision_plan`、`review_support_material` 仍保留 registry / skeleton 覆盖，但不计入 P0 成功标准。
+
+8. **PDF 仍是 text-only 降级路径**
+   - PDF 当前会显式输出 `pdf_text_extraction_only`、`pdf_tables_not_preserved`、`pdf_attachment_visibility_may_be_unknown` 等 warnings。
+   - 因此 PDF 场景下的表格、图示与附件边界仍可能落入 `unknown` / `attachment_unparsed`，需要结合原件人工复核。
+
+9. **strictMode 仍是保留字段**
+   - 请求、持久化和结果中仍保留 `strictMode`，但当前不作为真实规则裁决开关。
+   - UI 与文档已将其降级为 `reserved / no-op`，避免过度承诺。

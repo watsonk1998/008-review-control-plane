@@ -1,6 +1,10 @@
 "use client";
 
-import type { CreateTaskRequest, ReviewDocumentType } from "@/types/control-plane";
+import type {
+  CreateTaskRequest,
+  ReviewDocumentType,
+  SupportScopeResponse,
+} from "@/types/control-plane";
 
 const DOCUMENT_TYPE_OPTIONS: Array<{ value: ReviewDocumentType; label: string }> = [
   { value: "construction_org", label: "施工组织设计" },
@@ -27,18 +31,26 @@ const P0_SUPPORTED_DOC_TYPES = new Set<ReviewDocumentType>([
 interface StructuredReviewFormProps {
   form: CreateTaskRequest;
   setForm: React.Dispatch<React.SetStateAction<CreateTaskRequest>>;
+  supportScope?: SupportScopeResponse | null;
 }
 
 export function StructuredReviewForm({
   form,
   setForm,
+  supportScope,
 }: StructuredReviewFormProps) {
   if (form.taskType !== "structured_review") {
     return null;
   }
 
   const selectedTags = new Set(form.disciplineTags || []);
-  const isP0Supported = P0_SUPPORTED_DOC_TYPES.has(form.documentType || "construction_org");
+  const documentSupportMap = new Map(
+    (supportScope?.documentTypes || []).map((item) => [item.documentType, item.readiness]),
+  );
+  const selectedDocumentType = form.documentType || "construction_org";
+  const isP0Supported =
+    (documentSupportMap.get(selectedDocumentType) || (P0_SUPPORTED_DOC_TYPES.has(selectedDocumentType) ? "official" : "skeleton")) ===
+    "official";
 
   return (
     <section className="stack-lg">
@@ -89,9 +101,9 @@ export function StructuredReviewForm({
               }
               type="checkbox"
             />
-            <span>严格模式（默认开启）</span>
+            <span>strictMode（保留字段）</span>
           </label>
-          <small>关闭后会减少保守型人工复核提示，但仍输出结构化结果。</small>
+          <small>当前仅作为兼容字段透传，尚未启用新的裁决语义。</small>
         </label>
       </div>
 

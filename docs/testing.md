@@ -36,8 +36,8 @@ make eval-review-cross-model
 ```
 
 - `test-review-unit`：跑 `tests/test_structured_review.py`
-- `test-review-integration`：跑 runtime 中 `structured_review` 分支
-- `eval-review`：执行 legacy CI 稳定子集，并同时输出 versioned bootstrap diagnostics 与 stage metrics
+- `test-review-integration`：跑 runtime 中 `structured_review` 分支（覆盖 fixture 与 `sourceDocumentRef`）
+- `eval-review`：执行 legacy CI 稳定子集，并同时执行 official versioned stage gate
 - `eval-review-ablations`：输出 parser / visibility / rule engine / llm explanation 的消融结果
 - `eval-review-cross-pack`：对比自动 pack 选择与强制 expected packs 的结果
 - `eval-review-cross-model`：固定 facts/rules，仅替换 explanation model
@@ -89,9 +89,9 @@ make eval-review-cross-model
 
 当前 P0 数据集：
 
-- CI 稳定子集：12 cases
-- legacy 完整评测池：20 cases
-- additive versioned bootstrap cases：3 cases
+- legacy CI 稳定子集：12 cases
+- 本地完整评测池：26 cases
+- versioned cases：6 cases，其中 3 个 official CI stage-gate cases
 - P0 正式支持：
   - `construction_org`
   - `hazardous_special_scheme`
@@ -103,14 +103,16 @@ make eval-review-cross-model
 验收要点：
 
 - 能输出 `summary / resolvedProfile / issues / matrices / artifactIndex / reportMarkdown`
+- `structured_review` 同时支持 `fixtureId` 与 `sourceDocumentRef`
+- public API 不接受 `disable_visibility_check`
 - `summary.visibilitySummary` 与 `unresolvedFacts` 可被 API/UI/eval 一致消费
 - 能识别重复章节、附件可视域缺口、专项方案挂接不清、停机窗口与资源压力
 - 能识别施工组织设计核心章节完整性缺口
 - 能识别危大专项方案核心章节缺口、验算依据缺口、措施-监测闭环问题
 - 能区分 `attachment_unparsed / referenced_only / unknown / missing`
 - `missing` 只在有明确证据时产出
-- artifact API 可列出和下载工件
-- 详情页能展示 issues / matrices / 原始 JSON
+- artifact API 可列出和下载工件，且与 `result.artifactIndex` 同口径
+- 详情页能展示 L0 visibility / issues / matrices / 原始 JSON
 
 ## P1 主门槛
 
@@ -121,7 +123,12 @@ make eval-review-cross-model
 - attachment visibility accuracy ≥ `0.90`
 - severity accuracy ≥ `0.75`
 - manual review flag accuracy ≥ `0.85`
-- hard evidence accuracy / facts accuracy / rule hit accuracy / hazard identification accuracy 作为 stage diagnostics 输出
+- versioned official stage gate：
+  - facts accuracy ≥ `0.90`
+  - rule hit accuracy ≥ `0.85`
+  - hazard identification accuracy ≥ `0.90`
+  - attachment visibility accuracy ≥ `0.90`
+  - manual review flag accuracy ≥ `0.80`
 - `review_assist` 回归失败数 = `0`
 
 ## 推荐回归命令

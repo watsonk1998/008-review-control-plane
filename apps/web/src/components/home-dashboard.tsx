@@ -11,7 +11,9 @@ import {
   fetchHealth,
   fetchHeartbeat,
   fetchRecentTasks,
+  fetchSupportScope,
   getApiBaseUrl,
+  uploadDocument,
 } from "@/lib/api";
 import type {
   CapabilityHealth,
@@ -21,6 +23,7 @@ import type {
   HealthResponse,
   HeartbeatResponse,
   RecentTaskSummary,
+  SupportScopeResponse,
   TaskStatus,
   TaskType,
 } from "@/types/control-plane";
@@ -29,7 +32,7 @@ const TASK_OPTIONS: Array<{ value: TaskType; label: string; hint: string }> = [
   {
     value: "structured_review",
     label: "正式审查",
-    hint: "fixture-first；P0 正式支持 construction_org / hazardous_special_scheme。",
+    hint: "支持 fixture 或上传文档；P0 正式支持 construction_org / hazardous_special_scheme。",
   },
   {
     value: "review_assist",
@@ -150,6 +153,7 @@ export function HomeDashboard() {
   const [health, setHealth] = useState<HealthResponse | null>(null);
   const [heartbeat, setHeartbeat] = useState<HeartbeatResponse | null>(null);
   const [fixtures, setFixtures] = useState<FixtureRecord[]>([]);
+  const [supportScope, setSupportScope] = useState<SupportScopeResponse | null>(null);
   const [recentTasks, setRecentTasks] = useState<RecentTaskSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -162,11 +166,13 @@ export function HomeDashboard() {
   const [lastFullRefreshAt, setLastFullRefreshAt] = useState<number | null>(null);
   const [nowTick, setNowTick] = useState(() => Date.now());
   const [apiReachable, setApiReachable] = useState(false);
+  const [uploadingDocument, setUploadingDocument] = useState(false);
   const [form, setForm] = useState<CreateTaskRequest>({
     taskType: "structured_review",
     capabilityMode: "auto",
     query: "请对该施工组织设计执行正式结构化审查，并输出问题清单、证据定位与整改建议。",
     fixtureId: "",
+    sourceDocumentRef: undefined,
     datasetId: "",
     collectionId: "",
     useWeb: false,
@@ -219,17 +225,7 @@ export function HomeDashboard() {
   const canSubmit =
     apiReachable &&
     Boolean(form.query.trim()) &&
-    (form.taskType !== "structured_review" || Boolean(form.fixtureId));
-
-  const syncFixturesToForm = useCallback((fixtureData: FixtureRecord[]) => {
-    if (!fixtureData.length) {
-      return;
-    }
-    setForm((current) => {
-      if (current.fixtureId) return current;
-      return { ...current, fixtureId: fixtureData[0].id };
-    });
-  }, []);
+    (form.taskType !== "structured_review" || Boolean(form.fixtureId || form.sourceDocumentRef));
 
   const refreshLight = useCallback(async () => {
     const [heartbeatData, taskData] = await Promise.all([
@@ -252,17 +248,18 @@ export function HomeDashboard() {
       }
 
       try {
-        const [healthData, fixtureData, heartbeatData, taskData] = await Promise.all([
+        const [healthData, fixtureData, heartbeatData, taskData, supportScopeData] = await Promise.all([
           fetchHealth(),
           fetchFixtures(),
           fetchHeartbeat(),
           fetchRecentTasks(8),
+          fetchSupportScope(),
         ]);
         setHealth(healthData);
         setFixtures(fixtureData);
+        setSupportScope(supportScopeData);
         setHeartbeat(heartbeatData);
         setRecentTasks(taskData);
-        syncFixturesToForm(fixtureData);
         setApiReachable(true);
         setError(null);
         const now = Date.now();
@@ -276,7 +273,7 @@ export function HomeDashboard() {
         setRefreshing(false);
       }
     },
-    [lastFullRefreshAt, syncFixturesToForm],
+    [lastFullRefreshAt],
   );
 
   useEffect(() => {
@@ -319,6 +316,23 @@ export function HomeDashboard() {
     };
   }, [lastFullRefreshAt, refreshFull, refreshLight]);
 
+  async function handleDocumentUpload(file: File) {
+    setUploadingDocument(true);
+    setError(null);
+    try {
+      const sourceDocumentRef = await uploadDocument(file);
+      setForm((current) => ({
+        ...current,
+        fixtureId: "",
+        sourceDocumentRef,
+      }));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "文档上传失败");
+    } finally {
+      setUploadingDocument(false);
+    }
+  }
+
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSubmitting(true);
@@ -331,7 +345,14 @@ export function HomeDashboard() {
 
       const task = await createTask({
         ...form,
-        fixtureId: form.fixtureId || undefined,
+        fixtureId:
+          form.taskType === "structured_review" && form.sourceDocumentRef
+            ? undefined
+            : form.fixtureId || undefined,
+        sourceDocumentRef:
+          form.taskType === "structured_review" && form.sourceDocumentRef
+            ? form.sourceDocumentRef
+            : undefined,
         datasetId: form.datasetId || undefined,
         collectionId: form.collectionId || undefined,
         sourceUrls: sourceUrlInput
@@ -364,6 +385,7 @@ export function HomeDashboard() {
           status: task.status,
           query: task.query,
           fixtureId: task.fixtureId,
+          sourceDocumentRef: task.sourceDocumentRef,
           documentType: task.documentType,
           createdAt: task.createdAt,
           updatedAt: task.updatedAt,
@@ -510,13 +532,14 @@ export function HomeDashboard() {
               </label>
 
               <label className="field">
-                <span>Fixture 样本</span>
+                <span>Fixture 样本（可选）</span>
                 <select
                   value={form.fixtureId || ""}
                   onChange={(event) =>
                     setForm((current) => ({
                       ...current,
                       fixtureId: event.target.value,
+                      sourceDocumentRef: event.target.value ? undefined : current.sourceDocumentRef,
                     }))
                   }
                 >
@@ -533,12 +556,34 @@ export function HomeDashboard() {
                 </select>
                 <small>
                   {form.taskType === "structured_review"
-                    ? "正式审查当前仍需 fixture 文档；P0 仅将施工组织设计与危大专项方案视为正式支持对象。"
+                    ? "正式审查现在支持 fixture 或上传文档二选一；fixture 仍是更稳定的回归路径。"
                     : "文档研究 / 审查辅助推荐选择 docx fixture。"}
                 </small>
               </label>
 
-              <StructuredReviewForm form={form} setForm={setForm} />
+              {form.taskType === "structured_review" ? (
+                <label className="field">
+                  <span>上传文档（可选）</span>
+                  <input
+                    accept=".docx,.pdf,.md,.txt"
+                    disabled={uploadingDocument}
+                    onChange={(event) => {
+                      const file = event.target.files?.[0];
+                      if (!file) return;
+                      void handleDocumentUpload(file);
+                      event.currentTarget.value = "";
+                    }}
+                    type="file"
+                  />
+                  <small>
+                    {form.sourceDocumentRef
+                      ? `当前已选择上传文档：${form.sourceDocumentRef.displayName || form.sourceDocumentRef.fileName}`
+                      : "上传后将自动切换为 sourceDocumentRef 输入路径。"}
+                  </small>
+                </label>
+              ) : null}
+
+              <StructuredReviewForm form={form} setForm={setForm} supportScope={supportScope} />
 
               <div className="toggle-row">
                 <button
@@ -657,8 +702,16 @@ export function HomeDashboard() {
                   {!apiReachable ? (
                     <p className="error-text">API 当前不可达，表单可继续编辑，但暂时无法创建任务。</p>
                   ) : null}
-                  {form.taskType === "structured_review" && !form.fixtureId ? (
-                    <p className="error-text">正式审查需要先选择一个 fixture 文档。</p>
+                  {form.taskType === "structured_review" && !form.fixtureId && !form.sourceDocumentRef ? (
+                    <p className="error-text">正式审查需要选择 fixture 或上传文档。</p>
+                  ) : null}
+                  {form.taskType === "structured_review" && form.sourceDocumentRef ? (
+                    <p className="muted small">
+                      当前输入源：上传文档 · {form.sourceDocumentRef.displayName || form.sourceDocumentRef.fileName}
+                    </p>
+                  ) : null}
+                  {form.taskType === "structured_review" && form.fixtureId ? (
+                    <p className="muted small">当前输入源：fixture · {form.fixtureId}</p>
                   ) : null}
                 </div>
 

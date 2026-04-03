@@ -9,9 +9,10 @@ from typing import Any
 
 from src.review.evaluation.dataset import load_cases
 from src.review.evaluation.metrics import compute_metrics
-from src.review.evaluation.thresholds import THRESHOLDS
+from src.review.evaluation.thresholds import THRESHOLDS, VERSIONED_STAGE_THRESHOLDS
 from src.review.pipeline import StructuredReviewExecutor
 from src.review.rules.packs import get_policy_pack_registry
+from src.review.support_scope import is_official_document_type
 from src.services.document_loader import DocumentLoader
 
 MIN_CI_CASES = 12
@@ -107,6 +108,10 @@ def _passes_thresholds(aggregate: dict[str, float]) -> bool:
     return all(aggregate.get(key, 0.0) >= threshold for key, threshold in THRESHOLDS.items())
 
 
+def _passes_versioned_stage_thresholds(aggregate: dict[str, float]) -> bool:
+    return all(aggregate.get(key, 0.0) >= threshold for key, threshold in VERSIONED_STAGE_THRESHOLDS.items())
+
+
 def _run_cases(
     cases: list[dict[str, Any]],
     *,
@@ -173,14 +178,27 @@ def run_main(case_root: Path) -> tuple[int, dict[str, Any]]:
     stable_summaries = _run_cases(stable_cases, llm=DeterministicLLM())
     versioned_summaries = _run_cases(versioned_cases, llm=DeterministicLLM()) if versioned_cases else []
     aggregate = _aggregate(stable_summaries)
-    passed = _passes_thresholds(aggregate)
+    versioned_gate_cases = [
+        summary
+        for summary in versioned_summaries
+        if summary.get('docType') and is_official_document_type(summary.get('docType'))
+        and any(case.get('caseId') == summary.get('caseId') and case.get('ciEnabled', False) for case in versioned_cases)
+    ]
+    versioned_gate_aggregate = _aggregate(versioned_gate_cases) if versioned_gate_cases else {}
+    passed = _passes_thresholds(aggregate) and (not versioned_gate_cases or _passes_versioned_stage_thresholds(versioned_gate_aggregate))
     return (0 if passed else 1), {
         'mode': 'main',
         'passed': passed,
         'aggregate': aggregate,
         'thresholds': THRESHOLDS,
+        'versionedStageThresholds': VERSIONED_STAGE_THRESHOLDS,
         'datasetCounts': counts,
         'cases': stable_summaries,
+        'versionedStageGate': {
+            'aggregate': versioned_gate_aggregate,
+            'caseIds': [case['caseId'] for case in versioned_gate_cases],
+            'passed': (not versioned_gate_cases or _passes_versioned_stage_thresholds(versioned_gate_aggregate)),
+        },
         'versionedDiagnostics': {
             'aggregate': _aggregate(versioned_summaries) if versioned_summaries else {},
             'cases': versioned_summaries,

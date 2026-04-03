@@ -1,0 +1,12 @@
+[
+  {
+    "rule_id": "construction_org_attachment_visibility",
+    "expected_status": "manual_review_needed",
+    "expected_match_type": "visibility_gap"
+  },
+  {
+    "rule_id": "construction_org_special_scheme_gap",
+    "expected_status": "manual_review_needed",
+    "expected_match_type": "direct_hit"
+  }
+]

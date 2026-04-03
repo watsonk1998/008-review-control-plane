@@ -1,0 +1,9 @@
+{
+  "attachments": [
+    {
+      "name": "附件1：吊装平面图（未附）",
+      "expected_visibility": "missing",
+      "manual_review_needed": true
+    }
+  ]
+}

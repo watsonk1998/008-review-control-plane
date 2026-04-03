@@ -1,0 +1,12 @@
+{
+  "facts": [
+    {
+      "key": "lifting_operation_identified",
+      "value": true
+    },
+    {
+      "key": "has_attachment_1",
+      "value": true
+    }
+  ]
+}

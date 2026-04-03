@@ -1,0 +1,12 @@
+[
+  {
+    "rule_id": "hazardous_special_scheme_attachment_visibility",
+    "expected_status": "manual_review_needed",
+    "expected_match_type": "visibility_gap"
+  },
+  {
+    "rule_id": "hazardous_special_scheme_core_sections",
+    "expected_status": "hit",
+    "expected_match_type": "direct_hit"
+  }
+]

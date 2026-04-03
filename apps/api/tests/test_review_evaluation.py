@@ -57,7 +57,7 @@ def _build_legacy_case(root: Path) -> None:
     _write_json(case_dir / 'ground_truth_visibility.json', {'attachments': {'attachment-1': 'attachment_unparsed'}})
 
 
-def _build_versioned_case(root: Path) -> None:
+def _build_versioned_case(root: Path, *, ci_enabled: bool = False) -> None:
     case_dir = root / 'hazardous_special_scheme' / 'lifting' / 'cn_demo_hazardous_scheme' / 'v0.1.0-seed'
     source = root / 'hazardous_special_scheme' / 'lifting' / 'cn_demo_hazardous_scheme' / 'source.md'
     source.parent.mkdir(parents=True, exist_ok=True)
@@ -77,7 +77,7 @@ def _build_versioned_case(root: Path) -> None:
             'doc_type': 'hazardous_special_scheme',
             'discipline_tags': ['lifting'],
             'expected_packs': ['hazardous_special_scheme.base'],
-            'ci_enabled': False,
+            'ci_enabled': ci_enabled,
         },
     )
     _write_json(
@@ -153,18 +153,21 @@ def test_review_eval_loader_supports_legacy_and_versioned_cases(tmp_path: Path):
 
 def test_review_eval_harness_reports_stage_metrics_and_versioned_diagnostics(tmp_path: Path, monkeypatch):
     _build_legacy_case(tmp_path)
-    _build_versioned_case(tmp_path)
+    _build_versioned_case(tmp_path, ci_enabled=True)
 
     monkeypatch.setattr('src.review.evaluation.harness.MIN_CI_CASES', 1)
     monkeypatch.setattr('src.review.evaluation.harness.MIN_TOTAL_CASES', 2)
 
     main_code, main_payload = run_main(tmp_path)
-    assert main_code in {0, 1}
+    assert main_code == 0
     assert 'issue_recall' in main_payload['aggregate']
     assert 'facts_accuracy' in main_payload['aggregate']
     assert 'rule_hit_accuracy' in main_payload['aggregate']
     assert 'versionedDiagnostics' in main_payload
     assert len(main_payload['versionedDiagnostics']['cases']) == 1
+    assert main_payload['versionedStageThresholds']['facts_accuracy'] == 0.9
+    assert main_payload['versionedStageGate']['caseIds'] == ['versioned-hz-001']
+    assert main_payload['versionedStageGate']['passed'] is True
 
     ablation_code, ablation_payload = run_ablations(tmp_path)
     assert ablation_code == 0

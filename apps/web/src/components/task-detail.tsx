@@ -96,6 +96,7 @@ function ArtifactList({ artifacts }: { artifacts: TaskArtifact[] }) {
           target="_blank"
         >
           {artifact.fileName}
+          {artifact.category ? ` · ${artifact.category}` : ""}
         </a>
       ))}
     </div>
@@ -534,7 +535,7 @@ export function TaskDetail({ taskId }: { taskId: string }) {
                     <p>documentType：{structuredResult.resolvedProfile.documentType}</p>
                     <p>disciplineTags：{structuredResult.resolvedProfile.disciplineTags.join("，") || "auto"}</p>
                     <p>policyPackIds：{structuredResult.resolvedProfile.policyPackIds.join(" → ") || "auto"}</p>
-                    <p>strictMode：{structuredResult.resolvedProfile.strictMode ? "true" : "false"}</p>
+                    <p>strictMode：{structuredResult.resolvedProfile.strictMode ? "true" : "false"}（reserved）</p>
                   </div>
                   <div className="callout">
                     <strong>人工复核</strong>
@@ -606,6 +607,22 @@ export function TaskDetail({ taskId }: { taskId: string }) {
               <section className="grid two-up">
                 <article className="card stack-lg">
                   <div>
+                    <p className="eyebrow">L0 Visibility</p>
+                    <h2>可视域与解析降级</h2>
+                  </div>
+                  <div className="callout">
+                    <strong>Visibility Summary</strong>
+                    <p>附件数量：{structuredResult.summary.visibilitySummary.attachmentCount}</p>
+                    <p>状态计数：{renderJson(structuredResult.summary.visibilitySummary.counts)}</p>
+                    <p>原因计数：{renderJson(structuredResult.summary.visibilitySummary.reasonCounts)}</p>
+                    <p>重复章节：{structuredResult.summary.visibilitySummary.duplicateSectionTitles.join("，") || "无"}</p>
+                    <p>parse warnings：{structuredResult.summary.visibilitySummary.parseWarnings.join("，") || "无"}</p>
+                  </div>
+                  <pre className="code-block compact">{renderJson(structuredResult.matrices.attachmentVisibility)}</pre>
+                </article>
+
+                <article className="card stack-lg">
+                  <div>
                     <p className="eyebrow">Matrices</p>
                     <h2>审查矩阵</h2>
                   </div>
@@ -627,26 +644,10 @@ export function TaskDetail({ taskId }: { taskId: string }) {
 
                 <article className="card stack-lg">
                   <div>
-                    <p className="eyebrow">Visibility & Structure</p>
-                    <h2>附件 / 章节结构</h2>
+                    <p className="eyebrow">Structure</p>
+                    <h2>章节结构</h2>
                   </div>
-                  <div className="callout">
-                    <strong>Visibility Summary</strong>
-                    <p>附件数量：{structuredResult.summary.visibilitySummary.attachmentCount}</p>
-                    <p>状态计数：{renderJson(structuredResult.summary.visibilitySummary.counts)}</p>
-                    <p>原因计数：{renderJson(structuredResult.summary.visibilitySummary.reasonCounts)}</p>
-                    <p>重复章节：{structuredResult.summary.visibilitySummary.duplicateSectionTitles.join("，") || "无"}</p>
-                  </div>
-                  <div className="stack-md">
-                    <div>
-                      <strong>Attachment Visibility</strong>
-                      <pre className="code-block compact">{renderJson(structuredResult.matrices.attachmentVisibility)}</pre>
-                    </div>
-                    <div>
-                      <strong>Section Structure</strong>
-                      <pre className="code-block compact">{renderJson(structuredResult.matrices.sectionStructure)}</pre>
-                    </div>
-                  </div>
+                  <pre className="code-block compact">{renderJson(structuredResult.matrices.sectionStructure)}</pre>
                 </article>
               </section>
 
@@ -660,7 +661,9 @@ export function TaskDetail({ taskId }: { taskId: string }) {
                     <strong>Unresolved Facts</strong>
                     <ul>
                       {structuredResult.unresolvedFacts.map((item) => (
-                        <li key={item}>{item}</li>
+                        <li key={`${item.code}-${item.factKey}`}>
+                          {item.code} · {item.summary}
+                        </li>
                       ))}
                     </ul>
                   </div>

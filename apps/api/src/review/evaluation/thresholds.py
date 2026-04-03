@@ -9,3 +9,11 @@ THRESHOLDS = {
     'severity_accuracy': 0.75,
     'manual_review_flag_accuracy': 0.85,
 }
+
+VERSIONED_STAGE_THRESHOLDS = {
+    'facts_accuracy': 0.90,
+    'rule_hit_accuracy': 0.85,
+    'hazard_identification_accuracy': 0.90,
+    'attachment_visibility_accuracy': 0.90,
+    'manual_review_flag_accuracy': 0.80,
+}

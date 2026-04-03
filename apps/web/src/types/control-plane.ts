@@ -6,6 +6,20 @@ export type ReviewDocumentType = "construction_org" | "construction_scheme" | "h
 export type AttachmentVisibility = "parsed" | "attachment_unparsed" | "referenced_only" | "missing" | "unknown";
 export type FindingType = "hard_evidence" | "engineering_inference" | "visibility_gap" | "suggestion_enhancement";
 export type ConfidenceLevel = "low" | "medium" | "high";
+export type ArtifactCategory = "parse" | "facts" | "rule_hits" | "candidates" | "result" | "matrix" | "report" | "generic";
+export type ParseMode = "docx_structured" | "pdf_text_only" | "markdown_text" | "plain_text";
+
+export interface SourceDocumentRef {
+  refId: string;
+  sourceType: "fixture" | "upload";
+  fileName: string;
+  fileType: string;
+  storagePath: string;
+  displayName?: string | null;
+  mediaType?: string | null;
+  fixtureId?: string | null;
+  uploadedAt?: string | null;
+}
 
 export interface CapabilityHealth {
   name: string;
@@ -42,7 +56,12 @@ export interface TaskEvent {
 export interface EvidenceSpan {
   sourceType: "document" | "policy" | "artifact";
   sourceId: string;
-  locator: Record<string, unknown>;
+  locator:
+    | { blockId: string; sectionId?: string | null }
+    | { tableId: string; sectionId?: string | null }
+    | { attachmentId: string }
+    | { clauseId: string }
+    | { sectionId: string };
   excerpt: string;
   visibility?: AttachmentVisibility | null;
   confidence: ConfidenceLevel;
@@ -74,6 +93,16 @@ export interface StructuredReviewVisibilitySummary {
   manualReviewNeeded: boolean;
 }
 
+export interface VisibilityAssessment {
+  parserLimited: boolean;
+  fileType?: string | null;
+  attachmentCount: number;
+  counts: Record<string, number>;
+  reasonCounts: Record<string, number>;
+  duplicateSectionTitles: string[];
+  manualReviewNeeded: boolean;
+}
+
 export interface StructuredReviewSummary {
   overallConclusion: string;
   documentType: ReviewDocumentType;
@@ -101,6 +130,9 @@ export interface TaskArtifact {
   mediaType: string;
   sizeBytes: number;
   downloadUrl: string;
+  category?: ArtifactCategory | null;
+  stage?: string | null;
+  primary?: boolean;
 }
 
 export interface HazardIdentificationMatrix {
@@ -157,7 +189,11 @@ export interface StructuredReviewResult {
   artifactIndex: TaskArtifact[];
   reportMarkdown: string;
   artifacts: string[];
-  unresolvedFacts: string[];
+  unresolvedFacts: Array<{
+    code: string;
+    factKey: string;
+    summary: string;
+  }>;
   plan?: Record<string, unknown> | null;
   capabilitiesUsed: string[];
   finalAnswer: string;
@@ -174,6 +210,7 @@ export interface TaskRecord {
   datasetId?: string | null;
   collectionId?: string | null;
   fixtureId?: string | null;
+  sourceDocumentRef?: SourceDocumentRef | null;
   useWeb: boolean;
   debug: boolean;
   sourceUrls: string[];
@@ -211,6 +248,7 @@ export interface RecentTaskSummary {
   status: TaskStatus;
   query: string;
   fixtureId?: string | null;
+  sourceDocumentRef?: SourceDocumentRef | null;
   documentType?: ReviewDocumentType | null;
   createdAt: string;
   updatedAt: string;
@@ -262,6 +300,7 @@ export interface CreateTaskRequest {
   datasetId?: string;
   collectionId?: string;
   fixtureId?: string;
+  sourceDocumentRef?: SourceDocumentRef;
   useWeb: boolean;
   debug: boolean;
   sourceUrls?: string[];
@@ -269,4 +308,19 @@ export interface CreateTaskRequest {
   disciplineTags?: string[];
   strictMode?: boolean;
   policyPackIds?: string[];
+}
+
+export interface SupportScopeResponse {
+  documentTypes: Array<{
+    documentType: ReviewDocumentType;
+    readiness: "official" | "skeleton";
+  }>;
+  packs: Array<{
+    packId: string;
+    readiness: "ready" | "placeholder";
+    docTypes: string[];
+    disciplineTags: string[];
+    defaultEnabled: boolean;
+    description: string;
+  }>;
 }

@@ -1,0 +1,14 @@
+{
+  "case_id": "cn_hz_attachment_missing_ci",
+  "case_version": "v0.1.0-ci-stage-gate",
+  "doc_type": "hazardous_special_scheme",
+  "discipline_tags": [
+    "lifting_operations"
+  ],
+  "expected_packs": [
+    "hazardous_special_scheme.base"
+  ],
+  "ci_enabled": true,
+  "label_status": "stage_gate_curated",
+  "truth_level": "repo_runtime_aligned"
+}

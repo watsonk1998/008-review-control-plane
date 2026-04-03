@@ -3,13 +3,15 @@ from __future__ import annotations
 from datetime import datetime, timezone
 import json
 from pathlib import Path
+from types import SimpleNamespace
 
 from fastapi.testclient import TestClient
 
-from src.domain.models import CreateTaskRequest, TaskArtifact, TaskRecord
+from src.domain.models import CreateTaskRequest, SourceDocumentRef, TaskArtifact, TaskRecord
 from src.main import app
 from src.repositories.sqlite_store import SQLiteTaskStore
 from src.routes import tasks as tasks_route
+from src.routes import uploads as uploads_route
 from src.services.task_service import TaskService
 
 
@@ -56,6 +58,42 @@ def test_task_service_persists_structured_review_fields_and_artifacts(tmp_path: 
     assert service.resolve_task_artifact(task.id, '../structured-review-report.md') == artifact_path.resolve()
 
 
+def test_task_service_prefers_result_artifact_catalog_over_directory_scan(tmp_path: Path):
+    store = SQLiteTaskStore(tmp_path / 'service.sqlite')
+    runtime = StubRuntime(tmp_path / 'artifacts')
+    service = TaskService(store, runtime, runtime.tasks_dir)
+
+    task = service.create_task(
+        CreateTaskRequest(
+            taskType='structured_review',
+            capabilityMode='auto',
+            query='执行正式结构化审查',
+            fixtureId='fixture-1',
+            documentType='construction_org',
+        )
+    )
+
+    task_dir = runtime.tasks_dir / task.id
+    task_dir.mkdir(parents=True, exist_ok=True)
+    (task_dir / 'unexpected-debug.json').write_text('{"debug": true}', encoding='utf-8')
+    catalog_artifact = {
+        'name': 'report',
+        'fileName': 'structured-review-report.md',
+        'mediaType': 'text/markdown',
+        'sizeBytes': 12,
+        'downloadUrl': f'/api/tasks/{task.id}/artifacts/structured-review-report.md',
+        'category': 'report',
+        'stage': 'report',
+        'primary': True,
+    }
+    store.update_task(task.id, result={'artifactIndex': [catalog_artifact]})
+
+    artifacts = service.list_task_artifacts(task.id)
+    assert [artifact.fileName for artifact in artifacts] == ['structured-review-report.md']
+    assert artifacts[0].category == 'report'
+    assert artifacts[0].primary is True
+
+
 def test_task_routes_accept_structured_review_fields_and_serve_artifacts(monkeypatch, tmp_path: Path):
     now = datetime.now(timezone.utc)
     artifact_path = tmp_path / 'report.json'
@@ -73,6 +111,7 @@ def test_task_routes_accept_structured_review_fields_and_serve_artifacts(monkeyp
                 capabilityMode=request.capabilityMode,
                 query=request.query,
                 fixtureId=request.fixtureId,
+                sourceDocumentRef=request.sourceDocumentRef,
                 sourceUrls=[],
                 documentType=request.documentType,
                 disciplineTags=request.disciplineTags or [],
@@ -93,12 +132,90 @@ def test_task_routes_accept_structured_review_fields_and_serve_artifacts(monkeyp
                 capabilityMode='auto',
                 query='query',
                 fixtureId='fixture-1',
+                sourceDocumentRef=SourceDocumentRef(
+                    refId='fixture-1',
+                    sourceType='fixture',
+                    fileName='fixture.docx',
+                    fileType='docx',
+                    storagePath='/tmp/fixture.docx',
+                    fixtureId='fixture-1',
+                ),
                 sourceUrls=[],
                 documentType='construction_org',
                 disciplineTags=['lifting_operations'],
                 strictMode=True,
                 policyPackIds=['construction_org.base'],
                 status='succeeded',
+                result={
+                    'summary': {
+                        'overallConclusion': 'demo',
+                        'documentType': 'construction_org',
+                        'selectedPacks': ['construction_org.base'],
+                        'manualReviewNeeded': True,
+                        'issueCount': 1,
+                        'layerCounts': {'L1': 1},
+                        'stats': {},
+                        'visibilitySummary': {
+                            'attachmentCount': 1,
+                            'counts': {'attachment_unparsed': 1},
+                            'duplicateSectionTitles': [],
+                            'parseWarnings': [],
+                            'reasonCounts': {'title_detected_without_attachment_body': 1},
+                            'manualReviewNeeded': True,
+                        },
+                    },
+                    'resolvedProfile': {
+                        'requestedDocumentType': 'construction_org',
+                        'requestedDisciplineTags': ['lifting_operations'],
+                        'requestedPolicyPackIds': ['construction_org.base'],
+                        'documentType': 'construction_org',
+                        'disciplineTags': ['lifting_operations'],
+                        'policyPackIds': ['construction_org.base'],
+                        'strictMode': True,
+                    },
+                    'issues': [
+                        {
+                            'id': 'ISSUE-001',
+                            'title': '附件处于可视域缺口，需人工复核原件',
+                            'layer': 'L1',
+                            'severity': 'medium',
+                            'findingType': 'visibility_gap',
+                            'summary': '附件处于可视域缺口，需人工复核原件',
+                            'manualReviewNeeded': True,
+                            'evidenceMissing': True,
+                            'manualReviewReason': 'visibility_gap',
+                            'docEvidence': [],
+                            'policyEvidence': [],
+                            'recommendation': [],
+                            'confidence': 'medium',
+                        }
+                    ],
+                    'matrices': {
+                        'hazardIdentification': {'values': {}},
+                        'ruleHits': [],
+                        'conflicts': {'values': {}},
+                        'attachmentVisibility': [],
+                        'sectionStructure': [],
+                        'issueLayerCounts': {'L1': 1},
+                    },
+                    'artifactIndex': [
+                        {
+                            'name': 'report',
+                            'fileName': 'report.json',
+                            'mediaType': 'application/json',
+                            'sizeBytes': artifact_path.stat().st_size,
+                            'downloadUrl': f'/api/tasks/{task_id}/artifacts/report.json',
+                            'category': 'result',
+                            'stage': 'result',
+                            'primary': True,
+                        }
+                    ],
+                    'reportMarkdown': '# demo',
+                    'artifacts': ['report.json'],
+                    'unresolvedFacts': [],
+                    'capabilitiesUsed': ['llm_gateway'],
+                    'finalAnswer': 'demo',
+                },
                 createdAt=now,
                 updatedAt=now,
             )
@@ -114,6 +231,9 @@ def test_task_routes_accept_structured_review_fields_and_serve_artifacts(monkeyp
                     mediaType='application/json',
                     sizeBytes=artifact_path.stat().st_size,
                     downloadUrl=f'/api/tasks/{task_id}/artifacts/report.json',
+                    category='result',
+                    stage='result',
+                    primary=True,
                 )
             ]
 
@@ -145,6 +265,7 @@ def test_task_routes_accept_structured_review_fields_and_serve_artifacts(monkeyp
     assert payload['policyPackIds'] == ['construction_org.base']
     assert fake_service.last_request is not None
     assert fake_service.last_request.documentType == 'construction_org'
+    assert payload['sourceDocumentRef'] is None
 
     artifacts_response = client.get('/api/tasks/task-route-1/artifacts')
     assert artifacts_response.status_code == 200
@@ -153,6 +274,126 @@ def test_task_routes_accept_structured_review_fields_and_serve_artifacts(monkeyp
     download_response = client.get('/api/tasks/task-route-1/artifacts/report.json')
     assert download_response.status_code == 200
     assert download_response.text == '{"ok": true}'
+
+    result_response = client.get('/api/tasks/task-route-1/result')
+    assert result_response.status_code == 200
+    result_payload = result_response.json()['result']
+    assert result_payload['issues'][0]['manualReviewNeeded'] is True
+    assert result_payload['issues'][0]['whetherManualReviewNeeded'] is True
+    assert result_payload['artifactIndex'] == artifacts_response.json()
+
+
+def test_task_routes_accept_source_document_ref_without_fixture(monkeypatch):
+    now = datetime.now(timezone.utc)
+
+    class FakeService:
+        def __init__(self):
+            self.last_request = None
+
+        def create_task(self, request):
+            self.last_request = request
+            return TaskRecord(
+                id='task-route-upload-1',
+                taskType=request.taskType,
+                capabilityMode=request.capabilityMode,
+                query=request.query,
+                fixtureId=request.fixtureId,
+                sourceDocumentRef=request.sourceDocumentRef,
+                sourceUrls=[],
+                documentType=request.documentType,
+                disciplineTags=request.disciplineTags or [],
+                strictMode=request.strictMode,
+                policyPackIds=request.policyPackIds or [],
+                status='created',
+                createdAt=now,
+                updatedAt=now,
+            )
+
+        def schedule_task(self, task_id: str):
+            return None
+
+    fake_service = FakeService()
+    monkeypatch.setattr(tasks_route, 'get_task_service', lambda: fake_service)
+    client = TestClient(app)
+
+    response = client.post(
+        '/api/tasks',
+        json={
+            'taskType': 'structured_review',
+            'capabilityMode': 'auto',
+            'query': '执行上传文档正式结构化审查',
+            'sourceDocumentRef': {
+                'refId': 'upload-ref-1',
+                'sourceType': 'upload',
+                'fileName': 'sample.md',
+                'fileType': 'md',
+                'storagePath': '/tmp/sample.md',
+                'displayName': 'sample.md',
+            },
+            'documentType': 'construction_org',
+            'disciplineTags': ['lifting_operations'],
+            'strictMode': True,
+            'policyPackIds': ['construction_org.base'],
+        },
+    )
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload['fixtureId'] is None
+    assert payload['sourceDocumentRef']['sourceType'] == 'upload'
+    assert fake_service.last_request is not None
+    assert fake_service.last_request.sourceDocumentRef is not None
+    assert fake_service.last_request.fixtureId is None
+
+
+def test_task_routes_reject_disable_visibility_check_public_field():
+    client = TestClient(app)
+    response = client.post(
+        '/api/tasks',
+        json={
+            'taskType': 'structured_review',
+            'capabilityMode': 'auto',
+            'query': '执行正式结构化审查',
+            'fixtureId': 'fixture-1',
+            'documentType': 'construction_org',
+            'disable_visibility_check': True,
+        },
+    )
+    assert response.status_code == 422
+
+
+def test_support_scope_route_returns_official_and_placeholder_scope():
+    client = TestClient(app)
+    response = client.get('/api/tasks/support-scope')
+    assert response.status_code == 200
+    payload = response.json()
+    document_types = {item['documentType']: item['readiness'] for item in payload['documentTypes']}
+    assert document_types['construction_org'] == 'official'
+    assert document_types['hazardous_special_scheme'] == 'official'
+    assert document_types['construction_scheme'] == 'skeleton'
+    packs = {item['packId']: item['readiness'] for item in payload['packs']}
+    assert packs['construction_org.base'] == 'ready'
+    assert any(readiness == 'placeholder' for readiness in packs.values())
+
+
+def test_upload_route_returns_source_document_ref(monkeypatch, tmp_path: Path):
+    monkeypatch.setattr(
+        uploads_route,
+        'get_settings',
+        lambda: SimpleNamespace(uploads_dir=tmp_path),
+    )
+    client = TestClient(app)
+
+    response = client.post(
+        '/api/uploads/documents',
+        files={'file': ('uploaded.md', b'# demo\n\ncontent\n', 'text/markdown')},
+    )
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload['sourceType'] == 'upload'
+    assert payload['fileType'] == 'md'
+    stored_path = Path(payload['storagePath'])
+    assert stored_path.exists()
+    assert stored_path.read_text(encoding='utf-8') == '# demo\n\ncontent\n'
 
 
 def test_task_routes_list_recent_tasks(monkeypatch):

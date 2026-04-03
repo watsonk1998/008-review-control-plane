@@ -1,0 +1,9 @@
+{
+  "attachments": [
+    {
+      "name": "附件1：施工总平面布置图",
+      "expected_visibility": "attachment_unparsed",
+      "manual_review_needed": true
+    }
+  ]
+}

@@ -4,6 +4,8 @@ import type {
   HealthResponse,
   HeartbeatResponse,
   RecentTaskSummary,
+  SourceDocumentRef,
+  SupportScopeResponse,
   TaskArtifact,
   TaskEvent,
   TaskRecord,
@@ -21,11 +23,12 @@ export function resolveApiUrl(path: string) {
 }
 
 async function fetchJson<T>(path: string, init?: RequestInit): Promise<T> {
+  const isFormData = typeof FormData !== "undefined" && init?.body instanceof FormData;
   const response = await fetch(resolveApiUrl(path), {
     ...init,
     cache: "no-store",
     headers: {
-      "Content-Type": "application/json",
+      ...(isFormData ? {} : { "Content-Type": "application/json" }),
       ...(init?.headers || {}),
     },
   });
@@ -54,10 +57,23 @@ export function fetchRecentTasks(limit = 8) {
   return fetchJson<RecentTaskSummary[]>(`/api/tasks?limit=${encodeURIComponent(String(limit))}`);
 }
 
+export function fetchSupportScope() {
+  return fetchJson<SupportScopeResponse>("/api/tasks/support-scope");
+}
+
 export function createTask(payload: CreateTaskRequest) {
   return fetchJson<TaskRecord>("/api/tasks", {
     method: "POST",
     body: JSON.stringify(payload),
+  });
+}
+
+export function uploadDocument(file: File) {
+  const formData = new FormData();
+  formData.append("file", file);
+  return fetchJson<SourceDocumentRef>("/api/uploads/documents", {
+    method: "POST",
+    body: formData,
   });
 }
 

@@ -1,0 +1,16 @@
+{
+  "case_id": "cn_construction_org_high_risk_ci",
+  "case_version": "v0.1.0-ci-stage-gate",
+  "doc_type": "construction_org",
+  "discipline_tags": [
+    "lifting_operations",
+    "temporary_power",
+    "hot_work"
+  ],
+  "expected_packs": [
+    "construction_org.base"
+  ],
+  "ci_enabled": true,
+  "label_status": "stage_gate_curated",
+  "truth_level": "repo_runtime_aligned"
+}
