@@ -1,19 +1,47 @@
 from __future__ import annotations
 
 from datetime import datetime
+from enum import Enum
 from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
-TaskType = Literal["knowledge_qa", "deep_research", "document_research", "review_assist"]
-CapabilityMode = Literal["auto", "deeptutor", "gpt_researcher", "fast", "llm_only"]
-TaskStatus = Literal["created", "planned", "running", "waiting_external", "succeeded", "failed", "partial"]
-EventStatus = Literal["started", "completed", "failed", "info"]
+TaskType = Literal['knowledge_qa', 'deep_research', 'document_research', 'review_assist', 'structured_review']
+CapabilityMode = Literal['auto', 'deeptutor', 'gpt_researcher', 'fast', 'llm_only']
+TaskStatus = Literal['created', 'planned', 'running', 'waiting_external', 'succeeded', 'failed', 'partial']
+EventStatus = Literal['started', 'completed', 'failed', 'info']
+
+
+class AttachmentVisibility(str, Enum):
+    parsed = 'parsed'
+    attachment_unparsed = 'attachment_unparsed'
+    referenced_only = 'referenced_only'
+    missing = 'missing'
+    unknown = 'unknown'
+
+
+class ReviewLayer(str, Enum):
+    L1 = 'L1'
+    L2 = 'L2'
+    L3 = 'L3'
+
+
+class FindingType(str, Enum):
+    hard_evidence = 'hard_evidence'
+    engineering_inference = 'engineering_inference'
+    visibility_gap = 'visibility_gap'
+    suggestion_enhancement = 'suggestion_enhancement'
+
+
+class ConfidenceLevel(str, Enum):
+    low = 'low'
+    medium = 'medium'
+    high = 'high'
 
 
 class CreateTaskRequest(BaseModel):
     taskType: TaskType
-    capabilityMode: CapabilityMode = "auto"
+    capabilityMode: CapabilityMode = 'auto'
     query: str = Field(min_length=1)
     datasetId: str | None = None
     collectionId: str | None = None
@@ -21,6 +49,25 @@ class CreateTaskRequest(BaseModel):
     useWeb: bool = False
     debug: bool = False
     sourceUrls: list[str] | None = None
+
+
+class EvidenceSpan(BaseModel):
+    sourceType: Literal['document', 'policy', 'artifact']
+    sourceId: str
+    locator: dict[str, Any]
+    excerpt: str
+    visibility: AttachmentVisibility | None = None
+    confidence: ConfidenceLevel = ConfidenceLevel.medium
+
+
+class ReviewIssue(BaseModel):
+    id: str
+    title: str
+    layer: ReviewLayer
+    severity: Literal['high', 'medium', 'low', 'info']
+    findingType: FindingType
+    summary: str
+    manualReviewNeeded: bool = False
 
 
 class TaskEvent(BaseModel):
@@ -45,7 +92,7 @@ class TaskRecord(BaseModel):
     useWeb: bool = False
     debug: bool = False
     sourceUrls: list[str] = Field(default_factory=list)
-    status: TaskStatus = "created"
+    status: TaskStatus = 'created'
     plan: dict[str, Any] | None = None
     result: dict[str, Any] | None = None
     error: dict[str, Any] | None = None

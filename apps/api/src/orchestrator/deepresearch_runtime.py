@@ -3,7 +3,6 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from pathlib import Path
 import json
-import time
 
 from src.adapters.deeptutor_adapter import DeepTutorAdapter
 from src.adapters.fastgpt_adapter import FastGPTAdapter, FastGPTResponseParseError
@@ -13,6 +12,7 @@ from src.domain.models import TaskEvent, TaskRecord
 from src.orchestrator.planner import TaskPlanner
 from src.orchestrator.router import infer_default_dataset
 from src.repositories.sqlite_store import SQLiteTaskStore
+from src.review.pipeline import StructuredReviewExecutor
 from src.services.document_loader import DocumentLoader
 from src.services.fixture_service import FixtureService
 
@@ -39,13 +39,18 @@ class DeepResearchRuntime:
         self.deeptutor = deeptutor
         self.tasks_dir = tasks_dir
         self.planner = TaskPlanner()
+        self.structured_review = StructuredReviewExecutor(
+            document_loader=document_loader,
+            llm_gateway=llm_gateway,
+            fast_adapter=fast_adapter,
+        )
 
     async def execute_task(self, task_id: str):
         task = self.store.get_task(task_id)
         if task is None:
             raise KeyError(f'Task not found: {task_id}')
         fixture = self.fixture_service.get_fixture(task.fixtureId) if task.fixtureId else None
-        plan = self.planner.build_plan(task, has_fixture=fixture is not None)
+        plan = self.planner.build_plan(task, has_fixture=fixture is not None, fixture_title=fixture.title if fixture else None)
         self.store.update_task(task_id, status='planned', plan=plan)
         self._emit(task_id, 'planning', 'deepresearch_runtime', 'completed', 'Execution plan created', debug=plan)
         self.store.update_task(task_id, status='running')
@@ -59,6 +64,8 @@ class DeepResearchRuntime:
                 result = await self._run_document_research(task, plan, fixture)
             elif task.taskType == 'review_assist':
                 result = await self._run_review_assist(task, plan, fixture)
+            elif task.taskType == 'structured_review':
+                result = await self._run_structured_review(task, plan, fixture)
             else:
                 raise ValueError(f'Unsupported task type: {task.taskType}')
             self.store.update_task(task_id, status='succeeded', result=result)
@@ -197,6 +204,24 @@ class DeepResearchRuntime:
             'artifacts': artifacts,
         }
 
+    async def _run_structured_review(self, task: TaskRecord, plan: dict, fixture) -> dict:
+        if fixture is None:
+            raise ValueError('structured_review requires a fixtureId')
+
+        result = await self.structured_review.run(
+            task_id=task.id,
+            query=task.query,
+            source_document_path=fixture.copiedPath,
+            fixture_id=fixture.id,
+            plan=plan,
+            emit=lambda stage, capability, status, message, **kwargs: self._emit(task.id, stage, capability, status, message, **kwargs),
+            write_json_artifact=lambda name, payload: self._write_task_artifact(task.id, name, payload),
+            write_text_artifact=lambda name, content, suffix='.md': self._write_text_artifact(task.id, name, content, suffix=suffix),
+        )
+        result['fixture'] = fixture.model_dump()
+        result['steps'] = [event.model_dump(mode='json') for event in self.store.list_events(task.id)]
+        return result
+
     async def _retrieve_fast_chunks(self, task: TaskRecord, dataset_id: str | None) -> dict:
         if task.collectionId:
             try:
@@ -231,6 +256,14 @@ class DeepResearchRuntime:
         path.write_text(json.dumps(payload, ensure_ascii=False, indent=2, default=str))
         return str(path)
 
+    def _write_text_artifact(self, task_id: str, name: str, content: str, *, suffix: str = '.md') -> str:
+        task_dir = self.tasks_dir / task_id
+        task_dir.mkdir(parents=True, exist_ok=True)
+        safe_suffix = suffix if suffix.startswith('.') else f'.{suffix}'
+        path = task_dir / f'{name}{safe_suffix}'
+        path.write_text(content, encoding='utf-8')
+        return str(path)
+
     def _chunks_to_sources(self, chunks: list[dict]) -> list[dict]:
         return [
             {
@@ -238,6 +271,8 @@ class DeepResearchRuntime:
                 'score': chunk.get('score'),
                 'preview': chunk.get('text', '')[:200],
                 'mode': chunk.get('mode'),
+                'chunkId': chunk.get('chunkId'),
+                'datasetId': chunk.get('datasetId'),
             }
             for chunk in chunks[:10]
         ]

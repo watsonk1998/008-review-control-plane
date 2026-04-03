@@ -12,7 +12,7 @@ cd /Users/lucas/repos/review/008-review-control-plane/apps/api
 pytest -q
 ```
 
-当前结果：`8 passed`
+当前目标：覆盖 legacy runtime + structured_review parser / executor / runtime integration。
 
 ### 前端构建检查
 
@@ -24,14 +24,17 @@ npm run lint
 npm run build
 ```
 
-已通过。
+### review domain 专项命令
 
-### 前端端到端页面验证
+```bash
+make test-review-unit
+make test-review-integration
+make eval-review
+```
 
-- 成功 UI 任务：`5e778a1c468340cf895846ffa3a3d146`
-- 页面工件：
-  - `artifacts/verification/end-to-end-ui-or-api.png`
-  - `artifacts/verification/end-to-end-ui-or-api.json`
+- `test-review-unit`：跑 `tests/test_structured_review.py`
+- `test-review-integration`：跑 runtime 中 `structured_review` 分支
+- `eval-review`：执行 `fixtures/review_eval/` 下的 golden cases
 
 ## 功能测试矩阵
 
@@ -44,13 +47,6 @@ npm run build
 - 真实成功任务（前端发起）：`5e778a1c468340cf895846ffa3a3d146`
 - 历史 API 成功任务：`2e6e5025afe94556af23b20197a86a8e`
 - 能看到 plan / events / Fast chunk / DeepTutor 返回
-
-对应工件：
-
-- `artifacts/tasks/2e6e5025afe94556af23b20197a86a8e/fast-dataset.json`
-- `artifacts/tasks/2e6e5025afe94556af23b20197a86a8e/deeptutor.json`
-- `artifacts/verification/end-to-end-ui-or-api.png`
-- `artifacts/verification/end-to-end-ui-or-api.json`
 
 ### 测试 2：深度研究
 
@@ -71,42 +67,44 @@ npm run build
 - `fixtures/copied/supervision/230235-冷轧厂2030单元三台行车电气系统改造-施工组织设计.docx`
 - `fixtures/copied/supervision/监理实施规划（南校区宿舍楼）20250710(1).docx`
 
-已验证：
-
-- API 成功任务：`7f0fc83965e94a66874e00b96e5a03ee`
-- 联通工件：`artifacts/verification/gpt-researcher-connectivity.json`
-- 任务工件：
-  - `artifacts/tasks/7f0fc83965e94a66874e00b96e5a03ee/document-preview.json`
-  - `artifacts/tasks/7f0fc83965e94a66874e00b96e5a03ee/document-research.json`
-
 ### 测试 4：审查辅助
 
 目标链路：DeepResearchRuntime → FastGPT → DeepTutor / GPT Researcher → LLM
 
-已验证：
+验收要点：
 
-- API 成功任务：`23a57bd1d3a94454965452143325018b`
-- 返回 `capabilitiesUsed = ["fast", "deeptutor", "gpt_researcher", "llm_gateway"]`
-- 输出包含“辅助审查要点”和“这是辅助审查结果，不等于正式审查结论。”
-- 任务工件：
-  - `artifacts/tasks/23a57bd1d3a94454965452143325018b/review-fast.json`
-  - `artifacts/tasks/23a57bd1d3a94454965452143325018b/review-summary.json`
-  - `artifacts/tasks/23a57bd1d3a94454965452143325018b/review-doc-preview.json`
+- 输出包含“辅助审查要点”
+- 输出包含“这是辅助审查结果，不等于正式审查结论。”
+- `review_assist` shape 不因 `structured_review` 引入而回归
 
-## 测试汇总工件
+### 测试 5：结构化正式审查
 
-- `artifacts/verification/task-matrix.json`
-- `artifacts/verification/llm-health.json`
-- `artifacts/verification/fast-mode-a.json`
-- `artifacts/verification/fast-mode-b.md`
-- `artifacts/verification/deeptutor-connectivity.json`
-- `artifacts/verification/gpt-researcher-connectivity.json`
-- `artifacts/verification/gpt-researcher-deep-research.json`
+目标链路：DocumentLoader / review parser → facts → rules → evidence → report
+
+当前最小 golden case：
+
+- `fixtures/review_eval/construction_org/case_001`
+
+验收要点：
+
+- 能输出 `summary / issues / matrices / reportMarkdown / artifacts`
+- 能识别重复章节、附件可视域缺口、专项方案挂接不清、停机窗口与资源压力
+- 能区分 `attachment_unparsed` 与可直接证实的正文缺陷
+- 详情页能展示 issues / matrices / 原始 JSON
+
+## 当前 golden case 目标指标
+
+- issue recall ≥ `0.75`
+- attachment visibility accuracy = `1.0`
+- `review_assist` 回归失败数 = `0`
 
 ## 推荐回归命令
 
 ```bash
 make test
+make test-review-unit
+make test-review-integration
+make eval-review
 make smoke
 make verify-connectivity
 ```

@@ -4,13 +4,19 @@
 
 ## 项目定位
 
-`008-review-control-plane` 是一个新的多 Agent 总控平台骨架：
+`008-review-control-plane` 是一个新的多 Agent 总控平台骨架，同时开始承载一条独立的正式结构化审查子域：
 
 - **前端**：统一任务入口、能力边界说明、任务状态与链路展示
 - **后端**：FastAPI 任务 API、SQLite 状态存储、artifacts 落盘
 - **DeepResearchAgent 兼容层**：`planner + router + coordinator + runtime`
 - **能力服务层**：DeepTutor / GPT Researcher / FastGPT / 本地 LLM
+- **Review 子域**：`parse -> facts -> rules -> evidence -> report` 的 `structured_review` 正式结构化审查流水线
 - **知识层**：FastGPT chunks 检索优先，避免把 Fast 当成黑盒答案机
+
+## 双轨能力
+
+- `review_assist`：保留为快速辅助总结，结果里明确声明“不等于正式审查结论”
+- `structured_review`：新增为正式结构化审查，输出 issues / matrices / Markdown report / JSON artifacts
 
 ## 目录结构
 
@@ -36,6 +42,7 @@
 - `deep_research`：DeepResearchRuntime → GPT Researcher → LLM 摘要
 - `document_research`：fixture/docx → GPT Researcher 本地文档研究
 - `review_assist`：FastGPT + DeepTutor + GPT Researcher + LLM 总结为辅助审查要点
+- `structured_review`：DocumentLoader / review parser → facts → rule engine → evidence builder → formal report / matrices
 
 ## 快速启动
 
@@ -58,6 +65,9 @@ make dev-bridge
 make dev-api
 make dev-web
 make test
+make test-review-unit
+make test-review-integration
+make eval-review
 make smoke
 make verify-connectivity
 ```

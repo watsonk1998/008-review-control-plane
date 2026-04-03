@@ -9,6 +9,14 @@
 - 编排 DeepTutor / GPT Researcher / FastGPT / 本地 LLM
 - 保存任务状态、步骤、工件
 - 向前端暴露统一、可观察的运行时接口
+- 为正式审查能力提供可扩展的 review domain pipeline
+
+## 双轨能力边界
+
+- **`review_assist`**：快速辅助总结，明确不是正式结论。
+- **`structured_review`**：正式结构化审查，输出稳定 schema、矩阵和报告工件。
+
+runtime 仍然只是 orchestration / coordination 层；正式审查判断下沉到 `apps/api/src/review/`。
 
 ## 分层
 
@@ -22,6 +30,7 @@
 - 创建任务
 - 轮询查看状态与步骤日志
 - 展示结果 / chunks / 引用 / 调试信息
+- 对 `structured_review` 结果渲染 issues / matrices / report
 
 ### 2. API 层
 
@@ -46,8 +55,22 @@
 - 选择能力
 - 组织调用顺序
 - 聚合最终结果
+- 调度 `structured_review` 子域执行器
 
-### 4. Adapter 层
+### 4. Review 子域
+
+路径：`/Users/lucas/repos/review/008-review-control-plane/apps/api/src/review`
+
+职责：
+
+- 结构化文档解析（sections / blocks / tables / attachments / visibility）
+- 事实抽取（project / hazard / schedule / resources / emergency）
+- 规则命中（duplicate sections / attachment visibility / special scheme gap / schedule-resource pressure）
+- 证据归档（docEvidence / policyEvidence）
+- 正式报告与矩阵构建
+- evaluation harness / golden case 回归
+
+### 5. Adapter 层
 
 路径：`/Users/lucas/repos/review/008-review-control-plane/apps/api/src/adapters`
 
@@ -60,8 +83,9 @@
 
 - 把不同外部能力收束成统一接口
 - 做配置注入、错误处理、响应归一化
+- 在 formal review 中只作为工具层，不承担主裁判职责
 
-### 5. Config 层
+### 6. Config 层
 
 路径：`/Users/lucas/repos/review/008-review-control-plane/apps/api/src/config`
 
@@ -71,11 +95,12 @@
 - 支持 env > 本地文件 回退
 - 前端不直接接触密钥
 
-### 6. State / Artifacts 层
+### 7. State / Artifacts 层
 
 - SQLite：`artifacts/tasks/runtime.sqlite`
 - artifacts：`artifacts/tasks/<task-id>/...`
 - verification：`artifacts/verification/`
+- review eval fixtures：`fixtures/review_eval/`
 
 ## 核心任务流
 
@@ -89,6 +114,12 @@ flowchart TD
     E --> G[DeepTutor Adapter]
     E --> H[GPT Researcher Adapter]
     E --> I[LLM Gateway]
+    C --> R[Review Pipeline]
+    R --> R1[Parser]
+    R --> R2[Extractors]
+    R --> R3[Rule Engine]
+    R --> R4[Evidence Builder]
+    R --> R5[Report Builder]
     F --> J[FastGPT Chunks]
     G --> K[DeepTutor Bridge]
     H --> L[GPT Researcher Runtime]
@@ -103,12 +134,21 @@ flowchart TD
 - **FastGPT**：底层知识切片检索层
 - **DeepTutor**：知识问答 / 规范解释层
 - **GPT Researcher**：研究报告 / 多来源归纳 / 本地文档研究层
-- **LLM Gateway**：轻量整理、摘要、最终辅助输出层
+- **LLM Gateway**：轻量整理、摘要、正式审查解释层（非主裁判）
+- **Review Pipeline**：formal review 的领域执行器
+
+## 当前 formal review 最小规则核
+
+- 重复章节标题识别
+- 附件可视域缺口标记
+- 高风险作业专项方案挂接检查
+- 应急预案针对性检查
+- 停机窗口 / 人力 / 高风险工序并行压力提示
 
 ## 可扩展方向
 
-- 增加正式 review pack registry
+- 增加更多 review pack registry
 - 增加文档上传与多文档批处理
 - 增加 SSE / websocket 实时日志流
-- 增加多租户 dataset / collection 配置
-- 增加审查规则执行器、结构化 issue schema、审查报告导出
+- 增加更多专业场景 packs / evidence packs
+- 增加多模态图纸/附件解析

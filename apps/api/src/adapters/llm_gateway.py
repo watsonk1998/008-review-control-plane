@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import json
 from typing import Any
+
 import httpx
 
 from src.config.llm import LLMConfig, resolve_llm_config
@@ -54,11 +56,125 @@ class LLMGateway:
             for index, chunk in enumerate(chunks[:8])
         )
         prompt = (
-            '请严格基于提供的 chunks 回答。若 chunks 不足，请明确写出“不足以得出结论”。' +
-            ('\n' + extra_instruction if extra_instruction else '') +
-            f"\n\n问题：{query}\n\n可用上下文：\n{context}"
+            '请严格基于提供的 chunks 回答。若 chunks 不足，请明确写出“不足以得出结论”。'
+            + ('\n' + extra_instruction if extra_instruction else '')
+            + f'\n\n问题：{query}\n\n可用上下文：\n{context}'
         )
         return await self.chat([
             {'role': 'system', 'content': '你是一个谨慎的工程知识整理助手。'},
             {'role': 'user', 'content': prompt},
         ])
+
+    def explain_issue_candidates(self, candidates) -> list[dict[str, Any]]:
+        return self._fallback_issue_payloads(candidates)
+
+    async def aexplain_issue_candidates(self, candidates) -> list[dict[str, Any]]:
+        fallback = self._fallback_issue_payloads(candidates)
+        if not candidates:
+            return fallback
+        prompt = json.dumps(
+            [
+                {
+                    'id': candidate.candidateId,
+                    'title': candidate.title,
+                    'layer': candidate.layerHint.value,
+                    'severity': candidate.severityHint,
+                    'findingType': candidate.findingType.value,
+                    'manualReviewNeeded': candidate.manualReviewNeeded,
+                    'docEvidence': [span.model_dump(mode='json') for span in candidate.docEvidence],
+                    'policyEvidence': [span.model_dump(mode='json') for span in candidate.policyEvidence],
+                }
+                for candidate in candidates
+            ],
+            ensure_ascii=False,
+        )
+        try:
+            response = await self.chat(
+                [
+                    {
+                        'role': 'system',
+                        'content': '你是正式审查结果整理器。只能基于候选问题 JSON 整理 title/summary/recommendation，不得新增事实或法规依据。返回 JSON 数组。',
+                    },
+                    {'role': 'user', 'content': prompt[:12000]},
+                ],
+                temperature=0.1,
+                max_tokens=1800,
+            )
+            parsed = self._load_json_array(response.get('content', ''))
+            if not parsed:
+                return fallback
+            merged: list[dict[str, Any]] = []
+            for base, generated in zip(fallback, parsed):
+                merged.append(
+                    {
+                        **base,
+                        'title': generated.get('title') or base['title'],
+                        'summary': generated.get('summary') or base['summary'],
+                        'recommendation': generated.get('recommendation') or base['recommendation'],
+                        'confidence': generated.get('confidence') or base['confidence'],
+                    }
+                )
+            return merged
+        except Exception:
+            return fallback
+
+    def merge_issue_candidates(self, candidates) -> list[dict[str, Any]]:
+        return self._fallback_issue_payloads(candidates)
+
+    def render_recommendations(self, candidate) -> list[str]:
+        return self._fallback_issue_payloads([candidate])[0]['recommendation']
+
+    def _fallback_issue_payloads(self, candidates) -> list[dict[str, Any]]:
+        payloads: list[dict[str, Any]] = []
+        for index, candidate in enumerate(candidates, start=1):
+            payloads.append(
+                {
+                    'id': f'ISSUE-{index:03d}',
+                    'title': candidate.title,
+                    'layer': candidate.layerHint.value,
+                    'severity': candidate.severityHint,
+                    'findingType': candidate.findingType.value,
+                    'summary': self._fallback_summary(candidate),
+                    'manualReviewNeeded': candidate.manualReviewNeeded,
+                    'docEvidence': [span.model_dump(mode='json') for span in candidate.docEvidence],
+                    'policyEvidence': [span.model_dump(mode='json') for span in candidate.policyEvidence],
+                    'recommendation': self._fallback_recommendations(candidate),
+                    'confidence': 'low' if candidate.manualReviewNeeded else 'medium',
+                    'whetherManualReviewNeeded': candidate.manualReviewNeeded,
+                }
+            )
+        return payloads
+
+    def _fallback_summary(self, candidate) -> str:
+        if candidate.candidateId == 'construction_org_duplicate_sections':
+            return '解析结果中出现重复章节标题，会降低问题定位、矩阵对齐和人工复核稳定性。'
+        if candidate.candidateId == 'construction_org_attachment_visibility':
+            return '正文已引用附件，但当前解析仅能看到附件标题或引用位置，需人工复核附件原件。'
+        if candidate.candidateId == 'construction_org_special_scheme_gap':
+            return '文档已识别起重吊装、动火或施工用电等高风险作业，但未看到明确的专项方案挂接位置。'
+        if candidate.candidateId == 'construction_org_emergency_plan_targeted':
+            return '应急预案数量或类型与主要危险源不完全匹配，针对性不足。'
+        if candidate.candidateId == 'construction_org_shutdown_resource_conflict':
+            return '停机窗口紧、作业并行度高且投入人力较大，存在组织与交叉作业压力。'
+        return candidate.title
+
+    def _fallback_recommendations(self, candidate) -> list[str]:
+        mapping = {
+            'construction_org_duplicate_sections': ['统一章节编号与标题命名，消除重复“防火安全”等结构冲突。'],
+            'construction_org_attachment_visibility': ['补充上传附件原件或补录附件正文内容，并在正式报告中标记人工复核结果。'],
+            'construction_org_special_scheme_gap': ['针对识别出的起重吊装/动火/施工用电等高风险作业，明确专项方案或专项技术措施的正文挂接位置。'],
+            'construction_org_emergency_plan_targeted': ['按主要危险源补齐对应事故类型、联络链路和现场处置动作。'],
+            'construction_org_shutdown_resource_conflict': ['复核停机窗口、班组组织与交叉作业顺序，必要时拆分作业面或增加错峰安排。'],
+        }
+        return mapping.get(candidate.candidateId, ['结合证据补充整改措施。'])
+
+    def _load_json_array(self, content: str) -> list[dict[str, Any]]:
+        text = content.strip()
+        if text.startswith('```'):
+            parts = text.split('```')
+            if len(parts) >= 2:
+                text = parts[1]
+                if text.startswith('json'):
+                    text = text[4:]
+        parsed = json.loads(text)
+        return parsed if isinstance(parsed, list) else []

@@ -1,6 +1,10 @@
-export type TaskType = "knowledge_qa" | "deep_research" | "document_research" | "review_assist";
+export type TaskType = "knowledge_qa" | "deep_research" | "document_research" | "review_assist" | "structured_review";
 export type CapabilityMode = "auto" | "deeptutor" | "gpt_researcher" | "fast" | "llm_only";
 export type TaskStatus = "created" | "planned" | "running" | "waiting_external" | "succeeded" | "failed" | "partial";
+export type ReviewLayer = "L1" | "L2" | "L3";
+export type AttachmentVisibility = "parsed" | "attachment_unparsed" | "referenced_only" | "missing" | "unknown";
+export type FindingType = "hard_evidence" | "engineering_inference" | "visibility_gap" | "suggestion_enhancement";
+export type ConfidenceLevel = "low" | "medium" | "high";
 
 export interface CapabilityHealth {
   name: string;
@@ -34,6 +38,63 @@ export interface TaskEvent {
   artifactPath?: string | null;
 }
 
+export interface EvidenceSpan {
+  sourceType: "document" | "policy" | "artifact";
+  sourceId: string;
+  locator: Record<string, unknown>;
+  excerpt: string;
+  visibility?: AttachmentVisibility | null;
+  confidence: ConfidenceLevel;
+}
+
+export interface ReviewIssue {
+  id: string;
+  title: string;
+  layer: ReviewLayer;
+  severity: "high" | "medium" | "low" | "info";
+  findingType: FindingType;
+  summary: string;
+  manualReviewNeeded: boolean;
+  docEvidence: EvidenceSpan[];
+  policyEvidence: EvidenceSpan[];
+  recommendation: string[];
+  confidence: ConfidenceLevel;
+  whetherManualReviewNeeded: boolean;
+}
+
+export interface StructuredReviewSummary {
+  overallConclusion: string;
+  documentType: string;
+  selectedPacks: string[];
+  manualReviewNeeded: boolean;
+  issueCount: number;
+  layerCounts: Record<string, number>;
+  stats: Record<string, unknown>;
+}
+
+export interface StructuredReviewMatrices {
+  hazardIdentification: Record<string, unknown>;
+  ruleHits: Array<Record<string, unknown>>;
+  conflicts: Record<string, unknown>;
+  attachmentVisibility: Array<Record<string, unknown>>;
+  sectionStructure: Array<Record<string, unknown>>;
+  issueLayerCounts?: Record<string, number>;
+}
+
+export interface StructuredReviewResult {
+  summary: StructuredReviewSummary;
+  issues: ReviewIssue[];
+  matrices: StructuredReviewMatrices;
+  reportMarkdown: string;
+  artifacts: string[];
+  plan?: Record<string, unknown> | null;
+  capabilitiesUsed: string[];
+  finalAnswer: string;
+  notice?: string | null;
+  fixture?: FixtureRecord;
+  steps?: TaskEvent[];
+}
+
 export interface TaskRecord {
   id: string;
   taskType: TaskType;
@@ -47,7 +108,7 @@ export interface TaskRecord {
   sourceUrls: string[];
   status: TaskStatus;
   plan?: Record<string, unknown> | null;
-  result?: Record<string, unknown> | null;
+  result?: Record<string, unknown> | StructuredReviewResult | null;
   error?: Record<string, unknown> | null;
   createdAt: string;
   updatedAt: string;

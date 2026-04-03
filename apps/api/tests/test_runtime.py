@@ -20,6 +20,25 @@ class FakeLLM:
     async def chat(self, messages, temperature=0.2, max_tokens=1200):
         return {'content': '辅助审查要点\n- 示例\n\n非正式审查结论', 'raw': {}, 'usage': None}
 
+    def explain_issue_candidates(self, candidates):
+        return [
+            {
+                'id': f'ISSUE-{index + 1:03d}',
+                'title': candidate.title,
+                'layer': candidate.layerHint,
+                'severity': candidate.severityHint,
+                'findingType': candidate.findingType,
+                'summary': candidate.title,
+                'manualReviewNeeded': candidate.manualReviewNeeded,
+                'docEvidence': [span.model_dump(mode='json') for span in candidate.docEvidence],
+                'policyEvidence': [span.model_dump(mode='json') for span in candidate.policyEvidence],
+                'recommendation': ['demo'],
+                'confidence': 'medium',
+                'whetherManualReviewNeeded': candidate.manualReviewNeeded,
+            }
+            for index, candidate in enumerate(candidates)
+        ]
+
 
 class FakeFast:
     async def search_dataset_chunks(self, dataset_id, query, **kwargs):
@@ -76,7 +95,7 @@ def build_fixture_manifest(tmp_path: Path) -> Path:
     fixture_dir = tmp_path / 'fixtures'
     fixture_dir.mkdir()
     doc_path = fixture_dir / 'sample.md'
-    doc_path.write_text('# 标题\n\n这里是测试文档。', encoding='utf-8')
+    doc_path.write_text('# 施工组织设计\n\n## 第一节 工程概况\n项目名称：测试项目\n项目编号：P0-TEST\n## 第五节 防火安全\n保持消防器材完好。\n## 第七节 防火安全\n重复章节用于回归测试。\n施工单台行车停机改造时间为7天。\n起重吊装 作业\n施工用电 作业\n动火作业\n附件2：施工总平面布置图\n', encoding='utf-8')
     manifest = [
         {
             'id': 'sample-doc',
@@ -231,3 +250,26 @@ async def test_gpt_researcher_source_urls_use_static_context(monkeypatch):
     assert FakeSourceURLResearcher.last_instance is not None
     assert FakeSourceURLResearcher.last_instance.conduct_called is False
     assert FakeSourceURLResearcher.last_instance.ext_context == 'STATIC_CONTEXT'
+
+
+async def test_runtime_structured_review_generates_formal_result(tmp_path: Path):
+    runtime, store = build_runtime(tmp_path, deeptutor=None)
+    task = create_task(
+        id='task-3',
+        taskType='structured_review',
+        capabilityMode='auto',
+        query='对该施工组织设计执行正式结构化审查',
+        fixtureId='sample-doc',
+    )
+    store.create_task(task)
+
+    await runtime.execute_task(task.id)
+
+    saved = store.get_task(task.id)
+    assert saved is not None
+    assert saved.status == 'succeeded'
+    assert saved.result is not None
+    assert saved.result['summary']['documentType'] == 'construction_org'
+    assert saved.result['summary']['manualReviewNeeded'] is True
+    assert any(issue['title'] == '附件处于可视域缺口，需人工复核原件' for issue in saved.result['issues'])
+    assert any(path.endswith('.md') for path in saved.result['artifacts'])

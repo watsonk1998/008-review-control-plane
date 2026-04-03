@@ -1,0 +1,16 @@
+{
+  "caseId": "construction_org_cold_rolling_001",
+  "fixtureId": "supervision-cold-rolling-construction-plan",
+  "sourcePath": "/Users/lucas/repos/review/008-review-control-plane/fixtures/copied/supervision/230235-冷轧厂2030单元三台行车电气系统改造-施工组织设计.docx",
+  "query": "对该施工组织设计执行正式结构化审查",
+  "docType": "construction_org",
+  "disciplineTags": ["lifting_operations", "temporary_power", "hot_work", "gas_area_ops", "special_equipment"],
+  "expectedPacks": [
+    "construction_org.base",
+    "lifting_operations.base",
+    "temporary_power.base",
+    "hot_work.base",
+    "gas_area_ops.base",
+    "special_equipment.base"
+  ]
+}

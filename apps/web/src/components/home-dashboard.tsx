@@ -39,6 +39,11 @@ const TASK_OPTIONS: Array<{ value: TaskType; label: string; hint: string }> = [
     label: "审查辅助",
     hint: "辅助审查，不直接给正式审查结论。",
   },
+  {
+    value: "structured_review",
+    label: "结构化正式审查",
+    hint: "走 parse → facts → rules → evidence → report 的正式结构化审查链路。",
+  },
 ];
 
 const CAPABILITY_OPTIONS: Array<{
@@ -422,7 +427,7 @@ export function HomeDashboard() {
 
           <div className="form-footer">
             <p className="muted small">
-              审查辅助仅输出“辅助审查要点”，不会被渲染为正式审查意见。
+              review_assist 仅输出辅助审查要点；structured_review 会输出 issues、matrices 与正式报告。
             </p>
             <button
               className="primary-button"

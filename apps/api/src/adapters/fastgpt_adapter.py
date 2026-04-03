@@ -21,6 +21,8 @@ class FastChunk:
     score: float | None
     sourceLabel: str | None
     mode: str
+    chunkId: str | None = None
+    datasetId: str | None = None
 
 
 class FastGPTAdapter:
@@ -66,7 +68,7 @@ class FastGPTAdapter:
             response.raise_for_status()
             body = response.json()
         items = body.get('data', {}).get('list', [])
-        chunks = [self._normalize_chunk(item, mode='dataset') for item in items]
+        chunks = [self._normalize_chunk(item, mode='dataset', dataset_id=dataset_id) for item in items]
         return {
             'mode': 'dataset',
             'datasetId': dataset_id,
@@ -106,13 +108,11 @@ class FastGPTAdapter:
         try:
             parsed = json.loads(content)
         except json.JSONDecodeError as exc:
-            raise FastGPTResponseParseError(
-                f"FastGPT collection workflow did not return JSON. prefix={content[:160]!r}"
-            ) from exc
+            raise FastGPTResponseParseError(f'FastGPT collection workflow did not return JSON. prefix={content[:160]!r}') from exc
         if not isinstance(parsed, list):
             raise FastGPTResponseParseError('FastGPT collection workflow returned non-list JSON payload')
-        chunks = [self._normalize_chunk(item, mode='collection') for item in parsed]
         inferred_dataset = dataset_id or (parsed[0].get('datasetId') if parsed else None)
+        chunks = [self._normalize_chunk(item, mode='collection', dataset_id=inferred_dataset) for item in parsed]
         return {
             'mode': 'collection',
             'datasetId': inferred_dataset,
@@ -124,7 +124,7 @@ class FastGPTAdapter:
             'durationMs': round((time.perf_counter() - start) * 1000),
         }
 
-    def _normalize_chunk(self, item: dict[str, Any], *, mode: str) -> FastChunk:
+    def _normalize_chunk(self, item: dict[str, Any], *, mode: str, dataset_id: str | None = None) -> FastChunk:
         score_value = None
         score = item.get('score')
         if isinstance(score, list) and score:
@@ -139,4 +139,6 @@ class FastGPTAdapter:
             score=score_value,
             sourceLabel=item.get('sourceName') or item.get('sourceLabel'),
             mode=mode,
+            chunkId=item.get('chunkId') or item.get('id') or item.get('_id'),
+            datasetId=item.get('datasetId') or dataset_id,
         )
