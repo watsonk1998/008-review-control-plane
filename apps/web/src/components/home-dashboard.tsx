@@ -29,7 +29,7 @@ const TASK_OPTIONS: Array<{ value: TaskType; label: string; hint: string }> = [
   {
     value: "structured_review",
     label: "正式审查",
-    hint: "默认工作流：parse → facts → rules → evidence → report。",
+    hint: "fixture-first；P0 正式支持 construction_org / hazardous_special_scheme。",
   },
   {
     value: "review_assist",
@@ -533,7 +533,7 @@ export function HomeDashboard() {
                 </select>
                 <small>
                   {form.taskType === "structured_review"
-                    ? "正式审查需要 fixture 文档作为结构化审查输入。"
+                    ? "正式审查当前仍需 fixture 文档；P0 仅将施工组织设计与危大专项方案视为正式支持对象。"
                     : "文档研究 / 审查辅助推荐选择 docx fixture。"}
                 </small>
               </label>

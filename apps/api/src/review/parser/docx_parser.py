@@ -11,7 +11,7 @@ from docx.table import Table
 from docx.text.paragraph import Paragraph
 
 from src.review.parser.attachment_indexer import build_attachment_index
-from src.review.parser.normalizer import clean_text, detect_heading_level, normalize_lines, section_key
+from src.review.parser.normalizer import clean_text, detect_heading_level, normalize_lines_with_metadata, section_key
 
 
 def _iter_block_items(document: DocumentType) -> Iterator[Paragraph | Table]:
@@ -108,8 +108,9 @@ def parse_docx_document(file_path: str | Path) -> dict[str, Any]:
             }
         )
 
-    attachments, visibility_report = build_attachment_index(blocks)
-    normalized_text = '\n'.join(normalize_lines([block['text'] for block in blocks if block['type'] != 'figure']))
+    attachments, visibility_report = build_attachment_index(blocks, parser_limited=False, file_type=path.suffix.lower().lstrip('.'))
+    normalized_lines, normalization_meta = normalize_lines_with_metadata([block['text'] for block in blocks if block['type'] != 'figure'])
+    normalized_text = '\n'.join(normalized_lines)
     title_counts: dict[str, int] = {}
     duplicate_titles: list[str] = []
     for section in sections:
@@ -120,6 +121,7 @@ def parse_docx_document(file_path: str | Path) -> dict[str, Any]:
         if title_counts[key] == 2:
             duplicate_titles.append(key)
     visibility_report['duplicateSectionTitles'] = duplicate_titles
+    visibility_report['normalization'] = normalization_meta
 
     return {
         'documentId': path.stem,

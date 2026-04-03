@@ -5,9 +5,9 @@ import type { CreateTaskRequest, ReviewDocumentType } from "@/types/control-plan
 const DOCUMENT_TYPE_OPTIONS: Array<{ value: ReviewDocumentType; label: string }> = [
   { value: "construction_org", label: "施工组织设计" },
   { value: "hazardous_special_scheme", label: "危大专项方案" },
-  { value: "construction_scheme", label: "一般施工方案" },
-  { value: "supervision_plan", label: "监理规划" },
-  { value: "review_support_material", label: "审查辅助材料" },
+  { value: "construction_scheme", label: "一般施工方案（骨架）" },
+  { value: "supervision_plan", label: "监理规划（骨架）" },
+  { value: "review_support_material", label: "审查辅助材料（骨架）" },
 ];
 
 const DISCIPLINE_OPTIONS = [
@@ -18,6 +18,11 @@ const DISCIPLINE_OPTIONS = [
   { value: "special_equipment", label: "特种设备" },
   { value: "working_at_height", label: "高处作业" },
 ];
+
+const P0_SUPPORTED_DOC_TYPES = new Set<ReviewDocumentType>([
+  "construction_org",
+  "hazardous_special_scheme",
+]);
 
 interface StructuredReviewFormProps {
   form: CreateTaskRequest;
@@ -33,6 +38,7 @@ export function StructuredReviewForm({
   }
 
   const selectedTags = new Set(form.disciplineTags || []);
+  const isP0Supported = P0_SUPPORTED_DOC_TYPES.has(form.documentType || "construction_org");
 
   return (
     <section className="stack-lg">
@@ -41,8 +47,14 @@ export function StructuredReviewForm({
           <p className="eyebrow">Structured Review Profile</p>
           <h3>正式审查参数</h3>
         </div>
-        <p className="muted small">默认输出问题、证据、矩阵与 Markdown 报告。</p>
+        <p className="muted small">当前 P0 正式支持范围：施工组织设计、危大专项方案；其余类型仅保留骨架入口。</p>
       </div>
+
+      {!isP0Supported ? (
+        <div className="callout warning-callout">
+          当前所选文档类型仍属 skeleton / experimental。P0 成功标准不覆盖该类型，建议改用施工组织设计或危大专项方案。
+        </div>
+      ) : null}
 
       <div className="form-grid review-profile-grid">
         <label className="field">

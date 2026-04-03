@@ -11,6 +11,7 @@ def get_construction_org_base_pack() -> PolicyPack:
         disciplineTags=['electromechanical', 'lifting_operations', 'temporary_power', 'hot_work', 'gas_area_ops', 'special_equipment'],
         extractorIds=['project_facts', 'hazard_facts', 'schedule_resource_facts'],
         ruleIds=[
+            'construction_org_structure_completeness',
             'construction_org_duplicate_sections',
             'construction_org_attachment_visibility',
             'construction_org_special_scheme_gap',

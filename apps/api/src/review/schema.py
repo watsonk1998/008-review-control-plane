@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 from src.domain.models import (
     AttachmentVisibility,
@@ -127,7 +127,25 @@ class FinalIssue(ReviewIssue):
     policyEvidence: list[EvidenceSpan] = Field(default_factory=list)
     recommendation: list[str] = Field(default_factory=list)
     confidence: ConfidenceLevel = ConfidenceLevel.medium
-    whetherManualReviewNeeded: bool = False
+    whetherManualReviewNeeded: bool | None = None
+
+    @model_validator(mode='before')
+    @classmethod
+    def _sync_manual_review_alias(cls, data: Any):
+        if not isinstance(data, dict):
+            return data
+        manual_value = data.get('manualReviewNeeded')
+        alias_value = data.get('whetherManualReviewNeeded')
+        if manual_value is None and alias_value is not None:
+            data['manualReviewNeeded'] = alias_value
+        if alias_value is None and manual_value is not None:
+            data['whetherManualReviewNeeded'] = manual_value
+        return data
+
+    @model_validator(mode='after')
+    def _canonicalize_manual_review_alias(self):
+        self.whetherManualReviewNeeded = self.manualReviewNeeded
+        return self
 
 
 class HazardIdentificationMatrix(BaseModel):
@@ -153,6 +171,8 @@ class AttachmentVisibilityMatrixItem(BaseModel):
     title: str
     visibility: AttachmentVisibility
     parseState: str
+    manualReviewNeeded: bool = False
+    reason: str | None = None
     referenceBlockIds: list[str] = Field(default_factory=list)
     titleBlockId: str | None = None
 
@@ -174,6 +194,15 @@ class StructuredReviewMatrices(BaseModel):
     issueLayerCounts: dict[str, int] = Field(default_factory=dict)
 
 
+class StructuredReviewVisibilitySummary(BaseModel):
+    attachmentCount: int = 0
+    counts: dict[str, int] = Field(default_factory=dict)
+    duplicateSectionTitles: list[str] = Field(default_factory=list)
+    parseWarnings: list[str] = Field(default_factory=list)
+    reasonCounts: dict[str, int] = Field(default_factory=dict)
+    manualReviewNeeded: bool = False
+
+
 class StructuredReviewSummary(BaseModel):
     overallConclusion: str
     documentType: ReviewDocumentType
@@ -182,6 +211,7 @@ class StructuredReviewSummary(BaseModel):
     issueCount: int = 0
     layerCounts: dict[str, int] = Field(default_factory=dict)
     stats: dict[str, Any] = Field(default_factory=dict)
+    visibilitySummary: StructuredReviewVisibilitySummary = Field(default_factory=StructuredReviewVisibilitySummary)
 
 
 class StructuredReviewResult(BaseModel):
@@ -192,6 +222,7 @@ class StructuredReviewResult(BaseModel):
     artifactIndex: list[TaskArtifact] = Field(default_factory=list)
     reportMarkdown: str = ''
     artifacts: list[str] = Field(default_factory=list)
+    unresolvedFacts: list[str] = Field(default_factory=list)
     plan: dict[str, Any] | None = None
     capabilitiesUsed: list[str] = Field(default_factory=list)
     finalAnswer: str = ''

@@ -19,17 +19,30 @@ def clean_text(text: str) -> str:
 
 
 def normalize_lines(lines: list[str]) -> list[str]:
+    normalized, _ = normalize_lines_with_metadata(lines)
+    return normalized
+
+
+def normalize_lines_with_metadata(lines: list[str]) -> tuple[list[str], dict[str, object]]:
     normalized: list[str] = []
     previous = None
+    deduplicated_line_count = 0
+    deduplicated_samples: list[str] = []
     for raw in lines:
         line = clean_text(raw)
         if not line:
             continue
         if previous == line:
+            deduplicated_line_count += 1
+            if len(deduplicated_samples) < 5:
+                deduplicated_samples.append(line)
             continue
         normalized.append(line)
         previous = line
-    return normalized
+    return normalized, {
+        'deduplicatedLineCount': deduplicated_line_count,
+        'deduplicatedLineSamples': deduplicated_samples,
+    }
 
 
 def detect_heading_level(text: str, style_name: str | None = None) -> int | None:

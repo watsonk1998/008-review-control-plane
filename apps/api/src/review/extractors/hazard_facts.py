@@ -43,6 +43,9 @@ def extract_hazard_facts(parse_result) -> tuple[dict[str, Any], dict[str, list[s
         if '起重吊装' in content and 'lifting_operations' not in risk_categories:
             risk_categories.append('lifting_operations')
             block_refs['hazard.highRiskCategories'].append(block['id'])
+        if ('煤气区域' in content or '煤气' in content) and 'gas_area_ops' not in risk_categories:
+            risk_categories.append('gas_area_ops')
+            block_refs['hazard.highRiskCategories'].append(block['id'])
         if any(keyword in content for keyword in ['施工用电', '临时用电', '停送电']) and 'temporary_power' not in risk_categories:
             risk_categories.append('temporary_power')
             block_refs['hazard.highRiskCategories'].append(block['id'])
@@ -80,7 +83,20 @@ def extract_hazard_facts(parse_result) -> tuple[dict[str, Any], dict[str, list[s
     else:
         special_scheme_status = 'not_found'
 
-    section_presence = parse_result.visibilityReport.get('sectionPresenceCache') or {}
+    if not block_refs['hazard.measureSectionPresent']:
+        for section in parse_result.sections:
+            title = str(section.get('title') or '')
+            if any(keyword in title for keyword in ['安全保证措施', '安全技术措施', '安全管理措施']):
+                block_id = section.get('blockId')
+                if block_id:
+                    block_refs['hazard.measureSectionPresent'].append(block_id)
+    if not block_refs['hazard.monitoringSectionPresent']:
+        for section in parse_result.sections:
+            title = str(section.get('title') or '')
+            if any(keyword in title for keyword in ['监测监控', '监控监测']):
+                block_id = section.get('blockId')
+                if block_id:
+                    block_refs['hazard.monitoringSectionPresent'].append(block_id)
     facts = {
         'liftingOperation': bool(block_refs['hazard.liftingOperation']),
         'gasArea': bool(block_refs['hazard.gasArea']),
@@ -97,7 +113,7 @@ def extract_hazard_facts(parse_result) -> tuple[dict[str, Any], dict[str, list[s
     }
     unresolved = []
     if facts['liftingOperation'] and not facts['craneCapacityTon']:
-        unresolved.append('craneCapacityTon')
+        unresolved.append('hazard.craneCapacityTon')
     if facts['liftingOperation'] and not facts['calculatedLiftWeightTon']:
-        unresolved.append('calculatedLiftWeightTon')
+        unresolved.append('hazard.calculatedLiftWeightTon')
     return facts, block_refs, unresolved

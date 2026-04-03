@@ -111,6 +111,8 @@ class StructuredReviewExecutor:
             issues=final_issues,
             matrices=matrices,
             visibility_report=parse_result.visibilityReport,
+            parse_warnings=parse_result.parseWarnings,
+            unresolved_facts=facts.unresolvedFacts,
         )
         report_markdown = self.report_builder.render(
             summary=summary,
@@ -118,6 +120,7 @@ class StructuredReviewExecutor:
             issues=final_issues,
             matrices=matrices,
             parse_result=parse_result,
+            unresolved_facts=facts.unresolvedFacts,
         )
         if emit:
             emit('report', 'structured_review', 'completed', 'Structured review report assembled')
@@ -129,6 +132,7 @@ class StructuredReviewExecutor:
                 'resolvedProfile': resolved_profile.model_dump(mode='json'),
                 'issues': [issue.model_dump(mode='json') for issue in final_issues],
                 'matrices': matrices.model_dump(mode='json'),
+                'unresolvedFacts': facts.unresolvedFacts,
             }))
             report_artifacts.append(write_json_artifact('hazard-identification-matrix', matrices.hazardIdentification.model_dump(mode='json')))
             report_artifacts.append(write_json_artifact('rule-hit-matrix', [item.model_dump(mode='json') for item in matrices.ruleHits]))
@@ -150,6 +154,7 @@ class StructuredReviewExecutor:
             artifactIndex=artifact_index,
             reportMarkdown=report_markdown,
             artifacts=[artifact.downloadUrl for artifact in artifact_index],
+            unresolvedFacts=facts.unresolvedFacts,
             plan=plan,
             capabilitiesUsed=capabilities_used,
             finalAnswer=report_markdown,
@@ -200,13 +205,12 @@ class StructuredReviewExecutor:
         policy_pack_ids: list[str] | None,
     ) -> StructuredReviewTask:
         plan_profile = dict((plan or {}).get('reviewProfile') or {})
-        resolved_document_type = document_type or plan_profile.get('documentType') or 'construction_org'
         return StructuredReviewTask(
             taskId=task_id,
             requestId=task_id,
-            documentType=resolved_document_type,
-            disciplineTags=list(discipline_tags or plan_profile.get('disciplineTags') or []),
-            policyPackIds=list(policy_pack_ids or plan_profile.get('policyPackIds') or []),
+            documentType=document_type or plan_profile.get('requestedDocumentType') or 'construction_org',
+            disciplineTags=list(discipline_tags or plan_profile.get('requestedDisciplineTags') or []),
+            policyPackIds=list(policy_pack_ids or plan_profile.get('requestedPolicyPackIds') or []),
             strictMode=True if strict_mode is None else strict_mode,
             sourceDocumentPath=source_document_path,
             sourceFixtureId=fixture_id,
@@ -223,11 +227,20 @@ class StructuredReviewExecutor:
         requested_discipline_tags: list[str] | None,
         requested_policy_pack_ids: list[str] | None,
     ) -> ResolvedReviewProfile:
+        plan_profile = dict((plan or {}).get('reviewProfile') or {})
         requested_discipline_tags = list(requested_discipline_tags or [])
         requested_policy_pack_ids = list(requested_policy_pack_ids or [])
-        inferred_document_type = facts.projectFacts.get('documentTypeHint') or structured_task.documentType
-        document_type = structured_task.documentType or inferred_document_type or 'construction_org'
-        discipline_tags = list(dict.fromkeys([*requested_discipline_tags, *self._infer_discipline_tags(facts)]))
+        inferred_document_type = facts.projectFacts.get('documentTypeHint') or plan_profile.get('documentTypeHint') or structured_task.documentType
+        document_type = requested_document_type or inferred_document_type or 'construction_org'
+        discipline_tags = list(
+            dict.fromkeys(
+                [
+                    *requested_discipline_tags,
+                    *(plan_profile.get('disciplineTagHints') or []),
+                    *self._infer_discipline_tags(facts),
+                ]
+            )
+        )
         return ResolvedReviewProfile(
             requestedDocumentType=requested_document_type,
             requestedDisciplineTags=requested_discipline_tags,
@@ -255,7 +268,7 @@ class StructuredReviewExecutor:
             },
             emergencyFacts=schedule_bundle.get('emergencyFacts', {}),
             factEvidence=fact_evidence,
-            unresolvedFacts=project_unresolved + hazard_unresolved + schedule_unresolved,
+            unresolvedFacts=list(dict.fromkeys(project_unresolved + hazard_unresolved + schedule_unresolved)),
         )
 
     def _build_spans(self, parse_result: DocumentParseResult, refs: list[str]) -> list[EvidenceSpan]:
@@ -327,6 +340,8 @@ class StructuredReviewExecutor:
             for attachment in parse_result.attachments:
                 attachment['visibility'] = 'parsed'
                 attachment['parseState'] = 'parsed'
+                attachment['manualReviewNeeded'] = False
+                attachment['reason'] = None
             parse_result.visibilityReport = {
                 **parse_result.visibilityReport,
                 'manualReviewNeeded': False,
@@ -337,6 +352,7 @@ class StructuredReviewExecutor:
                     'missing': 0,
                     'unknown': 0,
                 },
+                'reasonCounts': {},
             }
             parse_result.parseWarnings.append('disable_visibility_check')
         return parse_result

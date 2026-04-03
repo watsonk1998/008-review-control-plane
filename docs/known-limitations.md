@@ -13,8 +13,16 @@
    - 若没有明确 collectionId，只能优先走 Mode A。
    - Mode B 解析严格要求返回正文可 `JSON.parse`，否则 008 会显式保留 raw 并报错。
 
-4. **当前前端使用轮询而非 SSE**
-   - 这是为稳定性和实现成本做的取舍。
+4. **当前前端优先使用 SSE，断流时回退轮询**
+   - 详情页已经接入 `/api/tasks/{taskId}/stream`。
+   - 当实时流中断时，前端会自动降级到 polling，而不是完全失去可观察性。
 
 5. **审查辅助不是正式审查结论**
    - 当前输出是 control plane 级别的辅助整合结果，不能直接替代正式签发审查意见。
+
+6. **structured_review 当前仍是 fixture-first**
+   - P0 先把既有 formal review 骨架做稳，不在本阶段扩成通用上传、多文档批处理或多模态 OCR 平台。
+
+7. **P0 正式支持范围仍有限**
+   - 当前正式支持仅 `construction_org` 与 `hazardous_special_scheme`。
+   - `construction_scheme`、`supervision_plan`、`review_support_material` 仍保留 registry / skeleton 覆盖，但不计入 P0 成功标准。

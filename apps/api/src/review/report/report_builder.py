@@ -3,7 +3,12 @@ from __future__ import annotations
 from collections import Counter
 import json
 
-from src.review.schema import ResolvedReviewProfile, StructuredReviewMatrices, StructuredReviewSummary
+from src.review.schema import (
+    ResolvedReviewProfile,
+    StructuredReviewMatrices,
+    StructuredReviewSummary,
+    StructuredReviewVisibilitySummary,
+)
 
 
 class StructuredReviewReportBuilder:
@@ -15,11 +20,21 @@ class StructuredReviewReportBuilder:
         issues,
         matrices: StructuredReviewMatrices,
         visibility_report,
+        parse_warnings: list[str],
+        unresolved_facts: list[str],
     ):
         layer_counts = Counter(issue.layer.value for issue in issues)
-        manual_review_needed = visibility_report.get('manualReviewNeeded', False) or any(issue.whetherManualReviewNeeded for issue in issues)
+        manual_review_needed = visibility_report.get('manualReviewNeeded', False) or any(issue.manualReviewNeeded for issue in issues)
         high_risk_issue = any(issue.layer.value == 'L1' and issue.severity in {'high', 'medium'} for issue in issues)
         overall = '修改后重新报审' if high_risk_issue or manual_review_needed else '可进入人工复核'
+        visibility_summary = StructuredReviewVisibilitySummary(
+            attachmentCount=visibility_report.get('attachmentCount', 0),
+            counts=visibility_report.get('counts', {}),
+            duplicateSectionTitles=visibility_report.get('duplicateSectionTitles', []),
+            parseWarnings=parse_warnings,
+            reasonCounts=visibility_report.get('reasonCounts', {}),
+            manualReviewNeeded=visibility_report.get('manualReviewNeeded', False),
+        )
         return StructuredReviewSummary(
             overallConclusion=overall,
             documentType=document_type,
@@ -30,10 +45,21 @@ class StructuredReviewReportBuilder:
             stats={
                 'attachmentCount': len(matrices.attachmentVisibility),
                 'ruleHitCount': sum(1 for item in matrices.ruleHits if item.status in {'hit', 'manual_review_needed'}),
+                'unresolvedFactCount': len(unresolved_facts),
             },
+            visibilitySummary=visibility_summary,
         )
 
-    def render(self, *, summary: StructuredReviewSummary, resolved_profile: ResolvedReviewProfile, issues, matrices: StructuredReviewMatrices, parse_result) -> str:
+    def render(
+        self,
+        *,
+        summary: StructuredReviewSummary,
+        resolved_profile: ResolvedReviewProfile,
+        issues,
+        matrices: StructuredReviewMatrices,
+        parse_result,
+        unresolved_facts: list[str],
+    ) -> str:
         lines = [
             '# Structured Review Report',
             '',
@@ -51,10 +77,21 @@ class StructuredReviewReportBuilder:
             f'- strictMode：{"true" if resolved_profile.strictMode else "false"}',
             '',
             '## 可视域与人工复核提示',
-            f'- 附件数量：{summary.stats.get("attachmentCount", 0)}',
-            f'- duplicate sections：{", ".join(parse_result.visibilityReport.get("duplicateSectionTitles", [])) or "无"}',
+            f'- 附件数量：{summary.visibilitySummary.attachmentCount}',
+            f'- 可视域计数：{json.dumps(summary.visibilitySummary.counts, ensure_ascii=False)}',
+            f'- 可视域原因计数：{json.dumps(summary.visibilitySummary.reasonCounts, ensure_ascii=False)}',
+            f'- duplicate sections：{", ".join(summary.visibilitySummary.duplicateSectionTitles) or "无"}',
+            f'- parse warnings：{", ".join(summary.visibilitySummary.parseWarnings) or "无"}',
             '',
         ]
+        if unresolved_facts:
+            lines.extend(
+                [
+                    '## 未决 facts / 待人工确认',
+                    *[f'- {item}' for item in unresolved_facts],
+                    '',
+                ]
+            )
         for layer in ['L1', 'L2', 'L3']:
             lines.append(f'## {layer} 问题')
             layer_issues = [issue for issue in issues if issue.layer.value == layer]
@@ -69,7 +106,9 @@ class StructuredReviewReportBuilder:
                         f'- severity: {issue.severity}',
                         f'- finding_type: {issue.findingType.value}',
                         f'- summary: {issue.summary}',
-                        f'- manual_review_needed: {"yes" if issue.whetherManualReviewNeeded else "no"}',
+                        f'- manual_review_needed: {"yes" if issue.manualReviewNeeded else "no"}',
+                        f'- manual_review_reason: {issue.manualReviewReason or "none"}',
+                        f'- evidence_missing: {"yes" if issue.evidenceMissing else "no"}',
                         f'- recommendations: {"；".join(issue.recommendation)}',
                         '',
                     ]

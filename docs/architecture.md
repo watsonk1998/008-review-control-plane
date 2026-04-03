@@ -18,14 +18,14 @@
 
 runtime 仍然只是 orchestration / coordination 层；正式审查判断下沉到 `apps/api/src/review/`。
 
-P1 起，`structured_review` 的入口 profile 显式化：
+P0 当前，`structured_review` 的入口 profile 已显式化：
 
 - `documentType`
 - `disciplineTags`
 - `strictMode`
 - `policyPackIds`
 
-最终生效值统一回写到 `result.resolvedProfile`，避免“用户指定 / 路由推断 / 实际执行”三套口径不一致。
+planner/router 只保留 provisional hints；最终生效值统一回写到 `result.resolvedProfile`，避免“用户指定 / 路由推断 / 实际执行”三套口径不一致。
 
 ## 分层
 
@@ -37,7 +37,7 @@ P1 起，`structured_review` 的入口 profile 显式化：
 
 - 展示平台定位与能力边界
 - 创建任务
-- 轮询查看状态与步骤日志
+- 通过 SSE 实时流查看状态与步骤日志，断流时回退轮询
 - 展示结果 / chunks / 引用 / 调试信息
 - 对 `structured_review` 结果渲染 issues / matrices / report
 
@@ -76,10 +76,10 @@ P1 起，`structured_review` 的入口 profile 显式化：
 - 结构化文档解析（sections / blocks / tables / attachments / visibility）
 - 事实抽取（project / hazard / schedule / resources / emergency）
 - policy/evidence pack registry
-- 规则命中（duplicate sections / attachment visibility / special scheme gap / schedule-resource pressure / hazardous special scheme checks）
-- 证据归档（docEvidence / policyEvidence）
+- 规则命中（structure completeness / duplicate sections / attachment visibility / special scheme gap / schedule-resource pressure / hazardous special scheme checks）
+- 证据归档（docEvidence / policyEvidence / evidenceMissing / manualReviewReason）
 - 正式报告与矩阵构建
-- evaluation harness / golden case / ablations / cross-pack / cross-model 回归
+- evaluation harness / legacy + versioned golden case / ablations / cross-pack / cross-model 回归
 
 ### 5. Adapter 层
 
@@ -151,6 +151,7 @@ flowchart TD
 
 ## 当前 formal review 最小规则核
 
+- 施工组织设计核心章节完整性
 - 重复章节标题识别
 - 附件可视域缺口标记
 - 高风险作业专项方案挂接检查
@@ -178,23 +179,27 @@ flowchart TD
 
 evidence packs 继续用 Python/Pydantic registry 管理，不进入 YAML/DSL 平台化。
 
-## P1 评测门
+## P0 评测门
 
 - CI 稳定子集：12 cases
-- 本地完整评测池：20 cases
+- 本地完整评测池：legacy 20 cases + additive versioned bootstrap cases
 - 主指标：
   - `issue_recall`
   - `l1_hit_rate`
+  - `high_severity_issue_recall`
   - `pack_selection_accuracy`
   - `policy_ref_accuracy`
   - `attachment_visibility_accuracy`
   - `severity_accuracy`
   - `manual_review_flag_accuracy`
+  - `hard_evidence_accuracy`
+  - `facts_accuracy`
+  - `rule_hit_accuracy`
+  - `hazard_identification_accuracy`
 
 ## 可扩展方向
 
 - 增加更多 review pack registry
 - 增加文档上传与多文档批处理
-- 增加 SSE / websocket 实时日志流
 - 增加更多专业场景 packs / evidence packs
 - 增加多模态图纸/附件解析

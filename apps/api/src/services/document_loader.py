@@ -8,7 +8,7 @@ from docx import Document
 
 from src.review.parser.attachment_indexer import build_attachment_index
 from src.review.parser.docx_parser import parse_docx_document
-from src.review.parser.normalizer import clean_text, detect_heading_level, normalize_lines, section_key
+from src.review.parser.normalizer import clean_text, detect_heading_level, normalize_lines_with_metadata, section_key
 from src.review.schema import DocumentParseResult
 
 
@@ -47,6 +47,7 @@ class DocumentLoader:
         blocks: list[dict[str, object]] = []
         section_stack: list[dict[str, object]] = []
         figures: list[dict[str, object]] = []
+        parse_warnings: list[str] = []
 
         def current_section_id() -> str | None:
             return str(section_stack[-1]['id']) if section_stack else None
@@ -96,8 +97,14 @@ class DocumentLoader:
                 }
             )
 
-        attachments, visibility_report = build_attachment_index(blocks)
-        normalized_text = '\n'.join(normalize_lines([str(block['text']) for block in blocks if block['type'] != 'figure']))
+        parser_limited = path.suffix.lower() == '.pdf'
+        attachments, visibility_report = build_attachment_index(
+            blocks,
+            parser_limited=parser_limited,
+            file_type=path.suffix.lower().lstrip('.'),
+        )
+        normalized_lines, normalization_meta = normalize_lines_with_metadata([str(block['text']) for block in blocks if block['type'] != 'figure'])
+        normalized_text = '\n'.join(normalized_lines)
         title_counts: dict[str, int] = {}
         duplicate_titles: list[str] = []
         for section in sections:
@@ -108,6 +115,23 @@ class DocumentLoader:
             if title_counts[key] == 2:
                 duplicate_titles.append(key)
         visibility_report['duplicateSectionTitles'] = duplicate_titles
+        visibility_report['normalization'] = normalization_meta
+        if path.suffix.lower() == '.pdf':
+            parse_warnings.extend(
+                [
+                    'pdf_text_extraction_only',
+                    'pdf_tables_not_preserved',
+                    'pdf_attachment_visibility_may_be_unknown',
+                    'pdf_figures_images_not_parsed',
+                ]
+            )
+        elif path.suffix.lower() in {'.txt', '.md'}:
+            parse_warnings.extend(
+                [
+                    'text_tables_not_preserved',
+                    'text_attachment_boundaries_inferred_from_headings',
+                ]
+            )
         return {
             'documentId': path.stem,
             'filePath': str(path),
@@ -120,5 +144,5 @@ class DocumentLoader:
             'normalizedText': normalized_text,
             'preview': normalized_text[:4000],
             'visibilityReport': visibility_report,
-            'parseWarnings': [],
+            'parseWarnings': parse_warnings,
         }

@@ -6,6 +6,7 @@ from typing import Any
 
 _SHUTDOWN_RE = re.compile(r'停机(?:改造)?时间为\s*(\d+)天')
 _PLAN_TITLE_RE = re.compile(r'标题[:：]\s*(.+)')
+_EMERGENCY_SCENARIO_KEYWORDS = ('触电', '火灾', '起重', '吊装', '高处坠落', '机械伤害', '煤气', '中毒', '窒息')
 
 
 def extract_schedule_resource_facts(parse_result) -> tuple[dict[str, Any], dict[str, list[str]], list[str]]:
@@ -64,6 +65,20 @@ def extract_schedule_resource_facts(parse_result) -> tuple[dict[str, Any], dict[
             emergency_titles.append(match.group(1).strip())
             refs['emergency.planTitles'].append(table['id'])
 
+    if not emergency_titles:
+        seen_titles: set[str] = set()
+        for block in parse_result.blocks:
+            content = str(block.get('text') or '')
+            if '应急预案' not in content:
+                continue
+            if not any(keyword in content for keyword in _EMERGENCY_SCENARIO_KEYWORDS):
+                continue
+            if content in seen_titles:
+                continue
+            seen_titles.add(content)
+            emergency_titles.append(content[:80])
+            refs['emergency.planTitles'].append(block['id'])
+
     attachment_refs = [attachment['id'] for attachment in parse_result.attachments]
     refs['schedule.attachmentRefs'] = attachment_refs.copy()
 
@@ -82,6 +97,10 @@ def extract_schedule_resource_facts(parse_result) -> tuple[dict[str, Any], dict[
         },
     }
     unresolved = []
-    if attachment_refs and not refs['schedule.attachmentRefs']:
-        unresolved.append('attachmentRefs')
+    if not shutdown_match:
+        unresolved.append('schedule.shutdownWindowDays')
+    if labor_total is None:
+        unresolved.append('resource.laborTotal')
+    if not emergency_titles:
+        unresolved.append('emergency.planTitles')
     return facts, refs, unresolved

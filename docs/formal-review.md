@@ -18,7 +18,7 @@
 
 ## 结果结构
 
-P1 的稳定结果字段：
+P0 的稳定结果字段：
 
 - `summary`
 - `resolvedProfile`
@@ -26,6 +26,7 @@ P1 的稳定结果字段：
 - `matrices`
 - `artifactIndex`
 - `reportMarkdown`
+- `unresolvedFacts`
 
 其中 `artifactIndex` 是前端下载工件的唯一可信入口，避免 UI 直接依赖本地绝对路径。
 
@@ -94,6 +95,11 @@ LLM 不负责：
 
 ## manual review 语义
 
+- `manualReviewNeeded` 是唯一 canonical 布尔语义
+- `whetherManualReviewNeeded` 仅保留兼容 alias
+- `FinalIssue` 会保留 `evidenceMissing` 与 `manualReviewReason`
+- `summary.visibilitySummary` 会统一输出附件计数、状态计数、reason counts、重复章节与 parse warnings
+
 以下情况必须保留人工复核标记：
 
 - `visibility_gap`
@@ -108,7 +114,8 @@ LLM 不负责：
 `fixtures/review_eval/` 当前包含：
 
 - CI 稳定子集：12 cases
-- 本地完整评测池：20 cases
+- legacy 完整评测池：20 cases
+- additive versioned bootstrap cases：`construction_org` 2 个、`hazardous_special_scheme` 1 个
 
 主命令：
 

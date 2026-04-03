@@ -56,11 +56,22 @@ export interface ReviewIssue {
   findingType: FindingType;
   summary: string;
   manualReviewNeeded: boolean;
+  evidenceMissing: boolean;
+  manualReviewReason?: string | null;
   docEvidence: EvidenceSpan[];
   policyEvidence: EvidenceSpan[];
   recommendation: string[];
   confidence: ConfidenceLevel;
-  whetherManualReviewNeeded: boolean;
+  whetherManualReviewNeeded?: boolean | null;
+}
+
+export interface StructuredReviewVisibilitySummary {
+  attachmentCount: number;
+  counts: Record<string, number>;
+  duplicateSectionTitles: string[];
+  parseWarnings: string[];
+  reasonCounts: Record<string, number>;
+  manualReviewNeeded: boolean;
 }
 
 export interface StructuredReviewSummary {
@@ -71,6 +82,7 @@ export interface StructuredReviewSummary {
   issueCount: number;
   layerCounts: Record<string, number>;
   stats: Record<string, unknown>;
+  visibilitySummary: StructuredReviewVisibilitySummary;
 }
 
 export interface ResolvedReviewProfile {
@@ -114,6 +126,8 @@ export interface AttachmentVisibilityMatrixItem {
   title: string;
   visibility: AttachmentVisibility;
   parseState: string;
+  manualReviewNeeded: boolean;
+  reason?: string | null;
   referenceBlockIds: string[];
   titleBlockId?: string | null;
 }
@@ -143,6 +157,7 @@ export interface StructuredReviewResult {
   artifactIndex: TaskArtifact[];
   reportMarkdown: string;
   artifacts: string[];
+  unresolvedFacts: string[];
   plan?: Record<string, unknown> | null;
   capabilitiesUsed: string[];
   finalAnswer: string;

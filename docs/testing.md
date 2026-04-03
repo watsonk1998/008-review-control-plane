@@ -37,7 +37,7 @@ make eval-review-cross-model
 
 - `test-review-unit`：跑 `tests/test_structured_review.py`
 - `test-review-integration`：跑 runtime 中 `structured_review` 分支
-- `eval-review`：执行 `fixtures/review_eval/` 下的 CI 稳定子集，并校验指标阈值与数据集规模门槛
+- `eval-review`：执行 legacy CI 稳定子集，并同时输出 versioned bootstrap diagnostics 与 stage metrics
 - `eval-review-ablations`：输出 parser / visibility / rule engine / llm explanation 的消融结果
 - `eval-review-cross-pack`：对比自动 pack 选择与强制 expected packs 的结果
 - `eval-review-cross-model`：固定 facts/rules，仅替换 explanation model
@@ -70,8 +70,8 @@ make eval-review-cross-model
 
 样本：
 
-- `fixtures/copied/supervision/230235-冷轧厂2030单元三台行车电气系统改造-施工组织设计.docx`
-- `fixtures/copied/supervision/监理实施规划（南校区宿舍楼）20250710(1).docx`
+- `fixtures/supervision/施工组织设计-冷轧厂2030单元三台行车电气系统改造.docx`
+- `fixtures/supervision/监理实施规划（南校区宿舍楼）20250710(1).docx`
 
 ### 测试 4：审查辅助
 
@@ -87,13 +87,15 @@ make eval-review-cross-model
 
 目标链路：DocumentLoader / review parser → facts → rules → evidence → report
 
-当前 P1 数据集：
+当前 P0 数据集：
 
 - CI 稳定子集：12 cases
-- 本地完整评测池：20 cases
-- 覆盖：
+- legacy 完整评测池：20 cases
+- additive versioned bootstrap cases：3 cases
+- P0 正式支持：
   - `construction_org`
   - `hazardous_special_scheme`
+- skeleton / registry 覆盖：
   - `construction_scheme`
   - `supervision_plan`
   - `review_support_material`
@@ -101,9 +103,12 @@ make eval-review-cross-model
 验收要点：
 
 - 能输出 `summary / resolvedProfile / issues / matrices / artifactIndex / reportMarkdown`
+- `summary.visibilitySummary` 与 `unresolvedFacts` 可被 API/UI/eval 一致消费
 - 能识别重复章节、附件可视域缺口、专项方案挂接不清、停机窗口与资源压力
+- 能识别施工组织设计核心章节完整性缺口
 - 能识别危大专项方案核心章节缺口、验算依据缺口、措施-监测闭环问题
-- 能区分 `attachment_unparsed` 与可直接证实的正文缺陷
+- 能区分 `attachment_unparsed / referenced_only / unknown / missing`
+- `missing` 只在有明确证据时产出
 - artifact API 可列出和下载工件
 - 详情页能展示 issues / matrices / 原始 JSON
 
@@ -116,6 +121,7 @@ make eval-review-cross-model
 - attachment visibility accuracy ≥ `0.90`
 - severity accuracy ≥ `0.75`
 - manual review flag accuracy ≥ `0.85`
+- hard evidence accuracy / facts accuracy / rule hit accuracy / hazard identification accuracy 作为 stage diagnostics 输出
 - `review_assist` 回归失败数 = `0`
 
 ## 推荐回归命令

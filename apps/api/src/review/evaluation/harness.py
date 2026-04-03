@@ -7,11 +7,12 @@ import statistics
 import sys
 from typing import Any
 
-from src.services.document_loader import DocumentLoader
 from src.review.evaluation.dataset import load_cases
 from src.review.evaluation.metrics import compute_metrics
 from src.review.evaluation.thresholds import THRESHOLDS
 from src.review.pipeline import StructuredReviewExecutor
+from src.review.rules.packs import get_policy_pack_registry
+from src.services.document_loader import DocumentLoader
 
 MIN_CI_CASES = 12
 MIN_TOTAL_CASES = 20
@@ -30,6 +31,8 @@ class DeterministicLLM:
                     'findingType': candidate.findingType,
                     'summary': candidate.title,
                     'manualReviewNeeded': candidate.manualReviewNeeded,
+                    'evidenceMissing': candidate.evidenceMissing,
+                    'manualReviewReason': candidate.manualReviewReason,
                     'docEvidence': [span.model_dump(mode='json') for span in candidate.docEvidence],
                     'policyEvidence': [span.model_dump(mode='json') for span in candidate.policyEvidence],
                     'recommendation': ['按证据链补齐正式审查材料。'],
@@ -53,6 +56,8 @@ class FallbackLLM:
                     'findingType': candidate.findingType,
                     'summary': f'fallback::{candidate.title}',
                     'manualReviewNeeded': candidate.manualReviewNeeded,
+                    'evidenceMissing': candidate.evidenceMissing,
+                    'manualReviewReason': candidate.manualReviewReason,
                     'docEvidence': [span.model_dump(mode='json') for span in candidate.docEvidence],
                     'policyEvidence': [span.model_dump(mode='json') for span in candidate.policyEvidence],
                     'recommendation': ['fallback'],
@@ -63,34 +68,54 @@ class FallbackLLM:
         return payloads
 
 
+_AGGREGATE_METRICS = [
+    'issue_recall',
+    'l1_hit_rate',
+    'high_severity_issue_recall',
+    'pack_selection_accuracy',
+    'policy_ref_accuracy',
+    'attachment_visibility_accuracy',
+    'severity_accuracy',
+    'manual_review_flag_accuracy',
+    'hard_evidence_accuracy',
+    'facts_accuracy',
+    'rule_hit_accuracy',
+    'hazard_identification_accuracy',
+]
+
+
 def _aggregate(case_summaries: list[dict[str, Any]]) -> dict[str, float]:
-    metric_names = [
-        'issue_recall',
-        'l1_hit_rate',
-        'pack_selection_accuracy',
-        'policy_ref_accuracy',
-        'attachment_visibility_accuracy',
-        'severity_accuracy',
-        'manual_review_flag_accuracy',
-    ]
+    if not case_summaries:
+        return {name: 0.0 for name in _AGGREGATE_METRICS}
     return {
         name: round(statistics.mean(case['metrics'][name] for case in case_summaries), 4)
-        for name in metric_names
+        for name in _AGGREGATE_METRICS
     }
 
 
-def _dataset_guard(case_root: Path) -> tuple[list[dict[str, Any]], list[dict[str, Any]], dict[str, int]]:
+def _dataset_guard(case_root: Path) -> tuple[list[dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]], dict[str, int]]:
     all_cases = load_cases(case_root, ci_only=False)
-    ci_cases = [case for case in all_cases if case.get('ciEnabled', False)]
-    counts = {'totalCases': len(all_cases), 'ciCases': len(ci_cases)}
-    return all_cases, ci_cases, counts
+    stable_cases = [case for case in all_cases if case.get('ciEnabled', False) and not case.get('versioned', False)]
+    versioned_cases = [case for case in all_cases if case.get('versioned', False)]
+    counts = {
+        'totalCases': len(all_cases),
+        'ciCases': len(stable_cases),
+        'versionedCases': len(versioned_cases),
+    }
+    return all_cases, stable_cases, versioned_cases, counts
 
 
 def _passes_thresholds(aggregate: dict[str, float]) -> bool:
     return all(aggregate.get(key, 0.0) >= threshold for key, threshold in THRESHOLDS.items())
 
 
-def _run_cases(cases: list[dict[str, Any]], *, llm, execution_options: dict[str, Any] | None = None, force_policy_pack_ids: list[str] | None = None) -> list[dict[str, Any]]:
+def _run_cases(
+    cases: list[dict[str, Any]],
+    *,
+    llm,
+    execution_options: dict[str, Any] | None = None,
+    force_policy_pack_ids: list[str] | None = None,
+) -> list[dict[str, Any]]:
     executor = StructuredReviewExecutor(document_loader=DocumentLoader(), llm_gateway=llm, fast_adapter=None)
     summaries = []
     for case in cases:
@@ -110,6 +135,7 @@ def _run_cases(cases: list[dict[str, Any]], *, llm, execution_options: dict[str,
             {
                 'caseId': case['caseId'],
                 'docType': case.get('docType'),
+                'versioned': case.get('versioned', False),
                 'passed': True,
                 'metrics': metrics,
                 'resolvedProfile': result.get('resolvedProfile', {}),
@@ -119,8 +145,21 @@ def _run_cases(cases: list[dict[str, Any]], *, llm, execution_options: dict[str,
     return summaries
 
 
+def _filter_cross_pack_ids(pack_ids: list[str]) -> list[str]:
+    registry = get_policy_pack_registry()
+    filtered: list[str] = []
+    for pack_id in pack_ids:
+        pack = registry.get(pack_id)
+        if pack is None or not pack.ruleIds:
+            continue
+        if pack.docTypes and not any(doc_type in {'construction_org', 'hazardous_special_scheme'} for doc_type in pack.docTypes):
+            continue
+        filtered.append(pack_id)
+    return filtered
+
+
 def run_main(case_root: Path) -> tuple[int, dict[str, Any]]:
-    all_cases, cases, counts = _dataset_guard(case_root)
+    all_cases, stable_cases, versioned_cases, counts = _dataset_guard(case_root)
     if counts['ciCases'] < MIN_CI_CASES or counts['totalCases'] < MIN_TOTAL_CASES:
         return 1, {
             'mode': 'main',
@@ -130,16 +169,30 @@ def run_main(case_root: Path) -> tuple[int, dict[str, Any]]:
             'datasetCounts': counts,
             'minimums': {'ciCases': MIN_CI_CASES, 'totalCases': MIN_TOTAL_CASES},
             'cases': [],
+            'versionedDiagnostics': [],
             'error': 'review evaluation dataset is below the required size gate',
         }
-    case_summaries = _run_cases(cases, llm=DeterministicLLM())
-    aggregate = _aggregate(case_summaries)
+    stable_summaries = _run_cases(stable_cases, llm=DeterministicLLM())
+    versioned_summaries = _run_cases(versioned_cases, llm=DeterministicLLM()) if versioned_cases else []
+    aggregate = _aggregate(stable_summaries)
     passed = _passes_thresholds(aggregate)
-    return (0 if passed else 1), {'mode': 'main', 'passed': passed, 'aggregate': aggregate, 'thresholds': THRESHOLDS, 'datasetCounts': counts, 'cases': case_summaries}
+    return (0 if passed else 1), {
+        'mode': 'main',
+        'passed': passed,
+        'aggregate': aggregate,
+        'thresholds': THRESHOLDS,
+        'datasetCounts': counts,
+        'cases': stable_summaries,
+        'versionedDiagnostics': {
+            'aggregate': _aggregate(versioned_summaries) if versioned_summaries else {},
+            'cases': versioned_summaries,
+        },
+    }
 
 
 def run_ablations(case_root: Path) -> tuple[int, dict[str, Any]]:
-    _, cases, counts = _dataset_guard(case_root)
+    _, stable_cases, versioned_cases, counts = _dataset_guard(case_root)
+    cases = [*stable_cases, *versioned_cases]
     variants = {
         'baseline': {},
         'disable_normalizer': {'disable_normalizer': True},
@@ -159,12 +212,16 @@ def run_ablations(case_root: Path) -> tuple[int, dict[str, Any]]:
 
 
 def run_cross_pack(case_root: Path) -> tuple[int, dict[str, Any]]:
-    _, cases, counts = _dataset_guard(case_root)
+    _, stable_cases, versioned_cases, counts = _dataset_guard(case_root)
+    cases = [*stable_cases, *versioned_cases]
     auto_case_summaries = _run_cases(cases, llm=DeterministicLLM())
     forced_case_summaries = []
     for case in cases:
+        forced_pack_ids = _filter_cross_pack_ids(case.get('expectedPacks', []))
+        if not forced_pack_ids:
+            continue
         forced_case_summaries.extend(
-            _run_cases([case], llm=DeterministicLLM(), force_policy_pack_ids=case.get('expectedPacks', []))
+            _run_cases([case], llm=DeterministicLLM(), force_policy_pack_ids=forced_pack_ids)
         )
     payload = {
         'mode': 'cross-pack',
@@ -185,7 +242,8 @@ def run_cross_pack(case_root: Path) -> tuple[int, dict[str, Any]]:
 
 
 def run_cross_model(case_root: Path) -> tuple[int, dict[str, Any]]:
-    _, cases, counts = _dataset_guard(case_root)
+    _, stable_cases, versioned_cases, counts = _dataset_guard(case_root)
+    cases = [*stable_cases, *versioned_cases]
     model_runs = {
         'deterministic': DeterministicLLM(),
         'fallback': FallbackLLM(),

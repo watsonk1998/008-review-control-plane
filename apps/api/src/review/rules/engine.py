@@ -17,9 +17,37 @@ class ReviewRuleEngine:
         return hits
 
     def _construction_org_hits(self, facts: ExtractedFacts, pack_by_rule: dict[str, str]) -> list[RuleHit]:
-        if 'construction_org_duplicate_sections' not in pack_by_rule and 'construction_org.base' not in pack_by_rule.values():
+        if 'construction_org_structure_completeness' not in pack_by_rule and 'construction_org.base' not in pack_by_rule.values():
             return []
         hits: list[RuleHit] = []
+        section_presence = facts.projectFacts.get('sectionPresence') or {}
+        missing_core_sections = [
+            key
+            for key in [
+                'engineeringOverview',
+                'constructionPlan',
+                'schedulePlan',
+                'resourcePlan',
+                'safetyMeasures',
+                'emergencyPlan',
+                'layoutPlan',
+            ]
+            if not section_presence.get(key)
+        ]
+        hits.append(
+            RuleHit(
+                ruleId='construction_org_structure_completeness',
+                packId=pack_by_rule.get('construction_org_structure_completeness', 'construction_org.base'),
+                matchType='direct_hit',
+                status='hit' if missing_core_sections else 'pass',
+                layerHint=ReviewLayer.L1,
+                severityHint='high' if len(missing_core_sections) >= 3 else 'medium',
+                factRefs=[f'project.sectionPresence.{key}' for key in missing_core_sections] or ['project.sectionPresence.engineeringOverview'],
+                evidenceRefs=['policy:construction_org_structure'],
+                rationale='施工组织设计应覆盖工程概况、部署、进度、资源、安全、应急和平面布置等核心章节。',
+            )
+        )
+
         duplicate_sections = facts.projectFacts.get('duplicateSections') or []
         hits.append(
             RuleHit(

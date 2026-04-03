@@ -44,6 +44,9 @@ def _collect_section_presence(parse_result) -> tuple[dict[str, bool], dict[str, 
         'engineeringOverview': False,
         'preparationBasis': False,
         'constructionPlan': False,
+        'schedulePlan': False,
+        'resourcePlan': False,
+        'layoutPlan': False,
         'processMethod': False,
         'safetyMeasures': False,
         'emergencyPlan': False,
@@ -66,6 +69,18 @@ def _collect_section_presence(parse_result) -> tuple[dict[str, bool], dict[str, 
             presence['constructionPlan'] = True
             if block_id:
                 refs['project.sectionPresence.constructionPlan'].append(block_id)
+        if any(keyword in title for keyword in ['施工进度计划', '进度计划', '工期安排']):
+            presence['schedulePlan'] = True
+            if block_id:
+                refs['project.sectionPresence.schedulePlan'].append(block_id)
+        if any(keyword in title for keyword in ['资源配置', '资源配置计划', '劳动力计划', '机械设备计划']):
+            presence['resourcePlan'] = True
+            if block_id:
+                refs['project.sectionPresence.resourcePlan'].append(block_id)
+        if any(keyword in title for keyword in ['施工总平面布置', '平面布置']):
+            presence['layoutPlan'] = True
+            if block_id:
+                refs['project.sectionPresence.layoutPlan'].append(block_id)
         if any(keyword in title for keyword in ['施工工艺', '工艺流程', '施工方法']):
             presence['processMethod'] = True
             if block_id:
@@ -127,7 +142,7 @@ def extract_project_facts(parse_result) -> tuple[dict[str, Any], dict[str, list[
     }
     unresolved = [
         key
-        for key, value in [('projectName', project_name), ('projectCode', project_code)]
+        for key, value in [('project.projectName', project_name), ('project.projectCode', project_code)]
         if not value
     ]
     return facts, refs, unresolved

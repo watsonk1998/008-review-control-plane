@@ -1,0 +1,16 @@
+{
+  "facts": [
+    {
+      "key": "lifting_operation_identified",
+      "value": true,
+      "value_type": "boolean",
+      "support_type": "doc_fact"
+    },
+    {
+      "key": "has_attachment_1",
+      "value": true,
+      "value_type": "boolean",
+      "support_type": "doc_fact"
+    }
+  ]
+}

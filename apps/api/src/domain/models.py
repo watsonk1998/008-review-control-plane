@@ -79,6 +79,8 @@ class ReviewIssue(BaseModel):
     findingType: FindingType
     summary: str
     manualReviewNeeded: bool = False
+    evidenceMissing: bool = False
+    manualReviewReason: str | None = None
 
 
 class TaskArtifact(BaseModel):

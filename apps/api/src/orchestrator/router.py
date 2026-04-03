@@ -76,12 +76,13 @@ def choose_structured_review_profile(
         )
     ]
     return {
+        'authority': 'provisional_router_hint',
         'requestedDocumentType': requested_document_type,
         'requestedDisciplineTags': requested_discipline_tags or [],
         'requestedPolicyPackIds': requested_policy_pack_ids or [],
-        'documentType': document_type,
-        'disciplineTags': discipline_tags,
-        'policyPackIds': selected_packs,
+        'documentTypeHint': document_type,
+        'disciplineTagHints': discipline_tags,
+        'policyPackHints': selected_packs,
         'strictMode': True if strict_mode is None else strict_mode,
     }
 

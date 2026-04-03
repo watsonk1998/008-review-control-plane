@@ -1,0 +1,22 @@
+{
+  "case_id": "cn_hazardous_special_scheme_md_missing_core_001",
+  "case_version": "v0.1.0-bootstrap-seed",
+  "schema_version": "v1",
+  "title": "危大专项方案-缺少核心章节最小样本",
+  "doc_type": "hazardous_special_scheme",
+  "discipline_tags": [
+    "lifting"
+  ],
+  "expected_packs": [
+    "hazardous_special_scheme.base",
+    "lifting_operations.base"
+  ],
+  "label_source": "legacy_case_conversion",
+  "label_status": "seeded_unreviewed",
+  "truth_level": "bootstrap",
+  "review_status": "not_final",
+  "source_files": [
+    "fixtures/review_eval/hazardous_special_scheme/case_001/source.md"
+  ],
+  "notes": "从 legacy hazardous_special_scheme/case_001 转换，用于 P0 最小 versioned hazardous regression。"
+}

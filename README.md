@@ -18,9 +18,9 @@
 - `review_assist`：保留为快速辅助总结，结果里明确声明“不等于正式审查结论”
 - `structured_review`：新增为正式结构化审查，输出 issues / matrices / Markdown report / JSON artifacts
 
-## P1 结构化审查能力
+## P0 结构化审查收敛范围
 
-P1 开始，`structured_review` 不再只靠后端隐式推断，而是支持显式参数化请求：
+当前 `structured_review` 已做实为 fixture-first 的正式结构化审查入口，显式支持：
 
 - `documentType`
 - `disciplineTags`
@@ -35,8 +35,20 @@ P1 开始，`structured_review` 不再只靠后端隐式推断，而是支持显
 - `matrices`
 - `artifactIndex`
 - `reportMarkdown`
+- `unresolvedFacts`
 
 前端会基于 `artifactIndex` 调用只读 artifact API，不再直接消费本地绝对路径。
+
+当前 P0 正式支持文档类型仅包括：
+
+- `construction_org`
+- `hazardous_special_scheme`
+
+以下类型暂保留 registry / skeleton 入口，但不计入 P0 成功标准：
+
+- `construction_scheme`
+- `supervision_plan`
+- `review_support_material`
 
 ## 目录结构
 
@@ -114,6 +126,14 @@ make verify-connectivity
 
 - `GET /api/tasks/{taskId}/artifacts`
 - `GET /api/tasks/{taskId}/artifacts/{artifactName}`
+
+## structured_review 结果约束
+
+- `manualReviewNeeded` 是唯一 canonical 人工复核布尔语义
+- `whetherManualReviewNeeded` 仅为兼容 alias，不再作为第二真相源
+- issue 结果会保留 `evidenceMissing` 与 `manualReviewReason`
+- `summary.visibilitySummary` 统一表达附件状态计数、重复章节、parse warnings 与 visibility reason counts
+- 系统不得把“未解析附件 / 当前不可视”直接写成“文档缺失”
 
 ## 配置原则
 

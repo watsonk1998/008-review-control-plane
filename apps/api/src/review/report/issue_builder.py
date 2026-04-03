@@ -6,6 +6,7 @@ from src.review.schema import FinalIssue, IssueCandidate
 
 def _fallback_recommendations(candidate: IssueCandidate) -> list[str]:
     mapping = {
+        'construction_org_structure_completeness': ['补齐工程概况、部署、进度、资源、安全、应急和平面布置等核心章节。'],
         'construction_org_duplicate_sections': ['统一章节编号与标题命名，消除重复“防火安全”等结构冲突。'],
         'construction_org_attachment_visibility': ['补充上传附件原件或补录附件正文内容，并在正式报告中标记人工复核结果。'],
         'construction_org_special_scheme_gap': ['针对识别出的起重吊装/动火/施工用电等高风险作业，明确专项方案或专项技术措施的正文挂接位置。'],
@@ -49,6 +50,8 @@ def _fallback_issue_payloads(candidates: list[IssueCandidate]) -> list[dict]:
                 'findingType': candidate.findingType,
                 'summary': _build_summary(candidate),
                 'manualReviewNeeded': candidate.manualReviewNeeded,
+                'evidenceMissing': candidate.evidenceMissing,
+                'manualReviewReason': candidate.manualReviewReason,
                 'docEvidence': [span.model_dump(mode='json') for span in candidate.docEvidence],
                 'policyEvidence': [span.model_dump(mode='json') for span in candidate.policyEvidence],
                 'recommendation': _fallback_recommendations(candidate),
@@ -60,6 +63,8 @@ def _fallback_issue_payloads(candidates: list[IssueCandidate]) -> list[dict]:
 
 
 def _build_summary(candidate: IssueCandidate) -> str:
+    if candidate.candidateId == 'construction_org_structure_completeness':
+        return '施工组织设计缺少核心章节，会削弱部署、资源、安全与应急链路的完整性。'
     if candidate.candidateId == 'construction_org_duplicate_sections':
         return '解析结果中出现重复章节标题，会降低问题定位、矩阵对齐和人工复核稳定性。'
     if candidate.candidateId == 'construction_org_attachment_visibility':

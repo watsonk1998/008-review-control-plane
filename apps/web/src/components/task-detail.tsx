@@ -538,7 +538,10 @@ export function TaskDetail({ taskId }: { taskId: string }) {
                   </div>
                   <div className="callout">
                     <strong>人工复核</strong>
-                    <p>{structuredResult.summary.manualReviewNeeded ? "需要结合附件原件复核" : "当前无需额外人工复核"}</p>
+                    <p>{structuredResult.summary.manualReviewNeeded ? "需要结合附件原件或可视域缺口做人工复核" : "当前无需额外人工复核"}</p>
+                    <p className="muted small">
+                      parse warnings：{structuredResult.summary.visibilitySummary.parseWarnings.join("，") || "无"}
+                    </p>
                   </div>
                   {structuredResult.notice ? <div className="callout warning-callout">{structuredResult.notice}</div> : null}
                   <pre className="result-block">{structuredResult.reportMarkdown}</pre>
@@ -575,9 +578,12 @@ export function TaskDetail({ taskId }: { taskId: string }) {
                             <span className={`status-pill ${severityTone(issue.severity)}`}>{issue.severity}</span>
                           </div>
                           <p>{issue.summary}</p>
-                          {issue.whetherManualReviewNeeded ? (
-                            <p className="error-text">需要人工复核该问题的可视域或附件证据。</p>
+                          {issue.manualReviewNeeded ? (
+                            <p className="error-text">
+                              需要人工复核该问题：{issue.manualReviewReason || "manual_confirmation_required"}。
+                            </p>
                           ) : null}
+                          {issue.evidenceMissing ? <p className="muted small">证据状态：当前存在 evidence gap，需补齐文档或条文证据。</p> : null}
                           <div className="stack-sm">
                             <strong>整改建议</strong>
                             <ul>
@@ -624,6 +630,13 @@ export function TaskDetail({ taskId }: { taskId: string }) {
                     <p className="eyebrow">Visibility & Structure</p>
                     <h2>附件 / 章节结构</h2>
                   </div>
+                  <div className="callout">
+                    <strong>Visibility Summary</strong>
+                    <p>附件数量：{structuredResult.summary.visibilitySummary.attachmentCount}</p>
+                    <p>状态计数：{renderJson(structuredResult.summary.visibilitySummary.counts)}</p>
+                    <p>原因计数：{renderJson(structuredResult.summary.visibilitySummary.reasonCounts)}</p>
+                    <p>重复章节：{structuredResult.summary.visibilitySummary.duplicateSectionTitles.join("，") || "无"}</p>
+                  </div>
                   <div className="stack-md">
                     <div>
                       <strong>Attachment Visibility</strong>
@@ -642,6 +655,16 @@ export function TaskDetail({ taskId }: { taskId: string }) {
                   <p className="eyebrow">Artifacts & Debug</p>
                   <h2>工件 / 原始 JSON</h2>
                 </div>
+                {structuredResult.unresolvedFacts.length ? (
+                  <div className="callout warning-callout">
+                    <strong>Unresolved Facts</strong>
+                    <ul>
+                      {structuredResult.unresolvedFacts.map((item) => (
+                        <li key={item}>{item}</li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
                 <ArtifactList artifacts={structuredArtifacts} />
                 <pre className="code-block">{renderJson(structuredResult)}</pre>
               </section>

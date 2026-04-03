@@ -1,5 +1,7 @@
 # DELIVERY REPORT — 008 Review Control Plane
 
+> 注：本文件保留为阶段性交付记录。当前仓库的真实现状以 `README.md`、`docs/architecture.md`、`docs/formal-review.md`、`docs/testing.md` 为准；后续提交已补齐 structured_review schema/report/artifact API、SSE 实时流与 P0 收敛改造。
+
 ## 1. 架构说明
 
 已在 `/Users/lucas/repos/review/008-review-control-plane` 新建 008 项目，并将其定位为 **DeepResearchAgent 总控编排层 + 外部能力服务层 + 前后端统一入口**。DeepResearchAgent 在本项目中作为 planner/router/coordinator，而不是审查器本体。
@@ -22,7 +24,7 @@
 - health 概览
 - 任务详情页
 - plan / timeline / result / sources / debug 展示
-- 轮询更新任务状态
+- 轮询更新任务状态（历史阶段记录；当前代码已升级为 SSE 优先、断流回退轮询）
 
 ## 4. 后端实现说明
 
@@ -110,11 +112,11 @@ make dev
 - DeepTutor 为轻量 bridge，不是官方全量平台镜像
 - GPT Researcher 首次/长任务耗时较高；`useWeb=true` 或未提供 `sourceUrls` 时，仍更依赖外部搜索质量
 - FastGPT Mode B 依赖 collectionId
-- 当前前端进度更新采用轮询
+- 当前仓库已升级为 SSE 优先、轮询回退；本条为历史阶段限制记录
 
 ## 14. 后续扩展方向
 
 - 增加正式审查 pack registry
 - 增加上传多文档研究
-- 增加 SSE / websocket 进度流
-- 增加结构化审查 issue schema 与报告导出
+- 增加更多 reviewer workflow 与写回闭环
+- 增加更广的结构化审查 pack / versioned goldens

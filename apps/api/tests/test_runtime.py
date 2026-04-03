@@ -30,6 +30,8 @@ class FakeLLM:
                 'findingType': candidate.findingType,
                 'summary': candidate.title,
                 'manualReviewNeeded': candidate.manualReviewNeeded,
+                'evidenceMissing': candidate.evidenceMissing,
+                'manualReviewReason': candidate.manualReviewReason,
                 'docEvidence': [span.model_dump(mode='json') for span in candidate.docEvidence],
                 'policyEvidence': [span.model_dump(mode='json') for span in candidate.policyEvidence],
                 'recommendation': ['demo'],
@@ -278,6 +280,10 @@ async def test_runtime_structured_review_generates_formal_result(tmp_path: Path)
     assert saved.result['resolvedProfile']['strictMode'] is True
     assert 'construction_org.base' in saved.result['resolvedProfile']['policyPackIds']
     assert saved.result['summary']['manualReviewNeeded'] is True
+    assert saved.result['summary']['visibilitySummary']['manualReviewNeeded'] is True
     assert any(issue['title'] == '附件处于可视域缺口，需人工复核原件' for issue in saved.result['issues'])
+    attachment_issue = next(issue for issue in saved.result['issues'] if issue['title'] == '附件处于可视域缺口，需人工复核原件')
+    assert attachment_issue['manualReviewNeeded'] is True
+    assert attachment_issue['manualReviewReason'] == 'visibility_gap'
     assert any(path.endswith('.md') for path in saved.result['artifacts'])
     assert any(artifact['fileName'].endswith('.md') for artifact in saved.result['artifactIndex'])

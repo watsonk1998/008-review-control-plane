@@ -1,0 +1,14 @@
+[
+  {
+    "rule_id": "hazardous_special_scheme_core_sections",
+    "expected_status": "hit",
+    "expected_match_type": "direct_hit",
+    "notes": "核心章节缺失。"
+  },
+  {
+    "rule_id": "hazardous_special_scheme_attachment_visibility",
+    "expected_status": "manual_review_needed",
+    "expected_match_type": "visibility_gap",
+    "notes": "附件被引用但当前正文不可见。"
+  }
+]

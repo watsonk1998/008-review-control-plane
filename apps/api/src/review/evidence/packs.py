@@ -29,10 +29,11 @@ def get_evidence_pack_registry() -> dict[str, EvidencePack]:
                 ),
             ],
             severityMapping={
+                'construction_org_structure_completeness': 'high',
                 'construction_org_duplicate_sections': 'medium',
                 'construction_org_shutdown_resource_conflict': 'medium',
             },
-            ruleIds=['construction_org_duplicate_sections', 'construction_org_shutdown_resource_conflict'],
+            ruleIds=['construction_org_structure_completeness', 'construction_org_duplicate_sections', 'construction_org_shutdown_resource_conflict'],
         ),
         'hazardous_special_scheme.base': EvidencePack(
             id='hazardous_special_scheme.base',

@@ -6,6 +6,7 @@ from src.review.schema import EvidencePack, PolicyClause
 
 
 _RULE_TO_CLAUSE_IDS = {
+    'construction_org_structure_completeness': ['construction_org_structure'],
     'construction_org_duplicate_sections': ['construction_org_structure'],
     'construction_org_attachment_visibility': ['review_visibility_gap'],
     'construction_org_special_scheme_gap': ['dangerous_special_scheme'],

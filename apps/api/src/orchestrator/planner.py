@@ -50,6 +50,7 @@ class TaskPlanner:
                 requested_policy_pack_ids=task.policyPackIds,
                 strict_mode=task.strictMode,
             )
+            notes.append('structured_review 的 reviewProfile 仅作为 provisional hints；最终 resolvedProfile 与 packs 由 review pipeline 生成。')
             plan['goal'] = 'Execute formal structured review through the review domain pipeline'
             plan['reviewProfile'] = review_profile
             plan['execution'] = [
