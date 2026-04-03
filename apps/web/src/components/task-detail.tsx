@@ -1,9 +1,15 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 
-import { fetchTask, fetchTaskArtifacts, fetchTaskEvents, resolveApiUrl } from "@/lib/api";
+import {
+  fetchTask,
+  fetchTaskArtifacts,
+  fetchTaskEvents,
+  getTaskStreamUrl,
+  resolveApiUrl,
+} from "@/lib/api";
 import type {
   EvidenceSpan,
   ReviewIssue,
@@ -15,6 +21,7 @@ import type {
 
 const TERMINAL_STATES = new Set(["succeeded", "failed", "partial"]);
 const REVIEW_LAYERS = ["L1", "L2", "L3"] as const;
+const STREAM_RECONNECT_DELAY_MS = 4_000;
 
 function renderJson(data: unknown) {
   return JSON.stringify(data, null, 2);
@@ -33,8 +40,25 @@ function isStructuredReviewResult(result: unknown): result is StructuredReviewRe
 
 function severityTone(severity: string) {
   if (severity === "high") return "is-unhealthy";
-  if (severity === "medium") return "is-neutral";
+  if (severity === "medium") return "is-warning";
   return "is-healthy";
+}
+
+function streamTone(mode: "connecting" | "sse" | "polling") {
+  if (mode === "sse") return "is-healthy";
+  if (mode === "polling") return "is-warning";
+  return "is-neutral";
+}
+
+function eventKey(event: TaskEvent) {
+  return [
+    event.timestamp,
+    event.stage,
+    event.capability,
+    event.status,
+    event.message,
+    event.artifactPath || "",
+  ].join("::");
 }
 
 function renderEvidenceList(title: string, evidence: EvidenceSpan[]) {
@@ -84,43 +108,242 @@ export function TaskDetail({ taskId }: { taskId: string }) {
   const [artifacts, setArtifacts] = useState<TaskArtifact[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [transportMode, setTransportMode] = useState<"connecting" | "sse" | "polling">("connecting");
+  const [transportMessage, setTransportMessage] = useState("正在建立实时流…");
+  const [highlightedEventKeys, setHighlightedEventKeys] = useState<string[]>([]);
+  const [lastStreamHeartbeatAt, setLastStreamHeartbeatAt] = useState<number | null>(null);
+  const [nowTick, setNowTick] = useState(() => Date.now());
+
+  const eventSourceRef = useRef<EventSource | null>(null);
+  const pollingTimerRef = useRef<number | null>(null);
+  const reconnectTimerRef = useRef<number | null>(null);
+  const pollingFailureCountRef = useRef(0);
+  const transportModeRef = useRef<"connecting" | "sse" | "polling">("connecting");
+  const reconnectStreamRef = useRef<() => void>(() => {});
+  const mountedRef = useRef(false);
 
   useEffect(() => {
-    let cancelled = false;
+    transportModeRef.current = transportMode;
+  }, [transportMode]);
 
-    async function load() {
+  useEffect(() => {
+    const interval = window.setInterval(() => setNowTick(Date.now()), 1000);
+    return () => window.clearInterval(interval);
+  }, []);
+
+  const highlightNewEvents = useCallback((newEvents: TaskEvent[], existingEvents: TaskEvent[]) => {
+    const existingKeys = new Set(existingEvents.map(eventKey));
+    const nextKeys = newEvents.map(eventKey).filter((key) => !existingKeys.has(key));
+    if (!nextKeys.length) return;
+
+    setHighlightedEventKeys((current) => Array.from(new Set([...current, ...nextKeys])));
+
+    nextKeys.forEach((key) => {
+      window.setTimeout(() => {
+        setHighlightedEventKeys((current) => current.filter((item) => item !== key));
+      }, 1_800);
+    });
+  }, []);
+
+  const clearPolling = useCallback(() => {
+    if (pollingTimerRef.current) {
+      window.clearTimeout(pollingTimerRef.current);
+      pollingTimerRef.current = null;
+    }
+  }, []);
+
+  const clearReconnect = useCallback(() => {
+    if (reconnectTimerRef.current) {
+      window.clearTimeout(reconnectTimerRef.current);
+      reconnectTimerRef.current = null;
+    }
+  }, []);
+
+  const closeStream = useCallback(() => {
+    if (eventSourceRef.current) {
+      eventSourceRef.current.close();
+      eventSourceRef.current = null;
+    }
+  }, []);
+
+  const applyTaskState = useCallback(
+    ({
+      taskData,
+      eventData,
+      artifactData,
+      highlight,
+    }: {
+      taskData: TaskRecord;
+      eventData: TaskEvent[];
+      artifactData: TaskArtifact[];
+      highlight: boolean;
+    }) => {
+      setTask(taskData);
+      setEvents((current) => {
+        if (highlight) {
+          highlightNewEvents(eventData, current);
+        }
+        return eventData;
+      });
+      setArtifacts(artifactData);
+      setError(null);
+      setLoading(false);
+    },
+    [highlightNewEvents],
+  );
+
+  const loadTaskSnapshot = useCallback(
+    async ({ highlight = false }: { highlight?: boolean } = {}) => {
       try {
         const [taskData, eventData] = await Promise.all([fetchTask(taskId), fetchTaskEvents(taskId)]);
         const artifactData =
-          taskData.taskType === "structured_review" ? await fetchTaskArtifacts(taskId).catch(() => []) : [];
-        if (cancelled) return true;
-        setTask(taskData);
-        setEvents(eventData);
-        setArtifacts(artifactData);
-        setError(null);
-        setLoading(false);
-        return TERMINAL_STATES.has(taskData.status);
+          taskData.taskType === "structured_review"
+            ? await fetchTaskArtifacts(taskId).catch(() => [])
+            : [];
+        if (!mountedRef.current) {
+          return { done: true, ok: true };
+        }
+        applyTaskState({ taskData, eventData, artifactData, highlight });
+        return { done: TERMINAL_STATES.has(taskData.status), ok: true };
       } catch (err) {
-        if (cancelled) return true;
+        if (!mountedRef.current) {
+          return { done: true, ok: false };
+        }
         setError(err instanceof Error ? err.message : "任务详情加载失败");
         setLoading(false);
-        return true;
+        return { done: false, ok: false };
+      }
+    },
+    [applyTaskState, taskId],
+  );
+
+  const startPolling = useCallback(() => {
+    clearPolling();
+
+    async function poll() {
+      if (!mountedRef.current || transportModeRef.current !== "polling") {
+        return;
+      }
+
+      const result = await loadTaskSnapshot({ highlight: true });
+      if (result.ok) {
+        pollingFailureCountRef.current = 0;
+      } else {
+        pollingFailureCountRef.current += 1;
+      }
+
+      const nextDelay = Math.min(3_000 + pollingFailureCountRef.current * 2_000, 10_000);
+      if (mountedRef.current && transportModeRef.current === "polling" && !result.done) {
+        pollingTimerRef.current = window.setTimeout(poll, nextDelay);
       }
     }
 
-    void load();
-    const interval = window.setInterval(async () => {
-      const isDone = await load();
-      if (isDone) {
-        window.clearInterval(interval);
-      }
-    }, 2000);
+    void poll();
+  }, [clearPolling, loadTaskSnapshot]);
+
+  const connectStream = useCallback(() => {
+    clearReconnect();
+    closeStream();
+
+    const source = new EventSource(getTaskStreamUrl(taskId));
+    eventSourceRef.current = source;
+    transportModeRef.current = "connecting";
+    setTransportMode("connecting");
+    setTransportMessage("正在建立实时流…");
+
+    source.onopen = () => {
+      if (!mountedRef.current) return;
+      clearPolling();
+      pollingFailureCountRef.current = 0;
+      transportModeRef.current = "sse";
+      setTransportMode("sse");
+      setTransportMessage("实时流已连接，任务状态将自动推送。");
+    };
+
+    source.addEventListener("snapshot", (rawEvent) => {
+      if (!mountedRef.current) return;
+      const payload = JSON.parse(rawEvent.data) as {
+        task: TaskRecord | null;
+        events: TaskEvent[];
+        artifacts: TaskArtifact[];
+      };
+      if (!payload.task) return;
+      applyTaskState({
+        taskData: payload.task,
+        eventData: payload.events || [],
+        artifactData: payload.artifacts || [],
+        highlight: false,
+      });
+      setLastStreamHeartbeatAt(Date.now());
+    });
+
+    source.addEventListener("task", (rawEvent) => {
+      if (!mountedRef.current) return;
+      const payload = JSON.parse(rawEvent.data) as TaskRecord;
+      setTask(payload);
+      setError(null);
+      setLoading(false);
+      setLastStreamHeartbeatAt(Date.now());
+    });
+
+    source.addEventListener("event", (rawEvent) => {
+      if (!mountedRef.current) return;
+      const payload = JSON.parse(rawEvent.data) as TaskEvent;
+      setEvents((current) => {
+        if (current.some((item) => eventKey(item) === eventKey(payload))) {
+          return current;
+        }
+        highlightNewEvents([payload], current);
+        return [...current, payload];
+      });
+      setLastStreamHeartbeatAt(Date.now());
+    });
+
+    source.addEventListener("artifacts", (rawEvent) => {
+      if (!mountedRef.current) return;
+      const payload = JSON.parse(rawEvent.data) as TaskArtifact[];
+      setArtifacts(payload);
+      setLastStreamHeartbeatAt(Date.now());
+    });
+
+    source.addEventListener("heartbeat", () => {
+      if (!mountedRef.current) return;
+      setLastStreamHeartbeatAt(Date.now());
+    });
+
+    source.onerror = () => {
+      if (!mountedRef.current) return;
+      closeStream();
+      transportModeRef.current = "polling";
+      setTransportMode("polling");
+      setTransportMessage("实时流已断开，切换轮询中。");
+      startPolling();
+      reconnectTimerRef.current = window.setTimeout(() => {
+        if (!mountedRef.current) return;
+        reconnectStreamRef.current();
+      }, STREAM_RECONNECT_DELAY_MS);
+    };
+  }, [applyTaskState, clearPolling, clearReconnect, closeStream, highlightNewEvents, startPolling, taskId]);
+
+  useEffect(() => {
+    reconnectStreamRef.current = connectStream;
+  }, [connectStream]);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    const initialSync = window.setTimeout(() => {
+      void loadTaskSnapshot();
+      connectStream();
+    }, 0);
 
     return () => {
-      cancelled = true;
-      window.clearInterval(interval);
+      mountedRef.current = false;
+      window.clearTimeout(initialSync);
+      clearPolling();
+      clearReconnect();
+      closeStream();
     };
-  }, [taskId]);
+  }, [clearPolling, clearReconnect, closeStream, connectStream, loadTaskSnapshot]);
 
   const summary = useMemo(() => {
     if (!task?.result || isStructuredReviewResult(task.result)) return null;
@@ -150,6 +373,11 @@ export function TaskDetail({ taskId }: { taskId: string }) {
     }, { L1: [], L2: [], L3: [] });
   }, [structuredResult]);
 
+  const streamFreshness = useMemo(() => {
+    if (!lastStreamHeartbeatAt) return "等待心跳";
+    return `最近心跳 ${Math.max(1, Math.round((nowTick - lastStreamHeartbeatAt) / 1000))} 秒前`;
+  }, [lastStreamHeartbeatAt, nowTick]);
+
   return (
     <main className="shell stack-xl">
       <section className="section-heading">
@@ -162,8 +390,29 @@ export function TaskDetail({ taskId }: { taskId: string }) {
         </Link>
       </section>
 
-      {loading ? <div className="card"><p className="muted">正在加载任务状态…</p></div> : null}
-      {error ? <div className="card"><p className="error-text">{error}</p></div> : null}
+      <section className={`status-banner ${streamTone(transportMode)}`}>
+        <strong>
+          {transportMode === "sse"
+            ? "实时流连接中"
+            : transportMode === "polling"
+              ? "轮询降级中"
+              : "正在连接实时流"}
+        </strong>
+        <p>
+          {transportMessage} · {streamFreshness}
+        </p>
+      </section>
+
+      {loading ? (
+        <div className="card">
+          <p className="muted">正在加载任务状态…</p>
+        </div>
+      ) : null}
+      {error ? (
+        <div className="card">
+          <p className="error-text">{error}</p>
+        </div>
+      ) : null}
 
       {task ? (
         <>
@@ -174,7 +423,17 @@ export function TaskDetail({ taskId }: { taskId: string }) {
                   <p className="eyebrow">Overview</p>
                   <h2>任务概览</h2>
                 </div>
-                <span className={`status-pill ${task.status === "succeeded" ? "is-healthy" : task.status === "failed" ? "is-unhealthy" : "is-neutral"}`}>
+                <span
+                  className={`status-pill ${
+                    task.status === "succeeded"
+                      ? "is-healthy"
+                      : task.status === "failed"
+                        ? "is-unhealthy"
+                        : task.status === "partial"
+                          ? "is-warning"
+                          : "is-neutral"
+                  }`}
+                >
                   {task.status}
                 </span>
               </div>
@@ -223,24 +482,38 @@ export function TaskDetail({ taskId }: { taskId: string }) {
               <h2>调用链路 / 中间步骤</h2>
             </div>
             <div className="timeline">
-              {events.map((event, index) => (
-                <article className="timeline-item" key={`${event.timestamp}-${index}`}>
-                  <div className="timeline-dot" />
-                  <div className="timeline-content">
-                    <div className="timeline-header">
-                      <strong>{event.stage}</strong>
-                      <span className="muted small">{event.capability}</span>
-                      <span className={`status-pill ${event.status === "completed" ? "is-healthy" : event.status === "failed" ? "is-unhealthy" : "is-neutral"}`}>
-                        {event.status}
-                      </span>
+              {events.map((event, index) => {
+                const key = eventKey(event);
+                return (
+                  <article
+                    className={`timeline-item ${highlightedEventKeys.includes(key) ? "is-new-event" : ""}`}
+                    key={`${key}-${index}`}
+                  >
+                    <div className="timeline-dot" />
+                    <div className="timeline-content">
+                      <div className="timeline-header">
+                        <strong>{event.stage}</strong>
+                        <span className="muted small">{event.capability}</span>
+                        <span
+                          className={`status-pill ${
+                            event.status === "completed"
+                              ? "is-healthy"
+                              : event.status === "failed"
+                                ? "is-unhealthy"
+                                : "is-neutral"
+                          }`}
+                        >
+                          {event.status}
+                        </span>
+                      </div>
+                      <p>{event.message}</p>
+                      <p className="muted small">{new Date(event.timestamp).toLocaleString()}</p>
+                      {event.artifactPath ? <p className="muted small">artifact: {event.artifactPath}</p> : null}
+                      {event.debug ? <pre className="code-block compact">{renderJson(event.debug)}</pre> : null}
                     </div>
-                    <p>{event.message}</p>
-                    <p className="muted small">{new Date(event.timestamp).toLocaleString()}</p>
-                    {event.artifactPath ? <p className="muted small">artifact: {event.artifactPath}</p> : null}
-                    {event.debug ? <pre className="code-block compact">{renderJson(event.debug)}</pre> : null}
-                  </div>
-                </article>
-              ))}
+                  </article>
+                );
+              })}
             </div>
           </section>
 
@@ -292,13 +565,19 @@ export function TaskDetail({ taskId }: { taskId: string }) {
                         <article className="boundary-item" key={issue.id}>
                           <div className="section-heading compact">
                             <div>
-                              <h3>{issue.id} · {issue.title}</h3>
-                              <p className="muted small">{issue.layer} / {issue.findingType}</p>
+                              <h3>
+                                {issue.id} · {issue.title}
+                              </h3>
+                              <p className="muted small">
+                                {issue.layer} / {issue.findingType}
+                              </p>
                             </div>
                             <span className={`status-pill ${severityTone(issue.severity)}`}>{issue.severity}</span>
                           </div>
                           <p>{issue.summary}</p>
-                          {issue.whetherManualReviewNeeded ? <p className="error-text">需要人工复核该问题的可视域或附件证据。</p> : null}
+                          {issue.whetherManualReviewNeeded ? (
+                            <p className="error-text">需要人工复核该问题的可视域或附件证据。</p>
+                          ) : null}
                           <div className="stack-sm">
                             <strong>整改建议</strong>
                             <ul>

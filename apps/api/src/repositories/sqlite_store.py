@@ -122,6 +122,34 @@ class SQLiteTaskStore:
             row = conn.execute('SELECT * FROM tasks WHERE id = ?', (task_id,)).fetchone()
         return self._row_to_task(row) if row else None
 
+    def list_tasks(self, limit: int = 8) -> list[TaskRecord]:
+        with self._connect() as conn:
+            rows = conn.execute(
+                'SELECT * FROM tasks ORDER BY updated_at DESC LIMIT ?',
+                (limit,),
+            ).fetchall()
+        return [self._row_to_task(row) for row in rows]
+
+    def count_running_tasks(self) -> int:
+        active_statuses = ('created', 'planned', 'running', 'waiting_external')
+        with self._connect() as conn:
+            row = conn.execute(
+                '''
+                SELECT COUNT(*) AS count
+                FROM tasks
+                WHERE status IN (?, ?, ?, ?)
+                ''',
+                active_statuses,
+            ).fetchone()
+        return int(row['count']) if row else 0
+
+    def latest_task_updated_at(self) -> datetime | None:
+        with self._connect() as conn:
+            row = conn.execute('SELECT MAX(updated_at) AS updated_at FROM tasks').fetchone()
+        if not row or not row['updated_at']:
+            return None
+        return datetime.fromisoformat(row['updated_at'])
+
     def update_task(self, task_id: str, **fields: Any) -> TaskRecord:
         now = datetime.now(timezone.utc)
         serialized: dict[str, Any] = {'updated_at': now.isoformat()}

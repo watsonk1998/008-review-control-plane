@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+import json
 from pathlib import Path
 
 from fastapi.testclient import TestClient
@@ -152,3 +153,121 @@ def test_task_routes_accept_structured_review_fields_and_serve_artifacts(monkeyp
     download_response = client.get('/api/tasks/task-route-1/artifacts/report.json')
     assert download_response.status_code == 200
     assert download_response.text == '{"ok": true}'
+
+
+def test_task_routes_list_recent_tasks(monkeypatch):
+    now = datetime.now(timezone.utc)
+
+    class FakeService:
+        def __init__(self):
+            self.last_limit = None
+
+        def list_tasks(self, limit: int = 8):
+            self.last_limit = limit
+            return [
+                TaskRecord(
+                    id='task-2',
+                    taskType='structured_review',
+                    capabilityMode='auto',
+                    query='最近任务 2',
+                    fixtureId='fixture-b',
+                    sourceUrls=[],
+                    documentType='hazardous_special_scheme',
+                    disciplineTags=[],
+                    strictMode=True,
+                    policyPackIds=[],
+                    status='running',
+                    createdAt=now,
+                    updatedAt=now,
+                ),
+                TaskRecord(
+                    id='task-1',
+                    taskType='knowledge_qa',
+                    capabilityMode='fast',
+                    query='最近任务 1',
+                    fixtureId=None,
+                    sourceUrls=[],
+                    documentType=None,
+                    disciplineTags=[],
+                    strictMode=None,
+                    policyPackIds=[],
+                    status='succeeded',
+                    createdAt=now,
+                    updatedAt=now,
+                ),
+            ]
+
+    fake_service = FakeService()
+    monkeypatch.setattr(tasks_route, 'get_task_service', lambda: fake_service)
+    client = TestClient(app)
+
+    response = client.get('/api/tasks?limit=2')
+    assert response.status_code == 200
+    payload = response.json()
+    assert fake_service.last_limit == 2
+    assert [item['id'] for item in payload] == ['task-2', 'task-1']
+    assert payload[0]['documentType'] == 'hazardous_special_scheme'
+    assert payload[1]['capabilityMode'] == 'fast'
+
+
+def test_task_stream_returns_snapshot_and_heartbeat(monkeypatch, tmp_path: Path):
+    now = datetime.now(timezone.utc)
+
+    class FakeService:
+        def __init__(self):
+            self.task_call_count = 0
+
+        def get_task(self, task_id: str):
+            self.task_call_count += 1
+            return TaskRecord(
+                id=task_id,
+                taskType='structured_review',
+                capabilityMode='auto',
+                query='stream task',
+                fixtureId='fixture-1',
+                sourceUrls=[],
+                documentType='construction_org',
+                disciplineTags=['lifting_operations'],
+                strictMode=True,
+                policyPackIds=['construction_org.base'],
+                status='running' if self.task_call_count == 1 else 'succeeded',
+                createdAt=now,
+                updatedAt=now,
+            )
+
+        def get_task_events(self, task_id: str):
+            return []
+
+        def list_task_artifacts(self, task_id: str):
+            return [
+                TaskArtifact(
+                    name='report',
+                    fileName='report.json',
+                    mediaType='application/json',
+                    sizeBytes=12,
+                    downloadUrl=f'/api/tasks/{task_id}/artifacts/report.json',
+                )
+            ]
+
+    fake_service = FakeService()
+    monkeypatch.setattr(tasks_route, 'get_task_service', lambda: fake_service)
+    monkeypatch.setattr(tasks_route, 'TASK_STREAM_POLL_SECONDS', 0.01)
+    monkeypatch.setattr(tasks_route, 'TASK_STREAM_HEARTBEAT_SECONDS', 0.01)
+    client = TestClient(app)
+
+    with client.stream('GET', '/api/tasks/task-stream-1/stream') as response:
+        assert response.status_code == 200
+        chunks: list[str] = []
+        for chunk in response.iter_text():
+            if not chunk:
+                continue
+            chunks.append(chunk)
+            merged = ''.join(chunks)
+            if 'event: snapshot' in merged and 'event: heartbeat' in merged:
+                break
+
+    payload = ''.join(chunks)
+    assert 'event: snapshot' in payload
+    assert 'event: heartbeat' in payload
+    assert '"id": "task-stream-1"' in payload
+    assert json.dumps('/api/tasks/task-stream-1/artifacts/report.json') in payload

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from datetime import datetime, timezone
+
 from fastapi import APIRouter
 
 from src.main_dependencies import get_capability_health, get_fixture_service, get_store
@@ -20,6 +22,19 @@ async def health():
 @router.get('/api/capabilities')
 async def capabilities():
     return await get_capability_health()
+
+
+@router.get('/api/heartbeat')
+async def heartbeat():
+    store = get_store()
+    latest_task_updated_at = store.latest_task_updated_at()
+    return {
+        'status': 'ok',
+        'serverTime': datetime.now(timezone.utc).isoformat(),
+        'database': store.database_path,
+        'runningTaskCount': store.count_running_tasks(),
+        'latestTaskUpdatedAt': latest_task_updated_at.isoformat() if latest_task_updated_at else None,
+    }
 
 
 @router.get('/api/fixtures')

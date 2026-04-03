@@ -22,15 +22,11 @@ const DISCIPLINE_OPTIONS = [
 interface StructuredReviewFormProps {
   form: CreateTaskRequest;
   setForm: React.Dispatch<React.SetStateAction<CreateTaskRequest>>;
-  policyPackInput: string;
-  setPolicyPackInput: React.Dispatch<React.SetStateAction<string>>;
 }
 
 export function StructuredReviewForm({
   form,
   setForm,
-  policyPackInput,
-  setPolicyPackInput,
 }: StructuredReviewFormProps) {
   if (form.taskType !== "structured_review") {
     return null;
@@ -39,18 +35,18 @@ export function StructuredReviewForm({
   const selectedTags = new Set(form.disciplineTags || []);
 
   return (
-    <section className="card stack-lg">
-      <div>
-        <p className="eyebrow">Structured Review Profile</p>
-        <h3>正式审查参数</h3>
-        <p className="muted small">
-          P1 起 structured_review 支持显式传入 documentType、disciplineTags、strictMode 与 policyPackIds。
-        </p>
+    <section className="stack-lg">
+      <div className="section-heading compact">
+        <div>
+          <p className="eyebrow">Structured Review Profile</p>
+          <h3>正式审查参数</h3>
+        </div>
+        <p className="muted small">默认输出问题、证据、矩阵与 Markdown 报告。</p>
       </div>
 
-      <div className="form-grid two-columns">
+      <div className="form-grid review-profile-grid">
         <label className="field">
-          <span>documentType</span>
+          <span>文档类型</span>
           <select
             value={form.documentType || "construction_org"}
             onChange={(event) =>
@@ -69,8 +65,8 @@ export function StructuredReviewForm({
         </label>
 
         <label className="field">
-          <span>strictMode</span>
-          <label className="checkbox-row">
+          <span>审查策略</span>
+          <label className="checkbox-row inline-check">
             <input
               checked={form.strictMode ?? true}
               onChange={(event) =>
@@ -81,17 +77,17 @@ export function StructuredReviewForm({
               }
               type="checkbox"
             />
-            <span>默认开启严格模式</span>
+            <span>严格模式（默认开启）</span>
           </label>
-          <small>关闭后仍保留结构化输出，但会降低人工复核/缺口类提示的保守性。</small>
+          <small>关闭后会减少保守型人工复核提示，但仍输出结构化结果。</small>
         </label>
       </div>
 
       <div className="field">
-        <span>disciplineTags</span>
-        <div className="form-grid two-columns">
+        <span>专业标签</span>
+        <div className="review-discipline-grid">
           {DISCIPLINE_OPTIONS.map((option) => (
-            <label className="checkbox-row" key={option.value}>
+            <label className="checkbox-row inline-check" key={option.value}>
               <input
                 checked={selectedTags.has(option.value)}
                 onChange={(event) =>
@@ -114,19 +110,8 @@ export function StructuredReviewForm({
             </label>
           ))}
         </div>
-        <small>可留空，后端仍会根据 query / fixture / parse hints 自动补齐。</small>
+        <small>可留空，后端仍会根据 query、fixture 与 parse hints 自动补齐。</small>
       </div>
-
-      <label className="field">
-        <span>policyPackIds（高级覆盖，可选）</span>
-        <textarea
-          rows={3}
-          value={policyPackInput}
-          onChange={(event) => setPolicyPackInput(event.target.value)}
-          placeholder={"construction_org.base\nlifting_operations.base"}
-        />
-        <small>留空表示自动选 pack；填写后按“基础 pack + 指定 pack”组合执行。</small>
-      </label>
     </section>
   );
 }

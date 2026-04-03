@@ -1,4 +1,13 @@
-import type { CreateTaskRequest, FixtureRecord, HealthResponse, TaskArtifact, TaskEvent, TaskRecord } from "@/types/control-plane";
+import type {
+  CreateTaskRequest,
+  FixtureRecord,
+  HealthResponse,
+  HeartbeatResponse,
+  RecentTaskSummary,
+  TaskArtifact,
+  TaskEvent,
+  TaskRecord,
+} from "@/types/control-plane";
 
 const DEFAULT_API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8018";
 
@@ -33,8 +42,16 @@ export function fetchHealth() {
   return fetchJson<HealthResponse>("/api/health");
 }
 
+export function fetchHeartbeat() {
+  return fetchJson<HeartbeatResponse>("/api/heartbeat");
+}
+
 export function fetchFixtures() {
   return fetchJson<FixtureRecord[]>("/api/fixtures");
+}
+
+export function fetchRecentTasks(limit = 8) {
+  return fetchJson<RecentTaskSummary[]>(`/api/tasks?limit=${encodeURIComponent(String(limit))}`);
 }
 
 export function createTask(payload: CreateTaskRequest) {
@@ -54,6 +71,10 @@ export function fetchTaskEvents(taskId: string) {
 
 export function fetchTaskArtifacts(taskId: string) {
   return fetchJson<TaskArtifact[]>(`/api/tasks/${taskId}/artifacts`);
+}
+
+export function getTaskStreamUrl(taskId: string) {
+  return resolveApiUrl(`/api/tasks/${taskId}/stream`);
 }
 
 export function getTaskArtifactUrl(taskId: string, fileName: string) {

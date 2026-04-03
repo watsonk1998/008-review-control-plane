@@ -51,6 +51,9 @@ class TaskService:
     def get_task(self, task_id: str):
         return self.store.get_task(task_id)
 
+    def list_tasks(self, limit: int = 8):
+        return self.store.list_tasks(limit=limit)
+
     def get_task_events(self, task_id: str):
         return self.store.list_events(task_id)
 

@@ -181,6 +181,65 @@ export interface HealthResponse {
   fixtureCount: number;
 }
 
+export interface HeartbeatResponse {
+  status: string;
+  serverTime: string;
+  database: string;
+  runningTaskCount: number;
+  latestTaskUpdatedAt?: string | null;
+}
+
+export interface RecentTaskSummary {
+  id: string;
+  taskType: TaskType;
+  capabilityMode: CapabilityMode;
+  status: TaskStatus;
+  query: string;
+  fixtureId?: string | null;
+  documentType?: ReviewDocumentType | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TaskStreamSnapshotEvent {
+  type: "snapshot";
+  payload: {
+    task: TaskRecord | null;
+    events: TaskEvent[];
+    artifacts: TaskArtifact[];
+  };
+}
+
+export interface TaskStreamTaskEvent {
+  type: "task";
+  payload: TaskRecord;
+}
+
+export interface TaskStreamEventEvent {
+  type: "event";
+  payload: TaskEvent;
+}
+
+export interface TaskStreamArtifactsEvent {
+  type: "artifacts";
+  payload: TaskArtifact[];
+}
+
+export interface TaskStreamHeartbeatEvent {
+  type: "heartbeat";
+  payload: {
+    taskId: string;
+    serverTime: string;
+  };
+}
+
+export type TaskStreamEnvelope =
+  | TaskStreamSnapshotEvent
+  | TaskStreamTaskEvent
+  | TaskStreamEventEvent
+  | TaskStreamArtifactsEvent
+  | TaskStreamHeartbeatEvent;
+
 export interface CreateTaskRequest {
   taskType: TaskType;
   capabilityMode: CapabilityMode;
