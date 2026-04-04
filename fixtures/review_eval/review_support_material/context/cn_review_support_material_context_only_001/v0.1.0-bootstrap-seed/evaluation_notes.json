@@ -1,0 +1,15 @@
+{
+  "purpose": [
+    "验证 review_support_material.base 明确表达“仅补充材料”边界。"
+  ],
+  "primary_checks": [
+    "context_only fact 命中",
+    "边界提示 issue 命中"
+  ],
+  "known_limitations": [
+    "仍属于 skeleton documentType，不进入 official stage gate。"
+  ],
+  "next_review_actions": [
+    "后续可扩展与正式方案 refId/审批单据的联动校验。"
+  ]
+}

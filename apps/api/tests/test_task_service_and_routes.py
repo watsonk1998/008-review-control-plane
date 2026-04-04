@@ -779,6 +779,10 @@ def test_support_scope_route_returns_official_and_placeholder_scope():
     assert document_types['construction_scheme'] == 'skeleton'
     packs = {item['packId']: item['readiness'] for item in payload['packs']}
     assert packs['construction_org.base'] == 'ready'
+    assert packs['construction_scheme.base'] == 'ready'
+    assert packs['supervision_plan.base'] == 'ready'
+    assert packs['review_support_material.base'] == 'ready'
+    assert packs['gas_area_ops.base'] == 'ready'
     assert any(readiness == 'placeholder' for readiness in packs.values())
 
 

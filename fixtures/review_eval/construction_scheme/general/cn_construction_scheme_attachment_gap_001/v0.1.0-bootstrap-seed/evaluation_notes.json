@@ -1,0 +1,15 @@
+{
+  "purpose": [
+    "验证 construction_scheme.base 已从 placeholder 变为可执行 pack。"
+  ],
+  "primary_checks": [
+    "核心章节缺口命中",
+    "附件可视域命中"
+  ],
+  "known_limitations": [
+    "仍属于 skeleton documentType，不进入 official stage gate。"
+  ],
+  "next_review_actions": [
+    "后续可继续扩施工方法、资源计划等更细粒度规则。"
+  ]
+}

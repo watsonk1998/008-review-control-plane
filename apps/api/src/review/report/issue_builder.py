@@ -12,15 +12,23 @@ def _fallback_recommendations(candidate: IssueCandidate) -> list[str]:
         'construction_org_special_scheme_gap': ['针对识别出的起重吊装/动火/施工用电等高风险作业，明确专项方案或专项技术措施的正文挂接位置。'],
         'construction_org_emergency_plan_targeted': ['按主要危险源补齐对应事故类型、联络链路和现场处置动作。'],
         'construction_org_shutdown_resource_conflict': ['复核停机窗口、班组组织与交叉作业顺序，必要时拆分作业面或增加错峰安排。'],
+        'construction_scheme_structure_completeness': ['补齐工程概况、编制依据、施工方法和安全措施等一般施工方案核心章节。'],
+        'construction_scheme_attachment_visibility': ['补充施工方案附件原件或补录附件正文内容，并保留人工复核记录。'],
         'hazardous_special_scheme_core_sections': ['补齐专项方案的工程概况、编制依据、施工工艺、安全措施、应急处置与验算章节。'],
         'hazardous_special_scheme_attachment_visibility': ['补充专项方案附件原件或图纸正文，并将人工复核结论写回正式报告。'],
         'hazardous_special_scheme_calculation_evidence': ['补充与起重/稳定性相关的验算书、设备选型依据和关键参数来源。'],
         'hazardous_special_scheme_emergency_targeted': ['围绕主要危险源补齐专项方案的应急处置流程、联络链路和现场动作。'],
         'hazardous_special_scheme_measure_linkage': ['将危险源、控制措施、监测监控和停工条件形成可执行闭环。'],
+        'supervision_plan_structure_completeness': ['补齐监理规划的工程概况、编制依据与监理控制措施等基础章节。'],
+        'supervision_plan_monitoring_linkage': ['明确监测监控、旁站或巡视检查的触发条件、责任人与记录要求。'],
+        'supervision_plan_attachment_visibility': ['补充监理规划附件原件或补录附件正文内容，并保留人工复核结论。'],
+        'review_support_material_context_only': ['将该材料定位为背景/佐证材料，并补充对应的正式方案正文或审批文件。'],
+        'review_support_material_attachment_visibility': ['补充支持材料附件原件或正文，避免把可视域缺口误读为材料缺失。'],
         'lifting_operations_special_scheme_linkage': ['在起重吊装相关章节明确专项方案、专项技术措施或附录挂接位置，并标注适用作业面。'],
         'lifting_operations_calculation_traceability': ['补齐吊装设备参数、计算起重量或验算书来源，并在正文中建立可追溯引用。'],
         'temporary_power_control_linkage': ['将临时用电/停送电作业的控制措施、监测要求和触电类应急处置串成同一条执行链。'],
         'hot_work_emergency_targeted': ['围绕动火作业补齐火灾/爆燃类应急标题、处置动作和联络链路。'],
+        'gas_area_ops_control_linkage': ['围绕煤气区域作业补齐检测频率、监护要求、停工条件以及中毒/窒息/爆炸类应急处置。'],
     }
     return mapping.get(candidate.candidateId, ['结合证据补充整改措施。'])
 
@@ -78,6 +86,10 @@ def _build_summary(candidate: IssueCandidate) -> str:
         return '应急预案数量或类型与主要危险源不完全匹配，针对性不足。'
     if candidate.candidateId == 'construction_org_shutdown_resource_conflict':
         return '停机窗口紧、作业并行度高且投入人力较大，存在组织与交叉作业压力。'
+    if candidate.candidateId == 'construction_scheme_structure_completeness':
+        return '一般施工方案缺少最小核心章节，难以判断其适用范围、施工方法和安全控制要求。'
+    if candidate.candidateId == 'construction_scheme_attachment_visibility':
+        return '施工方案附件存在可视域缺口，当前只能要求人工复核原件。'
     if candidate.candidateId == 'hazardous_special_scheme_core_sections':
         return '危大专项方案缺少核心章节，难以支撑工艺、控制措施与人工复核。'
     if candidate.candidateId == 'hazardous_special_scheme_attachment_visibility':
@@ -88,6 +100,16 @@ def _build_summary(candidate: IssueCandidate) -> str:
         return '专项方案的应急处置安排与主要危险源匹配不足。'
     if candidate.candidateId == 'hazardous_special_scheme_measure_linkage':
         return '危险源、控制措施与监测监控未形成完整闭环，现场执行风险较高。'
+    if candidate.candidateId == 'supervision_plan_structure_completeness':
+        return '监理规划缺少基础章节，会削弱监理边界、依据链与控制措施的可读性。'
+    if candidate.candidateId == 'supervision_plan_monitoring_linkage':
+        return '监理规划未清楚交代监测监控、旁站或巡视安排，后续执行边界不清。'
+    if candidate.candidateId == 'supervision_plan_attachment_visibility':
+        return '监理规划附件未进入当前可视域，需人工复核原件。'
+    if candidate.candidateId == 'review_support_material_context_only':
+        return '当前材料更适合作为背景/佐证，不应直接替代正式方案正文进入 formal review 判断。'
+    if candidate.candidateId == 'review_support_material_attachment_visibility':
+        return '审查支持材料附件存在可视域缺口，需结合原件人工确认。'
     if candidate.candidateId == 'lifting_operations_special_scheme_linkage':
         return '已识别起重吊装场景，但当前专项方案/专项技术措施挂接位置仍不稳定或需人工确认。'
     if candidate.candidateId == 'lifting_operations_calculation_traceability':
@@ -96,4 +118,6 @@ def _build_summary(candidate: IssueCandidate) -> str:
         return '临时用电/停送电相关控制措施、监测要求与触电类应急处置没有形成稳定闭环。'
     if candidate.candidateId == 'hot_work_emergency_targeted':
         return '已识别动火作业，但未看到足够明确的火灾/爆燃类针对性应急安排。'
+    if candidate.candidateId == 'gas_area_ops_control_linkage':
+        return '已识别煤气区域作业，但控制措施、监测监控和中毒/窒息/爆炸类应急处置未形成稳定闭环。'
     return candidate.title

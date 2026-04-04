@@ -1,0 +1,16 @@
+{
+  "facts": [
+    {
+      "key": "document_type_hint",
+      "value": "review_support_material",
+      "value_type": "string",
+      "support_type": "doc_fact"
+    },
+    {
+      "key": "context_only_material",
+      "value": true,
+      "value_type": "boolean",
+      "support_type": "doc_fact"
+    }
+  ]
+}

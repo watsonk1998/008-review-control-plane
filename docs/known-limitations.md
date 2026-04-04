@@ -26,10 +26,11 @@
 
 7. **P0 正式支持范围仍有限**
    - 当前正式支持仅 `construction_org` 与 `hazardous_special_scheme`。
-   - `construction_scheme`、`supervision_plan`、`review_support_material` 仍保留 registry / skeleton 覆盖，但不计入 P0 成功标准。
+   - `construction_scheme`、`supervision_plan`、`review_support_material` 虽已有 ready base packs，但 documentType 仍只处于 skeleton / experimental 范围，不计入 P0 成功标准。
 
 8. **PDF 仍是 text-only 降级路径**
    - PDF 当前会显式输出 `pdf_text_extraction_only`、`pdf_tables_not_preserved`、`pdf_attachment_visibility_may_be_unknown` 等 warnings。
+   - 本轮新增的 `pdf_appendix_title_candidates:*`、`pdf_table_caption_candidates:*`、`pdf_figure_caption_candidates:*` 只表示轻量结构提示，不代表附件或表格已被完整解析。
    - 因此 PDF 场景下的表格、图示与附件边界仍可能落入 `unknown` / `attachment_unparsed`，需要结合原件人工复核。
 
 9. **strictMode 仍是保留字段**

@@ -81,7 +81,6 @@ export interface ReviewIssue {
   policyEvidence: EvidenceSpan[];
   recommendation: string[];
   confidence: ConfidenceLevel;
-  whetherManualReviewNeeded?: boolean | null;
 }
 
 export interface StructuredReviewVisibilitySummary {

@@ -35,6 +35,27 @@ def get_evidence_pack_registry() -> dict[str, EvidencePack]:
             },
             ruleIds=['construction_org_structure_completeness', 'construction_org_duplicate_sections', 'construction_org_shutdown_resource_conflict'],
         ),
+        'construction_scheme.base': EvidencePack(
+            id='construction_scheme.base',
+            version='1.0.0',
+            docTypes=['construction_scheme'],
+            applicability='construction_scheme',
+            clauses=[
+                PolicyClause(
+                    id='construction_scheme_structure',
+                    sourceId='construction-《危险性较大的分部分项工程专项施工方案编制指南》（建办质〔2021〕48号）',
+                    title='一般施工方案最小结构要求',
+                    excerpt='施工方案至少应覆盖工程概况、编制依据、施工方法和安全措施，便于审查其适用边界与执行要求。',
+                    forceLevel='should',
+                    applicability='construction_scheme',
+                )
+            ],
+            severityMapping={
+                'construction_scheme_structure_completeness': 'high',
+                'construction_scheme_attachment_visibility': 'medium',
+            },
+            ruleIds=['construction_scheme_structure_completeness', 'construction_scheme_attachment_visibility'],
+        ),
         'hazardous_special_scheme.base': EvidencePack(
             id='hazardous_special_scheme.base',
             version='1.0.0',
@@ -95,6 +116,61 @@ def get_evidence_pack_registry() -> dict[str, EvidencePack]:
                 'hazardous_special_scheme_emergency_targeted',
             ],
         ),
+        'supervision_plan.base': EvidencePack(
+            id='supervision_plan.base',
+            version='1.0.0',
+            docTypes=['supervision_plan'],
+            applicability='supervision_plan',
+            clauses=[
+                PolicyClause(
+                    id='supervision_plan_structure',
+                    sourceId='construction-《建设工程监理规范》GB/T 50319',
+                    title='监理规划基础结构',
+                    excerpt='监理规划至少应交代工程概况、编制依据和监理控制措施，以支持后续旁站、巡视和验收控制。',
+                    forceLevel='should',
+                    applicability='supervision_plan',
+                ),
+                PolicyClause(
+                    id='supervision_plan_monitoring',
+                    sourceId='construction-《建设工程监理规范》GB/T 50319',
+                    title='监测监控与旁站安排',
+                    excerpt='监理规划或实施细则应明确监测监控、旁站和巡视检查的触发条件、责任与记录要求。',
+                    forceLevel='should',
+                    applicability='supervision_plan',
+                ),
+            ],
+            severityMapping={
+                'supervision_plan_structure_completeness': 'medium',
+                'supervision_plan_monitoring_linkage': 'medium',
+                'supervision_plan_attachment_visibility': 'medium',
+            },
+            ruleIds=[
+                'supervision_plan_structure_completeness',
+                'supervision_plan_monitoring_linkage',
+                'supervision_plan_attachment_visibility',
+            ],
+        ),
+        'review_support_material.base': EvidencePack(
+            id='review_support_material.base',
+            version='1.0.0',
+            docTypes=['review_support_material'],
+            applicability='review_support_material',
+            clauses=[
+                PolicyClause(
+                    id='review_support_material_context',
+                    sourceId='review-control-plane-support-scope-policy',
+                    title='审查支持材料边界',
+                    excerpt='审查支持材料只能补充背景或辅助判断，不能替代正式施工组织设计、施工方案或专项方案正文。',
+                    forceLevel='guidance',
+                    applicability='review_support_material',
+                )
+            ],
+            severityMapping={
+                'review_support_material_context_only': 'low',
+                'review_support_material_attachment_visibility': 'low',
+            },
+            ruleIds=['review_support_material_context_only', 'review_support_material_attachment_visibility'],
+        ),
         'review.visibility': EvidencePack(
             id='review.visibility',
             version='1.0.0',
@@ -136,12 +212,14 @@ def get_evidence_pack_registry() -> dict[str, EvidencePack]:
                 'hazardous_special_scheme_emergency_targeted': 'medium',
                 'temporary_power_control_linkage': 'medium',
                 'hot_work_emergency_targeted': 'medium',
+                'gas_area_ops_control_linkage': 'high',
             },
             ruleIds=[
                 'construction_org_emergency_plan_targeted',
                 'hazardous_special_scheme_emergency_targeted',
                 'temporary_power_control_linkage',
                 'hot_work_emergency_targeted',
+                'gas_area_ops_control_linkage',
             ],
         ),
     }

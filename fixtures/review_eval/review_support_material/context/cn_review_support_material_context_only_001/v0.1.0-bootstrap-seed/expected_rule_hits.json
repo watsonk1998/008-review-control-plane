@@ -1,0 +1,7 @@
+[
+  {
+    "rule_id": "review_support_material_context_only",
+    "expected_status": "hit",
+    "expected_match_type": "direct_hit"
+  }
+]

@@ -1,0 +1,12 @@
+[
+  {
+    "rule_id": "construction_scheme_structure_completeness",
+    "expected_status": "hit",
+    "expected_match_type": "direct_hit"
+  },
+  {
+    "rule_id": "construction_scheme_attachment_visibility",
+    "expected_status": "manual_review_needed",
+    "expected_match_type": "visibility_gap"
+  }
+]

@@ -10,8 +10,7 @@
   "strictMode": true,
   "policyPackIds": [],
   "expectedPacks": [
-    "review_support_material.base",
-    "gas_area_ops.base"
+    "review_support_material.base"
   ],
   "manualReviewCases": [],
   "ciEnabled": false

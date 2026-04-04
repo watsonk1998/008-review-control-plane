@@ -12,15 +12,23 @@ _RULE_TO_CLAUSE_IDS = {
     'construction_org_special_scheme_gap': ['dangerous_special_scheme'],
     'construction_org_emergency_plan_targeted': ['emergency_plan_targeted'],
     'construction_org_shutdown_resource_conflict': ['construction_org_schedule_resource'],
+    'construction_scheme_structure_completeness': ['construction_scheme_structure'],
+    'construction_scheme_attachment_visibility': ['review_visibility_gap'],
     'hazardous_special_scheme_core_sections': ['hazardous_scheme_structure'],
     'hazardous_special_scheme_attachment_visibility': ['review_visibility_gap'],
     'hazardous_special_scheme_calculation_evidence': ['hazardous_scheme_calculation'],
     'hazardous_special_scheme_emergency_targeted': ['emergency_plan_targeted'],
     'hazardous_special_scheme_measure_linkage': ['hazardous_scheme_measures'],
+    'supervision_plan_structure_completeness': ['supervision_plan_structure'],
+    'supervision_plan_monitoring_linkage': ['supervision_plan_monitoring'],
+    'supervision_plan_attachment_visibility': ['review_visibility_gap'],
+    'review_support_material_context_only': ['review_support_material_context'],
+    'review_support_material_attachment_visibility': ['review_visibility_gap'],
     'lifting_operations_special_scheme_linkage': ['dangerous_special_scheme'],
     'lifting_operations_calculation_traceability': ['hazardous_scheme_calculation'],
     'temporary_power_control_linkage': ['hazardous_scheme_measures', 'emergency_plan_targeted'],
     'hot_work_emergency_targeted': ['emergency_plan_targeted'],
+    'gas_area_ops_control_linkage': ['hazardous_scheme_measures', 'emergency_plan_targeted'],
 }
 
 

@@ -37,7 +37,7 @@ make eval-review-cross-model
 
 - `test-review-unit`：跑 `tests/test_structured_review.py`
 - `test-review-integration`：跑 runtime 中 `structured_review` 分支（覆盖 fixture 与 `sourceDocumentRef`）
-- `eval-review`：执行 legacy CI 稳定子集，并同时执行 official versioned stage gate
+- `eval-review`：执行 legacy CI 稳定子集，并同时执行 official versioned stage gate；新增 experimental versioned cases 只进入 diagnostics
 - `eval-review-ablations`：输出 parser / visibility / rule engine / llm explanation 的消融结果；其中 `disable_visibility_check` 仅允许走内部 ablation wiring
 - `eval-review-cross-pack`：对比自动 pack 选择与强制 expected packs 的结果
 - `eval-review-cross-model`：固定 facts/rules，仅替换 explanation model
@@ -87,15 +87,20 @@ make eval-review-cross-model
 
 目标链路：DocumentLoader / review parser → facts → rules → evidence → report
 
-当前 P0 数据集：
+当前 P0 / experimental 数据集：
 
 - legacy CI 稳定子集：12 cases
-- 本地完整评测池：26 cases
-- versioned cases：6 cases，其中 3 个 official CI stage-gate cases
+- 本地完整评测池：30 cases
+- versioned cases：10 cases，其中 3 个 official CI stage-gate cases
+- 新增 experimental versioned cases：
+  - `cn_construction_scheme_attachment_gap_001`
+  - `cn_supervision_plan_monitoring_gap_001`
+  - `cn_review_support_material_context_only_001`
+  - `cn_construction_org_gas_area_ops_001`
 - P0 正式支持：
   - `construction_org`
   - `hazardous_special_scheme`
-- skeleton / registry 覆盖：
+- skeleton / experimental 覆盖：
   - `construction_scheme`
   - `supervision_plan`
   - `review_support_material`
@@ -110,11 +115,15 @@ make eval-review-cross-model
 - `summary.visibilitySummary` 仅作为 display summary 保留
 - 能识别重复章节、附件可视域缺口、专项方案挂接不清、停机窗口与资源压力
 - 能识别施工组织设计核心章节完整性缺口
+- 能识别一般施工方案核心章节完整性缺口
+- 能识别监理规划核心章节缺口与监测监控安排缺口
+- 能识别审查支持材料只能补充背景、不能替代正式方案正文
 - 能识别危大专项方案核心章节缺口、验算依据缺口、措施-监测闭环问题
+- 能识别煤气区域作业控制与应急链路缺口
 - 能区分 `attachment_unparsed / referenced_only / unknown / missing`
 - `missing` 只在有明确证据时产出
 - artifact API 可列出和下载工件，且与 `result.artifactIndex` 同口径；对新任务 `artifactIndex` 即使为空也优先于目录扫描
-- 详情页能展示 top-level visibility / issues / rule-hit trace / reviewer decision / 原始 JSON
+- 详情页优先展示 `resolvedProfile / visibility / unresolvedFacts / artifactIndex / reviewerDecision`，再展示报告与原始 JSON
 
 ## P1 主门槛
 
@@ -131,6 +140,7 @@ make eval-review-cross-model
   - hazard identification accuracy ≥ `0.90`
   - attachment visibility accuracy ≥ `0.90`
   - manual review flag accuracy ≥ `0.80`
+- experimental versioned cases进入 diagnostics，但不提升 skeleton documentType 为 official CI gate
 - `review_assist` 回归失败数 = `0`
 
 ## 推荐回归命令

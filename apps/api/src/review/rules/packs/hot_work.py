@@ -7,7 +7,7 @@ def get_hot_work_pack() -> PolicyPack:
     return PolicyPack(
         id='hot_work.base',
         version='1.0.0',
-        docTypes=['construction_org'],
+        docTypes=['construction_org', 'construction_scheme'],
         disciplineTags=['hot_work'],
         extractorIds=['hazard_facts', 'schedule_resource_facts'],
         ruleIds=['hot_work_emergency_targeted'],

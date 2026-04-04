@@ -1,0 +1,23 @@
+[
+  {
+    "title": "施工组织设计核心章节不完整",
+    "layer": "L1",
+    "severity": "high",
+    "finding_type": "hard_evidence",
+    "manual_review_needed": false
+  },
+  {
+    "title": "应急预案针对性不足",
+    "layer": "L2",
+    "severity": "medium",
+    "finding_type": "hard_evidence",
+    "manual_review_needed": false
+  },
+  {
+    "title": "煤气区域作业控制与应急链路不完整",
+    "layer": "L2",
+    "severity": "high",
+    "finding_type": "engineering_inference",
+    "manual_review_needed": false
+  }
+]

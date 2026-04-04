@@ -549,12 +549,8 @@ export function TaskDetail({ taskId }: { taskId: string }) {
               <section className="grid two-up">
                 <article className="card stack-lg">
                   <div>
-                    <p className="eyebrow">Structured Review</p>
-                    <h2>正式结构化审查结果</h2>
-                  </div>
-                  <div className="callout">
-                    <strong>总体结论</strong>
-                    <p>{structuredResult.summary.overallConclusion}</p>
+                    <p className="eyebrow">Canonical Contract</p>
+                    <h2>审查主 contract</h2>
                   </div>
                   <div className="callout">
                     <strong>Resolved Profile</strong>
@@ -564,14 +560,36 @@ export function TaskDetail({ taskId }: { taskId: string }) {
                     <p>strictMode：{structuredResult.resolvedProfile.strictMode ? "true" : "false"}（reserved）</p>
                   </div>
                   <div className="callout">
-                    <strong>人工复核</strong>
+                    <strong>Canonical Visibility</strong>
+                    <p>parserLimited：{structuredResult.visibility.parserLimited ? "true" : "false"}</p>
+                    <p>fileType：{structuredResult.visibility.fileType || "unknown"}</p>
+                    <p>附件数量：{structuredResult.visibility.attachmentCount}</p>
+                    <p>状态计数：{renderJson(structuredResult.visibility.counts)}</p>
+                    <p>原因计数：{renderJson(structuredResult.visibility.reasonCounts)}</p>
+                    <p>重复章节：{structuredResult.visibility.duplicateSectionTitles.join("，") || "无"}</p>
+                    <p>parse warnings：{structuredResult.visibility.parseWarnings.join("，") || "无"}</p>
+                    <p>需人工复核：{structuredResult.visibility.manualReviewNeeded ? "true" : "false"}</p>
+                  </div>
+                  <div className="callout">
+                    <strong>Unresolved Facts</strong>
+                    {structuredResult.unresolvedFacts.length ? (
+                      <ul>
+                        {structuredResult.unresolvedFacts.map((item) => (
+                          <li key={`${item.code}-${item.factKey}`}>
+                            {item.code} · {item.summary}
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p>无</p>
+                    )}
+                  </div>
+                  <div className="callout">
+                    <strong>总体结论</strong>
+                    <p>{structuredResult.summary.overallConclusion}</p>
                     <p>{structuredResult.summary.manualReviewNeeded ? "需要结合附件原件或可视域缺口做人工复核" : "当前无需额外人工复核"}</p>
-                    <p className="muted small">
-                      parse warnings：{structuredResult.visibility.parseWarnings.join("，") || "无"}
-                    </p>
                   </div>
                   {structuredResult.notice ? <div className="callout warning-callout">{structuredResult.notice}</div> : null}
-                  <pre className="result-block">{structuredResult.reportMarkdown}</pre>
                 </article>
 
                 <article className="card stack-lg">
@@ -641,15 +659,8 @@ export function TaskDetail({ taskId }: { taskId: string }) {
                     <h2>可视域与解析降级</h2>
                   </div>
                   <div className="callout">
-                    <strong>Canonical Visibility</strong>
-                    <p>parserLimited：{structuredResult.visibility.parserLimited ? "true" : "false"}</p>
-                    <p>fileType：{structuredResult.visibility.fileType || "unknown"}</p>
-                    <p>附件数量：{structuredResult.visibility.attachmentCount}</p>
-                    <p>状态计数：{renderJson(structuredResult.visibility.counts)}</p>
-                    <p>原因计数：{renderJson(structuredResult.visibility.reasonCounts)}</p>
-                    <p>重复章节：{structuredResult.visibility.duplicateSectionTitles.join("，") || "无"}</p>
-                    <p>需人工复核：{structuredResult.visibility.manualReviewNeeded ? "true" : "false"}</p>
-                    <p>parse warnings：{structuredResult.visibility.parseWarnings.join("，") || "无"}</p>
+                    <strong>Attachment Visibility Matrix</strong>
+                    <p>top-level visibility 已在上方 canonical contract 卡片中展示；这里保留结构化明细。</p>
                   </div>
                   <pre className="code-block compact">{renderJson(structuredResult.matrices.attachmentVisibility)}</pre>
                 </article>
@@ -702,22 +713,10 @@ export function TaskDetail({ taskId }: { taskId: string }) {
 
               <section className="card stack-lg">
                 <div>
-                  <p className="eyebrow">Artifacts & Facts</p>
-                  <h2>工件 / 未决事实</h2>
+                  <p className="eyebrow">Structured Review Report</p>
+                  <h2>报告与原始结果</h2>
                 </div>
-                {structuredResult.unresolvedFacts.length ? (
-                  <div className="callout warning-callout">
-                    <strong>Unresolved Facts</strong>
-                    <ul>
-                      {structuredResult.unresolvedFacts.map((item) => (
-                        <li key={`${item.code}-${item.factKey}`}>
-                          {item.code} · {item.summary}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                ) : null}
-                <ArtifactList artifacts={structuredArtifacts} />
+                <pre className="result-block">{structuredResult.reportMarkdown}</pre>
                 <details>
                   <summary>查看原始 JSON</summary>
                   <pre className="code-block">{renderJson(structuredResult)}</pre>

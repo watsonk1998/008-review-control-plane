@@ -1,0 +1,16 @@
+{
+  "facts": [
+    {
+      "key": "document_type_hint",
+      "value": "supervision_plan",
+      "value_type": "string",
+      "support_type": "doc_fact"
+    },
+    {
+      "key": "monitoring_plan_present",
+      "value": false,
+      "value_type": "boolean",
+      "support_type": "doc_fact"
+    }
+  ]
+}

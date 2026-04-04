@@ -1,0 +1,20 @@
+{
+  "case_id": "cn_construction_scheme_attachment_gap_001",
+  "case_version": "v0.1.0-bootstrap-seed",
+  "schema_version": "v1",
+  "title": "一般施工方案-附件可视域缺口最小样本",
+  "doc_type": "construction_scheme",
+  "discipline_tags": [],
+  "expected_packs": [
+    "construction_scheme.base"
+  ],
+  "label_source": "repo_bootstrap",
+  "label_status": "seeded_unreviewed",
+  "truth_level": "bootstrap",
+  "review_status": "not_final",
+  "source_files": [
+    "source.md"
+  ],
+  "seed_review_files": [],
+  "notes": "用于 construction_scheme.base 的最小 versioned experimental 回归。"
+}

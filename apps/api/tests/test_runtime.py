@@ -289,12 +289,10 @@ async def test_runtime_structured_review_generates_formal_result(tmp_path: Path)
     assert attachment_issue['manualReviewReason'] == 'visibility_gap'
     assert any(path.endswith('.md') for path in saved.result['artifacts'])
     assert any(artifact['fileName'].endswith('.md') for artifact in saved.result['artifactIndex'])
-    assert saved.result['summary']['selectedPacks'] == [
-        'construction_org.base',
-        'lifting_operations.base',
-        'temporary_power.base',
-        'hot_work.base',
-    ]
+    assert {'construction_org.base', 'lifting_operations.base', 'temporary_power.base', 'hot_work.base'}.issubset(
+        set(saved.result['summary']['selectedPacks'])
+    )
+    assert saved.result['summary']['selectedPacks'] == saved.result['resolvedProfile']['policyPackIds']
     assert {'parse', 'facts', 'rule_hits', 'candidates', 'result', 'matrices', 'report'}.issubset(
         {artifact['category'] for artifact in saved.result['artifactIndex']}
     )

@@ -1,0 +1,16 @@
+{
+  "facts": [
+    {
+      "key": "document_type_hint",
+      "value": "construction_scheme",
+      "value_type": "string",
+      "support_type": "doc_fact"
+    },
+    {
+      "key": "has_attachment_1",
+      "value": true,
+      "value_type": "boolean",
+      "support_type": "doc_fact"
+    }
+  ]
+}

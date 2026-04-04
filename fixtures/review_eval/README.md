@@ -25,3 +25,15 @@
 - construction_org / electromechanical / cn_baosteel_coldrolling_crane_230235 / v0.1.0-gemini-seed
 - construction_org / municipal / cn_puhua_rainwater_storage_pool / v0.1.0-gemini-seed
 - hazardous_special_scheme / lifting / cn_hazardous_special_scheme_md_missing_core_001 / v0.1.0-bootstrap-seed
+- construction_scheme / general / cn_construction_scheme_attachment_gap_001 / v0.1.0-bootstrap-seed
+- supervision_plan / general / cn_supervision_plan_monitoring_gap_001 / v0.1.0-bootstrap-seed
+- review_support_material / context / cn_review_support_material_context_only_001 / v0.1.0-bootstrap-seed
+- construction_org / industrial / cn_construction_org_gas_area_ops_001 / v0.1.0-bootstrap-seed
+
+## 当前评测池概览
+
+- legacy CI 稳定子集：12 cases
+- 全量评测池：30 cases
+- versioned cases：10 cases
+- official CI stage-gate versioned cases：3 cases
+- 新增的 4 个 bootstrap-seed versioned cases 当前只进入 experimental diagnostics，不自动提升 skeleton documentType 为 official gate

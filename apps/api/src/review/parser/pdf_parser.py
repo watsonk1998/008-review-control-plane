@@ -87,6 +87,21 @@ def parse_pdf_document(file_path: str | Path) -> dict[str, Any]:
         [str(block['text']) for block in blocks if block['type'] != 'figure']
     )
     normalized_text = '\n'.join(normalized_lines)
+    appendix_heading_candidates = [
+        block
+        for block in blocks
+        if str(block.get('text') or '').startswith(('附件', '附录'))
+    ]
+    table_caption_candidates = [
+        block
+        for block in blocks
+        if str(block.get('text') or '').startswith(('表', 'TABLE', 'Table'))
+    ]
+    figure_caption_candidates = [
+        block
+        for block in blocks
+        if str(block.get('text') or '').startswith(('图', 'FIG', 'Figure'))
+    ]
     title_counts: dict[str, int] = {}
     duplicate_titles: list[str] = []
     for section in sections:
@@ -105,6 +120,9 @@ def parse_pdf_document(file_path: str | Path) -> dict[str, Any]:
             'pdf_tables_not_preserved',
             'pdf_attachment_visibility_may_be_unknown',
             'pdf_figures_images_not_parsed',
+            f'pdf_appendix_title_candidates:{len(appendix_heading_candidates)}',
+            f'pdf_table_caption_candidates:{len(table_caption_candidates)}',
+            f'pdf_figure_caption_candidates:{len(figure_caption_candidates)}',
             f'pdf_source_pages:{page_count}',
             f'pdf_extracted_pages:{extracted_page_count}',
         ]

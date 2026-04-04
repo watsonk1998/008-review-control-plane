@@ -1,0 +1,9 @@
+[
+  {
+    "title": "审查支持材料不能替代正式方案正文",
+    "layer": "L1",
+    "severity": "low",
+    "finding_type": "suggestion_enhancement",
+    "manual_review_needed": false
+  }
+]

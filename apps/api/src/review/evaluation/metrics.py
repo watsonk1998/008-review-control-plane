@@ -10,6 +10,7 @@ _RULE_ID_ALIASES = {
     'construction_org.section_duplicate_title': 'construction_org_duplicate_sections',
     'construction_org.attachment_reference_visible': 'construction_org_attachment_visibility',
     'lifting_operations.special_plan_required': 'construction_org_special_scheme_gap',
+    'gas_area_ops.risk_identification_complete': 'gas_area_ops_control_linkage',
 }
 
 
@@ -119,6 +120,7 @@ def _build_fact_snapshot(result: dict[str, Any], evaluation_artifacts: dict[str,
             for item in attachment_facts.get('attachments', [])
             if isinstance(item, dict)
         }
+        project_values = direct_facts.get('projectFacts', {})
     else:
         hazard_values = result.get('matrices', {}).get('hazardIdentification', {}).get('values', {})
         schedule_values = result.get('matrices', {}).get('hazardIdentification', {}).get('values', {})
@@ -128,7 +130,9 @@ def _build_fact_snapshot(result: dict[str, Any], evaluation_artifacts: dict[str,
             for item in result.get('matrices', {}).get('attachmentVisibility', [])
             if isinstance(item, dict)
         }
+        project_values = hazard_values
     duplicate_titles = set(visibility.get('duplicateSectionTitles', []))
+    section_presence = project_values.get('sectionPresence', {})
     return {
         'contains_gas_area': bool(hazard_values.get('gasArea')),
         'single_crane_shutdown_days': schedule_values.get('shutdownWindowDays', hazard_values.get('shutdownWindowDays')),
@@ -139,6 +143,9 @@ def _build_fact_snapshot(result: dict[str, Any], evaluation_artifacts: dict[str,
         'lifting_operation_identified': bool(hazard_values.get('liftingOperation')),
         'temporary_power_identified': bool(hazard_values.get('temporaryPower')),
         'hot_work_identified': bool(hazard_values.get('hotWork')),
+        'monitoring_plan_present': bool(section_presence.get('monitoringPlan')),
+        'context_only_material': bool(project_values.get('contextOnly')),
+        'document_type_hint': project_values.get('documentTypeHint'),
     }
 
 

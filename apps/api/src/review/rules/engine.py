@@ -14,10 +14,14 @@ class ReviewRuleEngine:
 
         hits: list[RuleHit] = []
         hits.extend(self._construction_org_hits(facts, pack_by_rule))
+        hits.extend(self._construction_scheme_hits(facts, pack_by_rule))
         hits.extend(self._hazardous_special_scheme_hits(facts, pack_by_rule))
+        hits.extend(self._supervision_plan_hits(facts, pack_by_rule))
+        hits.extend(self._review_support_material_hits(facts, pack_by_rule))
         hits.extend(self._lifting_operations_hits(facts, pack_by_rule, selected_pack_ids))
         hits.extend(self._temporary_power_hits(facts, pack_by_rule, selected_pack_ids))
         hits.extend(self._hot_work_hits(facts, pack_by_rule, selected_pack_ids))
+        hits.extend(self._gas_area_ops_hits(facts, pack_by_rule, selected_pack_ids))
         return hits
 
     def _construction_org_hits(self, facts: ExtractedFacts, pack_by_rule: dict[str, tuple[str, str]]) -> list[RuleHit]:
@@ -154,6 +158,51 @@ class ReviewRuleEngine:
         )
         return hits
 
+    def _construction_scheme_hits(self, facts: ExtractedFacts, pack_by_rule: dict[str, tuple[str, str]]) -> list[RuleHit]:
+        if not any(pack_id == 'construction_scheme.base' for pack_id, _ in pack_by_rule.values()):
+            return []
+        hits: list[RuleHit] = []
+        section_presence = facts.projectFacts.get('sectionPresence') or {}
+        missing_core_sections = [
+            key
+            for key in ['engineeringOverview', 'preparationBasis', 'processMethod', 'safetyMeasures']
+            if not section_presence.get(key)
+        ]
+        pack_id, pack_readiness = pack_by_rule.get('construction_scheme_structure_completeness', ('construction_scheme.base', 'ready'))
+        hits.append(
+            RuleHit(
+                ruleId='construction_scheme_structure_completeness',
+                packId=pack_id,
+                packReadiness=pack_readiness,
+                matchType='direct_hit',
+                status='hit' if missing_core_sections else 'pass',
+                layerHint=ReviewLayer.L1,
+                severityHint='high' if len(missing_core_sections) >= 2 else 'medium',
+                factRefs=[f'project.sectionPresence.{key}' for key in missing_core_sections] or ['project.sectionPresence.engineeringOverview'],
+                evidenceRefs=['policy:construction_scheme_structure'],
+                rationale='一般施工方案至少应覆盖工程概况、编制依据、施工方法和安全措施等最小核心章节。',
+            )
+        )
+
+        attachment_items = facts.attachmentFacts.get('attachments') or []
+        attachment_gap = [item for item in attachment_items if item.get('visibility') != 'parsed']
+        attachment_pack_id, attachment_pack_readiness = pack_by_rule.get('construction_scheme_attachment_visibility', ('construction_scheme.base', 'ready'))
+        hits.append(
+            RuleHit(
+                ruleId='construction_scheme_attachment_visibility',
+                packId=attachment_pack_id,
+                packReadiness=attachment_pack_readiness,
+                matchType='visibility_gap',
+                status='manual_review_needed' if attachment_gap else 'pass',
+                layerHint=ReviewLayer.L1,
+                severityHint='medium',
+                factRefs=['attachments.visibility'],
+                evidenceRefs=['policy:review_visibility_gap'],
+                rationale='施工方案附件未进入当前可视域时，应先标记人工复核。',
+            )
+        )
+        return hits
+
     def _hazardous_special_scheme_hits(self, facts: ExtractedFacts, pack_by_rule: dict[str, tuple[str, str]]) -> list[RuleHit]:
         if 'hazardous_special_scheme_core_sections' not in pack_by_rule and not any(pack_id == 'hazardous_special_scheme.base' for pack_id, _ in pack_by_rule.values()):
             return []
@@ -253,6 +302,108 @@ class ReviewRuleEngine:
         )
         return hits
 
+    def _supervision_plan_hits(self, facts: ExtractedFacts, pack_by_rule: dict[str, tuple[str, str]]) -> list[RuleHit]:
+        if not any(pack_id == 'supervision_plan.base' for pack_id, _ in pack_by_rule.values()):
+            return []
+        hits: list[RuleHit] = []
+        section_presence = facts.projectFacts.get('sectionPresence') or {}
+        missing_core_sections = [
+            key
+            for key in ['engineeringOverview', 'preparationBasis', 'safetyMeasures']
+            if not section_presence.get(key)
+        ]
+        structure_pack_id, structure_pack_readiness = pack_by_rule.get('supervision_plan_structure_completeness', ('supervision_plan.base', 'ready'))
+        hits.append(
+            RuleHit(
+                ruleId='supervision_plan_structure_completeness',
+                packId=structure_pack_id,
+                packReadiness=structure_pack_readiness,
+                matchType='direct_hit',
+                status='hit' if missing_core_sections else 'pass',
+                layerHint=ReviewLayer.L1,
+                severityHint='medium',
+                factRefs=[f'project.sectionPresence.{key}' for key in missing_core_sections] or ['project.sectionPresence.engineeringOverview'],
+                evidenceRefs=['policy:supervision_plan_structure'],
+                rationale='监理规划至少应提供工程概况、编制依据和监理控制措施的基础结构。',
+            )
+        )
+
+        monitoring_present = bool(section_presence.get('monitoringPlan'))
+        monitoring_pack_id, monitoring_pack_readiness = pack_by_rule.get('supervision_plan_monitoring_linkage', ('supervision_plan.base', 'ready'))
+        hits.append(
+            RuleHit(
+                ruleId='supervision_plan_monitoring_linkage',
+                packId=monitoring_pack_id,
+                packReadiness=monitoring_pack_readiness,
+                matchType='direct_hit',
+                status='pass' if monitoring_present else 'hit',
+                layerHint=ReviewLayer.L2,
+                severityHint='medium',
+                factRefs=['project.sectionPresence.monitoringPlan'],
+                evidenceRefs=['policy:supervision_plan_monitoring'],
+                rationale='监理规划应明确监测监控、旁站或巡视控制安排。',
+            )
+        )
+
+        attachment_items = facts.attachmentFacts.get('attachments') or []
+        attachment_gap = [item for item in attachment_items if item.get('visibility') != 'parsed']
+        attachment_pack_id, attachment_pack_readiness = pack_by_rule.get('supervision_plan_attachment_visibility', ('supervision_plan.base', 'ready'))
+        hits.append(
+            RuleHit(
+                ruleId='supervision_plan_attachment_visibility',
+                packId=attachment_pack_id,
+                packReadiness=attachment_pack_readiness,
+                matchType='visibility_gap',
+                status='manual_review_needed' if attachment_gap else 'pass',
+                layerHint=ReviewLayer.L1,
+                severityHint='medium',
+                factRefs=['attachments.visibility'],
+                evidenceRefs=['policy:review_visibility_gap'],
+                rationale='监理规划附件不可视时，应先进入人工复核而不是直接判断缺失。',
+            )
+        )
+        return hits
+
+    def _review_support_material_hits(self, facts: ExtractedFacts, pack_by_rule: dict[str, tuple[str, str]]) -> list[RuleHit]:
+        if not any(pack_id == 'review_support_material.base' for pack_id, _ in pack_by_rule.values()):
+            return []
+        hits: list[RuleHit] = []
+        context_only = bool(facts.projectFacts.get('contextOnly'))
+        pack_id, pack_readiness = pack_by_rule.get('review_support_material_context_only', ('review_support_material.base', 'ready'))
+        hits.append(
+            RuleHit(
+                ruleId='review_support_material_context_only',
+                packId=pack_id,
+                packReadiness=pack_readiness,
+                matchType='direct_hit',
+                status='hit' if context_only else 'manual_review_needed',
+                layerHint=ReviewLayer.L1,
+                severityHint='low',
+                factRefs=['project.contextOnly'],
+                evidenceRefs=['policy:review_support_material_context'],
+                rationale='审查支持材料只能补充背景或辅助判断，不能替代正式方案正文。',
+            )
+        )
+
+        attachment_items = facts.attachmentFacts.get('attachments') or []
+        attachment_gap = [item for item in attachment_items if item.get('visibility') != 'parsed']
+        attachment_pack_id, attachment_pack_readiness = pack_by_rule.get('review_support_material_attachment_visibility', ('review_support_material.base', 'ready'))
+        hits.append(
+            RuleHit(
+                ruleId='review_support_material_attachment_visibility',
+                packId=attachment_pack_id,
+                packReadiness=attachment_pack_readiness,
+                matchType='visibility_gap',
+                status='manual_review_needed' if attachment_gap else 'pass',
+                layerHint=ReviewLayer.L1,
+                severityHint='low',
+                factRefs=['attachments.visibility'],
+                evidenceRefs=['policy:review_visibility_gap'],
+                rationale='支持材料附件不可视时仍需显式标记人工复核。',
+            )
+        )
+        return hits
+
     def _lifting_operations_hits(
         self,
         facts: ExtractedFacts,
@@ -310,7 +461,7 @@ class ReviewRuleEngine:
         pack_by_rule: dict[str, tuple[str, str]],
         selected_pack_ids: set[str],
     ) -> list[RuleHit]:
-        if 'temporary_power.base' not in selected_pack_ids or 'construction_org.base' not in selected_pack_ids:
+        if 'temporary_power.base' not in selected_pack_ids or not ({'construction_org.base', 'construction_scheme.base'} & selected_pack_ids):
             return []
         if not facts.hazardFacts.get('temporaryPower'):
             return []
@@ -341,7 +492,7 @@ class ReviewRuleEngine:
         pack_by_rule: dict[str, tuple[str, str]],
         selected_pack_ids: set[str],
     ) -> list[RuleHit]:
-        if 'hot_work.base' not in selected_pack_ids or 'construction_org.base' not in selected_pack_ids:
+        if 'hot_work.base' not in selected_pack_ids or not ({'construction_org.base', 'construction_scheme.base'} & selected_pack_ids):
             return []
         if not facts.hazardFacts.get('hotWork'):
             return []
@@ -361,6 +512,37 @@ class ReviewRuleEngine:
                 factRefs=['hazard.hotWork', 'emergency.planTitles'],
                 evidenceRefs=['policy:emergency_plan_targeted'],
                 rationale='动火场景至少应看到火灾/爆燃类应急处置标题或明确联动安排。',
+            )
+        ]
+
+    def _gas_area_ops_hits(
+        self,
+        facts: ExtractedFacts,
+        pack_by_rule: dict[str, tuple[str, str]],
+        selected_pack_ids: set[str],
+    ) -> list[RuleHit]:
+        if 'gas_area_ops.base' not in selected_pack_ids:
+            return []
+        if not facts.hazardFacts.get('gasArea'):
+            return []
+        targeted_titles = facts.emergencyFacts.get('planTitles') or []
+        has_targeted_title = self._contains_keywords(targeted_titles, ('煤气', '中毒', '窒息', '爆炸', '泄漏'))
+        measures_ready = bool(facts.hazardFacts.get('measureSectionPresent'))
+        monitoring_ready = bool(facts.hazardFacts.get('monitoringSectionPresent'))
+        status = 'pass' if measures_ready and monitoring_ready and has_targeted_title else 'hit'
+        pack_id, pack_readiness = pack_by_rule.get('gas_area_ops_control_linkage', ('gas_area_ops.base', 'ready'))
+        return [
+            RuleHit(
+                ruleId='gas_area_ops_control_linkage',
+                packId=pack_id,
+                packReadiness=pack_readiness,
+                matchType='inferred_risk',
+                status=status,
+                layerHint=ReviewLayer.L2,
+                severityHint='high',
+                factRefs=['hazard.gasArea', 'hazard.measureSectionPresent', 'hazard.monitoringSectionPresent', 'emergency.planTitles'],
+                evidenceRefs=['policy:hazardous_scheme_measures', 'policy:emergency_plan_targeted'],
+                rationale='煤气区域作业至少应形成控制措施、监测监控与中毒/窒息/爆炸类应急处置的同链表达。',
             )
         ]
 

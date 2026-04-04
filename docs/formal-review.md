@@ -43,7 +43,7 @@ P0 的稳定结果字段：
 - `construction_org`
 - `hazardous_special_scheme`
 
-以下类型暂时只提供 pack 骨架与 registry 覆盖，不作为 P1 主支持对象：
+以下类型当前已有可执行 `ready` base packs，但 documentType 仍只处于 skeleton / experimental 范围，不作为 P1 主支持对象：
 
 - `construction_scheme`
 - `supervision_plan`
@@ -55,18 +55,24 @@ P0 的稳定结果字段：
 
 - `construction_org.base`（ready）
 - `hazardous_special_scheme.base`（ready）
-- `construction_scheme.base`（placeholder）
-- `supervision_plan.base`（placeholder）
-- `review_support_material.base`（placeholder）
+- `construction_scheme.base`（ready，experimental）
+- `supervision_plan.base`（ready，experimental）
+- `review_support_material.base`（ready，experimental）
 
 ### scenario packs
 
 - `lifting_operations.base`（ready）
 - `temporary_power.base`（ready）
 - `hot_work.base`（ready）
-- `gas_area_ops.base`（placeholder）
+- `gas_area_ops.base`（ready）
 - `special_equipment.base`（placeholder）
 - `working_at_height.base`（placeholder）
+
+适用边界补充：
+
+- `lifting_operations.base` / `temporary_power.base` / `hot_work.base` 现可对 `construction_scheme` 生效
+- `gas_area_ops.base` 当前仅对 `construction_org` 与 `hazardous_special_scheme` 生效
+- `supervision_plan` 与 `review_support_material` 本轮仍保持 base-only
 
 支持范围事实源：
 
@@ -123,6 +129,14 @@ LLM 不负责：
 - reviewer decision 以单个 task-scoped JSON 保存：`taskState + note + issues[] + attachments[] + updatedAt`
 - `disable_visibility_check` 仅保留给 eval / ablation 内部路径
 
+PDF 仍保持 `pdf_text_only + parserLimited=True` 的受限路径；本轮只新增轻量结构提示，不引入 OCR / 多模态：
+
+- `pdf_appendix_title_candidates:<n>`
+- `pdf_table_caption_candidates:<n>`
+- `pdf_figure_caption_candidates:<n>`
+
+这些 warning 只表达“可视域受限 / 结构提示”，不能被解释为“正文或附件缺失”。
+
 以下情况必须保留人工复核标记：
 
 - `visibility_gap`
@@ -137,9 +151,10 @@ LLM 不负责：
 `fixtures/review_eval/` 当前包含：
 
 - legacy CI 稳定子集：12 cases
-- 数据集总量：26 cases
-- versioned cases：6 cases
+- 数据集总量：30 cases
+- versioned cases：10 cases
 - 其中 versioned official stage-gate cases：3 cases
+- 其余新增 versioned cases 为 experimental diagnostics，不进入 blocking official gate
 
 当前 `make eval-review` 同时要求：
 

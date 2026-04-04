@@ -1,0 +1,16 @@
+{
+  "facts": [
+    {
+      "key": "document_type_hint",
+      "value": "construction_org",
+      "value_type": "string",
+      "support_type": "doc_fact"
+    },
+    {
+      "key": "contains_gas_area",
+      "value": true,
+      "value_type": "boolean",
+      "support_type": "doc_fact"
+    }
+  ]
+}

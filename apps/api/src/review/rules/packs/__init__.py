@@ -1,9 +1,13 @@
 from __future__ import annotations
 
+from src.review.rules.packs.construction_scheme import get_construction_scheme_base_pack
 from src.review.rules.packs.construction_org import get_construction_org_base_pack
+from src.review.rules.packs.gas_area_ops import get_gas_area_ops_pack
 from src.review.rules.packs.hazardous_special_scheme import get_hazardous_special_scheme_base_pack
 from src.review.rules.packs.hot_work import get_hot_work_pack
 from src.review.rules.packs.lifting_operations import get_lifting_operations_pack
+from src.review.rules.packs.review_support_material import get_review_support_material_base_pack
+from src.review.rules.packs.supervision_plan import get_supervision_plan_base_pack
 from src.review.rules.packs.temporary_power import get_temporary_power_pack
 from src.review.schema import PolicyPack
 
@@ -24,22 +28,6 @@ _SCENARIO_TAGS = {
     'special_equipment': 'special_equipment.base',
     'working_at_height': 'working_at_height.base',
 }
-
-
-def _make_placeholder_pack(pack_id: str, doc_type: str) -> PolicyPack:
-    return PolicyPack(
-        id=pack_id,
-        version='1.0.0',
-        docTypes=[doc_type],
-        extractorIds=['project_facts', 'hazard_facts', 'schedule_resource_facts'],
-        ruleIds=[],
-        evidencePackIds=['review.visibility'],
-        defaultEnabled=True,
-        description=f'{doc_type} placeholder pack for P1 registry coverage.',
-        readiness='placeholder',
-    )
-
-
 def _make_scenario_pack(pack_id: str, discipline_tag: str) -> PolicyPack:
     return PolicyPack(
         id=pack_id,
@@ -59,12 +47,13 @@ def get_policy_pack_registry() -> dict[str, PolicyPack]:
     registry = {
         'construction_org.base': get_construction_org_base_pack(),
         'hazardous_special_scheme.base': get_hazardous_special_scheme_base_pack(),
-        'construction_scheme.base': _make_placeholder_pack('construction_scheme.base', 'construction_scheme'),
-        'supervision_plan.base': _make_placeholder_pack('supervision_plan.base', 'supervision_plan'),
-        'review_support_material.base': _make_placeholder_pack('review_support_material.base', 'review_support_material'),
+        'construction_scheme.base': get_construction_scheme_base_pack(),
+        'supervision_plan.base': get_supervision_plan_base_pack(),
+        'review_support_material.base': get_review_support_material_base_pack(),
         'lifting_operations.base': get_lifting_operations_pack(),
         'temporary_power.base': get_temporary_power_pack(),
         'hot_work.base': get_hot_work_pack(),
+        'gas_area_ops.base': get_gas_area_ops_pack(),
     }
     for discipline_tag, pack_id in _SCENARIO_TAGS.items():
         if pack_id in registry:

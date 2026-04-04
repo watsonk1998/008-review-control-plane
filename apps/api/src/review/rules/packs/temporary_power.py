@@ -7,7 +7,7 @@ def get_temporary_power_pack() -> PolicyPack:
     return PolicyPack(
         id='temporary_power.base',
         version='1.0.0',
-        docTypes=['construction_org'],
+        docTypes=['construction_org', 'construction_scheme'],
         disciplineTags=['temporary_power'],
         extractorIds=['hazard_facts', 'schedule_resource_facts'],
         ruleIds=['temporary_power_control_linkage'],

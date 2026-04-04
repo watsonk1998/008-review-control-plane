@@ -1,0 +1,20 @@
+{
+  "case_id": "cn_review_support_material_context_only_001",
+  "case_version": "v0.1.0-bootstrap-seed",
+  "schema_version": "v1",
+  "title": "审查支持材料-背景材料边界最小样本",
+  "doc_type": "review_support_material",
+  "discipline_tags": [],
+  "expected_packs": [
+    "review_support_material.base"
+  ],
+  "label_source": "repo_bootstrap",
+  "label_status": "seeded_unreviewed",
+  "truth_level": "bootstrap",
+  "review_status": "not_final",
+  "source_files": [
+    "source.md"
+  ],
+  "seed_review_files": [],
+  "notes": "用于 review_support_material.base 的边界表达回归。"
+}

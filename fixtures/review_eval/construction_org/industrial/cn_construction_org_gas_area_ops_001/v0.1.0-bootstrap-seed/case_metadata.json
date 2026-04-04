@@ -1,0 +1,23 @@
+{
+  "case_id": "cn_construction_org_gas_area_ops_001",
+  "case_version": "v0.1.0-bootstrap-seed",
+  "schema_version": "v1",
+  "title": "施工组织设计-煤气区域场景最小样本",
+  "doc_type": "construction_org",
+  "discipline_tags": [
+    "gas_area_ops"
+  ],
+  "expected_packs": [
+    "construction_org.base",
+    "gas_area_ops.base"
+  ],
+  "label_source": "repo_bootstrap",
+  "label_status": "seeded_unreviewed",
+  "truth_level": "bootstrap",
+  "review_status": "not_final",
+  "source_files": [
+    "source.md"
+  ],
+  "seed_review_files": [],
+  "notes": "用于 gas_area_ops.base 的第一波 versioned experimental 回归。"
+}

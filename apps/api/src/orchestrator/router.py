@@ -67,12 +67,12 @@ def choose_structured_review_profile(
 ) -> dict[str, object]:
     document_type = infer_review_document_type(query, fixture_title, requested_document_type)
     discipline_tags = infer_review_discipline_tags(query, fixture_title, requested_discipline_tags)
-    selected_packs = [
+    hinted_packs = [
         pack.id
         for pack in select_policy_packs(
             document_type,
             discipline_tags,
-            requested_pack_ids=requested_policy_pack_ids or [],
+            requested_pack_ids=[],
         )
         if pack.readiness == 'ready'
     ]
@@ -83,7 +83,7 @@ def choose_structured_review_profile(
         'requestedPolicyPackIds': requested_policy_pack_ids or [],
         'documentTypeHint': document_type,
         'disciplineTagHints': discipline_tags,
-        'policyPackHints': selected_packs,
+        'policyPackHints': hinted_packs,
         'strictMode': True if strict_mode is None else strict_mode,
     }
 

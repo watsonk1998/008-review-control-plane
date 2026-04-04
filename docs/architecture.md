@@ -165,6 +165,9 @@ flowchart TD
 ## 当前 formal review 最小规则核
 
 - 施工组织设计核心章节完整性
+- 一般施工方案核心章节完整性
+- 监理规划核心章节与监测监控安排完整性
+- 审查支持材料“仅为补充、不能替代正式方案正文”提示
 - 重复章节标题识别
 - 附件可视域缺口标记
 - 高风险作业专项方案挂接检查
@@ -173,30 +176,38 @@ flowchart TD
 - 危大专项方案核心章节完整性
 - 危大专项方案验算依据检查
 - 危大专项方案措施-监测闭环检查
+- 煤气区域作业控制与应急链路检查
 
 ## P1 pack / evidence 体系
 
 - `construction_org.base`（ready）
 - `hazardous_special_scheme.base`（ready）
-- placeholder base packs：
-  - `construction_scheme.base`
-  - `supervision_plan.base`
-  - `review_support_material.base`
+- experimental base packs：
+  - `construction_scheme.base`（ready）
+  - `supervision_plan.base`（ready）
+  - `review_support_material.base`（ready）
 - scenario packs：
   - `lifting_operations.base`（ready）
   - `temporary_power.base`（ready）
   - `hot_work.base`（ready）
-  - `gas_area_ops.base`
-  - `special_equipment.base`
-  - `working_at_height.base`
+  - `gas_area_ops.base`（ready）
+  - `special_equipment.base`（placeholder）
+  - `working_at_height.base`（placeholder）
+
+适用边界：
+
+- `construction_scheme` 仍是 skeleton documentType，但其 ready base pack 已可与 `lifting_operations / temporary_power / hot_work` 场景 pack 组合运行
+- `supervision_plan` 与 `review_support_material` 仍是 skeleton documentType，当前只启用各自 base pack
+- `gas_area_ops.base` 当前只对 `construction_org` 与 `hazardous_special_scheme` 生效
 
 evidence packs 继续用 Python/Pydantic registry 管理，不进入 YAML/DSL 平台化。
 
 ## P0 评测门
 
 - legacy CI 稳定子集：12 cases
-- 本地完整评测池：26 cases
-- versioned cases：6 cases，其中 3 个 official CI stage-gate cases
+- 本地完整评测池：30 cases
+- versioned cases：10 cases，其中 3 个 official CI stage-gate cases
+- 其余新增 versioned cases 只进入 experimental diagnostics，不进入 blocking CI stage gate
 - 主指标：
   - `issue_recall`
   - `l1_hit_rate`

@@ -10,8 +10,7 @@
   "strictMode": true,
   "policyPackIds": [],
   "expectedPacks": [
-    "supervision_plan.base",
-    "special_equipment.base"
+    "supervision_plan.base"
   ],
   "manualReviewCases": [],
   "ciEnabled": false

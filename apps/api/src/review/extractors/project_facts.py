@@ -31,6 +31,16 @@ _DOC_TYPE_HINTS = {
     'supervision_plan': ['监理规划', '监理实施规划', '监理'],
 }
 
+_CONTEXT_ONLY_MARKERS = (
+    '补充背景',
+    '背景说明',
+    '辅助材料',
+    '支持材料',
+    '不形成正式方案',
+    '不作为正式方案',
+    '仅供审查参考',
+)
+
 
 def _infer_document_type_hint(text: str) -> str:
     for document_type, keywords in _DOC_TYPE_HINTS.items():
@@ -119,6 +129,11 @@ def extract_project_facts(parse_result) -> tuple[dict[str, Any], dict[str, list[
 
     document_type_hint = _infer_document_type_hint(parse_result.normalizedText[:3000])
     special_equipment_blocks = [block['id'] for block in blocks if '特种设备' in str(block.get('text') or '') or '行车' in str(block.get('text') or '')]
+    context_only_blocks = [
+        block['id']
+        for block in blocks
+        if any(marker in str(block.get('text') or '') for marker in _CONTEXT_ONLY_MARKERS)
+    ]
     section_presence, section_presence_refs = _collect_section_presence(parse_result)
 
     facts = {
@@ -128,6 +143,7 @@ def extract_project_facts(parse_result) -> tuple[dict[str, Any], dict[str, list[
         'location': location,
         'duplicateSections': duplicate_sections,
         'specialEquipmentMentioned': bool(special_equipment_blocks),
+        'contextOnly': bool(context_only_blocks),
         'sectionCount': len(parse_result.sections),
         'tableCount': len(parse_result.tables),
         'sectionPresence': section_presence,
@@ -138,6 +154,7 @@ def extract_project_facts(parse_result) -> tuple[dict[str, Any], dict[str, list[
         'project.location': [location_ref] if location_ref else [],
         'project.duplicateSections': [ref for title in duplicate_sections for ref in duplicate_map.get(title, [])],
         'project.specialEquipmentMentioned': special_equipment_blocks,
+        'project.contextOnly': context_only_blocks,
         **section_presence_refs,
     }
     unresolved = []

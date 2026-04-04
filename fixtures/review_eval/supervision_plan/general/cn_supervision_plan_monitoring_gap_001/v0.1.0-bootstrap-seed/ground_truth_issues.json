@@ -1,0 +1,16 @@
+[
+  {
+    "title": "监理规划核心章节不完整",
+    "layer": "L1",
+    "severity": "medium",
+    "finding_type": "hard_evidence",
+    "manual_review_needed": false
+  },
+  {
+    "title": "监理规划缺少明确的监测监控/旁站安排",
+    "layer": "L2",
+    "severity": "medium",
+    "finding_type": "hard_evidence",
+    "manual_review_needed": false
+  }
+]

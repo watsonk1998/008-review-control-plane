@@ -1,0 +1,15 @@
+{
+  "purpose": [
+    "验证 supervision_plan.base 具备最小可执行规则。"
+  ],
+  "primary_checks": [
+    "基础结构缺口命中",
+    "监测监控/旁站缺口命中"
+  ],
+  "known_limitations": [
+    "仍属于 skeleton documentType，不进入 official stage gate。"
+  ],
+  "next_review_actions": [
+    "后续可扩展监理实施细则、旁站记录等更细粒度要求。"
+  ]
+}

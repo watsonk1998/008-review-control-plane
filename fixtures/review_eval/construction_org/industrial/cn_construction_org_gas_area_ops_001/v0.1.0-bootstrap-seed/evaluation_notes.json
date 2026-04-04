@@ -1,0 +1,15 @@
+{
+  "purpose": [
+    "验证 gas_area_ops.base 已接入 construction_org 正式流水线。"
+  ],
+  "primary_checks": [
+    "gas_area fact 命中",
+    "gas_area_ops rule hit 命中"
+  ],
+  "known_limitations": [
+    "seed case 为 bootstrap 标签，不进入 official stage gate。"
+  ],
+  "next_review_actions": [
+    "后续可补更真实的煤气区域检测频率与监护要求样本。"
+  ]
+}

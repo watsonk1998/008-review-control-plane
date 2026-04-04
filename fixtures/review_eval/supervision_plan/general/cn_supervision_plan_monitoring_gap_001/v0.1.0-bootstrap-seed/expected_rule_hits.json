@@ -1,0 +1,12 @@
+[
+  {
+    "rule_id": "supervision_plan_structure_completeness",
+    "expected_status": "hit",
+    "expected_match_type": "direct_hit"
+  },
+  {
+    "rule_id": "supervision_plan_monitoring_linkage",
+    "expected_status": "hit",
+    "expected_match_type": "direct_hit"
+  }
+]

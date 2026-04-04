@@ -7,7 +7,7 @@ def get_lifting_operations_pack() -> PolicyPack:
     return PolicyPack(
         id='lifting_operations.base',
         version='1.0.0',
-        docTypes=['construction_org', 'hazardous_special_scheme'],
+        docTypes=['construction_org', 'hazardous_special_scheme', 'construction_scheme'],
         disciplineTags=['lifting_operations'],
         extractorIds=['hazard_facts', 'schedule_resource_facts'],
         ruleIds=[

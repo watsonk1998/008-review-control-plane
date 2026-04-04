@@ -23,11 +23,6 @@ const DISCIPLINE_OPTIONS = [
   { value: "working_at_height", label: "高处作业" },
 ];
 
-const P0_SUPPORTED_DOC_TYPES = new Set<ReviewDocumentType>([
-  "construction_org",
-  "hazardous_special_scheme",
-]);
-
 interface StructuredReviewFormProps {
   form: CreateTaskRequest;
   setForm: React.Dispatch<React.SetStateAction<CreateTaskRequest>>;
@@ -48,9 +43,13 @@ export function StructuredReviewForm({
     (supportScope?.documentTypes || []).map((item) => [item.documentType, item.readiness]),
   );
   const selectedDocumentType = form.documentType || "construction_org";
-  const isP0Supported =
-    (documentSupportMap.get(selectedDocumentType) || (P0_SUPPORTED_DOC_TYPES.has(selectedDocumentType) ? "official" : "skeleton")) ===
-    "official";
+  const documentReadiness = documentSupportMap.get(selectedDocumentType);
+  const relevantPacks = (supportScope?.packs || []).filter((pack) => {
+    if (pack.docTypes.includes(selectedDocumentType)) return true;
+    return pack.disciplineTags.some((tag) => selectedTags.has(tag));
+  });
+  const readyPacks = relevantPacks.filter((pack) => pack.readiness === "ready");
+  const placeholderPacks = relevantPacks.filter((pack) => pack.readiness === "placeholder");
 
   return (
     <section className="stack-lg">
@@ -59,14 +58,15 @@ export function StructuredReviewForm({
           <p className="eyebrow">Structured Review Profile</p>
           <h3>正式审查参数</h3>
         </div>
-        <p className="muted small">当前 P0 正式支持范围：施工组织设计、危大专项方案；其余类型仅保留骨架入口。</p>
+        <p className="muted small">支持范围只以 `/api/tasks/support-scope` 为准；文档类型的 official / skeleton 与 pack readiness 不再前端硬编码。</p>
       </div>
 
-      {!isP0Supported ? (
+      {documentReadiness === "skeleton" ? (
         <div className="callout warning-callout">
-          当前所选文档类型仍属 skeleton / experimental。P0 成功标准不覆盖该类型，建议改用施工组织设计或危大专项方案。
+          当前所选文档类型仍属 skeleton / experimental。系统会如实展示已 ready 的 pack，但不会把该 documentType 伪装成 official support。
         </div>
       ) : null}
+      {!documentReadiness ? <div className="callout">support-scope 加载中；未返回前不展示本地 fallback 结论。</div> : null}
 
       <div className="form-grid review-profile-grid">
         <label className="field">
@@ -136,6 +136,15 @@ export function StructuredReviewForm({
         </div>
         <small>可留空，后端仍会根据 query、fixture 与 parse hints 自动补齐。</small>
       </div>
+
+      {documentReadiness ? (
+        <div className="callout">
+          <strong>当前 support-scope</strong>
+          <p>documentType readiness：{documentReadiness}</p>
+          <p>ready packs：{readyPacks.map((pack) => pack.packId).join("，") || "无"}</p>
+          <p>placeholder packs：{placeholderPacks.map((pack) => pack.packId).join("，") || "无"}</p>
+        </div>
+      ) : null}
     </section>
   );
 }

@@ -1,0 +1,20 @@
+{
+  "case_id": "cn_supervision_plan_monitoring_gap_001",
+  "case_version": "v0.1.0-bootstrap-seed",
+  "schema_version": "v1",
+  "title": "监理规划-监测监控缺口最小样本",
+  "doc_type": "supervision_plan",
+  "discipline_tags": [],
+  "expected_packs": [
+    "supervision_plan.base"
+  ],
+  "label_source": "repo_bootstrap",
+  "label_status": "seeded_unreviewed",
+  "truth_level": "bootstrap",
+  "review_status": "not_final",
+  "source_files": [
+    "source.md"
+  ],
+  "seed_review_files": [],
+  "notes": "用于 supervision_plan.base 的最小 versioned experimental 回归。"
+}

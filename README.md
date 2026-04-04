@@ -55,7 +55,7 @@
 - `construction_org`
 - `hazardous_special_scheme`
 
-以下类型暂保留 registry / skeleton 入口，但不计入 P0 成功标准：
+以下类型已具备 ready base pack，但 documentType 仍只保留 skeleton / experimental 入口，不计入 P0 成功标准：
 
 - `construction_scheme`
 - `supervision_plan`
@@ -86,6 +86,13 @@
 - `document_research`：fixture/docx → GPT Researcher 本地文档研究
 - `review_assist`：FastGPT + DeepTutor + GPT Researcher + LLM 总结为辅助审查要点
 - `structured_review`：DocumentLoader / review parser → facts → rule engine → evidence builder → formal report / matrices
+
+当前 pack 状态简表：
+
+- ready / official base：`construction_org.base`、`hazardous_special_scheme.base`
+- ready / experimental base：`construction_scheme.base`、`supervision_plan.base`、`review_support_material.base`
+- ready scenario：`lifting_operations.base`、`temporary_power.base`、`hot_work.base`、`gas_area_ops.base`
+- placeholder scenario：`special_equipment.base`、`working_at_height.base`
 
 ## 快速启动
 
