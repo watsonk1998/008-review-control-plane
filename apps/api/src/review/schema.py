@@ -5,6 +5,7 @@ from typing import Any, Literal
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from src.domain.models import (
+    ApplicabilityState,
     AttachmentVisibility,
     AttachmentLocator,
     BlockLocator,
@@ -13,6 +14,7 @@ from src.domain.models import (
     EvidenceSpan,
     EvidenceLocator,
     FindingType,
+    IssueKind,
     ReviewDocumentType,
     ReviewIssue,
     ReviewLayer,
@@ -66,6 +68,7 @@ class PolicyPack(BaseModel):
     defaultEnabled: bool = True
     description: str = ''
     readiness: Literal['ready', 'placeholder'] = 'ready'
+    promotionCriteria: dict[str, bool] = Field(default_factory=dict)
 
 
 class EvidencePack(BaseModel):
@@ -113,6 +116,20 @@ class FinalIssue(ReviewIssue):
     policyEvidence: list[EvidenceSpan] = Field(default_factory=list)
     recommendation: list[str] = Field(default_factory=list)
     confidence: ConfidenceLevel = ConfidenceLevel.medium
+
+    @model_validator(mode='after')
+    def _derive_review_semantics(self):
+        self.issueKind = _derive_issue_kind(
+            finding_type=self.findingType,
+            evidence_missing=self.evidenceMissing,
+        )
+        self.applicabilityState = _derive_applicability_state(
+            issue_kind=self.issueKind,
+            manual_review_needed=self.manualReviewNeeded,
+            manual_review_reason=self.manualReviewReason,
+            evidence_missing=self.evidenceMissing,
+        )
+        return self
 
 
 class HazardIdentificationMatrix(BaseModel):
@@ -269,3 +286,37 @@ class StructuredReviewResult(BaseModel):
     capabilitiesUsed: list[str] = Field(default_factory=list)
     finalAnswer: str = ''
     notice: str | None = None
+
+
+_VISIBILITY_BLOCKING_REASONS = {
+    'visibility_gap',
+    'attachment_unparsed',
+    'referenced_only',
+    'visibility_unknown',
+}
+
+
+def _derive_issue_kind(*, finding_type: FindingType, evidence_missing: bool) -> IssueKind:
+    if finding_type == FindingType.visibility_gap:
+        return 'visibility_gap'
+    if finding_type == FindingType.suggestion_enhancement:
+        return 'enhancement'
+    if evidence_missing:
+        return 'evidence_gap'
+    return 'hard_defect'
+
+
+def _derive_applicability_state(
+    *,
+    issue_kind: IssueKind,
+    manual_review_needed: bool,
+    manual_review_reason: str | None,
+    evidence_missing: bool,
+) -> ApplicabilityState:
+    if manual_review_reason in _VISIBILITY_BLOCKING_REASONS or issue_kind == 'visibility_gap':
+        return 'blocked_by_visibility'
+    if evidence_missing:
+        return 'blocked_by_missing_fact'
+    if manual_review_needed:
+        return 'partial'
+    return 'applies'

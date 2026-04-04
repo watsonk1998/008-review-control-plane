@@ -2,7 +2,7 @@
 
 ## 配置文件
 
-默认读取：`/Users/lucas/tools/from-obsidian/AI/config/century.json`
+默认优先读取 `LLM_*` / `OPENAI_*` 环境变量；若部署侧使用本地 JSON 配置文件，也应由运行环境显式指定
 
 当前 008 使用：
 

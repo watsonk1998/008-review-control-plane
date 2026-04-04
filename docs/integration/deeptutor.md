@@ -4,7 +4,7 @@
 
 采用 **轻量 bridge**：
 
-- bridge 文件：`/Users/lucas/repos/review/008-review-control-plane/scripts/run_deeptutor_bridge.py`
+- bridge 文件：`scripts/run_deeptutor_bridge.py`
 - 默认源码路径：`/tmp/008-discovery/DeepTutor`
 - 暴露接口：
   - `GET /api/v1/system/status`
@@ -16,7 +16,7 @@
 
 ## 008 内 adapter
 
-文件：`/Users/lucas/repos/review/008-review-control-plane/apps/api/src/adapters/deeptutor_adapter.py`
+文件：`apps/api/src/adapters/deeptutor_adapter.py`
 
 统一方法：
 

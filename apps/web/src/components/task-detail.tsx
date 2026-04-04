@@ -92,6 +92,12 @@ function findingTone(findingType: string) {
   return "is-neutral";
 }
 
+function issueKindTone(issueKind: string) {
+  if (issueKind === "hard_defect") return "is-unhealthy";
+  if (issueKind === "visibility_gap" || issueKind === "evidence_gap") return "is-warning";
+  return "is-neutral";
+}
+
 function ArtifactList({ artifacts }: { artifacts: TaskArtifact[] }) {
   if (!artifacts.length) {
     return <p className="muted">暂无工件。</p>;
@@ -624,6 +630,37 @@ export function TaskDetail({ taskId }: { taskId: string }) {
     }, { L1: [], L2: [], L3: [] });
   }, [structuredResult]);
 
+  const issuesByKind = useMemo(() => {
+    if (!structuredResult) {
+      return { hard_defect: [], visibility_gap: [], evidence_gap: [], enhancement: [] } as Record<string, ReviewIssue[]>;
+    }
+    return structuredResult.issues.reduce<Record<string, ReviewIssue[]>>(
+      (acc, issue) => {
+        acc[issue.issueKind] = [...(acc[issue.issueKind] || []), issue];
+        return acc;
+      },
+      { hard_defect: [], visibility_gap: [], evidence_gap: [], enhancement: [] },
+    );
+  }, [structuredResult]);
+
+  const l0Artifact = useMemo(
+    () => structuredArtifacts.find((artifact) => artifact.name === "structured-review-l0-visibility"),
+    [structuredArtifacts],
+  );
+
+  const reviewerSummary = useMemo(() => {
+    if (!reviewerDecision) return null;
+    const issueReviewed = reviewerDecision.issues.filter((item) => item.state !== "pending").length;
+    const attachmentReviewed = reviewerDecision.attachments.filter((item) => item.state !== "pending").length;
+    return {
+      taskState: reviewerDecision.taskState,
+      issueReviewed,
+      issueTotal: reviewerDecision.issues.length,
+      attachmentReviewed,
+      attachmentTotal: reviewerDecision.attachments.length,
+    };
+  }, [reviewerDecision]);
+
   const streamFreshness = useMemo(() => {
     if (!lastStreamHeartbeatAt) return "等待心跳";
     return `最近心跳 ${Math.max(1, Math.round((nowTick - lastStreamHeartbeatAt) / 1000))} 秒前`;
@@ -770,6 +807,25 @@ export function TaskDetail({ taskId }: { taskId: string }) {
 
           {structuredResult ? (
             <>
+              {reviewerSummary ? (
+                <section className="card stack-md">
+                  <div>
+                    <p className="eyebrow">Reviewer Cockpit</p>
+                    <h2>人工复核状态</h2>
+                  </div>
+                  <ReviewKeyValueList
+                    items={[
+                      { label: "taskState", value: reviewerSummary.taskState },
+                      { label: "issues reviewed", value: `${reviewerSummary.issueReviewed}/${reviewerSummary.issueTotal}` },
+                      {
+                        label: "attachments reviewed",
+                        value: `${reviewerSummary.attachmentReviewed}/${reviewerSummary.attachmentTotal}`,
+                      },
+                    ]}
+                  />
+                </section>
+              ) : null}
+
               <ReviewDecisionPanel
                 taskId={task.id}
                 issues={structuredResult.issues}
@@ -803,6 +859,14 @@ export function TaskDetail({ taskId }: { taskId: string }) {
                   <div className="callout">
                     <strong>Canonical Visibility</strong>
                     <VisibilitySummaryPanel visibility={structuredResult.visibility} />
+                    {l0Artifact ? (
+                      <p className="muted small">
+                        L0 artifact：
+                        <a href={resolveApiUrl(l0Artifact.downloadUrl)} rel="noreferrer" target="_blank">
+                          {l0Artifact.fileName}
+                        </a>
+                      </p>
+                    ) : null}
                   </div>
                   <div className="callout">
                     <strong>Unresolved Facts</strong>
@@ -834,6 +898,17 @@ export function TaskDetail({ taskId }: { taskId: string }) {
                     <h2>审查工件</h2>
                   </div>
                   <ArtifactList artifacts={structuredArtifacts} />
+                  <div className="stack-sm">
+                    <strong>Issue Buckets</strong>
+                    <ReviewKeyValueList
+                      items={[
+                        { label: "hard defect", value: String(issuesByKind.hard_defect.length) },
+                        { label: "visibility gap", value: String(issuesByKind.visibility_gap.length) },
+                        { label: "evidence gap", value: String(issuesByKind.evidence_gap.length) },
+                        { label: "enhancement", value: String(issuesByKind.enhancement.length) },
+                      ]}
+                    />
+                  </div>
                 </article>
               </section>
 
@@ -868,7 +943,9 @@ export function TaskDetail({ taskId }: { taskId: string }) {
                           <div className="stack-sm">
                             <div className="artifact-list">
                               <span className={`status-pill ${findingTone(issue.findingType)}`}>{issue.findingType}</span>
+                              <span className={`status-pill ${issueKindTone(issue.issueKind)}`}>{issue.issueKind}</span>
                               <span className={`status-pill ${severityTone(issue.severity)}`}>{issue.severity}</span>
+                              <span className="status-pill is-neutral">{issue.applicabilityState}</span>
                             </div>
                             <strong>整改建议</strong>
                             <ul>

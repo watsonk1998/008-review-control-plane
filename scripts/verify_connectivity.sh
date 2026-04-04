@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT="/Users/lucas/repos/review/008-review-control-plane"
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 API_DIR="$ROOT/apps/api"
 VERIFY_DIR="$ROOT/artifacts/verification"
 mkdir -p "$VERIFY_DIR"
+export REVIEW_CONTROL_PLANE_ROOT="$ROOT"
 
 export DEEPTUTOR_BASE_URL="${DEEPTUTOR_BASE_URL:-http://127.0.0.1:8121}"
 export GPT_RESEARCHER_EXTERNAL_PATH="${GPT_RESEARCHER_EXTERNAL_PATH:-/tmp/008-discovery/gpt-researcher}"
@@ -20,9 +21,9 @@ from src.adapters.gpt_researcher_adapter import GPTResearcherAdapter
 from src.adapters.llm_gateway import LLMGateway
 from src.adapters.deeptutor_adapter import DeepTutorAdapter
 
-ROOT = pathlib.Path("/Users/lucas/repos/review/008-review-control-plane")
+ROOT = pathlib.Path(os.environ["REVIEW_CONTROL_PLANE_ROOT"])
 VERIFY_DIR = ROOT / "artifacts" / "verification"
-DOC = str(ROOT / "fixtures" / "copied" / "supervision" / "230235-冷轧厂2030单元三台行车电气系统改造-施工组织设计.docx")
+DOC = str(ROOT / "fixtures" / "supervision" / "施工组织设计-冷轧厂2030单元三台行车电气系统改造.docx")
 API_BASE = "http://127.0.0.1:8018"
 DATASET_ID = os.getenv("FASTGPT_VERIFICATION_DATASET_ID", "6984435295a6ce02e80696a1")
 

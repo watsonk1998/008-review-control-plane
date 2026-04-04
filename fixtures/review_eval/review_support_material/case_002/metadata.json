@@ -1,7 +1,7 @@
 {
   "caseId": "review_support_material_placeholder_002",
   "fixtureId": "review_support_material_placeholder_002",
-  "sourcePath": "/Users/lucas/repos/review/008-review-control-plane/fixtures/review_eval/review_support_material/case_002/source.md",
+  "sourcePath": "fixtures/review_eval/review_support_material/case_002/source.md",
   "query": "对该审查支持材料执行正式结构化审查",
   "docType": "review_support_material",
   "disciplineTags": [

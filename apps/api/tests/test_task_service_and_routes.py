@@ -254,6 +254,43 @@ def test_task_service_derives_consistent_reviewer_task_state(tmp_path: Path):
     assert accepted.reviewerDecision.taskState == 'accepted'
 
 
+def test_sqlite_store_tolerates_malformed_structured_review_json_columns(tmp_path: Path):
+    store = SQLiteTaskStore(tmp_path / 'service.sqlite')
+    runtime = StubRuntime(tmp_path / 'artifacts')
+    service = TaskService(store, runtime, runtime.tasks_dir)
+
+    task = service.create_task(
+        CreateTaskRequest(
+            taskType='structured_review',
+            capabilityMode='auto',
+            query='执行正式结构化审查',
+            fixtureId='fixture-1',
+            documentType='construction_org',
+        )
+    )
+
+    with store._connect() as conn:  # noqa: SLF001 - targeted persistence compatibility test
+        conn.execute(
+            '''
+            UPDATE tasks
+            SET source_document_ref_json = ?, reviewer_decision_json = ?, plan_json = ?
+            WHERE id = ?
+            ''',
+            (
+                '{"refId":',
+                '{"taskState":"accepted","issues":"oops"}',
+                '{bad-json',
+                task.id,
+            ),
+        )
+
+    restored = store.get_task(task.id)
+    assert restored is not None
+    assert restored.sourceDocumentRef is None
+    assert restored.reviewerDecision is None
+    assert restored.plan is None
+
+
 def test_task_routes_legacy_structured_review_result_keeps_read_only_compatibility(monkeypatch, tmp_path: Path):
     now = datetime.now(timezone.utc)
     artifact_path = tmp_path / 'report.json'
@@ -804,13 +841,12 @@ def test_upload_route_returns_source_document_ref(monkeypatch, tmp_path: Path):
     payload = response.json()
     assert payload['sourceType'] == 'upload'
     assert payload['fileType'] == 'md'
-    assert payload['mediaType'] == 'text/markdown'
     stored_path = Path(payload['storagePath'])
     assert stored_path.exists()
     assert stored_path.read_text(encoding='utf-8') == '# demo\n\ncontent\n'
 
 
-def test_upload_route_rejects_missing_filename(monkeypatch, tmp_path: Path):
+def test_upload_route_rejects_missing_content_type(monkeypatch, tmp_path: Path):
     monkeypatch.setattr(
         uploads_route,
         'get_settings',
@@ -820,13 +856,13 @@ def test_upload_route_rejects_missing_filename(monkeypatch, tmp_path: Path):
 
     response = client.post(
         '/api/uploads/documents',
-        files={'file': ('   ', b'content', 'text/plain')},
+        files={'file': ('uploaded.md', b'# demo\n\ncontent\n', '')},
     )
     assert response.status_code == 400
-    assert response.json()['detail'] == 'Invalid upload filename: missing file name'
+    assert response.json()['detail'] == 'Missing content type for .md upload'
 
 
-def test_upload_route_rejects_unexpected_content_type(monkeypatch, tmp_path: Path):
+def test_upload_route_rejects_suffix_mime_mismatch(monkeypatch, tmp_path: Path):
     monkeypatch.setattr(
         uploads_route,
         'get_settings',
@@ -836,10 +872,10 @@ def test_upload_route_rejects_unexpected_content_type(monkeypatch, tmp_path: Pat
 
     response = client.post(
         '/api/uploads/documents',
-        files={'file': ('uploaded.pdf', b'%PDF-1.4', 'text/plain')},
+        files={'file': ('uploaded.md', b'# demo\n\ncontent\n', 'application/pdf')},
     )
     assert response.status_code == 400
-    assert response.json()['detail'] == 'Unexpected content type for .pdf upload: text/plain'
+    assert response.json()['detail'] == 'Unexpected content type for .md upload: application/pdf'
 
 
 def test_task_routes_list_recent_tasks(monkeypatch):

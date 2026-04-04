@@ -15,4 +15,10 @@ def get_gas_area_ops_pack() -> PolicyPack:
         defaultEnabled=False,
         description='煤气区域场景 pack，检查控制措施与中毒/窒息/爆炸类应急链路是否成链。',
         readiness='ready',
+        promotionCriteria={
+            'ruleCoverage': True,
+            'policyEvidenceReady': True,
+            'testsReady': True,
+            'versionedCasesReady': False,
+        },
     )

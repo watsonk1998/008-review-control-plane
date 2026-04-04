@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT="/Users/lucas/repos/review/008-review-control-plane"
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 API_DIR="$ROOT/apps/api"
 WEB_DIR="$ROOT/apps/web"
 API_BASE="${NEXT_PUBLIC_API_BASE_URL:-http://127.0.0.1:8018}"

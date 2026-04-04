@@ -25,10 +25,10 @@
   "truth_level": "bootstrap",
   "review_status": "not_final",
   "source_files": [
-    "fixtures/copied/supervision/施工组织设计-冷轧厂2030单元三台行车电气系统改造.docx"
+    "fixtures/supervision/施工组织设计-冷轧厂2030单元三台行车电气系统改造.docx"
   ],
   "seed_review_files": [
-    "fixtures/copied/supervision/gemini-deepresearch审查结果-施工组织设计-冷轧厂2030单元三台行车电气系统改造.md"
+    "fixtures/supervision/gemini-deepresearch审查结果-施工组织设计-冷轧厂2030单元三台行车电气系统改造.md"
   ],
   "notes": "本版本基于原始施组与 Gemini deepresearch 结果生成，不等同于专家确认 gold truth。"
 }

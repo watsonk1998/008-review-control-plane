@@ -1,0 +1,27 @@
+{
+  "id": "construction_scheme.base",
+  "version": "1.0.0",
+  "clauses": [
+    {
+      "id": "construction_scheme_structure",
+      "sourceId": "construction-《危险性较大的分部分项工程专项施工方案编制指南》（建办质〔2021〕48号）",
+      "title": "一般施工方案最小结构要求",
+      "excerpt": "施工方案至少应覆盖工程概况、编制依据、施工方法和安全措施，便于审查其适用边界与执行要求。",
+      "forceLevel": "should",
+      "applicability": "construction_scheme"
+    }
+  ],
+  "forceLevel": "guidance",
+  "applicability": "construction_scheme",
+  "severityMapping": {
+    "construction_scheme_structure_completeness": "high",
+    "construction_scheme_attachment_visibility": "medium"
+  },
+  "ruleIds": [
+    "construction_scheme_structure_completeness",
+    "construction_scheme_attachment_visibility"
+  ],
+  "docTypes": [
+    "construction_scheme"
+  ]
+}

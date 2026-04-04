@@ -11,5 +11,8 @@
   ],
   "ci_enabled": true,
   "label_status": "stage_gate_curated",
-  "truth_level": "repo_runtime_aligned"
+  "truth_level": "repo_runtime_aligned",
+  "source_files": [
+    "source.md"
+  ]
 }

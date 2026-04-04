@@ -1,6 +1,6 @@
 # 008-review-control-plane
 
-命名理由：延续 `/Users/lucas/repos/review/007-deepresearch` 的编号体系，且本项目不再把能力重心放在“审查器本体”，而是明确定位为 **review control plane**——即统一入口、总控编排、能力路由与未来运行时底座。
+命名理由：延续 007-deepresearch 的编号体系，且本项目不再把能力重心放在“审查器本体”，而是明确定位为 **review control plane**——即统一入口、总控编排、能力路由与未来运行时底座。
 
 ## 项目定位
 
@@ -48,6 +48,7 @@
 - `artifactIndex` 与 `GET /api/tasks/{taskId}/artifacts` 共享同一套官方 catalog，且对新任务是 authoritative source（即使为空）
 - `manualReviewNeeded` 是 canonical 字段；`whetherManualReviewNeeded` 仅在 legacy task replay 的只读兼容层输出
 - `visibility` 是结构化结果中的 top-level canonical 可视域对象，并直接携带 `parseWarnings`；`summary.visibilitySummary` 仅保留为展示摘要
+- issue 会显式输出 `issueKind` 与 `applicabilityState`
 - `strictMode` 当前保留为兼容字段，状态为 `reserved / no-op`
 
 当前 P0 正式支持文档类型仅包括：
@@ -55,7 +56,7 @@
 - `construction_org`
 - `hazardous_special_scheme`
 
-以下类型已具备 ready base pack，但 documentType 当前只保留 experimental 入口，不计入 P0 成功标准：
+以下类型已具备 ready base pack，但 documentType 当前仅保留 experimental 入口，不计入 official gate 成功标准：
 
 - `construction_scheme`
 - `supervision_plan`
@@ -64,7 +65,7 @@
 ## 目录结构
 
 ```text
-/Users/lucas/repos/review/008-review-control-plane
+.
 ├── README.md
 ├── DELIVERY_REPORT.md
 ├── Makefile
@@ -97,7 +98,6 @@
 ## 快速启动
 
 ```bash
-cd /Users/lucas/repos/review/008-review-control-plane
 make bootstrap
 make dev
 ```
@@ -163,22 +163,22 @@ make verify-connectivity
 - parse 结果会保留 typed `visibility` / `parseMode` / `parserLimited`
 - `result.visibility` 是唯一 canonical visibility contract
 - `summary.visibilitySummary` 统一表达附件状态计数、重复章节、parse warnings 与 visibility reason counts，但不再作为第二事实源
+- `artifactIndex` 额外输出 `structured-review-l0-visibility` 与 `structured-review-report-buckets`
 - `disable_visibility_check` 仅保留给 eval / ablation 内部路径，不能作为公开任务入口参数
 - 任务详情现在支持最小 reviewer decision：task-level / issue-level / attachment-level 复核状态与备注
 - 系统不得把“未解析附件 / 当前不可视”直接写成“文档缺失”
 
 ## 配置原则
 
-- LLM 配置默认读取 `/Users/lucas/tools/from-obsidian/AI/config/century.json`
-- FastGPT 配置默认读取 `/Users/lucas/tools/from-obsidian/AI/config/gbcs-fast.json`
+- LLM / FastGPT 配置优先读取环境变量；若使用本地配置文件，由部署环境自行指定路径
 - 真实密钥只允许服务端读取
 - 不把 API key、dataset key、collection key 硬编码进仓库
 
 ## 关键文档
 
-- 资产勘查：`/Users/lucas/repos/review/008-review-control-plane/docs/discovery.md`
-- 架构说明：`/Users/lucas/repos/review/008-review-control-plane/docs/architecture.md`
-- 正式审查说明：`/Users/lucas/repos/review/008-review-control-plane/docs/formal-review.md`
-- 运行说明：`/Users/lucas/repos/review/008-review-control-plane/docs/runbook.md`
-- 测试记录：`/Users/lucas/repos/review/008-review-control-plane/docs/testing.md`
-- 最终交付：`/Users/lucas/repos/review/008-review-control-plane/DELIVERY_REPORT.md`
+- 资产勘查：`docs/discovery.md`
+- 架构说明：`docs/architecture.md`
+- 正式审查说明：`docs/formal-review.md`
+- 运行说明：`docs/runbook.md`
+- 测试记录：`docs/testing.md`
+- 最终交付：`DELIVERY_REPORT.md`

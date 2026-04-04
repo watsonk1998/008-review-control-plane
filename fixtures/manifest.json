@@ -3,8 +3,8 @@
     "id": "construction-《中华人民共和国建筑法》",
     "title": "《中华人民共和国建筑法》",
     "domain": "construction",
-    "sourcePath": "/Users/lucas/repos/review/007-deepresearch/fixtures/construction organization plan of building/《中华人民共和国建筑法》.md",
-    "copiedPath": "/Users/lucas/repos/review/008-review-control-plane/fixtures/copied/construction/《中华人民共和国建筑法》.md",
+    "sourcePath": "fixtures/construction/《中华人民共和国建筑法》.md",
+    "copiedPath": "fixtures/construction/《中华人民共和国建筑法》.md",
     "fileType": "md",
     "notes": "Copied from 007 construction fixtures for Fast/chunk grounding and QA tests."
   },
@@ -12,8 +12,8 @@
     "id": "construction-《关于实施《危险性较大的分部分项工程安全管理规定》有关问题的通知》（建办质〔2018〕31号）",
     "title": "《关于实施《危险性较大的分部分项工程安全管理规定》有关问题的通知》（建办质〔2018〕31号）",
     "domain": "construction",
-    "sourcePath": "/Users/lucas/repos/review/007-deepresearch/fixtures/construction organization plan of building/《关于实施《危险性较大的分部分项工程安全管理规定》有关问题的通知》（建办质〔2018〕31号）.md",
-    "copiedPath": "/Users/lucas/repos/review/008-review-control-plane/fixtures/copied/construction/《关于实施《危险性较大的分部分项工程安全管理规定》有关问题的通知》（建办质〔2018〕31号）.md",
+    "sourcePath": "fixtures/construction/《关于实施《危险性较大的分部分项工程安全管理规定》有关问题的通知》（建办质〔2018〕31号）.md",
+    "copiedPath": "fixtures/construction/《关于实施《危险性较大的分部分项工程安全管理规定》有关问题的通知》（建办质〔2018〕31号）.md",
     "fileType": "md",
     "notes": "Copied from 007 construction fixtures for Fast/chunk grounding and QA tests."
   },
@@ -21,8 +21,8 @@
     "id": "construction-《危险性较大的分部分项工程专项施工方案严重缺陷清单（试行）》（建办质〔2024〕63号）",
     "title": "《危险性较大的分部分项工程专项施工方案严重缺陷清单（试行）》（建办质〔2024〕63号）",
     "domain": "construction",
-    "sourcePath": "/Users/lucas/repos/review/007-deepresearch/fixtures/construction organization plan of building/《危险性较大的分部分项工程专项施工方案严重缺陷清单（试行）》（建办质〔2024〕63号）.md",
-    "copiedPath": "/Users/lucas/repos/review/008-review-control-plane/fixtures/copied/construction/《危险性较大的分部分项工程专项施工方案严重缺陷清单（试行）》（建办质〔2024〕63号）.md",
+    "sourcePath": "fixtures/construction/《危险性较大的分部分项工程专项施工方案严重缺陷清单（试行）》（建办质〔2024〕63号）.md",
+    "copiedPath": "fixtures/construction/《危险性较大的分部分项工程专项施工方案严重缺陷清单（试行）》（建办质〔2024〕63号）.md",
     "fileType": "md",
     "notes": "Copied from 007 construction fixtures for Fast/chunk grounding and QA tests."
   },
@@ -30,8 +30,8 @@
     "id": "construction-《危险性较大的分部分项工程专项施工方案编制指南》（建办质〔2021〕48号）",
     "title": "《危险性较大的分部分项工程专项施工方案编制指南》（建办质〔2021〕48号）",
     "domain": "construction",
-    "sourcePath": "/Users/lucas/repos/review/007-deepresearch/fixtures/construction organization plan of building/《危险性较大的分部分项工程专项施工方案编制指南》（建办质〔2021〕48号）.md",
-    "copiedPath": "/Users/lucas/repos/review/008-review-control-plane/fixtures/copied/construction/《危险性较大的分部分项工程专项施工方案编制指南》（建办质〔2021〕48号）.md",
+    "sourcePath": "fixtures/construction/《危险性较大的分部分项工程专项施工方案编制指南》（建办质〔2021〕48号）.md",
+    "copiedPath": "fixtures/construction/《危险性较大的分部分项工程专项施工方案编制指南》（建办质〔2021〕48号）.md",
     "fileType": "md",
     "notes": "Copied from 007 construction fixtures for Fast/chunk grounding and QA tests."
   },
@@ -39,8 +39,8 @@
     "id": "construction-《建筑施工安全检查标准》JGJ-59-2011",
     "title": "《建筑施工安全检查标准》JGJ 59-2011",
     "domain": "construction",
-    "sourcePath": "/Users/lucas/repos/review/007-deepresearch/fixtures/construction organization plan of building/《建筑施工安全检查标准》JGJ 59-2011.md",
-    "copiedPath": "/Users/lucas/repos/review/008-review-control-plane/fixtures/copied/construction/《建筑施工安全检查标准》JGJ 59-2011.md",
+    "sourcePath": "fixtures/construction/《建筑施工安全检查标准》JGJ 59-2011.md",
+    "copiedPath": "fixtures/construction/《建筑施工安全检查标准》JGJ 59-2011.md",
     "fileType": "md",
     "notes": "Copied from 007 construction fixtures for Fast/chunk grounding and QA tests."
   },
@@ -48,8 +48,8 @@
     "id": "construction-《建筑施工组织设计规范》GB:T-50502-2009",
     "title": "《建筑施工组织设计规范》GB:T 50502-2009",
     "domain": "construction",
-    "sourcePath": "/Users/lucas/repos/review/007-deepresearch/fixtures/construction organization plan of building/《建筑施工组织设计规范》GB:T 50502-2009.md",
-    "copiedPath": "/Users/lucas/repos/review/008-review-control-plane/fixtures/copied/construction/《建筑施工组织设计规范》GB:T 50502-2009.md",
+    "sourcePath": "fixtures/construction/《建筑施工组织设计规范》GB:T 50502-2009.md",
+    "copiedPath": "fixtures/construction/《建筑施工组织设计规范》GB:T 50502-2009.md",
     "fileType": "md",
     "notes": "Copied from 007 construction fixtures for Fast/chunk grounding and QA tests."
   },
@@ -57,8 +57,8 @@
     "id": "construction-《建设工程安全生产管理条例》",
     "title": "《建设工程安全生产管理条例》",
     "domain": "construction",
-    "sourcePath": "/Users/lucas/repos/review/007-deepresearch/fixtures/construction organization plan of building/《建设工程安全生产管理条例》.md",
-    "copiedPath": "/Users/lucas/repos/review/008-review-control-plane/fixtures/copied/construction/《建设工程安全生产管理条例》.md",
+    "sourcePath": "fixtures/construction/《建设工程安全生产管理条例》.md",
+    "copiedPath": "fixtures/construction/《建设工程安全生产管理条例》.md",
     "fileType": "md",
     "notes": "Copied from 007 construction fixtures for Fast/chunk grounding and QA tests."
   },
@@ -66,8 +66,8 @@
     "id": "construction-《建设工程施工现场消防安全技术规范》GB-50720-2011",
     "title": "《建设工程施工现场消防安全技术规范》GB 50720-2011",
     "domain": "construction",
-    "sourcePath": "/Users/lucas/repos/review/007-deepresearch/fixtures/construction organization plan of building/《建设工程施工现场消防安全技术规范》GB 50720-2011.md",
-    "copiedPath": "/Users/lucas/repos/review/008-review-control-plane/fixtures/copied/construction/《建设工程施工现场消防安全技术规范》GB 50720-2011.md",
+    "sourcePath": "fixtures/construction/《建设工程施工现场消防安全技术规范》GB 50720-2011.md",
+    "copiedPath": "fixtures/construction/《建设工程施工现场消防安全技术规范》GB 50720-2011.md",
     "fileType": "md",
     "notes": "Copied from 007 construction fixtures for Fast/chunk grounding and QA tests."
   },
@@ -75,8 +75,8 @@
     "id": "construction-《建设工程质量管理条例》",
     "title": "《建设工程质量管理条例》",
     "domain": "construction",
-    "sourcePath": "/Users/lucas/repos/review/007-deepresearch/fixtures/construction organization plan of building/《建设工程质量管理条例》.md",
-    "copiedPath": "/Users/lucas/repos/review/008-review-control-plane/fixtures/copied/construction/《建设工程质量管理条例》.md",
+    "sourcePath": "fixtures/construction/《建设工程质量管理条例》.md",
+    "copiedPath": "fixtures/construction/《建设工程质量管理条例》.md",
     "fileType": "md",
     "notes": "Copied from 007 construction fixtures for Fast/chunk grounding and QA tests."
   },
@@ -84,8 +84,8 @@
     "id": "construction-《房屋市政工程生产安全重大事故隐患判定标准（2024版）》",
     "title": "《房屋市政工程生产安全重大事故隐患判定标准（2024版）》",
     "domain": "construction",
-    "sourcePath": "/Users/lucas/repos/review/007-deepresearch/fixtures/construction organization plan of building/《房屋市政工程生产安全重大事故隐患判定标准（2024版）》.md",
-    "copiedPath": "/Users/lucas/repos/review/008-review-control-plane/fixtures/copied/construction/《房屋市政工程生产安全重大事故隐患判定标准（2024版）》.md",
+    "sourcePath": "fixtures/construction/《房屋市政工程生产安全重大事故隐患判定标准（2024版）》.md",
+    "copiedPath": "fixtures/construction/《房屋市政工程生产安全重大事故隐患判定标准（2024版）》.md",
     "fileType": "md",
     "notes": "Copied from 007 construction fixtures for Fast/chunk grounding and QA tests."
   },
@@ -93,8 +93,8 @@
     "id": "construction-《施工现场临时建筑物技术规范》JGJ:T-188-2009",
     "title": "《施工现场临时建筑物技术规范》JGJ:T 188-2009",
     "domain": "construction",
-    "sourcePath": "/Users/lucas/repos/review/007-deepresearch/fixtures/construction organization plan of building/《施工现场临时建筑物技术规范》JGJ:T 188-2009.md",
-    "copiedPath": "/Users/lucas/repos/review/008-review-control-plane/fixtures/copied/construction/《施工现场临时建筑物技术规范》JGJ:T 188-2009.md",
+    "sourcePath": "fixtures/construction/《施工现场临时建筑物技术规范》JGJ:T 188-2009.md",
+    "copiedPath": "fixtures/construction/《施工现场临时建筑物技术规范》JGJ:T 188-2009.md",
     "fileType": "md",
     "notes": "Copied from 007 construction fixtures for Fast/chunk grounding and QA tests."
   },
@@ -102,8 +102,8 @@
     "id": "supervision-cold-rolling-construction-plan",
     "title": "冷轧厂施工组织设计样本",
     "domain": "supervision",
-    "sourcePath": "/Users/lucas/repos/review/007-deepresearch/fixtures/supervision/230235-冷轧厂2030单元三台行车电气系统改造-施工组织设计.docx",
-    "copiedPath": "/Users/lucas/repos/review/008-review-control-plane/fixtures/copied/supervision/230235-冷轧厂2030单元三台行车电气系统改造-施工组织设计.docx",
+    "sourcePath": "fixtures/supervision/施工组织设计-冷轧厂2030单元三台行车电气系统改造.docx",
+    "copiedPath": "fixtures/supervision/施工组织设计-冷轧厂2030单元三台行车电气系统改造.docx",
     "fileType": "docx",
     "notes": "document_research / review_assist docx sample"
   },
@@ -111,8 +111,8 @@
     "id": "supervision-tianyou-plan",
     "title": "天佑监理实施规划样本",
     "domain": "supervision",
-    "sourcePath": "/Users/lucas/repos/review/007-deepresearch/fixtures/supervision/天佑/待审文件/监理实施规划（南校区宿舍楼）20250710(1).docx",
-    "copiedPath": "/Users/lucas/repos/review/008-review-control-plane/fixtures/copied/supervision/监理实施规划（南校区宿舍楼）20250710(1).docx",
+    "sourcePath": "fixtures/supervision/监理实施规划（南校区宿舍楼）20250710(1).docx",
+    "copiedPath": "fixtures/supervision/监理实施规划（南校区宿舍楼）20250710(1).docx",
     "fileType": "docx",
     "notes": "Tianyou supervision plan sample for document research"
   },
@@ -120,8 +120,8 @@
     "id": "supervision-gb50319-2013",
     "title": "建设工程监理规范 GB50319-2013",
     "domain": "supervision",
-    "sourcePath": "/Users/lucas/repos/review/007-deepresearch/fixtures/supervision/天佑/审查依据/gb50319-2013 建设工程监理规范.docx",
-    "copiedPath": "/Users/lucas/repos/review/008-review-control-plane/fixtures/copied/supervision/gb50319-2013 建设工程监理规范.docx",
+    "sourcePath": "fixtures/supervision/gb50319-2013 建设工程监理规范.docx",
+    "copiedPath": "fixtures/supervision/gb50319-2013 建设工程监理规范.docx",
     "fileType": "docx",
     "notes": "Review basis document copied from Tianyou folder"
   },
@@ -129,18 +129,18 @@
     "id": "supervision-template-housing-municipal",
     "title": "房建市政项目监理规划示范文本",
     "domain": "supervision",
-    "sourcePath": "/Users/lucas/repos/review/007-deepresearch/fixtures/supervision/天佑/审查依据/房建市政项目监理规划示范文本_7435202876278734848.docx",
-    "copiedPath": "/Users/lucas/repos/review/008-review-control-plane/fixtures/copied/supervision/房建市政项目监理规划示范文本.docx",
+    "sourcePath": "fixtures/supervision/房建市政项目监理规划示范文本.docx",
+    "copiedPath": "fixtures/supervision/房建市政项目监理规划示范文本.docx",
     "fileType": "docx",
     "notes": "Reference supervision planning template"
   },
   {
     "id": "supervision-tianyou-review-notes",
-    "title": "天佑历史深研审查结果",
+    "title": "历史 Gemini 深研审查结果（冷轧厂样本）",
     "domain": "supervision",
-    "sourcePath": "/Users/lucas/repos/review/007-deepresearch/fixtures/supervision/天佑/gemini -deepresearch-审查结果.md",
-    "copiedPath": "/Users/lucas/repos/review/008-review-control-plane/fixtures/copied/supervision/gemini-deepresearch-审查结果.md",
+    "sourcePath": "fixtures/supervision/gemini-deepresearch审查结果-施工组织设计-冷轧厂2030单元三台行车电气系统改造.md",
+    "copiedPath": "fixtures/supervision/gemini-deepresearch审查结果-施工组织设计-冷轧厂2030单元三台行车电气系统改造.md",
     "fileType": "md",
-    "notes": "Historical reference output copied for comparison only"
+    "notes": "Historical Gemini review output kept as seed/reference only."
   }
 ]

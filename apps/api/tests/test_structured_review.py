@@ -8,12 +8,9 @@ from src.services.document_loader import DocumentLoader
 from src.review.pipeline import StructuredReviewExecutor
 
 
-SAMPLE_DOC = Path(
-    '/Users/lucas/repos/review/008-review-control-plane/fixtures/supervision/施工组织设计-冷轧厂2030单元三台行车电气系统改造.docx'
-)
-SAMPLE_PDF = Path(
-    '/Users/lucas/repos/review/008-review-control-plane/fixtures/review_eval/hazardous_special_scheme/ci/cn_hz_pdf_unknown_visibility_ci/v0.1.0-ci-stage-gate/source.pdf'
-)
+REPO_ROOT = Path(__file__).resolve().parents[3]
+SAMPLE_DOC = REPO_ROOT / 'fixtures' / 'supervision' / '施工组织设计-冷轧厂2030单元三台行车电气系统改造.docx'
+SAMPLE_PDF = REPO_ROOT / 'fixtures' / 'review_eval' / 'hazardous_special_scheme' / 'ci' / 'cn_hz_pdf_unknown_visibility_ci' / 'v0.1.0-ci-stage-gate' / 'source.pdf'
 
 
 class DummyLLM:
@@ -83,6 +80,8 @@ def test_structured_review_executor_returns_expected_issue_titles():
     attachment_issue = next(issue for issue in result['issues'] if issue['title'] == '附件处于可视域缺口，需人工复核原件')
     assert attachment_issue['manualReviewNeeded'] is True
     assert attachment_issue['manualReviewReason'] == 'visibility_gap'
+    assert attachment_issue['issueKind'] == 'visibility_gap'
+    assert attachment_issue['applicabilityState'] == 'blocked_by_visibility'
     assert 'whetherManualReviewNeeded' not in attachment_issue
     assert 'evidenceMissing' in attachment_issue
     assert all('packReadiness' in row for row in result['matrices']['ruleHits'])
@@ -274,9 +273,11 @@ def test_structured_review_executor_builds_full_artifact_catalog(tmp_path: Path)
     assert {'parse', 'facts', 'rule_hits', 'candidates', 'result', 'matrices', 'report'}.issubset(artifact_categories)
     artifact_names = {artifact['name'] for artifact in result['artifactIndex']}
     assert 'structured-review-l0-visibility' in artifact_names
+    assert 'structured-review-report-buckets' in artifact_names
     l0_payload = json.loads((tmp_path / 'structured-review-l0-visibility.json').read_text(encoding='utf-8'))
     assert l0_payload['parseMode'] == 'docx_structured'
     assert l0_payload['parserLimited'] is False
-    assert l0_payload['visibility'] == result['visibility']
-    assert l0_payload['manualReviewNeeded'] == result['visibility']['manualReviewNeeded']
-    assert any(item['visibility'] == 'attachment_unparsed' for item in l0_payload['attachments'])
+    assert l0_payload['manualReviewNeeded'] is True
+    report_buckets = json.loads((tmp_path / 'structured-review-report-buckets.json').read_text(encoding='utf-8'))
+    assert 'visibility_gap' in report_buckets
+    assert any(item['title'] == '附件处于可视域缺口，需人工复核原件' for item in report_buckets['visibility_gap'])

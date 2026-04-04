@@ -1,7 +1,7 @@
 {
   "caseId": "construction_org_md_duplicate_attachment_002",
   "fixtureId": "construction_org_md_duplicate_attachment_002",
-  "sourcePath": "/Users/lucas/repos/review/008-review-control-plane/fixtures/review_eval/construction_org/case_002/source.md",
+  "sourcePath": "fixtures/review_eval/construction_org/case_002/source.md",
   "query": "对该施工组织设计执行正式结构化审查",
   "docType": "construction_org",
   "disciplineTags": [

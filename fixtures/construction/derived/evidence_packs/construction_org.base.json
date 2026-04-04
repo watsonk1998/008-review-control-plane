@@ -1,0 +1,37 @@
+{
+  "id": "construction_org.base",
+  "version": "1.0.0",
+  "clauses": [
+    {
+      "id": "construction_org_structure",
+      "sourceId": "construction-《建筑施工组织设计规范》GB/T 50502-2009",
+      "title": "施工组织设计结构完整性",
+      "excerpt": "施工组织设计应覆盖工程概况、部署、进度、资源、安全、应急和平面布置等核心章节，并保持结构清晰。",
+      "forceLevel": "should",
+      "applicability": "construction_org"
+    },
+    {
+      "id": "construction_org_schedule_resource",
+      "sourceId": "construction-《建筑施工组织设计规范》GB/T 50502-2009",
+      "title": "进度与资源协调",
+      "excerpt": "施工部署、资源投入和工期窗口应相互匹配，尤其要控制交叉作业、高风险工序并行和停机窗口内的组织压力。",
+      "forceLevel": "should",
+      "applicability": "construction_org"
+    }
+  ],
+  "forceLevel": "guidance",
+  "applicability": "construction_org",
+  "severityMapping": {
+    "construction_org_structure_completeness": "high",
+    "construction_org_duplicate_sections": "medium",
+    "construction_org_shutdown_resource_conflict": "medium"
+  },
+  "ruleIds": [
+    "construction_org_structure_completeness",
+    "construction_org_duplicate_sections",
+    "construction_org_shutdown_resource_conflict"
+  ],
+  "docTypes": [
+    "construction_org"
+  ]
+}

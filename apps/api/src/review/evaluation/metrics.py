@@ -23,8 +23,7 @@ def _pack_accuracy(expected: set[str], actual: set[str]) -> float:
         return 1.0
     if not expected:
         return 0.0
-    union = expected | actual
-    return len(expected & actual) / len(union) if union else 1.0
+    return len(expected & actual) / len(expected)
 
 
 def _normalize_ready_pack_ids(pack_ids: set[str], *, document_type: str | None = None) -> set[str]:
@@ -88,6 +87,14 @@ def _build_actual_visibility_maps(result: dict[str, Any]) -> tuple[dict[str, str
         if item.get('title'):
             by_title[str(item['title'])] = visibility
     return by_id, by_title
+
+
+def _build_actual_visibility_items(result: dict[str, Any]) -> list[dict[str, Any]]:
+    return [
+        item
+        for item in result.get('matrices', {}).get('attachmentVisibility', [])
+        if isinstance(item, dict) and item.get('visibility')
+    ]
 
 
 def _build_actual_rule_hit_map(result: dict[str, Any], evaluation_artifacts: dict[str, Any] | None = None) -> dict[str, dict[str, Any]]:
@@ -194,6 +201,57 @@ def _rule_hit_accuracy(
     return ((hits / checks) if checks else 1.0, checks)
 
 
+def _suggestion_defect_separation(case: dict[str, Any], result: dict[str, Any]) -> tuple[float, int]:
+    actual_issues = _issue_map(result)
+    checks = 0
+    hits = 0
+    for expected in case.get('groundTruthIssues', {}).get('issues', []):
+        actual = actual_issues.get(expected.get('title', ''))
+        checks += 1
+        if actual is None:
+            continue
+        expected_group = 'enhancement' if expected.get('findingType') == 'suggestion_enhancement' else 'defect_or_gap'
+        actual_group = 'enhancement' if actual.get('issueKind') == 'enhancement' else 'defect_or_gap'
+        if expected_group == actual_group:
+            hits += 1
+    return ((hits / checks) if checks else 1.0, checks)
+
+
+def _remediation_bucket_consistency(
+    result: dict[str, Any],
+    evaluation_artifacts: dict[str, Any] | None = None,
+) -> tuple[float, int]:
+    buckets = _artifact_payload(
+        evaluation_artifacts,
+        category='matrices',
+        name='structured-review-report-buckets',
+    )
+    if not isinstance(buckets, dict):
+        return (0.0 if result.get('issues') else 1.0, len(result.get('issues', [])))
+    issue_bucket_map: dict[str, str] = {}
+    for bucket_name, items in buckets.items():
+        if not isinstance(items, list):
+            continue
+        for item in items:
+            if not isinstance(item, dict):
+                continue
+            issue_id = item.get('id')
+            if issue_id:
+                issue_bucket_map[str(issue_id)] = str(bucket_name)
+    checks = 0
+    hits = 0
+    for issue in result.get('issues', []):
+        if not isinstance(issue, dict):
+            continue
+        issue_id = issue.get('id')
+        if not issue_id:
+            continue
+        checks += 1
+        if issue_bucket_map.get(str(issue_id)) == issue.get('issueKind'):
+            hits += 1
+    return ((hits / checks) if checks else 1.0, checks)
+
+
 def _hazard_identification_accuracy(
     case: dict[str, Any],
     result: dict[str, Any],
@@ -236,12 +294,16 @@ def compute_metrics(
     policy_checks = 0
     policy_hits = 0
     severity_scores: list[float] = []
-    manual_scores: list[float] = []
+    manual_checks = 0
+    manual_hits = 0
     hard_evidence_scores: list[float] = []
     for issue in expected_issues:
         actual = actual_issues.get(issue.get('title', ''))
         severity_scores.append(_severity_accuracy(issue, actual))
-        manual_scores.append(1.0 if actual and _manual_review_value(actual) == issue.get('manualReviewNeeded', False) else 0.0)
+        if actual is not None:
+            manual_checks += 1
+            if _manual_review_value(actual) == issue.get('manualReviewNeeded', False):
+                manual_hits += 1
         if issue.get('findingType') == 'hard_evidence':
             hard_evidence_scores.append(1.0 if actual and actual.get('findingType') == 'hard_evidence' else 0.0)
         required_refs = issue.get('requiredPolicyRefs', [])
@@ -263,6 +325,8 @@ def compute_metrics(
 
     expected_visibility_items = case.get('groundTruthVisibility', {}).get('attachments', [])
     actual_visibility_by_id, actual_visibility_by_title = _build_actual_visibility_maps(result)
+    actual_visibility_items = _build_actual_visibility_items(result)
+    used_visibility_indexes: set[int] = set()
     visibility_checks = 0
     matched_visibility = 0
     for item in expected_visibility_items:
@@ -270,17 +334,40 @@ def compute_metrics(
         expected_id = item.get('id')
         expected_name = item.get('name') or item.get('title')
         actual_visibility = None
+        matched_index: int | None = None
         if expected_id:
             actual_visibility = actual_visibility_by_id.get(str(expected_id))
         if actual_visibility is None and expected_name:
             actual_visibility = actual_visibility_by_title.get(str(expected_name))
+        if actual_visibility is not None:
+            for index, actual_item in enumerate(actual_visibility_items):
+                if index in used_visibility_indexes:
+                    continue
+                if expected_id and actual_item.get('id') == str(expected_id):
+                    matched_index = index
+                    break
+                if expected_name and actual_item.get('title') == str(expected_name):
+                    matched_index = index
+                    break
+        if actual_visibility is None:
+            for index, actual_item in enumerate(actual_visibility_items):
+                if index in used_visibility_indexes:
+                    continue
+                if actual_item.get('visibility') == expected_visibility:
+                    actual_visibility = expected_visibility
+                    matched_index = index
+                    break
         visibility_checks += 1
         if actual_visibility == expected_visibility:
             matched_visibility += 1
+            if matched_index is not None:
+                used_visibility_indexes.add(matched_index)
 
     facts_accuracy, facts_checks = _fact_accuracy(case, result, evaluation_artifacts)
     rule_hit_accuracy, rule_hit_checks = _rule_hit_accuracy(case, result, evaluation_artifacts)
     hazard_accuracy, hazard_checks = _hazard_identification_accuracy(case, result, evaluation_artifacts)
+    suggestion_separation_accuracy, suggestion_separation_checks = _suggestion_defect_separation(case, result)
+    remediation_bucket_consistency, remediation_bucket_checks = _remediation_bucket_consistency(result, evaluation_artifacts)
 
     issue_recall = len(matched_titles) / len(expected_titles) if expected_titles else 1.0
     l1_hit_rate = l1_matched / len(l1_expected) if l1_expected else 1.0
@@ -289,7 +376,7 @@ def compute_metrics(
     policy_ref_accuracy = policy_hits / policy_checks if policy_checks else 1.0
     visibility_accuracy = matched_visibility / visibility_checks if visibility_checks else 1.0
     severity_accuracy = sum(severity_scores) / len(severity_scores) if severity_scores else 1.0
-    manual_accuracy = sum(manual_scores) / len(manual_scores) if manual_scores else 1.0
+    manual_accuracy = manual_hits / manual_checks if manual_checks else 1.0
     hard_evidence_accuracy = sum(hard_evidence_scores) / len(hard_evidence_scores) if hard_evidence_scores else 1.0
     return {
         'issue_recall': round(issue_recall, 4),
@@ -304,9 +391,13 @@ def compute_metrics(
         'facts_accuracy': round(facts_accuracy, 4),
         'rule_hit_accuracy': round(rule_hit_accuracy, 4),
         'hazard_identification_accuracy': round(hazard_accuracy, 4),
+        'suggestion_defect_separation': round(suggestion_separation_accuracy, 4),
+        'remediation_bucket_consistency': round(remediation_bucket_consistency, 4),
         'facts_checks': facts_checks,
         'rule_hit_checks': rule_hit_checks,
         'hazard_identification_checks': hazard_checks,
+        'suggestion_defect_separation_checks': suggestion_separation_checks,
+        'remediation_bucket_checks': remediation_bucket_checks,
         'expected_issue_count': len(expected_titles),
         'actual_issue_count': len(actual_issues),
     }

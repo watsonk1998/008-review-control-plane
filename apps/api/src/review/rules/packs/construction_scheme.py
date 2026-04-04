@@ -18,4 +18,10 @@ def get_construction_scheme_base_pack() -> PolicyPack:
         defaultEnabled=True,
         description='一般施工方案基础 pack，覆盖最小结构完整性与附件可视域收口。',
         readiness='ready',
+        promotionCriteria={
+            'ruleCoverage': True,
+            'policyEvidenceReady': True,
+            'testsReady': True,
+            'versionedCasesReady': True,
+        },
     )

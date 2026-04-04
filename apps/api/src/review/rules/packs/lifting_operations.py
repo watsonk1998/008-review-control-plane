@@ -18,4 +18,10 @@ def get_lifting_operations_pack() -> PolicyPack:
         defaultEnabled=False,
         description='起重吊装场景 pack，补充专项方案挂接与吊装参数/验算可追溯性检查。',
         readiness='ready',
+        promotionCriteria={
+            'ruleCoverage': True,
+            'policyEvidenceReady': True,
+            'testsReady': True,
+            'versionedCasesReady': True,
+        },
     )

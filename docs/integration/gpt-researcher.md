@@ -5,7 +5,7 @@
 采用 **direct Python import + 008 环境桥接**。
 
 - 默认源码路径：`/tmp/008-discovery/gpt-researcher`
-- adapter：`/Users/lucas/repos/review/008-review-control-plane/apps/api/src/adapters/gpt_researcher_adapter.py`
+- adapter：`apps/api/src/adapters/gpt_researcher_adapter.py`
 
 ## 为什么不用单独常驻 HTTP 服务
 

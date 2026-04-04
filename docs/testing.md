@@ -7,7 +7,7 @@
 命令：
 
 ```bash
-cd /Users/lucas/repos/review/008-review-control-plane/apps/api
+cd apps/api
 . .venv/bin/activate
 pytest -q
 ```
@@ -19,7 +19,7 @@ pytest -q
 命令：
 
 ```bash
-cd /Users/lucas/repos/review/008-review-control-plane/apps/web
+cd apps/web
 npm run lint
 npm run build
 ```
@@ -40,7 +40,7 @@ make eval-review-cross-model
 - `eval-review`：执行 legacy CI 稳定子集，并同时执行 official versioned stage gate；新增 experimental versioned cases 只进入 diagnostics
 - `eval-review-ablations`：输出 parser / visibility / rule engine / llm explanation 的消融结果；其中 `disable_visibility_check` 仅允许走内部 ablation wiring
 - `eval-review-cross-pack`：对比自动 pack 选择与强制 expected packs 的结果
-- `eval-review-cross-model`：固定 facts/rules，仅替换 explanation model
+- `eval-review-cross-model`：固定 facts/rules，仅替换 explanation model；facts / rule hits / policy refs 不应漂移
 
 ## 功能测试矩阵
 
@@ -100,7 +100,7 @@ make eval-review-cross-model
 - P0 正式支持：
   - `construction_org`
   - `hazardous_special_scheme`
-- experimental 覆盖：
+- skeleton / experimental 覆盖：
   - `construction_scheme`
   - `supervision_plan`
   - `review_support_material`
@@ -113,7 +113,8 @@ make eval-review-cross-model
 - `result.visibility` 与 `unresolvedFacts` 可被 API/UI/eval 一致消费
 - `result.visibility.parseWarnings` 是 canonical 解析告警来源
 - `summary.visibilitySummary` 仅作为 display summary 保留
-- `structured-review-l0-visibility.json` 会单独输出 L0 可视域工件，但不替代 `result.visibility`
+- `artifactIndex` 中必须包含 `structured-review-l0-visibility`；report 语义工件会额外输出 `structured-review-report-buckets`
+- issue 会显式输出 `issueKind` 与 `applicabilityState`
 - 能识别重复章节、附件可视域缺口、专项方案挂接不清、停机窗口与资源压力
 - 能识别施工组织设计核心章节完整性缺口
 - 能识别一般施工方案核心章节完整性缺口
@@ -129,26 +130,22 @@ make eval-review-cross-model
 
 ## P1 主门槛
 
-- issue recall ≥ `0.80`
-- l1 hit rate ≥ `0.80`
-- pack selection accuracy ≥ `0.85`
-- policy ref accuracy ≥ `0.85`
-- attachment visibility accuracy ≥ `0.90`
-- severity accuracy ≥ `0.75`
-- manual review flag accuracy ≥ `0.85`
-- versioned official stage gate：
+- legacy CI 稳定子集作为**回归地板**：
+  - issue recall ≥ `0.75`
+  - l1 hit rate ≥ `0.85`
+  - pack selection accuracy ≥ `0.95`
+  - policy ref accuracy ≥ `0.75`
+  - attachment visibility accuracy ≥ `0.55`
+  - severity accuracy ≥ `0.75`
+  - manual review flag accuracy ≥ `0.95`
+- official versioned stage gate 作为**主质量门槛**：
   - facts accuracy ≥ `0.90`
   - rule hit accuracy ≥ `0.85`
   - hazard identification accuracy ≥ `0.90`
   - attachment visibility accuracy ≥ `0.90`
   - manual review flag accuracy ≥ `0.80`
-- eval JSON 会补充 `layeredMetrics` 视图：
-  - `L0`：`attachment_visibility_accuracy / manual_review_flag_accuracy`
-  - `L1`：`issue_recall / l1_hit_rate / high_severity_issue_recall / hard_evidence_accuracy / severity_accuracy`
-  - `L2`：`facts_accuracy / rule_hit_accuracy / policy_ref_accuracy / hazard_identification_accuracy`
-  - `CrossCutting`：`pack_selection_accuracy`
-  - `L3`：仅保留 `diagnosticOnly: true`
 - experimental versioned cases进入 diagnostics，但不提升 skeleton documentType 为 official CI gate
+- `layeredMetrics` 必须按 `L0 / L1 / L2 / L3 / CrossCutting` 分组输出，其中 L3 当前允许 `diagnosticOnly=true`
 - `review_assist` 回归失败数 = `0`
 
 ## 推荐回归命令

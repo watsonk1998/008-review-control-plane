@@ -1,5 +1,5 @@
 SHELL := /bin/bash
-ROOT := /Users/lucas/repos/review/008-review-control-plane
+ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
 
 .PHONY: bootstrap dev-bridge dev-api dev-web dev test test-review-unit test-review-integration smoke verify-connectivity eval-review eval-review-ablations eval-review-cross-pack eval-review-cross-model
 

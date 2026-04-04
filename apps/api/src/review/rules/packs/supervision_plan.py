@@ -18,4 +18,10 @@ def get_supervision_plan_base_pack() -> PolicyPack:
         defaultEnabled=True,
         description='监理规划基础 pack，覆盖核心章节、监测监控与附件可视域。',
         readiness='ready',
+        promotionCriteria={
+            'ruleCoverage': True,
+            'policyEvidenceReady': True,
+            'testsReady': True,
+            'versionedCasesReady': True,
+        },
     )

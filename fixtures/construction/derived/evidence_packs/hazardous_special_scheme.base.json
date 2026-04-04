@@ -1,0 +1,63 @@
+{
+  "id": "hazardous_special_scheme.base",
+  "version": "1.0.0",
+  "clauses": [
+    {
+      "id": "dangerous_special_scheme",
+      "sourceId": "construction-《危险性较大的分部分项工程专项施工方案编制指南》（建办质〔2021〕48号）",
+      "title": "危大工程专项方案要求",
+      "excerpt": "识别到起重吊装、临时用电、动火等高风险作业后，应明确专项施工方案的适用范围、工艺安排、验算和控制措施。",
+      "forceLevel": "must",
+      "applicability": "hazardous_work"
+    },
+    {
+      "id": "hazardous_scheme_structure",
+      "sourceId": "construction-《危险性较大的分部分项工程专项施工方案编制指南》（建办质〔2021〕48号）",
+      "title": "专项方案核心章节",
+      "excerpt": "专项施工方案通常应包含工程概况、编制依据、施工计划、施工工艺、安全保证措施、监测监控、应急处置和验算书。",
+      "forceLevel": "must",
+      "applicability": "hazardous_special_scheme"
+    },
+    {
+      "id": "hazardous_scheme_calculation",
+      "sourceId": "construction-《危险性较大的分部分项工程专项施工方案编制指南》（建办质〔2021〕48号）",
+      "title": "专项方案验算与计算",
+      "excerpt": "涉及起重吊装、支撑体系、受力稳定或设备选型时，应形成可追溯的验算或计算依据。",
+      "forceLevel": "must",
+      "applicability": "hazardous_special_scheme"
+    },
+    {
+      "id": "hazardous_scheme_measures",
+      "sourceId": "construction-《危险性较大的分部分项工程专项施工方案编制指南》（建办质〔2021〕48号）",
+      "title": "风险措施与监测监控",
+      "excerpt": "专项方案应将主要危险源、控制措施、监测监控和应急处置形成闭环，便于现场执行。",
+      "forceLevel": "should",
+      "applicability": "hazardous_special_scheme"
+    }
+  ],
+  "forceLevel": "guidance",
+  "applicability": "hazardous_special_scheme",
+  "severityMapping": {
+    "hazardous_special_scheme_core_sections": "high",
+    "hazardous_special_scheme_calculation_evidence": "high",
+    "lifting_operations_special_scheme_linkage": "high",
+    "lifting_operations_calculation_traceability": "high",
+    "temporary_power_control_linkage": "medium",
+    "hot_work_emergency_targeted": "medium",
+    "hazardous_special_scheme_measure_linkage": "medium",
+    "hazardous_special_scheme_emergency_targeted": "medium"
+  },
+  "ruleIds": [
+    "hazardous_special_scheme_core_sections",
+    "hazardous_special_scheme_calculation_evidence",
+    "lifting_operations_special_scheme_linkage",
+    "lifting_operations_calculation_traceability",
+    "temporary_power_control_linkage",
+    "hot_work_emergency_targeted",
+    "hazardous_special_scheme_measure_linkage",
+    "hazardous_special_scheme_emergency_targeted"
+  ],
+  "docTypes": [
+    "hazardous_special_scheme"
+  ]
+}

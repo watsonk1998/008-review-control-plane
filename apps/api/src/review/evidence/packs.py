@@ -1,10 +1,13 @@
 from __future__ import annotations
 
+import json
+from pathlib import Path
+
 from src.review.schema import EvidencePack, PolicyClause
 
 
 def get_evidence_pack_registry() -> dict[str, EvidencePack]:
-    return {
+    registry = {
         'construction_org.base': EvidencePack(
             id='construction_org.base',
             version='1.0.0',
@@ -223,3 +226,19 @@ def get_evidence_pack_registry() -> dict[str, EvidencePack]:
             ],
         ),
     }
+    return {pack_id: _load_manifest_pack(pack_id, pack) for pack_id, pack in registry.items()}
+
+
+def _load_manifest_pack(pack_id: str, fallback: EvidencePack) -> EvidencePack:
+    manifest_path = _evidence_manifest_dir() / f'{pack_id}.json'
+    if not manifest_path.exists():
+        return fallback
+    try:
+        payload = json.loads(manifest_path.read_text(encoding='utf-8'))
+        return EvidencePack.model_validate(payload)
+    except Exception:
+        return fallback
+
+
+def _evidence_manifest_dir() -> Path:
+    return Path(__file__).resolve().parents[5] / 'fixtures' / 'construction' / 'derived' / 'evidence_packs'

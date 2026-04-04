@@ -1,9 +1,9 @@
 # 230235-冷轧厂2030单元三台行车电气系统改造-施工组织设计｜LLM施组审查结果
 
 - 生成时间：2026-04-03 00:18:45
-- 审查文档：`/Users/lucas/repos/review/008-review-control-plane/fixtures/copied/supervision/230235-冷轧厂2030单元三台行车电气系统改造-施工组织设计.docx`
-- 结果文件：`/Users/lucas/repos/review/008-review-control-plane/fixtures/copied/supervision/230235-冷轧厂2030单元三台行车电气系统改造-施工组织设计-LLM施组审查结果-2026-04-03.md`
-- 调用方式：基于 `/Users/lucas/repos/review/008-review-control-plane/apps/api/src/adapters/llm_gateway.py` 的真实 LLM API 调用
+- 审查文档：`fixtures/supervision/施工组织设计-冷轧厂2030单元三台行车电气系统改造.docx`
+- 结果文件：`fixtures/supervision/archive/230235-冷轧厂2030单元三台行车电气系统改造-施工组织设计-LLM施组审查结果-2026-04-03.md`
+- 调用方式：基于 `apps/api/src/adapters/llm_gateway.py` 的真实 LLM API 调用
 - 模型：`qwen3.5-plus`
 
 ---

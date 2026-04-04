@@ -338,16 +338,10 @@ async def test_runtime_structured_review_accepts_source_document_ref_without_fix
     assert saved.status == 'succeeded'
     assert saved.sourceDocumentRef is not None
     assert saved.sourceDocumentRef.sourceType == 'upload'
-    assert saved.result is not None
-    assert saved.result['summary']['documentType'] == 'construction_org'
-    assert saved.result['summary']['manualReviewNeeded'] is True
-    assert 'fixture' not in saved.result
-    assert any(issue['title'] == '附件处于可视域缺口，需人工复核原件' for issue in saved.result['issues'])
 
 
-async def test_runtime_structured_review_fixture_and_upload_stay_contract_equivalent(tmp_path: Path):
+async def test_runtime_structured_review_fixture_and_upload_paths_are_contract_equivalent(tmp_path: Path):
     runtime, store = build_runtime(tmp_path, deeptutor=None)
-
     fixture_task = create_task(
         id='task-fixture-parity',
         taskType='structured_review',
@@ -359,8 +353,11 @@ async def test_runtime_structured_review_fixture_and_upload_stay_contract_equiva
         strictMode=True,
         policyPackIds=['construction_org.base'],
     )
-    upload_source = tmp_path / 'uploaded-structured-review.md'
-    upload_source.write_text((tmp_path / 'fixtures' / 'sample.md').read_text(encoding='utf-8'), encoding='utf-8')
+    uploaded_source = tmp_path / 'uploaded-same-source.md'
+    uploaded_source.write_text(
+        (tmp_path / 'fixtures' / 'sample.md').read_text(encoding='utf-8'),
+        encoding='utf-8',
+    )
     upload_task = create_task(
         id='task-upload-parity',
         taskType='structured_review',
@@ -370,10 +367,10 @@ async def test_runtime_structured_review_fixture_and_upload_stay_contract_equiva
         sourceDocumentRef=SourceDocumentRef(
             refId='upload-ref-parity',
             sourceType='upload',
-            fileName=upload_source.name,
+            fileName=uploaded_source.name,
             fileType='md',
-            storagePath=str(upload_source),
-            displayName='上传同构样本',
+            storagePath=str(uploaded_source),
+            displayName='上传同源文档',
         ),
         documentType='construction_org',
         disciplineTags=['lifting_operations', 'temporary_power', 'hot_work'],
@@ -386,15 +383,26 @@ async def test_runtime_structured_review_fixture_and_upload_stay_contract_equiva
     await runtime.execute_task(fixture_task.id)
     await runtime.execute_task(upload_task.id)
 
-    fixture_saved = store.get_task(fixture_task.id)
-    upload_saved = store.get_task(upload_task.id)
-    assert fixture_saved is not None and upload_saved is not None
-    assert fixture_saved.result is not None and upload_saved.result is not None
+    saved_fixture = store.get_task(fixture_task.id)
+    saved_upload = store.get_task(upload_task.id)
+    assert saved_fixture is not None and saved_upload is not None
+    assert saved_fixture.result is not None and saved_upload.result is not None
 
-    assert fixture_saved.result['summary']['documentType'] == upload_saved.result['summary']['documentType']
-    assert fixture_saved.result['resolvedProfile'] == upload_saved.result['resolvedProfile']
-    assert fixture_saved.result['visibility'] == upload_saved.result['visibility']
-    assert [issue['findingType'] for issue in fixture_saved.result['issues']] == [issue['findingType'] for issue in upload_saved.result['issues']]
-    assert [(item['name'], item['category']) for item in fixture_saved.result['artifactIndex']] == [
-        (item['name'], item['category']) for item in upload_saved.result['artifactIndex']
+    fixture_result = saved_fixture.result
+    upload_result = saved_upload.result
+    assert fixture_result['summary']['documentType'] == upload_result['summary']['documentType']
+    assert fixture_result['resolvedProfile'] == upload_result['resolvedProfile']
+    assert fixture_result['visibility'] == upload_result['visibility']
+    assert [issue['title'] for issue in fixture_result['issues']] == [issue['title'] for issue in upload_result['issues']]
+    assert [
+        (artifact['name'], artifact['category'], artifact['stage'])
+        for artifact in fixture_result['artifactIndex']
+    ] == [
+        (artifact['name'], artifact['category'], artifact['stage'])
+        for artifact in upload_result['artifactIndex']
     ]
+    assert fixture_result['summary']['documentType'] == 'construction_org'
+    assert upload_result['summary']['manualReviewNeeded'] is True
+    assert 'fixture' in fixture_result
+    assert 'fixture' not in upload_result
+    assert any(issue['title'] == '附件处于可视域缺口，需人工复核原件' for issue in upload_result['issues'])

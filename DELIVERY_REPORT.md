@@ -4,16 +4,16 @@
 
 ## 1. 架构说明
 
-已在 `/Users/lucas/repos/review/008-review-control-plane` 新建 008 项目，并将其定位为 **DeepResearchAgent 总控编排层 + 外部能力服务层 + 前后端统一入口**。DeepResearchAgent 在本项目中作为 planner/router/coordinator，而不是审查器本体。
+已在当前仓库根目录建立 008 项目，并将其定位为 **DeepResearchAgent 总控编排层 + 外部能力服务层 + 前后端统一入口**。DeepResearchAgent 在本项目中作为 planner/router/coordinator，而不是审查器本体。
 
 ## 2. 项目目录结构
 
-- 前端：`/Users/lucas/repos/review/008-review-control-plane/apps/web`
-- 后端：`/Users/lucas/repos/review/008-review-control-plane/apps/api`
-- 编排层：`/Users/lucas/repos/review/008-review-control-plane/apps/api/src/orchestrator`
-- adapter：`/Users/lucas/repos/review/008-review-control-plane/apps/api/src/adapters`
-- fixtures：`/Users/lucas/repos/review/008-review-control-plane/fixtures`
-- 工件：`/Users/lucas/repos/review/008-review-control-plane/artifacts`
+- 前端：`apps/web`
+- 后端：`apps/api`
+- 编排层：`apps/api/src/orchestrator`
+- adapter：`apps/api/src/adapters`
+- fixtures：`fixtures`
+- 工件：`artifacts`
 
 ## 3. 前端实现说明
 
@@ -77,7 +77,7 @@
 ## 10. 运行说明
 
 ```bash
-cd /Users/lucas/repos/review/008-review-control-plane
+cd .
 make bootstrap
 make dev
 ```

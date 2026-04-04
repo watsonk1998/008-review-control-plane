@@ -1,7 +1,7 @@
 {
   "caseId": "construction_org_real_docx_001",
   "fixtureId": "construction_org_real_docx_001",
-  "sourcePath": "/Users/lucas/repos/review/008-review-control-plane/fixtures/copied/supervision/230235-冷轧厂2030单元三台行车电气系统改造-施工组织设计.docx",
+  "sourcePath": "fixtures/supervision/施工组织设计-冷轧厂2030单元三台行车电气系统改造.docx",
   "query": "对该施工组织设计执行正式结构化审查",
   "docType": "construction_org",
   "disciplineTags": [

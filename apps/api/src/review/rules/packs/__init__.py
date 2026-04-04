@@ -40,6 +40,12 @@ def _make_scenario_pack(pack_id: str, discipline_tag: str) -> PolicyPack:
         defaultEnabled=False,
         description=f'Scenario pack for {discipline_tag}.',
         readiness='placeholder',
+        promotionCriteria={
+            'ruleCoverage': False,
+            'policyEvidenceReady': False,
+            'testsReady': False,
+            'versionedCasesReady': False,
+        },
     )
 
 

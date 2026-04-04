@@ -2,7 +2,7 @@
 
 ## 配置解析
 
-- 默认配置文件：`/Users/lucas/tools/from-obsidian/AI/config/gbcs-fast.json`
+- 默认通过 `FASTGPT_*` 环境变量注入；若部署侧使用本地 JSON 配置文件，也应由运行环境显式指定
 - 统一入口：`apps/api/src/config/fastgpt.py`
 - 统一 adapter：`apps/api/src/adapters/fastgpt_adapter.py`
 

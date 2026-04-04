@@ -12,6 +12,8 @@ TaskStatus = Literal['created', 'planned', 'running', 'waiting_external', 'succe
 EventStatus = Literal['started', 'completed', 'failed', 'info']
 ReviewerTaskState = Literal['pending', 'accepted', 'rejected', 'needs_attachment']
 ReviewerItemState = Literal['pending', 'confirmed', 'dismissed', 'needs_attachment']
+IssueKind = Literal['hard_defect', 'visibility_gap', 'evidence_gap', 'enhancement']
+ApplicabilityState = Literal['applies', 'partial', 'blocked_by_visibility', 'blocked_by_missing_fact']
 ReviewDocumentType = Literal[
     'construction_org',
     'construction_scheme',
@@ -125,6 +127,11 @@ class EvidenceSpan(BaseModel):
     excerpt: str
     visibility: AttachmentVisibility | None = None
     confidence: ConfidenceLevel = ConfidenceLevel.medium
+    clauseTitle: str | None = None
+    forceLevel: Literal['must', 'should', 'guidance'] | None = None
+    applicability: str | None = None
+    sourceProvenance: str | None = None
+    evidenceGapReason: str | None = None
 
 
 class ReviewIssue(BaseModel):
@@ -137,6 +144,8 @@ class ReviewIssue(BaseModel):
     manualReviewNeeded: bool = False
     evidenceMissing: bool = False
     manualReviewReason: str | None = None
+    issueKind: IssueKind = 'hard_defect'
+    applicabilityState: ApplicabilityState = 'applies'
 
 
 class TaskArtifact(BaseModel):
@@ -202,7 +211,7 @@ class TaskRecord(BaseModel):
     sourceUrls: list[str] = Field(default_factory=list)
     documentType: ReviewDocumentType | None = None
     disciplineTags: list[str] = Field(default_factory=list)
-    strictMode: bool | None = None
+    strictMode: bool | None = None  # reserved/no-op compatibility field
     policyPackIds: list[str] = Field(default_factory=list)
     status: TaskStatus = 'created'
     plan: dict[str, Any] | None = None

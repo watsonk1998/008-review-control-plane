@@ -8,6 +8,8 @@ export type FindingType = "hard_evidence" | "engineering_inference" | "visibilit
 export type ConfidenceLevel = "low" | "medium" | "high";
 export type ArtifactCategory = "parse" | "facts" | "rule_hits" | "candidates" | "result" | "matrix" | "matrices" | "report" | "generic";
 export type ParseMode = "docx_structured" | "pdf_text_only" | "markdown_text" | "plain_text";
+export type IssueKind = "hard_defect" | "visibility_gap" | "evidence_gap" | "enhancement";
+export type ApplicabilityState = "applies" | "partial" | "blocked_by_visibility" | "blocked_by_missing_fact";
 
 export interface SourceDocumentRef {
   refId: string;
@@ -65,6 +67,11 @@ export interface EvidenceSpan {
   excerpt: string;
   visibility?: AttachmentVisibility | null;
   confidence: ConfidenceLevel;
+  clauseTitle?: string | null;
+  forceLevel?: "must" | "should" | "guidance" | null;
+  applicability?: string | null;
+  sourceProvenance?: string | null;
+  evidenceGapReason?: string | null;
 }
 
 export interface ReviewIssue {
@@ -77,6 +84,8 @@ export interface ReviewIssue {
   manualReviewNeeded: boolean;
   evidenceMissing: boolean;
   manualReviewReason?: string | null;
+  issueKind: IssueKind;
+  applicabilityState: ApplicabilityState;
   docEvidence: EvidenceSpan[];
   policyEvidence: EvidenceSpan[];
   recommendation: string[];
@@ -104,9 +113,9 @@ export interface VisibilityAssessment {
 }
 
 export interface StructuredReviewSummary {
-  overallConclusion: string;
-  documentType: ReviewDocumentType;
-  selectedPacks: string[];
+    overallConclusion: string;
+    documentType: ReviewDocumentType;
+    selectedPacks: string[];
   manualReviewNeeded: boolean;
   issueCount: number;
   layerCounts: Record<string, number>;

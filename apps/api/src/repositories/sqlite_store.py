@@ -242,6 +242,8 @@ class SQLiteTaskStore:
         ]
 
     def _row_to_task(self, row: sqlite3.Row) -> TaskRecord:
+        source_document_ref = self._load_model(row['source_document_ref_json'], SourceDocumentRef)
+        reviewer_decision = self._load_model(row['reviewer_decision_json'], ReviewerDecision)
         return TaskRecord(
             id=row['id'],
             taskType=row['task_type'],
@@ -250,19 +252,40 @@ class SQLiteTaskStore:
             datasetId=row['dataset_id'],
             collectionId=row['collection_id'],
             fixtureId=row['fixture_id'],
-            sourceDocumentRef=SourceDocumentRef.model_validate(json.loads(row['source_document_ref_json'])) if row['source_document_ref_json'] else None,
+            sourceDocumentRef=source_document_ref,
             useWeb=bool(row['use_web']),
             debug=bool(row['debug']),
-            sourceUrls=json.loads(row['source_urls']) if row['source_urls'] else [],
+            sourceUrls=self._load_list_json(row['source_urls']),
             documentType=row['document_type'],
-            disciplineTags=json.loads(row['discipline_tags_json']) if row['discipline_tags_json'] else [],
+            disciplineTags=self._load_list_json(row['discipline_tags_json']),
             strictMode=bool(row['strict_mode']) if row['strict_mode'] is not None else None,
-            policyPackIds=json.loads(row['policy_pack_ids_json']) if row['policy_pack_ids_json'] else [],
+            policyPackIds=self._load_list_json(row['policy_pack_ids_json']),
             status=row['status'],
-            plan=json.loads(row['plan_json']) if row['plan_json'] else None,
-            result=json.loads(row['result_json']) if row['result_json'] else None,
-            reviewerDecision=ReviewerDecision.model_validate(json.loads(row['reviewer_decision_json'])) if row['reviewer_decision_json'] else None,
-            error=json.loads(row['error_json']) if row['error_json'] else None,
+            plan=self._load_json(row['plan_json']),
+            result=self._load_json(row['result_json']),
+            reviewerDecision=reviewer_decision,
+            error=self._load_json(row['error_json']),
             createdAt=datetime.fromisoformat(row['created_at']),
             updatedAt=datetime.fromisoformat(row['updated_at']),
         )
+
+    def _load_json(self, raw: str | None, *, default: Any = None) -> Any:
+        if not raw:
+            return default
+        try:
+            return json.loads(raw)
+        except Exception:
+            return default
+
+    def _load_list_json(self, raw: str | None) -> list[Any]:
+        payload = self._load_json(raw, default=[])
+        return payload if isinstance(payload, list) else []
+
+    def _load_model(self, raw: str | None, model_cls):
+        payload = self._load_json(raw)
+        if payload is None:
+            return None
+        try:
+            return model_cls.model_validate(payload)
+        except Exception:
+            return None

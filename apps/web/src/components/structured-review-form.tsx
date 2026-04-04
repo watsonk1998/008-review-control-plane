@@ -50,12 +50,6 @@ export function StructuredReviewForm({
   });
   const readyPacks = relevantPacks.filter((pack) => pack.readiness === "ready");
   const placeholderPacks = relevantPacks.filter((pack) => pack.readiness === "placeholder");
-  const readinessHint =
-    documentReadiness === "official"
-      ? "当前 documentType 属于 official support。"
-      : documentReadiness === "experimental"
-        ? "当前 documentType 属于 experimental：已有 ready packs，但不等同 official support。"
-        : "当前 documentType 仍属 skeleton：仅保留未来扩展位。";
 
   return (
     <section className="stack-lg">
@@ -64,17 +58,17 @@ export function StructuredReviewForm({
           <p className="eyebrow">Structured Review Profile</p>
           <h3>正式审查参数</h3>
         </div>
-        <p className="muted small">支持范围只以 `/api/tasks/support-scope` 为准；文档类型的 official / experimental / skeleton 与 pack readiness 不再前端硬编码。</p>
-      </div>
+          <p className="muted small">支持范围只以 `/api/tasks/support-scope` 为准；documentType readiness 与 pack readiness 明确分离。</p>
+        </div>
 
       {documentReadiness === "experimental" ? (
         <div className="callout warning-callout">
-          当前所选文档类型属于 experimental。系统会如实展示已 ready 的 pack，但不会把该 documentType 伪装成 official support。
+          当前所选 documentType 属于 experimental。系统会如实展示已 ready 的 pack，但不会把该 documentType 伪装成 official support。
         </div>
       ) : null}
       {documentReadiness === "skeleton" ? (
         <div className="callout warning-callout">
-          当前所选文档类型仍属 skeleton。系统只展示当前可见范围，不承诺已具备稳定审查能力。
+          当前所选 documentType 仍处于 skeleton。可以查看范围定义，但不应把 ready packs 理解为该类型已进入 official 支持。
         </div>
       ) : null}
       {!documentReadiness ? <div className="callout">support-scope 加载中；未返回前不展示本地 fallback 结论。</div> : null}
@@ -152,9 +146,9 @@ export function StructuredReviewForm({
         <div className="callout">
           <strong>当前 support-scope</strong>
           <p>documentType readiness：{documentReadiness}</p>
-          <p>{readinessHint}</p>
           <p>ready packs：{readyPacks.map((pack) => pack.packId).join("，") || "无"}</p>
           <p>placeholder packs：{placeholderPacks.map((pack) => pack.packId).join("，") || "无"}</p>
+          <p className="muted small">说明：ready pack 仅表示 pack 已可执行，不等于 documentType 已进入 official support。</p>
         </div>
       ) : null}
     </section>

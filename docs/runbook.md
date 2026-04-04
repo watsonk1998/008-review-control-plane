@@ -7,9 +7,9 @@
 - Python 3.11+
 - Node.js 20+
 - npm
-- 可访问本地配置：
-  - `/Users/lucas/tools/from-obsidian/AI/config/century.json`
-  - `/Users/lucas/tools/from-obsidian/AI/config/gbcs-fast.json`
+- 可通过环境变量或部署侧配置文件提供：
+  - `LLM_*` / `OPENAI_*`
+  - `FASTGPT_*`
 - 勘查副本存在（默认值，可改环境变量）：
   - `/tmp/008-discovery/DeepTutor`
   - `/tmp/008-discovery/gpt-researcher`
@@ -17,7 +17,7 @@
 ## 2. 安装依赖
 
 ```bash
-cd /Users/lucas/repos/review/008-review-control-plane
+cd .
 make bootstrap
 ```
 
@@ -50,14 +50,14 @@ make dev-web
 ### DeepTutor bridge
 
 ```bash
-cd /Users/lucas/repos/review/008-review-control-plane
+cd .
 apps/api/.venv/bin/python scripts/run_deeptutor_bridge.py --port 8121
 ```
 
 ### API
 
 ```bash
-cd /Users/lucas/repos/review/008-review-control-plane/apps/api
+cd apps/api
 export DEEPTUTOR_BASE_URL=http://127.0.0.1:8121
 export GPT_RESEARCHER_EXTERNAL_PATH=/tmp/008-discovery/gpt-researcher
 . .venv/bin/activate
@@ -67,7 +67,7 @@ uvicorn src.main:app --host 127.0.0.1 --port 8018
 ### Web
 
 ```bash
-cd /Users/lucas/repos/review/008-review-control-plane/apps/web
+cd apps/web
 NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8018 npm run dev -- --port 3008
 ```
 
@@ -110,6 +110,6 @@ make verify-connectivity
 
 ## 7. 工件位置
 
-- 任务状态库：`/Users/lucas/repos/review/008-review-control-plane/artifacts/tasks/runtime.sqlite`
-- 单任务工件：`/Users/lucas/repos/review/008-review-control-plane/artifacts/tasks/<task-id>/`
-- 联通验证：`/Users/lucas/repos/review/008-review-control-plane/artifacts/verification/`
+- 任务状态库：`artifacts/tasks/runtime.sqlite`
+- 单任务工件：`artifacts/tasks/<task-id>/`
+- 联通验证：`artifacts/verification/`

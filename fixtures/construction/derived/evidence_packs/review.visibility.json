@@ -1,0 +1,31 @@
+{
+  "id": "review.visibility",
+  "version": "1.0.0",
+  "clauses": [
+    {
+      "id": "review_visibility_gap",
+      "sourceId": "review-control-plane-visibility-policy",
+      "title": "附件可视域处理",
+      "excerpt": "当附件或图纸未进入当前解析可视域时，应标记为 visibility_gap / manual_review_needed，而不是直接判定缺失。",
+      "forceLevel": "guidance",
+      "applicability": "all_review_types"
+    }
+  ],
+  "forceLevel": "guidance",
+  "applicability": "all_review_types",
+  "severityMapping": {
+    "construction_org_attachment_visibility": "medium",
+    "hazardous_special_scheme_attachment_visibility": "medium"
+  },
+  "ruleIds": [
+    "construction_org_attachment_visibility",
+    "hazardous_special_scheme_attachment_visibility"
+  ],
+  "docTypes": [
+    "construction_org",
+    "construction_scheme",
+    "hazardous_special_scheme",
+    "supervision_plan",
+    "review_support_material"
+  ]
+}

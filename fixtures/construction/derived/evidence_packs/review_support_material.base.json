@@ -1,0 +1,27 @@
+{
+  "id": "review_support_material.base",
+  "version": "1.0.0",
+  "clauses": [
+    {
+      "id": "review_support_material_context",
+      "sourceId": "review-control-plane-support-scope-policy",
+      "title": "审查支持材料边界",
+      "excerpt": "审查支持材料只能补充背景或辅助判断，不能替代正式施工组织设计、施工方案或专项方案正文。",
+      "forceLevel": "guidance",
+      "applicability": "review_support_material"
+    }
+  ],
+  "forceLevel": "guidance",
+  "applicability": "review_support_material",
+  "severityMapping": {
+    "review_support_material_context_only": "low",
+    "review_support_material_attachment_visibility": "low"
+  },
+  "ruleIds": [
+    "review_support_material_context_only",
+    "review_support_material_attachment_visibility"
+  ],
+  "docTypes": [
+    "review_support_material"
+  ]
+}

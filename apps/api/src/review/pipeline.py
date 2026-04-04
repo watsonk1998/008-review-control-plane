@@ -86,12 +86,11 @@ class StructuredReviewExecutor:
         )
         parse_artifact = write_json_artifact('structured-review-parse', parse_result.model_dump(mode='json')) if write_json_artifact else None
         self._record_artifact(artifact_records, parse_artifact, category='parse', stage='parse')
-        l0_visibility_artifact = (
-            write_json_artifact('structured-review-l0-visibility', self._build_l0_visibility_artifact(parse_result))
-            if write_json_artifact
-            else None
-        )
-        self._record_artifact(artifact_records, l0_visibility_artifact, category='parse', stage='parse')
+        l0_artifact = write_json_artifact(
+            'structured-review-l0-visibility',
+            self._build_l0_visibility_artifact(parse_result),
+        ) if write_json_artifact else None
+        self._record_artifact(artifact_records, l0_artifact, category='parse', stage='parse')
         if emit:
             emit('parse', 'structured_review', 'completed', 'Document parsed for structured review', artifact_path=parse_artifact)
 
@@ -170,6 +169,7 @@ class StructuredReviewExecutor:
             report_artifacts.append(write_json_artifact('conflict-matrix', matrices.conflicts.model_dump(mode='json')))
             report_artifacts.append(write_json_artifact('attachment-visibility-matrix', [item.model_dump(mode='json') for item in matrices.attachmentVisibility]))
             report_artifacts.append(write_json_artifact('section-structure-matrix', [item.model_dump(mode='json') for item in matrices.sectionStructure]))
+            report_artifacts.append(write_json_artifact('structured-review-report-buckets', self.report_builder.build_issue_buckets(final_issues)))
         if write_text_artifact:
             report_artifacts.append(write_text_artifact('structured-review-report', report_markdown, '.md'))
         if report_artifacts:
@@ -339,6 +339,16 @@ class StructuredReviewExecutor:
                 )
         return spans
 
+    def _build_l0_visibility_artifact(self, parse_result: DocumentParseResult) -> dict[str, Any]:
+        return {
+            'parseMode': parse_result.parseMode,
+            'parserLimited': parse_result.parserLimited,
+            'parseWarnings': list(parse_result.parseWarnings),
+            'visibility': parse_result.visibility.model_dump(mode='json'),
+            'manualReviewNeeded': parse_result.visibility.manualReviewNeeded,
+            'attachmentVisibility': [item.model_dump(mode='json') for item in parse_result.attachments],
+        }
+
     def _apply_execution_options(
         self,
         parse_result: DocumentParseResult,
@@ -425,13 +435,3 @@ class StructuredReviewExecutor:
             unresolved = UnresolvedFact.model_validate(item)
             deduped[(unresolved.code, unresolved.factKey)] = unresolved
         return list(deduped.values())
-
-    def _build_l0_visibility_artifact(self, parse_result: DocumentParseResult) -> dict[str, Any]:
-        return {
-            'parseMode': parse_result.parseMode,
-            'parserLimited': parse_result.parserLimited,
-            'parseWarnings': list(parse_result.parseWarnings),
-            'visibility': parse_result.visibility.model_dump(mode='json'),
-            'manualReviewNeeded': parse_result.visibility.manualReviewNeeded,
-            'attachments': [attachment.model_dump(mode='json') for attachment in parse_result.attachments],
-        }

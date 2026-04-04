@@ -15,4 +15,10 @@ def get_temporary_power_pack() -> PolicyPack:
         defaultEnabled=False,
         description='临时用电/停送电场景 pack，检查控制措施与应急安排是否成链。',
         readiness='ready',
+        promotionCriteria={
+            'ruleCoverage': True,
+            'policyEvidenceReady': True,
+            'testsReady': True,
+            'versionedCasesReady': False,
+        },
     )

@@ -4,7 +4,7 @@
 
 ## 1. 007 项目技术栈、目录结构与可复用点
 
-勘查目录：`/Users/lucas/repos/review/007-deepresearch`
+勘查目录：历史 `007-deepresearch` 本地仓库
 
 ### 1.1 事实
 
@@ -77,7 +77,7 @@
 
 采用 **轻量 bridge**：
 
-- 文件：`/Users/lucas/repos/review/008-review-control-plane/scripts/run_deeptutor_bridge.py`
+- 文件：`scripts/run_deeptutor_bridge.py`
 - 复用 DeepTutor 的真实 `ChatAgent + SessionManager`
 - 对未用重模块做 monkeypatch
 - 对 008 暴露与官方一致的 health/chat 接口
@@ -118,7 +118,7 @@
 
 ### 5.1 LLM 配置
 
-路径：`/Users/lucas/tools/from-obsidian/AI/config/century.json`
+路径：部署侧提供的 `century.json` / 等价 LLM 配置文件
 
 实际可用 profile：
 
@@ -142,7 +142,7 @@
 
 ### 5.2 FastGPT 配置
 
-路径：`/Users/lucas/tools/from-obsidian/AI/config/gbcs-fast.json`
+路径：部署侧提供的 `gbcs-fast.json` / 等价 FastGPT 配置文件
 
 已使用字段：
 
@@ -177,10 +177,10 @@
 
 已从 007 复制最小可验证样本到：
 
-- `/Users/lucas/repos/review/008-review-control-plane/fixtures/copied/construction`
-- `/Users/lucas/repos/review/008-review-control-plane/fixtures/copied/supervision`
+- `fixtures/construction`
+- `fixtures/supervision`
 
-当前 manifest：`/Users/lucas/repos/review/008-review-control-plane/fixtures/manifest.json`
+当前 manifest：`fixtures/manifest.json`
 
 已覆盖：
 

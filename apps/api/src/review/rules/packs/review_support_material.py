@@ -17,4 +17,10 @@ def get_review_support_material_base_pack() -> PolicyPack:
         defaultEnabled=True,
         description='审查辅助材料基础 pack，显式提示其只能补充背景、不能替代正式方案正文。',
         readiness='ready',
+        promotionCriteria={
+            'ruleCoverage': True,
+            'policyEvidenceReady': True,
+            'testsReady': True,
+            'versionedCasesReady': True,
+        },
     )

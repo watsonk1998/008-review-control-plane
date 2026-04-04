@@ -46,9 +46,24 @@ class StructuredReviewReportBuilder:
                 'attachmentCount': len(matrices.attachmentVisibility),
                 'ruleHitCount': sum(1 for item in matrices.ruleHits if item.status in {'hit', 'manual_review_needed'}),
                 'unresolvedFactCount': len(unresolved_facts),
+                'issueKindCounts': dict(Counter(issue.issueKind for issue in issues)),
             },
             visibilitySummary=visibility_summary,
         )
+
+    def build_issue_buckets(self, issues) -> dict[str, list[dict[str, str]]]:
+        bucket_order = ['hard_defect', 'visibility_gap', 'evidence_gap', 'enhancement']
+        buckets = {bucket: [] for bucket in bucket_order}
+        for issue in issues:
+            buckets.setdefault(issue.issueKind, []).append(
+                {
+                    'id': issue.id,
+                    'title': issue.title,
+                    'layer': issue.layer.value,
+                    'severity': issue.severity,
+                }
+            )
+        return buckets
 
     def render(
         self,
@@ -94,8 +109,39 @@ class StructuredReviewReportBuilder:
                     '',
                 ]
             )
+        bucket_titles = {
+            'hard_defect': 'Hard Defects',
+            'visibility_gap': 'Visibility Gaps',
+            'evidence_gap': 'Evidence Gaps',
+            'enhancement': 'Enhancements',
+        }
+        for issue_kind in ['hard_defect', 'visibility_gap', 'evidence_gap', 'enhancement']:
+            lines.append(f'## {bucket_titles[issue_kind]}')
+            bucket_issues = [issue for issue in issues if issue.issueKind == issue_kind]
+            if not bucket_issues:
+                lines.append('- 无')
+                lines.append('')
+                continue
+            for issue in bucket_issues:
+                lines.extend(
+                    [
+                        f'### {issue.id} {issue.title}',
+                        f'- layer: {issue.layer.value}',
+                        f'- severity: {issue.severity}',
+                        f'- finding_type: {issue.findingType.value}',
+                        f'- issue_kind: {issue.issueKind}',
+                        f'- applicability_state: {issue.applicabilityState}',
+                        f'- summary: {issue.summary}',
+                        f'- manual_review_needed: {"yes" if issue.manualReviewNeeded else "no"}',
+                        f'- manual_review_reason: {issue.manualReviewReason or "none"}',
+                        f'- evidence_missing: {"yes" if issue.evidenceMissing else "no"}',
+                        f'- recommendations: {"；".join(issue.recommendation)}',
+                        '',
+                    ]
+                )
+
         for layer in ['L1', 'L2', 'L3']:
-            lines.append(f'## {layer} 问题')
+            lines.append(f'## {layer} 问题视图')
             layer_issues = [issue for issue in issues if issue.layer.value == layer]
             if not layer_issues:
                 lines.append('- 无')
@@ -107,6 +153,8 @@ class StructuredReviewReportBuilder:
                         f'### {issue.id} {issue.title}',
                         f'- severity: {issue.severity}',
                         f'- finding_type: {issue.findingType.value}',
+                        f'- issue_kind: {issue.issueKind}',
+                        f'- applicability_state: {issue.applicabilityState}',
                         f'- summary: {issue.summary}',
                         f'- manual_review_needed: {"yes" if issue.manualReviewNeeded else "no"}',
                         f'- manual_review_reason: {issue.manualReviewReason or "none"}',

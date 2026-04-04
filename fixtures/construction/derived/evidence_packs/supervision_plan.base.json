@@ -1,0 +1,37 @@
+{
+  "id": "supervision_plan.base",
+  "version": "1.0.0",
+  "clauses": [
+    {
+      "id": "supervision_plan_structure",
+      "sourceId": "construction-《建设工程监理规范》GB/T 50319",
+      "title": "监理规划基础结构",
+      "excerpt": "监理规划至少应交代工程概况、编制依据和监理控制措施，以支持后续旁站、巡视和验收控制。",
+      "forceLevel": "should",
+      "applicability": "supervision_plan"
+    },
+    {
+      "id": "supervision_plan_monitoring",
+      "sourceId": "construction-《建设工程监理规范》GB/T 50319",
+      "title": "监测监控与旁站安排",
+      "excerpt": "监理规划或实施细则应明确监测监控、旁站和巡视检查的触发条件、责任与记录要求。",
+      "forceLevel": "should",
+      "applicability": "supervision_plan"
+    }
+  ],
+  "forceLevel": "guidance",
+  "applicability": "supervision_plan",
+  "severityMapping": {
+    "supervision_plan_structure_completeness": "medium",
+    "supervision_plan_monitoring_linkage": "medium",
+    "supervision_plan_attachment_visibility": "medium"
+  },
+  "ruleIds": [
+    "supervision_plan_structure_completeness",
+    "supervision_plan_monitoring_linkage",
+    "supervision_plan_attachment_visibility"
+  ],
+  "docTypes": [
+    "supervision_plan"
+  ]
+}

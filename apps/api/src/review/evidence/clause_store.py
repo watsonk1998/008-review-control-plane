@@ -50,9 +50,13 @@ class ClauseStore:
                 EvidenceSpan(
                     sourceType='policy',
                     sourceId=clause.sourceId,
-                    locator={'clauseId': clause.id, 'title': clause.title, 'forceLevel': clause.forceLevel},
+                    locator={'clauseId': clause.id},
                     excerpt=clause.excerpt,
                     confidence=ConfidenceLevel.high,
+                    clauseTitle=clause.title,
+                    forceLevel=clause.forceLevel,
+                    applicability=clause.applicability,
+                    sourceProvenance=clause.sourceId,
                 )
             )
         return evidence

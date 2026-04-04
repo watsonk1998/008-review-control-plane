@@ -15,4 +15,10 @@ def get_hot_work_pack() -> PolicyPack:
         defaultEnabled=False,
         description='动火场景 pack，检查动火专项控制与火灾类应急安排是否匹配。',
         readiness='ready',
+        promotionCriteria={
+            'ruleCoverage': True,
+            'policyEvidenceReady': True,
+            'testsReady': True,
+            'versionedCasesReady': False,
+        },
     )

@@ -1,7 +1,6 @@
 {
   "seed_source": "gemini_deepresearch",
-  "absolute_path": "/Users/lucas/repos/review/008-review-control-plane/fixtures/copied/supervision/gemini-deepresearch审查结果-施工组织设计-培花初期雨水调蓄池建设工程.md",
-  "relative_path": "fixtures/copied/supervision/gemini-deepresearch审查结果-施工组织设计-培花初期雨水调蓄池建设工程.md",
+  "relative_path": "fixtures/supervision/gemini-deepresearch审查结果-施工组织设计-培花初期雨水调蓄池建设工程.md",
   "status": "used_as_seed_only",
   "notes": "仅作为 bootstrap labels 来源，不能视作最终专家金标准。"
 }

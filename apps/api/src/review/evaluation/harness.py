@@ -13,7 +13,7 @@ from src.review.evaluation.metrics import compute_metrics
 from src.review.evaluation.thresholds import THRESHOLDS, VERSIONED_STAGE_THRESHOLDS
 from src.review.pipeline import StructuredReviewExecutor
 from src.review.rules.packs import get_policy_pack_registry
-from src.review.support_scope import is_official_document_type
+from src.review.support_scope import get_document_type_readiness, is_official_document_type
 from src.services.document_loader import DocumentLoader
 
 MIN_CI_CASES = 12
@@ -81,14 +81,9 @@ _AGGREGATE_METRICS = [
     'facts_accuracy',
     'rule_hit_accuracy',
     'hazard_identification_accuracy',
+    'suggestion_defect_separation',
+    'remediation_bucket_consistency',
 ]
-
-_LAYERED_METRIC_GROUPS = {
-    'L0': ['attachment_visibility_accuracy', 'manual_review_flag_accuracy'],
-    'L1': ['issue_recall', 'l1_hit_rate', 'high_severity_issue_recall', 'hard_evidence_accuracy', 'severity_accuracy'],
-    'L2': ['facts_accuracy', 'rule_hit_accuracy', 'policy_ref_accuracy', 'hazard_identification_accuracy'],
-    'CrossCutting': ['pack_selection_accuracy'],
-}
 
 
 def _aggregate(case_summaries: list[dict[str, Any]]) -> dict[str, float]:
@@ -101,16 +96,63 @@ def _aggregate(case_summaries: list[dict[str, Any]]) -> dict[str, float]:
 
 
 def _build_layered_metrics(aggregate: dict[str, float]) -> dict[str, Any]:
-    payload: dict[str, Any] = {}
-    for group, keys in _LAYERED_METRIC_GROUPS.items():
-        payload[group] = {
+    return {
+        'L0': {
             'metrics': {
-                key: aggregate.get(key, 0.0)
-                for key in keys
+                'attachment_visibility_accuracy': aggregate.get('attachment_visibility_accuracy', 0.0),
+                'manual_review_flag_accuracy': aggregate.get('manual_review_flag_accuracy', 0.0),
             }
-        }
-    payload['L3'] = {'diagnosticOnly': True, 'metrics': {}}
+        },
+        'L1': {
+            'metrics': {
+                'issue_recall': aggregate.get('issue_recall', 0.0),
+                'l1_hit_rate': aggregate.get('l1_hit_rate', 0.0),
+                'high_severity_issue_recall': aggregate.get('high_severity_issue_recall', 0.0),
+                'hard_evidence_accuracy': aggregate.get('hard_evidence_accuracy', 0.0),
+                'severity_accuracy': aggregate.get('severity_accuracy', 0.0),
+            }
+        },
+        'L2': {
+            'metrics': {
+                'facts_accuracy': aggregate.get('facts_accuracy', 0.0),
+                'rule_hit_accuracy': aggregate.get('rule_hit_accuracy', 0.0),
+                'policy_ref_accuracy': aggregate.get('policy_ref_accuracy', 0.0),
+                'hazard_identification_accuracy': aggregate.get('hazard_identification_accuracy', 0.0),
+            }
+        },
+        'L3': {
+            'diagnosticOnly': True,
+            'metrics': {
+                'suggestion_defect_separation': aggregate.get('suggestion_defect_separation', 0.0),
+                'remediation_bucket_consistency': aggregate.get('remediation_bucket_consistency', 0.0),
+            },
+        },
+        'CrossCutting': {
+            'metrics': {
+                'pack_selection_accuracy': aggregate.get('pack_selection_accuracy', 0.0),
+            }
+        },
+    }
+
+
+def _with_layered_metrics(payload: dict[str, Any], aggregate: dict[str, float]) -> dict[str, Any]:
+    payload['layeredMetrics'] = _build_layered_metrics(aggregate)
     return payload
+
+
+def _aggregate_by_doc_type_readiness(case_summaries: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
+    grouped: dict[str, list[dict[str, Any]]] = {}
+    for summary in case_summaries:
+        readiness = get_document_type_readiness(summary.get('docType'))
+        grouped.setdefault(readiness, []).append(summary)
+    return {
+        readiness: {
+            'aggregate': _aggregate(items),
+            'layeredMetrics': _build_layered_metrics(_aggregate(items)),
+            'caseIds': [item['caseId'] for item in items],
+        }
+        for readiness, items in grouped.items()
+    }
 
 
 def _dataset_guard(case_root: Path) -> tuple[list[dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]], dict[str, int]]:
@@ -283,7 +325,7 @@ def run_main(case_root: Path) -> tuple[int, dict[str, Any]]:
     ]
     versioned_gate_aggregate = _aggregate(versioned_gate_cases) if versioned_gate_cases else {}
     passed = _passes_thresholds(aggregate) and (not versioned_gate_cases or _passes_versioned_stage_thresholds(versioned_gate_aggregate))
-    return (0 if passed else 1), {
+    main_payload = {
         'mode': 'main',
         'passed': passed,
         'aggregate': aggregate,
@@ -294,16 +336,17 @@ def run_main(case_root: Path) -> tuple[int, dict[str, Any]]:
         'cases': stable_summaries,
         'versionedStageGate': {
             'aggregate': versioned_gate_aggregate,
-            'layeredMetrics': _build_layered_metrics(versioned_gate_aggregate),
+            'layeredMetrics': _build_layered_metrics(versioned_gate_aggregate) if versioned_gate_aggregate else {},
             'caseIds': [case['caseId'] for case in versioned_gate_cases],
             'passed': (not versioned_gate_cases or _passes_versioned_stage_thresholds(versioned_gate_aggregate)),
         },
         'versionedDiagnostics': {
             'aggregate': _aggregate(versioned_summaries) if versioned_summaries else {},
-            'layeredMetrics': _build_layered_metrics(_aggregate(versioned_summaries) if versioned_summaries else {}),
+            'layeredMetrics': _build_layered_metrics(_aggregate(versioned_summaries)) if versioned_summaries else {},
             'cases': versioned_summaries,
         },
     }
+    return (0 if passed else 1), main_payload
 
 
 def run_ablations(case_root: Path) -> tuple[int, dict[str, Any]]:
@@ -319,9 +362,10 @@ def run_ablations(case_root: Path) -> tuple[int, dict[str, Any]]:
     results = {}
     for name, options in variants.items():
         case_summaries = _run_cases(cases, llm=DeterministicLLM(), execution_options=options, run_label=name)
+        aggregate = _aggregate(case_summaries)
         results[name] = {
-            'aggregate': _aggregate(case_summaries),
-            'layeredMetrics': _build_layered_metrics(_aggregate(case_summaries)),
+            'aggregate': aggregate,
+            'layeredMetrics': _build_layered_metrics(aggregate),
             'cases': case_summaries,
             'executionOptions': options,
             'ablationMode': name != 'baseline',
@@ -350,11 +394,13 @@ def run_cross_pack(case_root: Path) -> tuple[int, dict[str, Any]]:
             'auto': {
                 'aggregate': _aggregate(auto_case_summaries),
                 'layeredMetrics': _build_layered_metrics(_aggregate(auto_case_summaries)),
+                'byDocumentTypeReadiness': _aggregate_by_doc_type_readiness(auto_case_summaries),
                 'cases': auto_case_summaries,
             },
             'expected_packs_forced': {
                 'aggregate': _aggregate(forced_case_summaries),
                 'layeredMetrics': _build_layered_metrics(_aggregate(forced_case_summaries)),
+                'byDocumentTypeReadiness': _aggregate_by_doc_type_readiness(forced_case_summaries),
                 'cases': forced_case_summaries,
             },
         },
@@ -372,9 +418,10 @@ def run_cross_model(case_root: Path) -> tuple[int, dict[str, Any]]:
     payload = {'mode': 'cross-model', 'passed': True, 'datasetCounts': counts, 'models': {}}
     for model_name, llm in model_runs.items():
         case_summaries = _run_cases(cases, llm=llm)
+        aggregate = _aggregate(case_summaries)
         payload['models'][model_name] = {
-            'aggregate': _aggregate(case_summaries),
-            'layeredMetrics': _build_layered_metrics(_aggregate(case_summaries)),
+            'aggregate': aggregate,
+            'layeredMetrics': _build_layered_metrics(aggregate),
             'cases': case_summaries,
         }
     return 0, payload
