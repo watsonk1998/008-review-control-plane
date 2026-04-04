@@ -125,6 +125,32 @@ make smoke
 make verify-connectivity
 ```
 
+## research pack 导出
+
+如需把 `structured_review` 的真实结构化结果落盘为双样本 research pack，并同步归档一轮最新 eval，可执行：
+
+```bash
+. apps/api/.venv/bin/activate
+python scripts/build_research_pack.py
+```
+
+脚本会清理并重建：
+
+- `artifacts/research-pack/supervision-sample-a-cold-rolling/`
+- `artifacts/research-pack/supervision-sample-b-puhua-rainwater/`
+- `artifacts/research-pack/eval/`
+- `artifacts/research-pack/logs/`
+- `artifacts/research-pack/manifest.json`
+- `artifacts/research-pack/latest-eval-summary.md`
+
+样本目录会显式落盘 `structured-review-result / parse / l0-visibility / facts / rule-hits / candidates / report-buckets / report.md` 以及各类 matrices，便于研究型 AI 直接消费。
+
+边界说明：
+
+- PDF 样本仍走 `pdf_text_only + parserLimited=True` 的受限路径
+- 这类 warning 只表示“当前可视域受限 / 结构提示”，不能解释为“正文或附件缺失”
+- `artifacts/research-pack/` 属于运行产物，默认不作为长期版本化真相资产提交
+
 ## structured_review 请求示例
 
 ```json
