@@ -111,7 +111,7 @@ make eval-review-cross-model
 - `structured_review` 同时支持 `fixtureId` 与 `sourceDocumentRef`
 - public API 不接受 `disable_visibility_check`
 - `result.visibility` 与 `unresolvedFacts` 可被 API/UI/eval 一致消费
-- `result.visibility.parseWarnings` 是 canonical 解析告警来源
+- `result.visibility.parseMode / parseWarnings / manualReviewReason` 是 canonical L0 消费入口
 - `summary.visibilitySummary` 仅作为 display summary 保留
 - `artifactIndex` 中必须包含 `structured-review-l0-visibility`；report 语义工件会额外输出 `structured-review-report-buckets`
 - issue 会显式输出 `issueKind` 与 `applicabilityState`
@@ -127,6 +127,7 @@ make eval-review-cross-model
 - artifact API 可列出和下载工件，且与 `result.artifactIndex` 同口径；对新任务 `artifactIndex` 即使为空也优先于目录扫描
 - 详情页优先展示 `resolvedProfile / visibility / unresolvedFacts / artifactIndex / reviewerDecision`，再展示报告与原始 JSON
 - reviewer 结果页以结构化方式展示 `attachmentVisibility / ruleHits / conflicts / sectionStructure`；raw JSON 只保留为折叠调试信息
+- `/api/tasks/support-scope` 需同时返回 pack `promotionCriteria`；表单/UI 不得自行发明 official/experimental/promotion 结论
 
 ## P1 主门槛
 

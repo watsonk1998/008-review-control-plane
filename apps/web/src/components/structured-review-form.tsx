@@ -23,6 +23,18 @@ const DISCIPLINE_OPTIONS = [
   { value: "working_at_height", label: "高处作业" },
 ];
 
+function renderPromotionCriteria(criteria: Record<string, boolean>) {
+  const order = [
+    ["testsReady", "tests"],
+    ["versionedCasesReady", "versioned cases"],
+    ["policyEvidenceReady", "policy evidence"],
+    ["ruleCoverage", "rule coverage"],
+  ] as const;
+  return order
+    .map(([key, label]) => `${label}:${criteria[key] ? "✓" : "✗"}`)
+    .join(" / ");
+}
+
 interface StructuredReviewFormProps {
   form: CreateTaskRequest;
   setForm: React.Dispatch<React.SetStateAction<CreateTaskRequest>>;
@@ -148,6 +160,21 @@ export function StructuredReviewForm({
           <p>documentType readiness：{documentReadiness}</p>
           <p>ready packs：{readyPacks.map((pack) => pack.packId).join("，") || "无"}</p>
           <p>placeholder packs：{placeholderPacks.map((pack) => pack.packId).join("，") || "无"}</p>
+          {relevantPacks.length ? (
+            <div className="stack-sm">
+              <strong>pack promotion criteria</strong>
+              <ul className="source-list">
+                {relevantPacks.map((pack) => (
+                  <li key={pack.packId}>
+                    <strong>
+                      {pack.packId} · {pack.readiness}
+                    </strong>
+                    <p className="muted small">{renderPromotionCriteria(pack.promotionCriteria || {})}</p>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
           <p className="muted small">说明：ready pack 仅表示 pack 已可执行，不等于 documentType 已进入 official support。</p>
         </div>
       ) : null}

@@ -27,12 +27,14 @@ def _serialize_structured_review_result(result):
     if is_legacy_payload:
         visibility_summary = ((payload.get('summary') or {}).get('visibilitySummary') or {})
         payload['visibility'] = {
+            'parseMode': None,
             'attachmentCount': visibility_summary.get('attachmentCount', 0),
             'counts': visibility_summary.get('counts', {}),
             'reasonCounts': visibility_summary.get('reasonCounts', {}),
             'duplicateSectionTitles': visibility_summary.get('duplicateSectionTitles', []),
             'parseWarnings': visibility_summary.get('parseWarnings', []),
             'manualReviewNeeded': visibility_summary.get('manualReviewNeeded', False),
+            'manualReviewReason': None,
             'parserLimited': False,
             'fileType': None,
         }

@@ -283,6 +283,8 @@ async def test_runtime_structured_review_generates_formal_result(tmp_path: Path)
     assert saved.result['summary']['manualReviewNeeded'] is True
     assert saved.result['summary']['visibilitySummary']['manualReviewNeeded'] is True
     assert saved.result['visibility']['manualReviewNeeded'] is True
+    assert saved.result['visibility']['parseMode'] == 'markdown_text'
+    assert saved.result['visibility']['manualReviewReason'] == 'title_detected_without_attachment_body'
     assert any(issue['title'] == '附件处于可视域缺口，需人工复核原件' for issue in saved.result['issues'])
     attachment_issue = next(issue for issue in saved.result['issues'] if issue['title'] == '附件处于可视域缺口，需人工复核原件')
     assert attachment_issue['manualReviewNeeded'] is True

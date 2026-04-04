@@ -128,6 +128,61 @@ function humanizeToken(value: string) {
   return withSpaces ? withSpaces.charAt(0).toUpperCase() + withSpaces.slice(1) : value;
 }
 
+function parseModeLabel(value: string | null | undefined) {
+  switch (value) {
+    case "docx_structured":
+      return "DOCX structured";
+    case "pdf_text_only":
+      return "PDF text only";
+    case "markdown_text":
+      return "Markdown text";
+    case "plain_text":
+      return "Plain text";
+    default:
+      return "unknown";
+  }
+}
+
+function manualReviewReasonLabel(value: string | null | undefined) {
+  switch (value) {
+    case "explicit_missing_marker":
+      return "附件被正文显式标记为缺失/后补";
+    case "title_detected_but_body_not_reliably_parsed":
+      return "检测到附件标题，但当前解析能力不足以确认正文";
+    case "title_detected_without_attachment_body":
+      return "检测到附件标题，但未见附件正文";
+    case "reference_detected_in_limited_parser":
+      return "仅检测到附件引用，且当前解析路径受限";
+    case "reference_detected_without_attachment_body":
+      return "仅检测到附件引用，未见附件正文";
+    case "visibility_gap":
+      return "存在可视域缺口";
+    case "attachment_unparsed":
+      return "附件未解析";
+    case "referenced_only":
+      return "仅检测到引用";
+    case "visibility_unknown":
+      return "当前可视域无法确定";
+    case "manual_confirmation_required":
+      return "需要人工确认";
+    default:
+      return value || "—";
+  }
+}
+
+function reviewerTaskStateLabel(value: string) {
+  switch (value) {
+    case "accepted":
+      return "accepted（已完成复核）";
+    case "rejected":
+      return "rejected（确认存在阻断问题）";
+    case "needs_attachment":
+      return "needs supplement（需补件/补充材料）";
+    default:
+      return "pending（待处理）";
+  }
+}
+
 function renderScalar(value: unknown): string {
   if (value === null || value === undefined || value === "") return "—";
   if (typeof value === "boolean") return value ? "是" : "否";
@@ -190,12 +245,27 @@ function VisibilitySummaryPanel({ visibility }: { visibility: StructuredReviewRe
     <div className="stack-md">
       <ReviewKeyValueList
         items={[
+          { label: "parseMode", value: parseModeLabel(visibility.parseMode) },
           { label: "parserLimited", value: visibility.parserLimited ? "true" : "false" },
           { label: "fileType", value: visibility.fileType || "unknown" },
           { label: "attachmentCount", value: String(visibility.attachmentCount) },
           { label: "manualReviewNeeded", value: visibility.manualReviewNeeded ? "true" : "false" },
+          { label: "manualReviewReason", value: manualReviewReasonLabel(visibility.manualReviewReason) },
         ]}
       />
+      {visibility.parserLimited || visibility.manualReviewReason ? (
+        <div className="callout warning-callout">
+          <strong>L0 parser / visibility 提示</strong>
+          <p>
+            {visibility.parserLimited
+              ? "当前解析路径存在明确限制；下述 visibility 结论应按保守口径理解。"
+              : "当前结果已触发人工复核条件。"}
+          </p>
+          {visibility.manualReviewReason ? (
+            <p>主人工复核原因：{manualReviewReasonLabel(visibility.manualReviewReason)}</p>
+          ) : null}
+        </div>
+      ) : null}
       <div className="stack-sm">
         <strong>状态计数</strong>
         <ReviewKeyValueList items={countItems} />
@@ -658,6 +728,7 @@ export function TaskDetail({ taskId }: { taskId: string }) {
       issueTotal: reviewerDecision.issues.length,
       attachmentReviewed,
       attachmentTotal: reviewerDecision.attachments.length,
+      updatedAt: reviewerDecision.updatedAt || null,
     };
   }, [reviewerDecision]);
 
@@ -815,11 +886,15 @@ export function TaskDetail({ taskId }: { taskId: string }) {
                   </div>
                   <ReviewKeyValueList
                     items={[
-                      { label: "taskState", value: reviewerSummary.taskState },
+                      { label: "taskState", value: reviewerTaskStateLabel(reviewerSummary.taskState) },
                       { label: "issues reviewed", value: `${reviewerSummary.issueReviewed}/${reviewerSummary.issueTotal}` },
                       {
                         label: "attachments reviewed",
                         value: `${reviewerSummary.attachmentReviewed}/${reviewerSummary.attachmentTotal}`,
+                      },
+                      {
+                        label: "updatedAt",
+                        value: reviewerSummary.updatedAt ? new Date(reviewerSummary.updatedAt).toLocaleString() : "—",
                       },
                     ]}
                   />
@@ -936,7 +1011,7 @@ export function TaskDetail({ taskId }: { taskId: string }) {
                           <p>{issue.summary}</p>
                           {issue.manualReviewNeeded ? (
                             <p className="error-text">
-                              需要人工复核该问题：{issue.manualReviewReason || "manual_confirmation_required"}。
+                              需要人工复核该问题：{manualReviewReasonLabel(issue.manualReviewReason || "manual_confirmation_required")}。
                             </p>
                           ) : null}
                           {issue.evidenceMissing ? <p className="muted small">证据状态：当前存在 evidence gap，需补齐文档或条文证据。</p> : null}

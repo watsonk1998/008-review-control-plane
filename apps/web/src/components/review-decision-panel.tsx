@@ -11,18 +11,24 @@ import type {
   ReviewerIssueDecision,
 } from "@/types/control-plane";
 
-const TASK_STATE_OPTIONS: ReviewerDecisionUpdateRequest["taskState"][] = [
-  "pending",
-  "accepted",
-  "rejected",
-  "needs_attachment",
+const TASK_STATE_OPTIONS: Array<{
+  value: ReviewerDecisionUpdateRequest["taskState"];
+  label: string;
+}> = [
+  { value: "pending", label: "pending（待处理）" },
+  { value: "accepted", label: "accepted（已完成复核）" },
+  { value: "rejected", label: "rejected（确认存在阻断问题）" },
+  { value: "needs_attachment", label: "needs supplement（需补件/补充材料）" },
 ];
 
-const ITEM_STATE_OPTIONS: ReviewerIssueDecision["state"][] = [
-  "pending",
-  "confirmed",
-  "dismissed",
-  "needs_attachment",
+const ITEM_STATE_OPTIONS: Array<{
+  value: ReviewerIssueDecision["state"];
+  label: string;
+}> = [
+  { value: "pending", label: "pending（待处理 / unresolved）" },
+  { value: "confirmed", label: "confirmed（确认问题成立）" },
+  { value: "dismissed", label: "rejected（驳回 / 不成立）" },
+  { value: "needs_attachment", label: "needs supplement（需补件/补充材料）" },
 ];
 
 function buildFallbackDecision(
@@ -121,6 +127,10 @@ export function ReviewDecisionPanel({
         <h2>最小人工复核面板</h2>
       </div>
 
+      <div className="callout">
+        UI 使用 reviewer 语义标签展示状态；后端 on-wire enum 保持稳定，以保证历史任务回放与持久化兼容。
+      </div>
+
       <div className="form-grid two-columns">
         <label className="field">
           <span>任务结论</span>
@@ -134,8 +144,8 @@ export function ReviewDecisionPanel({
             }
           >
             {TASK_STATE_OPTIONS.map((option) => (
-              <option key={option} value={option}>
-                {option}
+              <option key={option.value} value={option.value}>
+                {option.label}
               </option>
             ))}
           </select>
@@ -198,8 +208,8 @@ export function ReviewDecisionPanel({
                       }
                     >
                       {ITEM_STATE_OPTIONS.map((option) => (
-                        <option key={option} value={option}>
-                          {option}
+                        <option key={option.value} value={option.value}>
+                          {option.label}
                         </option>
                       ))}
                     </select>
@@ -272,8 +282,8 @@ export function ReviewDecisionPanel({
                       }
                     >
                       {ITEM_STATE_OPTIONS.map((option) => (
-                        <option key={option} value={option}>
-                          {option}
+                        <option key={option.value} value={option.value}>
+                          {option.label}
                         </option>
                       ))}
                     </select>
@@ -312,7 +322,7 @@ export function ReviewDecisionPanel({
         {decision?.updatedAt ? (
           <p className="muted small">上次保存：{new Date(decision.updatedAt).toLocaleString()}</p>
         ) : (
-          <p className="muted small">尚未保存，默认状态均为 pending。</p>
+          <p className="muted small">尚未保存，默认状态均为 pending（待处理）。</p>
         )}
       </div>
     </section>

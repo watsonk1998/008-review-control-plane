@@ -47,6 +47,7 @@ def get_pack_support_scope() -> list[dict[str, object]]:
             'disciplineTags': pack.disciplineTags,
             'defaultEnabled': pack.defaultEnabled,
             'description': pack.description,
+            'promotionCriteria': pack.promotionCriteria,
         }
         for pack in registry.values()
     ]

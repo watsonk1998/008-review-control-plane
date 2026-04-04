@@ -35,7 +35,7 @@ P0 的稳定结果字段：
 
 - `artifactIndex` 与 `GET /api/tasks/{taskId}/artifacts` 共享同一套官方 catalog；对新任务即使为空也视为 authoritative source
 - parse 结果内部使用 typed `visibility`、`parseMode`、`parserLimited`
-- `result.visibility` 是 top-level canonical visibility 对象，并直接携带 `parseWarnings`
+- `result.visibility` 是 top-level canonical visibility 对象，并直接携带 `parseMode / parseWarnings / manualReviewReason`
 - `summary.visibilitySummary` 仅负责总览；`matrices.attachmentVisibility` 负责结构化明细
 - issue 会显式给出 `issueKind`（`hard_defect / visibility_gap / evidence_gap / enhancement`）与 `applicabilityState`
 - task-detail 结果页优先以结构化 reviewer 视图呈现 `attachmentVisibility / ruleHits / conflicts / sectionStructure`，raw JSON 仅作为折叠调试信息
@@ -85,6 +85,7 @@ support-scope 唯一事实源：
 
 - documentType readiness：`official | experimental | skeleton`
 - pack readiness：`ready | placeholder`
+- pack promotion governance：`promotionCriteria = tests / versioned cases / policy evidence / rule coverage`
 - `ready pack ≠ official documentType`
 
 ## L1 / L2 / L3 语义
@@ -135,9 +136,10 @@ LLM 不负责：
 - `whetherManualReviewNeeded` 仅保留给 legacy task replay 的只读兼容层
 - `FinalIssue` 会保留 `evidenceMissing` 与 `manualReviewReason`
 - `FinalIssue.issueKind` 与 `FinalIssue.applicabilityState` 是 reviewer / report / eval 共享的最小派生语义
-- `result.visibility` 是唯一 canonical visibility contract
+- `result.visibility` 是唯一 canonical visibility contract，并直接承载 `parseMode / manualReviewReason`
 - `summary.visibilitySummary` 会统一输出附件计数、状态计数、reason counts、重复章节与 parse warnings，但不再反向生成 canonical visibility
 - reviewer decision 以单个 task-scoped JSON 保存：`taskState + note + issues[] + attachments[] + updatedAt`
+- reviewer cockpit 的 UI 文案会将稳定的 on-wire enum 映射为 reviewer 语义（如 `dismissed -> rejected`、`needs_attachment -> needs supplement`），但不改变持久化字段
 - `disable_visibility_check` 仅保留给 eval / ablation 内部路径
 
 PDF 仍保持 `pdf_text_only + parserLimited=True` 的受限路径；本轮只新增轻量结构提示，不引入 OCR / 多模态：

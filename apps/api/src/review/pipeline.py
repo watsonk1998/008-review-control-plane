@@ -346,6 +346,7 @@ class StructuredReviewExecutor:
             'parseWarnings': list(parse_result.parseWarnings),
             'visibility': parse_result.visibility.model_dump(mode='json'),
             'manualReviewNeeded': parse_result.visibility.manualReviewNeeded,
+            'manualReviewReason': parse_result.visibility.manualReviewReason,
             'attachmentVisibility': [item.model_dump(mode='json') for item in parse_result.attachments],
         }
 

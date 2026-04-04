@@ -163,6 +163,7 @@ class AttachmentVisibilityMatrixItem(BaseModel):
 
 
 class VisibilityAssessment(BaseModel):
+    parseMode: Literal['docx_structured', 'pdf_text_only', 'markdown_text', 'plain_text'] | None = None
     parserLimited: bool = False
     fileType: str | None = None
     attachmentCount: int = 0
@@ -171,6 +172,7 @@ class VisibilityAssessment(BaseModel):
     duplicateSectionTitles: list[str] = Field(default_factory=list)
     parseWarnings: list[str] = Field(default_factory=list)
     manualReviewNeeded: bool = False
+    manualReviewReason: str | None = None
 
 
 class DocumentParseResult(BaseModel):
@@ -200,9 +202,11 @@ class DocumentParseResult(BaseModel):
         if visibility is None:
             visibility = {
                 **visibility_report,
+                'parseMode': data.get('parseMode', visibility_report.get('parseMode')),
                 'parserLimited': data.get('parserLimited', visibility_report.get('parserLimited', False)),
                 'fileType': data.get('fileType', visibility_report.get('fileType')),
                 'parseWarnings': data.get('parseWarnings', visibility_report.get('parseWarnings', [])),
+                'manualReviewReason': data.get('manualReviewReason', visibility_report.get('manualReviewReason')),
             }
         data['visibility'] = visibility
         if 'parserLimited' not in data:
@@ -211,8 +215,11 @@ class DocumentParseResult(BaseModel):
 
     @model_validator(mode='after')
     def _sync_visibility_report(self):
+        self.visibility.parseMode = self.parseMode
         self.parserLimited = self.visibility.parserLimited
         self.visibility.parseWarnings = list(dict.fromkeys(self.parseWarnings or self.visibility.parseWarnings))
+        if not self.visibility.manualReviewNeeded:
+            self.visibility.manualReviewReason = None
         self.parseWarnings = list(self.visibility.parseWarnings)
         self.visibilityReport = self.visibility.model_dump(mode='json')
         return self

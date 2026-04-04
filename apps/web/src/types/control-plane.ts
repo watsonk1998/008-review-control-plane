@@ -102,6 +102,7 @@ export interface StructuredReviewVisibilitySummary {
 }
 
 export interface VisibilityAssessment {
+  parseMode?: ParseMode | null;
   parserLimited: boolean;
   fileType?: string | null;
   attachmentCount: number;
@@ -110,6 +111,7 @@ export interface VisibilityAssessment {
   duplicateSectionTitles: string[];
   parseWarnings: string[];
   manualReviewNeeded: boolean;
+  manualReviewReason?: string | null;
 }
 
 export interface StructuredReviewSummary {
@@ -361,5 +363,6 @@ export interface SupportScopeResponse {
     disciplineTags: string[];
     defaultEnabled: boolean;
     description: string;
+    promotionCriteria: Record<string, boolean>;
   }>;
 }

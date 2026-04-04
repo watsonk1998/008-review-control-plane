@@ -43,10 +43,13 @@ def test_document_loader_parse_document_extracts_sections_tables_and_attachments
     assert result.fileType == 'docx'
     assert result.parseMode == 'docx_structured'
     assert result.parserLimited is False
+    assert result.visibility.parseMode == 'docx_structured'
     assert len(result.sections) > 20
     assert len(result.tables) >= 10
     assert result.visibility.manualReviewNeeded is True
+    assert result.visibility.manualReviewReason == 'title_detected_without_attachment_body'
     assert result.visibilityReport['manualReviewNeeded'] is True
+    assert result.visibilityReport['manualReviewReason'] == 'title_detected_without_attachment_body'
     assert '防火安全' in result.visibilityReport['duplicateSectionTitles']
     assert result.visibilityReport['reasonCounts']['title_detected_without_attachment_body'] >= 1
     attachment_map = {item.id: item for item in result.attachments}
@@ -73,6 +76,10 @@ def test_structured_review_executor_returns_expected_issue_titles():
     assert '停机窗口、投入人力与高风险工序并行存在组织压力' in issue_titles
     assert result['summary']['manualReviewNeeded'] is True
     assert result['visibility']['manualReviewNeeded'] is True
+    assert result['visibility']['parseMode'] == 'docx_structured'
+    assert result['visibility']['manualReviewReason'] == 'title_detected_without_attachment_body'
+    assert '- parse mode：docx_structured' in result['reportMarkdown']
+    assert '- manual review reason：title_detected_without_attachment_body' in result['reportMarkdown']
     assert result['visibility']['parseWarnings'] == result['summary']['visibilitySummary']['parseWarnings']
     assert result['summary']['visibilitySummary']['attachmentCount'] >= 1
     assert result['summary']['visibilitySummary']['counts']['attachment_unparsed'] >= 1
@@ -196,7 +203,9 @@ def test_document_loader_parse_pdf_document_uses_explicit_pdf_parser():
     assert result.fileType == 'pdf'
     assert result.parseMode == 'pdf_text_only'
     assert result.parserLimited is True
+    assert result.visibility.parseMode == 'pdf_text_only'
     assert result.visibility.parserLimited is True
+    assert result.visibility.manualReviewReason == 'title_detected_but_body_not_reliably_parsed'
     assert result.visibility.counts['unknown'] >= 1
     assert result.visibility.counts['missing'] == 0
     assert any(warning.startswith('pdf_appendix_title_candidates:') for warning in result.parseWarnings)
@@ -278,6 +287,9 @@ def test_structured_review_executor_builds_full_artifact_catalog(tmp_path: Path)
     assert l0_payload['parseMode'] == 'docx_structured'
     assert l0_payload['parserLimited'] is False
     assert l0_payload['manualReviewNeeded'] is True
+    assert l0_payload['manualReviewReason'] == 'title_detected_without_attachment_body'
+    assert l0_payload['visibility']['parseMode'] == 'docx_structured'
+    assert l0_payload['visibility']['manualReviewReason'] == 'title_detected_without_attachment_body'
     report_buckets = json.loads((tmp_path / 'structured-review-report-buckets.json').read_text(encoding='utf-8'))
     assert 'visibility_gap' in report_buckets
     assert any(item['title'] == '附件处于可视域缺口，需人工复核原件' for item in report_buckets['visibility_gap'])

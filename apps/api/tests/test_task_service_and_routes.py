@@ -475,8 +475,10 @@ def test_task_routes_legacy_structured_review_result_keeps_read_only_compatibili
     result_response = client.get('/api/tasks/task-route-1/result')
     assert result_response.status_code == 200
     result_payload = result_response.json()['result']
+    assert result_payload['visibility']['parseMode'] is None
     assert result_payload['visibility']['attachmentCount'] == 1
     assert result_payload['visibility']['parseWarnings'] == []
+    assert result_payload['visibility']['manualReviewReason'] is None
     assert result_payload['issues'][0]['manualReviewNeeded'] is True
     assert result_payload['issues'][0]['whetherManualReviewNeeded'] is True
     assert result_payload['artifactIndex'] == artifacts_response.json()
@@ -519,12 +521,14 @@ def test_task_routes_fresh_structured_review_result_uses_canonical_visibility_on
                         },
                     },
                     'visibility': {
+                        'parseMode': 'docx_structured',
                         'attachmentCount': 1,
                         'counts': {'attachment_unparsed': 1},
                         'duplicateSectionTitles': [],
                         'parseWarnings': ['canonical-visibility-warning'],
                         'reasonCounts': {'title_detected_without_attachment_body': 1},
                         'manualReviewNeeded': True,
+                        'manualReviewReason': 'title_detected_without_attachment_body',
                         'parserLimited': False,
                         'fileType': 'docx',
                     },
@@ -585,7 +589,9 @@ def test_task_routes_fresh_structured_review_result_uses_canonical_visibility_on
     result_response = client.get('/api/tasks/task-fresh/result')
     assert result_response.status_code == 200
     result_payload = result_response.json()['result']
+    assert result_payload['visibility']['parseMode'] == 'docx_structured'
     assert result_payload['visibility']['parseWarnings'] == ['canonical-visibility-warning']
+    assert result_payload['visibility']['manualReviewReason'] == 'title_detected_without_attachment_body'
     assert 'whetherManualReviewNeeded' not in result_payload['issues'][0]
 
 
@@ -816,13 +822,15 @@ def test_support_scope_route_returns_official_and_placeholder_scope():
     assert document_types['construction_scheme'] == 'experimental'
     assert document_types['supervision_plan'] == 'experimental'
     assert document_types['review_support_material'] == 'experimental'
-    packs = {item['packId']: item['readiness'] for item in payload['packs']}
-    assert packs['construction_org.base'] == 'ready'
-    assert packs['construction_scheme.base'] == 'ready'
-    assert packs['supervision_plan.base'] == 'ready'
-    assert packs['review_support_material.base'] == 'ready'
-    assert packs['gas_area_ops.base'] == 'ready'
-    assert any(readiness == 'placeholder' for readiness in packs.values())
+    packs = {item['packId']: item for item in payload['packs']}
+    assert packs['construction_org.base']['readiness'] == 'ready'
+    assert packs['construction_org.base']['promotionCriteria']['testsReady'] is True
+    assert packs['construction_scheme.base']['readiness'] == 'ready'
+    assert packs['construction_scheme.base']['promotionCriteria']['versionedCasesReady'] is True
+    assert packs['supervision_plan.base']['readiness'] == 'ready'
+    assert packs['review_support_material.base']['readiness'] == 'ready'
+    assert packs['gas_area_ops.base']['readiness'] == 'ready'
+    assert any(item['readiness'] == 'placeholder' for item in packs.values())
 
 
 def test_upload_route_returns_source_document_ref(monkeypatch, tmp_path: Path):

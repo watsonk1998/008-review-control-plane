@@ -9,10 +9,28 @@ from src.review.parser.normalizer import clean_text
 
 ATTACHMENT_RE = re.compile(r'(附件|附录)\s*([A-Za-z一二三四五六七八九十百零〇0-9]+)')
 _MISSING_MARKERS = ('未附', '缺失', '缺少', '暂缺', '后补')
+_MANUAL_REVIEW_REASON_PRIORITY = {
+    'explicit_missing_marker': 0,
+    'title_detected_but_body_not_reliably_parsed': 1,
+    'title_detected_without_attachment_body': 2,
+    'reference_detected_in_limited_parser': 3,
+    'reference_detected_without_attachment_body': 4,
+}
 
 
 def _token_to_id(token: str) -> str:
     return clean_text(token).replace(' ', '')
+
+
+def _primary_manual_review_reason(attachments: list[dict[str, Any]]) -> str | None:
+    reasons = [
+        str(item['reason'])
+        for item in attachments
+        if item.get('manualReviewNeeded') and item.get('reason')
+    ]
+    if not reasons:
+        return None
+    return min(reasons, key=lambda reason: (_MANUAL_REVIEW_REASON_PRIORITY.get(reason, 99), reason))
 
 
 def build_attachment_index(
@@ -99,6 +117,7 @@ def build_attachment_index(
             reason_counts[str(reason)] += 1
 
     visibility_report = {
+        'parseMode': None,
         'parserLimited': parser_limited,
         'fileType': file_type,
         'attachmentCount': len(attachments),
@@ -111,5 +130,6 @@ def build_attachment_index(
         },
         'reasonCounts': dict(reason_counts),
         'manualReviewNeeded': any(item['manualReviewNeeded'] for item in attachments),
+        'manualReviewReason': _primary_manual_review_reason(attachments),
     }
     return attachments, visibility_report

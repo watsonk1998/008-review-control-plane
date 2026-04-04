@@ -28,7 +28,7 @@ P0 当前，`structured_review` 的入口 profile 已显式化：
 
 planner/router 只保留 provisional hints；最终生效值统一回写到 `result.resolvedProfile`，避免“用户指定 / 路由推断 / 实际执行”三套口径不一致。
 `strictMode` 当前仅作兼容透传，状态为 `reserved / no-op`。
-`result.visibility` 是结构化结果中的 top-level canonical visibility contract，并直接携带 `parseWarnings`；`summary.visibilitySummary` 仅保留为展示摘要。
+`result.visibility` 是结构化结果中的 top-level canonical visibility contract，并直接携带 `parseMode / parseWarnings / manualReviewReason`；`summary.visibilitySummary` 仅保留为展示摘要。
 
 ## 分层
 
@@ -54,6 +54,7 @@ planner/router 只保留 provisional hints；最终生效值统一回写到 `res
 - `support-scope` 与单文件 upload 入口
 - artifact 列表与下载接口
 - reviewer decision 更新接口
+- support-scope 返回 documentType readiness、pack readiness 与 pack promotionCriteria
 - health / capabilities / fixtures 暴露
 
 ### 3. Orchestrator 层（DeepResearchAgent 兼容层）
@@ -125,6 +126,8 @@ planner/router 只保留 provisional hints；最终生效值统一回写到 `res
 - `GET /api/tasks/{taskId}/artifacts`
 
 两者必须保持同口径，UI 不自行推导额外工件真相。
+
+reviewer cockpit 也遵循同一原则：后端 on-wire enum 保持稳定以兼容持久化与回放，UI 只做语义映射展示，不引入第二套 reviewer 状态真相。
 
 ## 核心任务流
 
