@@ -3,20 +3,20 @@ import sys
 import json
 from pathlib import Path
 
-repo_root = Path(__file__).resolve().parents[1]
+repo_root = Path('/Users/lucas/repos/review/008-review-control-plane')
 apps_api = repo_root / 'apps' / 'api'
 sys.path.insert(0, str(apps_api))
 
-os.environ.setdefault('LLM_MODEL', 'qwen3.6-plus-2026-04-02')
-config_path = os.getenv('LLM_CONFIG_PATH')
-if config_path:
-    try:
-        with open(config_path) as f:
-            cfg = json.load(f)
-            if 'dashscope' not in cfg and 'aliyun' in cfg:
-                os.environ.setdefault('LLM_CONFIG_PROFILE', 'aliyun')
-    except Exception as e:
-        print(f"Could not read configured LLM config: {e}")
+os.environ['LLM_MODEL'] = 'qwen3.6-plus-2026-04-02'
+os.environ['LLM_CONFIG_PATH'] = '/Users/lucas/tools/from-obsidian/AI/config/century.json'
+# We fallback to common profiles if default dashscope fails
+try:
+    with open(os.environ['LLM_CONFIG_PATH']) as f:
+        cfg = json.load(f)
+        if 'dashscope' not in cfg and 'aliyun' in cfg:
+            os.environ['LLM_CONFIG_PROFILE'] = 'aliyun'
+except Exception as e:
+    print(f"Could not read century.json: {e}")
 
 from src.review.pipeline import StructuredReviewExecutor
 from src.services.document_loader import DocumentLoader
@@ -37,16 +37,16 @@ def main():
     
     files_to_review = [
         {
-            "task_id": "review-peihua",
+            "task_id": "review-peihua-v0.2",
             "path": repo_root / "fixtures/supervision/施工组织设计-培花初期雨水调蓄池建设工程.pdf",
             "type": "construction_org",
-            "out": repo_root / "fixtures/supervision/review-control-plane审查结果-施工组织设计培花初期雨水调蓄池建设工程.md"
+            "out": repo_root / "fixtures/supervision/V0.2-review-control-plane审查结果-施工组织设计培花初期雨水调蓄池建设工程.md"
         },
         {
-            "task_id": "review-cold-rolling",
+            "task_id": "review-cold-rolling-v0.2",
             "path": repo_root / "fixtures/supervision/施工组织设计-冷轧厂2030单元三台行车电气系统改造.docx",
             "type": "construction_org",
-            "out": repo_root / "fixtures/supervision/review-control-plane审查结果-施工组织设计-冷轧厂2030单元三台行车电气系统改造.md"
+            "out": repo_root / "fixtures/supervision/V0.2-review-control-plane审查结果-施工组织设计-冷轧厂2030单元三台行车电气系统改造.md"
         }
     ]
     
