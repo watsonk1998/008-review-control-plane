@@ -1,0 +1,46 @@
+{
+  "parseMode": "pdf_text_only",
+  "parserLimited": true,
+  "parseWarnings": [
+    "pdf_text_extraction_only",
+    "pdf_tables_not_preserved",
+    "pdf_attachment_visibility_may_be_unknown",
+    "pdf_figures_images_not_parsed",
+    "pdf_appendix_title_candidates:0",
+    "pdf_table_caption_candidates:93",
+    "pdf_figure_caption_candidates:82",
+    "pdf_source_pages:276",
+    "pdf_extracted_pages:261"
+  ],
+  "visibility": {
+    "parseMode": "pdf_text_only",
+    "parserLimited": true,
+    "fileType": "pdf",
+    "attachmentCount": 0,
+    "counts": {
+      "parsed": 0,
+      "attachment_unparsed": 0,
+      "referenced_only": 0,
+      "missing": 0,
+      "unknown": 0
+    },
+    "reasonCounts": {},
+    "duplicateSectionTitles": [],
+    "parseWarnings": [
+      "pdf_text_extraction_only",
+      "pdf_tables_not_preserved",
+      "pdf_attachment_visibility_may_be_unknown",
+      "pdf_figures_images_not_parsed",
+      "pdf_appendix_title_candidates:0",
+      "pdf_table_caption_candidates:93",
+      "pdf_figure_caption_candidates:82",
+      "pdf_source_pages:276",
+      "pdf_extracted_pages:261"
+    ],
+    "manualReviewNeeded": false,
+    "manualReviewReason": null
+  },
+  "manualReviewNeeded": false,
+  "manualReviewReason": null,
+  "attachmentVisibility": []
+}

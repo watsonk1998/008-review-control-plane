@@ -1,0 +1,820 @@
+{
+  "generatedAt": "2026-04-05T00:51:14+08:00",
+  "repoRoot": ".",
+  "generatorScript": "scripts/build_research_pack.py",
+  "generatorCommand": "python scripts/build_research_pack.py",
+  "outputRoot": "artifacts/research-pack",
+  "summaryPath": "artifacts/research-pack/latest-eval-summary.md",
+  "git": {
+    "branch": "main",
+    "commit": "ac8019195d5e333732bfb3d81daedad43cc6688e",
+    "dirty": true,
+    "statusShort": [
+      "?? scripts/build_research_pack.py"
+    ]
+  },
+  "llm": {
+    "mode": "configured",
+    "config": {
+      "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+      "api_key": "***",
+      "model": "qwen3.6-plus-2026-04-02",
+      "provider": "dashscope",
+      "source": "credentials_file",
+      "profile": "dashscope"
+    },
+    "warning": "configured 表示成功解析了 LLM 配置；若运行期请求失败，structured_review 内部仍可能自动回退为 fallback issue 文案。"
+  },
+  "samples": [
+    {
+      "id": "sample-a-cold-rolling",
+      "name": "冷轧厂 2030 单元三台行车电气系统改造",
+      "slug": "supervision-sample-a-cold-rolling",
+      "generatedAt": "2026-04-05T00:42:33+08:00",
+      "taskId": "research-pack-sample-a-cold-rolling",
+      "fixtureId": "supervision-cold-rolling-construction-plan",
+      "sourceMode": "fixture",
+      "sourceDocumentPath": "fixtures/supervision/施工组织设计-冷轧厂2030单元三台行车电气系统改造.docx",
+      "documentType": "construction_org",
+      "strictMode": true,
+      "query": "对该文件执行正式结构化审查",
+      "outputDirectory": "artifacts/research-pack/supervision-sample-a-cold-rolling",
+      "generatorScript": "scripts/build_research_pack.py",
+      "generatorCommand": "python scripts/build_research_pack.py",
+      "llmMode": "configured",
+      "success": true,
+      "resultContractKeysPresent": [
+        "artifactIndex",
+        "issues",
+        "matrices",
+        "reportMarkdown",
+        "resolvedProfile",
+        "summary",
+        "unresolvedFacts",
+        "visibility"
+      ],
+      "resultContractKeysMissing": [],
+      "resultSummary": {
+        "overallConclusion": "修改后重新报审",
+        "documentType": "construction_org",
+        "selectedPacks": [
+          "construction_org.base",
+          "lifting_operations.base",
+          "temporary_power.base",
+          "hot_work.base",
+          "gas_area_ops.base"
+        ],
+        "manualReviewNeeded": true,
+        "issueCount": 8,
+        "layerCounts": {
+          "L1": 5,
+          "L3": 1,
+          "L2": 2
+        },
+        "stats": {
+          "attachmentCount": 2,
+          "ruleHitCount": 8,
+          "unresolvedFactCount": 0,
+          "issueKindCounts": {
+            "evidence_gap": 1,
+            "hard_defect": 6,
+            "visibility_gap": 1
+          }
+        },
+        "visibilitySummary": {
+          "attachmentCount": 2,
+          "counts": {
+            "parsed": 1,
+            "attachment_unparsed": 1,
+            "referenced_only": 0,
+            "missing": 0,
+            "unknown": 0
+          },
+          "duplicateSectionTitles": [
+            "防火安全",
+            "环境管理计划"
+          ],
+          "parseWarnings": [],
+          "reasonCounts": {
+            "attachment_body_visible": 1,
+            "title_detected_without_attachment_body": 1
+          },
+          "manualReviewNeeded": true
+        }
+      },
+      "visibility": {
+        "parseMode": "docx_structured",
+        "parserLimited": false,
+        "fileType": "docx",
+        "attachmentCount": 2,
+        "counts": {
+          "parsed": 1,
+          "attachment_unparsed": 1,
+          "referenced_only": 0,
+          "missing": 0,
+          "unknown": 0
+        },
+        "reasonCounts": {
+          "attachment_body_visible": 1,
+          "title_detected_without_attachment_body": 1
+        },
+        "duplicateSectionTitles": [
+          "防火安全",
+          "环境管理计划"
+        ],
+        "parseWarnings": [],
+        "manualReviewNeeded": true,
+        "manualReviewReason": "title_detected_without_attachment_body"
+      },
+      "unresolvedFactsCount": 0,
+      "artifactIndexLocalPaths": [
+        {
+          "name": "structured-review-parse",
+          "fileName": "structured-review-parse.json",
+          "mediaType": "application/json",
+          "sizeBytes": 589380,
+          "downloadUrl": "/api/tasks/research-pack-sample-a-cold-rolling/artifacts/structured-review-parse.json",
+          "category": "parse",
+          "stage": "parse",
+          "primary": false,
+          "localPath": "artifacts/research-pack/supervision-sample-a-cold-rolling/structured-review-parse.json",
+          "localPathExists": true
+        },
+        {
+          "name": "structured-review-l0-visibility",
+          "fileName": "structured-review-l0-visibility.json",
+          "mediaType": "application/json",
+          "sizeBytes": 1627,
+          "downloadUrl": "/api/tasks/research-pack-sample-a-cold-rolling/artifacts/structured-review-l0-visibility.json",
+          "category": "parse",
+          "stage": "parse",
+          "primary": false,
+          "localPath": "artifacts/research-pack/supervision-sample-a-cold-rolling/structured-review-l0-visibility.json",
+          "localPathExists": true
+        },
+        {
+          "name": "structured-review-facts",
+          "fileName": "structured-review-facts.json",
+          "mediaType": "application/json",
+          "sizeBytes": 107243,
+          "downloadUrl": "/api/tasks/research-pack-sample-a-cold-rolling/artifacts/structured-review-facts.json",
+          "category": "facts",
+          "stage": "extract",
+          "primary": false,
+          "localPath": "artifacts/research-pack/supervision-sample-a-cold-rolling/structured-review-facts.json",
+          "localPathExists": true
+        },
+        {
+          "name": "structured-review-rule-hits",
+          "fileName": "structured-review-rule-hits.json",
+          "mediaType": "application/json",
+          "sizeBytes": 5920,
+          "downloadUrl": "/api/tasks/research-pack-sample-a-cold-rolling/artifacts/structured-review-rule-hits.json",
+          "category": "rule_hits",
+          "stage": "rules",
+          "primary": false,
+          "localPath": "artifacts/research-pack/supervision-sample-a-cold-rolling/structured-review-rule-hits.json",
+          "localPathExists": true
+        },
+        {
+          "name": "structured-review-candidates",
+          "fileName": "structured-review-candidates.json",
+          "mediaType": "application/json",
+          "sizeBytes": 65149,
+          "downloadUrl": "/api/tasks/research-pack-sample-a-cold-rolling/artifacts/structured-review-candidates.json",
+          "category": "candidates",
+          "stage": "evidence",
+          "primary": false,
+          "localPath": "artifacts/research-pack/supervision-sample-a-cold-rolling/structured-review-candidates.json",
+          "localPathExists": true
+        },
+        {
+          "name": "structured-review-result",
+          "fileName": "structured-review-result.json",
+          "mediaType": "application/json",
+          "sizeBytes": 155264,
+          "downloadUrl": "/api/tasks/research-pack-sample-a-cold-rolling/artifacts/structured-review-result.json",
+          "category": "result",
+          "stage": "report",
+          "primary": false,
+          "localPath": "artifacts/research-pack/supervision-sample-a-cold-rolling/structured-review-result.json",
+          "localPathExists": true
+        },
+        {
+          "name": "hazard-identification-matrix",
+          "fileName": "hazard-identification-matrix.json",
+          "mediaType": "application/json",
+          "sizeBytes": 878,
+          "downloadUrl": "/api/tasks/research-pack-sample-a-cold-rolling/artifacts/hazard-identification-matrix.json",
+          "category": "matrices",
+          "stage": "report",
+          "primary": false,
+          "localPath": "artifacts/research-pack/supervision-sample-a-cold-rolling/hazard-identification-matrix.json",
+          "localPathExists": true
+        },
+        {
+          "name": "rule-hit-matrix",
+          "fileName": "rule-hit-matrix.json",
+          "mediaType": "application/json",
+          "sizeBytes": 2652,
+          "downloadUrl": "/api/tasks/research-pack-sample-a-cold-rolling/artifacts/rule-hit-matrix.json",
+          "category": "matrices",
+          "stage": "report",
+          "primary": false,
+          "localPath": "artifacts/research-pack/supervision-sample-a-cold-rolling/rule-hit-matrix.json",
+          "localPathExists": true
+        },
+        {
+          "name": "conflict-matrix",
+          "fileName": "conflict-matrix.json",
+          "mediaType": "application/json",
+          "sizeBytes": 556,
+          "downloadUrl": "/api/tasks/research-pack-sample-a-cold-rolling/artifacts/conflict-matrix.json",
+          "category": "matrices",
+          "stage": "report",
+          "primary": false,
+          "localPath": "artifacts/research-pack/supervision-sample-a-cold-rolling/conflict-matrix.json",
+          "localPathExists": true
+        },
+        {
+          "name": "attachment-visibility-matrix",
+          "fileName": "attachment-visibility-matrix.json",
+          "mediaType": "application/json",
+          "sizeBytes": 753,
+          "downloadUrl": "/api/tasks/research-pack-sample-a-cold-rolling/artifacts/attachment-visibility-matrix.json",
+          "category": "matrices",
+          "stage": "report",
+          "primary": false,
+          "localPath": "artifacts/research-pack/supervision-sample-a-cold-rolling/attachment-visibility-matrix.json",
+          "localPathExists": true
+        },
+        {
+          "name": "section-structure-matrix",
+          "fileName": "section-structure-matrix.json",
+          "mediaType": "application/json",
+          "sizeBytes": 73237,
+          "downloadUrl": "/api/tasks/research-pack-sample-a-cold-rolling/artifacts/section-structure-matrix.json",
+          "category": "matrices",
+          "stage": "report",
+          "primary": false,
+          "localPath": "artifacts/research-pack/supervision-sample-a-cold-rolling/section-structure-matrix.json",
+          "localPathExists": true
+        },
+        {
+          "name": "structured-review-report-buckets",
+          "fileName": "structured-review-report-buckets.json",
+          "mediaType": "application/json",
+          "sizeBytes": 1341,
+          "downloadUrl": "/api/tasks/research-pack-sample-a-cold-rolling/artifacts/structured-review-report-buckets.json",
+          "category": "matrices",
+          "stage": "report",
+          "primary": false,
+          "localPath": "artifacts/research-pack/supervision-sample-a-cold-rolling/structured-review-report-buckets.json",
+          "localPathExists": true
+        },
+        {
+          "name": "structured-review-report",
+          "fileName": "structured-review-report.md",
+          "mediaType": "text/markdown",
+          "sizeBytes": 87914,
+          "downloadUrl": "/api/tasks/research-pack-sample-a-cold-rolling/artifacts/structured-review-report.md",
+          "category": "report",
+          "stage": "report",
+          "primary": true,
+          "localPath": "artifacts/research-pack/supervision-sample-a-cold-rolling/structured-review-report.md",
+          "localPathExists": true
+        }
+      ],
+      "artifactFiles": {
+        "structured-review-result.json": {
+          "path": "artifacts/research-pack/supervision-sample-a-cold-rolling/structured-review-result.json",
+          "exists": true,
+          "jsonValid": true
+        },
+        "structured-review-report.md": {
+          "path": "artifacts/research-pack/supervision-sample-a-cold-rolling/structured-review-report.md",
+          "exists": true
+        },
+        "structured-review-parse.json": {
+          "path": "artifacts/research-pack/supervision-sample-a-cold-rolling/structured-review-parse.json",
+          "exists": true,
+          "jsonValid": true
+        },
+        "structured-review-l0-visibility.json": {
+          "path": "artifacts/research-pack/supervision-sample-a-cold-rolling/structured-review-l0-visibility.json",
+          "exists": true,
+          "jsonValid": true
+        },
+        "structured-review-facts.json": {
+          "path": "artifacts/research-pack/supervision-sample-a-cold-rolling/structured-review-facts.json",
+          "exists": true,
+          "jsonValid": true
+        },
+        "structured-review-rule-hits.json": {
+          "path": "artifacts/research-pack/supervision-sample-a-cold-rolling/structured-review-rule-hits.json",
+          "exists": true,
+          "jsonValid": true
+        },
+        "structured-review-candidates.json": {
+          "path": "artifacts/research-pack/supervision-sample-a-cold-rolling/structured-review-candidates.json",
+          "exists": true,
+          "jsonValid": true
+        },
+        "structured-review-report-buckets.json": {
+          "path": "artifacts/research-pack/supervision-sample-a-cold-rolling/structured-review-report-buckets.json",
+          "exists": true,
+          "jsonValid": true
+        },
+        "hazard-identification-matrix.json": {
+          "path": "artifacts/research-pack/supervision-sample-a-cold-rolling/hazard-identification-matrix.json",
+          "exists": true,
+          "jsonValid": true
+        },
+        "rule-hit-matrix.json": {
+          "path": "artifacts/research-pack/supervision-sample-a-cold-rolling/rule-hit-matrix.json",
+          "exists": true,
+          "jsonValid": true
+        },
+        "conflict-matrix.json": {
+          "path": "artifacts/research-pack/supervision-sample-a-cold-rolling/conflict-matrix.json",
+          "exists": true,
+          "jsonValid": true
+        },
+        "attachment-visibility-matrix.json": {
+          "path": "artifacts/research-pack/supervision-sample-a-cold-rolling/attachment-visibility-matrix.json",
+          "exists": true,
+          "jsonValid": true
+        },
+        "section-structure-matrix.json": {
+          "path": "artifacts/research-pack/supervision-sample-a-cold-rolling/section-structure-matrix.json",
+          "exists": true,
+          "jsonValid": true
+        }
+      },
+      "missingArtifacts": [],
+      "successfulArtifacts": [
+        "attachment-visibility-matrix.json",
+        "conflict-matrix.json",
+        "hazard-identification-matrix.json",
+        "rule-hit-matrix.json",
+        "section-structure-matrix.json",
+        "structured-review-candidates.json",
+        "structured-review-facts.json",
+        "structured-review-l0-visibility.json",
+        "structured-review-parse.json",
+        "structured-review-report-buckets.json",
+        "structured-review-report.md",
+        "structured-review-result.json",
+        "structured-review-rule-hits.json"
+      ],
+      "parseSnapshot": {
+        "parseMode": "docx_structured",
+        "parserLimited": false,
+        "fileType": "docx",
+        "parseWarnings": []
+      }
+    },
+    {
+      "id": "sample-b-puhua-rainwater",
+      "name": "培花初期雨水调蓄池建设工程",
+      "slug": "supervision-sample-b-puhua-rainwater",
+      "generatedAt": "2026-04-05T00:43:48+08:00",
+      "taskId": "research-pack-sample-b-puhua-rainwater",
+      "fixtureId": null,
+      "sourceMode": "direct_path",
+      "sourceDocumentPath": "fixtures/supervision/施工组织设计-培花初期雨水调蓄池建设工程.pdf",
+      "documentType": "construction_org",
+      "strictMode": true,
+      "query": "对该文件执行正式结构化审查",
+      "outputDirectory": "artifacts/research-pack/supervision-sample-b-puhua-rainwater",
+      "generatorScript": "scripts/build_research_pack.py",
+      "generatorCommand": "python scripts/build_research_pack.py",
+      "llmMode": "configured",
+      "success": true,
+      "resultContractKeysPresent": [
+        "artifactIndex",
+        "issues",
+        "matrices",
+        "reportMarkdown",
+        "resolvedProfile",
+        "summary",
+        "unresolvedFacts",
+        "visibility"
+      ],
+      "resultContractKeysMissing": [],
+      "resultSummary": {
+        "overallConclusion": "修改后重新报审",
+        "documentType": "construction_org",
+        "selectedPacks": [
+          "construction_org.base",
+          "lifting_operations.base",
+          "temporary_power.base",
+          "hot_work.base"
+        ],
+        "manualReviewNeeded": true,
+        "issueCount": 6,
+        "layerCounts": {
+          "L1": 3,
+          "L2": 3
+        },
+        "stats": {
+          "attachmentCount": 0,
+          "ruleHitCount": 6,
+          "unresolvedFactCount": 6,
+          "issueKindCounts": {
+            "evidence_gap": 2,
+            "hard_defect": 4
+          }
+        },
+        "visibilitySummary": {
+          "attachmentCount": 0,
+          "counts": {
+            "parsed": 0,
+            "attachment_unparsed": 0,
+            "referenced_only": 0,
+            "missing": 0,
+            "unknown": 0
+          },
+          "duplicateSectionTitles": [],
+          "parseWarnings": [
+            "pdf_text_extraction_only",
+            "pdf_tables_not_preserved",
+            "pdf_attachment_visibility_may_be_unknown",
+            "pdf_figures_images_not_parsed",
+            "pdf_appendix_title_candidates:0",
+            "pdf_table_caption_candidates:93",
+            "pdf_figure_caption_candidates:82",
+            "pdf_source_pages:276",
+            "pdf_extracted_pages:261"
+          ],
+          "reasonCounts": {},
+          "manualReviewNeeded": false
+        }
+      },
+      "visibility": {
+        "parseMode": "pdf_text_only",
+        "parserLimited": true,
+        "fileType": "pdf",
+        "attachmentCount": 0,
+        "counts": {
+          "parsed": 0,
+          "attachment_unparsed": 0,
+          "referenced_only": 0,
+          "missing": 0,
+          "unknown": 0
+        },
+        "reasonCounts": {},
+        "duplicateSectionTitles": [],
+        "parseWarnings": [
+          "pdf_text_extraction_only",
+          "pdf_tables_not_preserved",
+          "pdf_attachment_visibility_may_be_unknown",
+          "pdf_figures_images_not_parsed",
+          "pdf_appendix_title_candidates:0",
+          "pdf_table_caption_candidates:93",
+          "pdf_figure_caption_candidates:82",
+          "pdf_source_pages:276",
+          "pdf_extracted_pages:261"
+        ],
+        "manualReviewNeeded": false,
+        "manualReviewReason": null
+      },
+      "unresolvedFactsCount": 6,
+      "artifactIndexLocalPaths": [
+        {
+          "name": "structured-review-parse",
+          "fileName": "structured-review-parse.json",
+          "mediaType": "application/json",
+          "sizeBytes": 2769785,
+          "downloadUrl": "/api/tasks/research-pack-sample-b-puhua-rainwater/artifacts/structured-review-parse.json",
+          "category": "parse",
+          "stage": "parse",
+          "primary": false,
+          "localPath": "artifacts/research-pack/supervision-sample-b-puhua-rainwater/structured-review-parse.json",
+          "localPathExists": true
+        },
+        {
+          "name": "structured-review-l0-visibility",
+          "fileName": "structured-review-l0-visibility.json",
+          "mediaType": "application/json",
+          "sizeBytes": 1270,
+          "downloadUrl": "/api/tasks/research-pack-sample-b-puhua-rainwater/artifacts/structured-review-l0-visibility.json",
+          "category": "parse",
+          "stage": "parse",
+          "primary": false,
+          "localPath": "artifacts/research-pack/supervision-sample-b-puhua-rainwater/structured-review-l0-visibility.json",
+          "localPathExists": true
+        },
+        {
+          "name": "structured-review-facts",
+          "fileName": "structured-review-facts.json",
+          "mediaType": "application/json",
+          "sizeBytes": 110173,
+          "downloadUrl": "/api/tasks/research-pack-sample-b-puhua-rainwater/artifacts/structured-review-facts.json",
+          "category": "facts",
+          "stage": "extract",
+          "primary": false,
+          "localPath": "artifacts/research-pack/supervision-sample-b-puhua-rainwater/structured-review-facts.json",
+          "localPathExists": true
+        },
+        {
+          "name": "structured-review-rule-hits",
+          "fileName": "structured-review-rule-hits.json",
+          "mediaType": "application/json",
+          "sizeBytes": 5279,
+          "downloadUrl": "/api/tasks/research-pack-sample-b-puhua-rainwater/artifacts/structured-review-rule-hits.json",
+          "category": "rule_hits",
+          "stage": "rules",
+          "primary": false,
+          "localPath": "artifacts/research-pack/supervision-sample-b-puhua-rainwater/structured-review-rule-hits.json",
+          "localPathExists": true
+        },
+        {
+          "name": "structured-review-candidates",
+          "fileName": "structured-review-candidates.json",
+          "mediaType": "application/json",
+          "sizeBytes": 98131,
+          "downloadUrl": "/api/tasks/research-pack-sample-b-puhua-rainwater/artifacts/structured-review-candidates.json",
+          "category": "candidates",
+          "stage": "evidence",
+          "primary": false,
+          "localPath": "artifacts/research-pack/supervision-sample-b-puhua-rainwater/structured-review-candidates.json",
+          "localPathExists": true
+        },
+        {
+          "name": "structured-review-result",
+          "fileName": "structured-review-result.json",
+          "mediaType": "application/json",
+          "sizeBytes": 261188,
+          "downloadUrl": "/api/tasks/research-pack-sample-b-puhua-rainwater/artifacts/structured-review-result.json",
+          "category": "result",
+          "stage": "report",
+          "primary": false,
+          "localPath": "artifacts/research-pack/supervision-sample-b-puhua-rainwater/structured-review-result.json",
+          "localPathExists": true
+        },
+        {
+          "name": "hazard-identification-matrix",
+          "fileName": "hazard-identification-matrix.json",
+          "mediaType": "application/json",
+          "sizeBytes": 891,
+          "downloadUrl": "/api/tasks/research-pack-sample-b-puhua-rainwater/artifacts/hazard-identification-matrix.json",
+          "category": "matrices",
+          "stage": "report",
+          "primary": false,
+          "localPath": "artifacts/research-pack/supervision-sample-b-puhua-rainwater/hazard-identification-matrix.json",
+          "localPathExists": true
+        },
+        {
+          "name": "rule-hit-matrix",
+          "fileName": "rule-hit-matrix.json",
+          "mediaType": "application/json",
+          "sizeBytes": 2411,
+          "downloadUrl": "/api/tasks/research-pack-sample-b-puhua-rainwater/artifacts/rule-hit-matrix.json",
+          "category": "matrices",
+          "stage": "report",
+          "primary": false,
+          "localPath": "artifacts/research-pack/supervision-sample-b-puhua-rainwater/rule-hit-matrix.json",
+          "localPathExists": true
+        },
+        {
+          "name": "conflict-matrix",
+          "fileName": "conflict-matrix.json",
+          "mediaType": "application/json",
+          "sizeBytes": 575,
+          "downloadUrl": "/api/tasks/research-pack-sample-b-puhua-rainwater/artifacts/conflict-matrix.json",
+          "category": "matrices",
+          "stage": "report",
+          "primary": false,
+          "localPath": "artifacts/research-pack/supervision-sample-b-puhua-rainwater/conflict-matrix.json",
+          "localPathExists": true
+        },
+        {
+          "name": "attachment-visibility-matrix",
+          "fileName": "attachment-visibility-matrix.json",
+          "mediaType": "application/json",
+          "sizeBytes": 2,
+          "downloadUrl": "/api/tasks/research-pack-sample-b-puhua-rainwater/artifacts/attachment-visibility-matrix.json",
+          "category": "matrices",
+          "stage": "report",
+          "primary": false,
+          "localPath": "artifacts/research-pack/supervision-sample-b-puhua-rainwater/attachment-visibility-matrix.json",
+          "localPathExists": true
+        },
+        {
+          "name": "section-structure-matrix",
+          "fileName": "section-structure-matrix.json",
+          "mediaType": "application/json",
+          "sizeBytes": 128094,
+          "downloadUrl": "/api/tasks/research-pack-sample-b-puhua-rainwater/artifacts/section-structure-matrix.json",
+          "category": "matrices",
+          "stage": "report",
+          "primary": false,
+          "localPath": "artifacts/research-pack/supervision-sample-b-puhua-rainwater/section-structure-matrix.json",
+          "localPathExists": true
+        },
+        {
+          "name": "structured-review-report-buckets",
+          "fileName": "structured-review-report-buckets.json",
+          "mediaType": "application/json",
+          "sizeBytes": 973,
+          "downloadUrl": "/api/tasks/research-pack-sample-b-puhua-rainwater/artifacts/structured-review-report-buckets.json",
+          "category": "matrices",
+          "stage": "report",
+          "primary": false,
+          "localPath": "artifacts/research-pack/supervision-sample-b-puhua-rainwater/structured-review-report-buckets.json",
+          "localPathExists": true
+        },
+        {
+          "name": "structured-review-report",
+          "fileName": "structured-review-report.md",
+          "mediaType": "text/markdown",
+          "sizeBytes": 140313,
+          "downloadUrl": "/api/tasks/research-pack-sample-b-puhua-rainwater/artifacts/structured-review-report.md",
+          "category": "report",
+          "stage": "report",
+          "primary": true,
+          "localPath": "artifacts/research-pack/supervision-sample-b-puhua-rainwater/structured-review-report.md",
+          "localPathExists": true
+        }
+      ],
+      "artifactFiles": {
+        "structured-review-result.json": {
+          "path": "artifacts/research-pack/supervision-sample-b-puhua-rainwater/structured-review-result.json",
+          "exists": true,
+          "jsonValid": true
+        },
+        "structured-review-report.md": {
+          "path": "artifacts/research-pack/supervision-sample-b-puhua-rainwater/structured-review-report.md",
+          "exists": true
+        },
+        "structured-review-parse.json": {
+          "path": "artifacts/research-pack/supervision-sample-b-puhua-rainwater/structured-review-parse.json",
+          "exists": true,
+          "jsonValid": true
+        },
+        "structured-review-l0-visibility.json": {
+          "path": "artifacts/research-pack/supervision-sample-b-puhua-rainwater/structured-review-l0-visibility.json",
+          "exists": true,
+          "jsonValid": true
+        },
+        "structured-review-facts.json": {
+          "path": "artifacts/research-pack/supervision-sample-b-puhua-rainwater/structured-review-facts.json",
+          "exists": true,
+          "jsonValid": true
+        },
+        "structured-review-rule-hits.json": {
+          "path": "artifacts/research-pack/supervision-sample-b-puhua-rainwater/structured-review-rule-hits.json",
+          "exists": true,
+          "jsonValid": true
+        },
+        "structured-review-candidates.json": {
+          "path": "artifacts/research-pack/supervision-sample-b-puhua-rainwater/structured-review-candidates.json",
+          "exists": true,
+          "jsonValid": true
+        },
+        "structured-review-report-buckets.json": {
+          "path": "artifacts/research-pack/supervision-sample-b-puhua-rainwater/structured-review-report-buckets.json",
+          "exists": true,
+          "jsonValid": true
+        },
+        "hazard-identification-matrix.json": {
+          "path": "artifacts/research-pack/supervision-sample-b-puhua-rainwater/hazard-identification-matrix.json",
+          "exists": true,
+          "jsonValid": true
+        },
+        "rule-hit-matrix.json": {
+          "path": "artifacts/research-pack/supervision-sample-b-puhua-rainwater/rule-hit-matrix.json",
+          "exists": true,
+          "jsonValid": true
+        },
+        "conflict-matrix.json": {
+          "path": "artifacts/research-pack/supervision-sample-b-puhua-rainwater/conflict-matrix.json",
+          "exists": true,
+          "jsonValid": true
+        },
+        "attachment-visibility-matrix.json": {
+          "path": "artifacts/research-pack/supervision-sample-b-puhua-rainwater/attachment-visibility-matrix.json",
+          "exists": true,
+          "jsonValid": true
+        },
+        "section-structure-matrix.json": {
+          "path": "artifacts/research-pack/supervision-sample-b-puhua-rainwater/section-structure-matrix.json",
+          "exists": true,
+          "jsonValid": true
+        }
+      },
+      "missingArtifacts": [],
+      "successfulArtifacts": [
+        "attachment-visibility-matrix.json",
+        "conflict-matrix.json",
+        "hazard-identification-matrix.json",
+        "rule-hit-matrix.json",
+        "section-structure-matrix.json",
+        "structured-review-candidates.json",
+        "structured-review-facts.json",
+        "structured-review-l0-visibility.json",
+        "structured-review-parse.json",
+        "structured-review-report-buckets.json",
+        "structured-review-report.md",
+        "structured-review-result.json",
+        "structured-review-rule-hits.json"
+      ],
+      "parseSnapshot": {
+        "parseMode": "pdf_text_only",
+        "parserLimited": true,
+        "fileType": "pdf",
+        "parseWarnings": [
+          "pdf_text_extraction_only",
+          "pdf_tables_not_preserved",
+          "pdf_attachment_visibility_may_be_unknown",
+          "pdf_figures_images_not_parsed",
+          "pdf_appendix_title_candidates:0",
+          "pdf_table_caption_candidates:93",
+          "pdf_figure_caption_candidates:82",
+          "pdf_source_pages:276",
+          "pdf_extracted_pages:261"
+        ]
+      },
+      "pdfVisibilityBoundary": {
+        "note": "PDF 样本保持 pdf_text_only + parserLimited=True；可视域受限只表示当前解析边界，不得解释为正文或附件缺失。",
+        "parseMode": "pdf_text_only",
+        "parserLimited": true,
+        "parseWarnings": [
+          "pdf_text_extraction_only",
+          "pdf_tables_not_preserved",
+          "pdf_attachment_visibility_may_be_unknown",
+          "pdf_figures_images_not_parsed",
+          "pdf_appendix_title_candidates:0",
+          "pdf_table_caption_candidates:93",
+          "pdf_figure_caption_candidates:82",
+          "pdf_source_pages:276",
+          "pdf_extracted_pages:261"
+        ]
+      }
+    }
+  ],
+  "eval": {
+    "commands": [
+      {
+        "name": "eval-review",
+        "makeTarget": "eval-review",
+        "command": "make eval-review",
+        "startedAt": "2026-04-05T00:45:14+08:00",
+        "finishedAt": "2026-04-05T00:45:49+08:00",
+        "success": true,
+        "exitCode": 0,
+        "logPath": "artifacts/research-pack/logs/eval-review.log",
+        "jsonPath": "artifacts/research-pack/eval/eval-review.json",
+        "jsonParseOk": true,
+        "stdoutBytes": 92066,
+        "stderrBytes": 0
+      },
+      {
+        "name": "eval-review-ablations",
+        "makeTarget": "eval-review-ablations",
+        "command": "make eval-review-ablations",
+        "startedAt": "2026-04-05T00:45:49+08:00",
+        "finishedAt": "2026-04-05T00:48:51+08:00",
+        "success": true,
+        "exitCode": 0,
+        "logPath": "artifacts/research-pack/logs/eval-review-ablations.log",
+        "jsonPath": "artifacts/research-pack/eval/eval-review-ablations.json",
+        "jsonParseOk": true,
+        "stdoutBytes": 487300,
+        "stderrBytes": 0
+      },
+      {
+        "name": "eval-review-cross-pack",
+        "makeTarget": "eval-review-cross-pack",
+        "command": "make eval-review-cross-pack",
+        "startedAt": "2026-04-05T00:48:51+08:00",
+        "finishedAt": "2026-04-05T00:50:02+08:00",
+        "success": true,
+        "exitCode": 0,
+        "logPath": "artifacts/research-pack/logs/eval-review-cross-pack.log",
+        "jsonPath": "artifacts/research-pack/eval/eval-review-cross-pack.json",
+        "jsonParseOk": true,
+        "stdoutBytes": 192904,
+        "stderrBytes": 0
+      },
+      {
+        "name": "eval-review-cross-model",
+        "makeTarget": "eval-review-cross-model",
+        "command": "make eval-review-cross-model",
+        "startedAt": "2026-04-05T00:50:02+08:00",
+        "finishedAt": "2026-04-05T00:51:14+08:00",
+        "success": true,
+        "exitCode": 0,
+        "logPath": "artifacts/research-pack/logs/eval-review-cross-model.log",
+        "jsonPath": "artifacts/research-pack/eval/eval-review-cross-model.json",
+        "jsonParseOk": true,
+        "stdoutBytes": 193850,
+        "stderrBytes": 0
+      }
+    ],
+    "summaryPath": "artifacts/research-pack/latest-eval-summary.md",
+    "logDirectory": "artifacts/research-pack/logs",
+    "evalDirectory": "artifacts/research-pack/eval"
+  }
+}

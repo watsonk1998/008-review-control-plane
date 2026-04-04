@@ -1,0 +1,35 @@
+{
+  "values": {
+    "liftingOperation": true,
+    "gasArea": true,
+    "hotWork": true,
+    "temporaryPower": true,
+    "specialEquipmentMentioned": true,
+    "highRiskCategories": [
+      "working_at_height",
+      "gas_area_ops",
+      "hot_work",
+      "temporary_power"
+    ],
+    "craneCapacityTon": 50,
+    "calculatedLiftWeightTon": 2.86,
+    "shutdownWindowDays": 7,
+    "laborTotal": 37,
+    "sectionPresence": {
+      "engineeringOverview": true,
+      "preparationBasis": true,
+      "constructionPlan": true,
+      "schedulePlan": false,
+      "resourcePlan": false,
+      "layoutPlan": true,
+      "processMethod": true,
+      "safetyMeasures": true,
+      "emergencyPlan": true,
+      "calculationBook": false,
+      "monitoringPlan": true
+    },
+    "calculationEvidencePresent": true,
+    "measureSectionPresent": true,
+    "monitoringSectionPresent": true
+  }
+}

@@ -1,0 +1,175 @@
+[
+  {
+    "ruleId": "construction_org_structure_completeness",
+    "packId": "construction_org.base",
+    "packReadiness": "ready",
+    "matchType": "direct_hit",
+    "status": "hit",
+    "layerHint": "L1",
+    "severityHint": "medium",
+    "factRefs": [
+      "project.sectionPresence.constructionPlan",
+      "project.sectionPresence.resourcePlan"
+    ],
+    "evidenceRefs": [
+      "policy:construction_org_structure"
+    ],
+    "rationale": "施工组织设计应覆盖工程概况、部署、进度、资源、安全、应急和平面布置等核心章节。"
+  },
+  {
+    "ruleId": "construction_org_duplicate_sections",
+    "packId": "construction_org.base",
+    "packReadiness": "ready",
+    "matchType": "direct_hit",
+    "status": "pass",
+    "layerHint": "L1",
+    "severityHint": "medium",
+    "factRefs": [
+      "project.duplicateSections"
+    ],
+    "evidenceRefs": [
+      "policy:construction_org_structure"
+    ],
+    "rationale": "章节标题重复会直接影响正式审查定位与条款挂接。"
+  },
+  {
+    "ruleId": "construction_org_attachment_visibility",
+    "packId": "construction_org.base",
+    "packReadiness": "ready",
+    "matchType": "visibility_gap",
+    "status": "pass",
+    "layerHint": "L1",
+    "severityHint": "medium",
+    "factRefs": [
+      "attachments.visibility"
+    ],
+    "evidenceRefs": [
+      "policy:review_visibility_gap"
+    ],
+    "rationale": "附件当前可视域不足时，应先标注人工复核，而不是直接判定缺失。"
+  },
+  {
+    "ruleId": "construction_org_special_scheme_gap",
+    "packId": "construction_org.base",
+    "packReadiness": "ready",
+    "matchType": "direct_hit",
+    "status": "manual_review_needed",
+    "layerHint": "L1",
+    "severityHint": "high",
+    "factRefs": [
+      "hazard.highRiskCategories",
+      "hazard.specialSchemePlanStatus"
+    ],
+    "evidenceRefs": [
+      "policy:dangerous_special_scheme"
+    ],
+    "rationale": "识别到危大/高风险作业后，需检查专项方案是否明确挂接到正文或附件。"
+  },
+  {
+    "ruleId": "construction_org_emergency_plan_targeted",
+    "packId": "construction_org.base",
+    "packReadiness": "ready",
+    "matchType": "direct_hit",
+    "status": "hit",
+    "layerHint": "L2",
+    "severityHint": "medium",
+    "factRefs": [
+      "emergency.planTitles"
+    ],
+    "evidenceRefs": [
+      "policy:emergency_plan_targeted"
+    ],
+    "rationale": "应急预案应与主要风险类别形成针对性映射。"
+  },
+  {
+    "ruleId": "construction_org_shutdown_resource_conflict",
+    "packId": "construction_org.base",
+    "packReadiness": "ready",
+    "matchType": "inferred_risk",
+    "status": "pass",
+    "layerHint": "L3",
+    "severityHint": "medium",
+    "factRefs": [
+      "schedule.shutdownWindowDays",
+      "resource.laborTotal",
+      "hazard.highRiskCategories"
+    ],
+    "evidenceRefs": [
+      "policy:construction_org_schedule_resource"
+    ],
+    "rationale": "停机窗口紧、投入人力高且高风险工种并行时，需提示现场组织与交叉作业压力。"
+  },
+  {
+    "ruleId": "lifting_operations_special_scheme_linkage",
+    "packId": "lifting_operations.base",
+    "packReadiness": "ready",
+    "matchType": "direct_hit",
+    "status": "manual_review_needed",
+    "layerHint": "L1",
+    "severityHint": "high",
+    "factRefs": [
+      "hazard.liftingOperation",
+      "hazard.specialSchemePlanStatus"
+    ],
+    "evidenceRefs": [
+      "policy:dangerous_special_scheme"
+    ],
+    "rationale": "起重吊装场景需明确专项方案/专项技术措施的正文挂接和适用边界。"
+  },
+  {
+    "ruleId": "lifting_operations_calculation_traceability",
+    "packId": "lifting_operations.base",
+    "packReadiness": "ready",
+    "matchType": "direct_hit",
+    "status": "pass",
+    "layerHint": "L2",
+    "severityHint": "high",
+    "factRefs": [
+      "hazard.liftingOperation",
+      "hazard.calculationEvidencePresent",
+      "hazard.craneCapacityTon",
+      "hazard.calculatedLiftWeightTon"
+    ],
+    "evidenceRefs": [
+      "policy:hazardous_scheme_calculation"
+    ],
+    "rationale": "起重吊装至少应有设备参数、起重量或验算依据可追溯。"
+  },
+  {
+    "ruleId": "temporary_power_control_linkage",
+    "packId": "temporary_power.base",
+    "packReadiness": "ready",
+    "matchType": "inferred_risk",
+    "status": "hit",
+    "layerHint": "L2",
+    "severityHint": "medium",
+    "factRefs": [
+      "hazard.temporaryPower",
+      "hazard.measureSectionPresent",
+      "hazard.monitoringSectionPresent",
+      "emergency.planTitles"
+    ],
+    "evidenceRefs": [
+      "policy:hazardous_scheme_measures",
+      "policy:emergency_plan_targeted"
+    ],
+    "rationale": "临时用电/停送电作业应同时落到控制措施、监测监控和触电类应急处置。"
+  },
+  {
+    "ruleId": "hot_work_emergency_targeted",
+    "packId": "hot_work.base",
+    "packReadiness": "ready",
+    "matchType": "direct_hit",
+    "status": "hit",
+    "layerHint": "L2",
+    "severityHint": "medium",
+    "factRefs": [
+      "hazard.hotWork",
+      "emergency.planTitles"
+    ],
+    "evidenceRefs": [
+      "policy:emergency_plan_targeted"
+    ],
+    "rationale": "动火场景至少应看到火灾/爆燃类应急处置标题或明确联动安排。"
+  }
+]

@@ -1,0 +1,101 @@
+[
+  {
+    "ruleId": "construction_org_structure_completeness",
+    "packId": "construction_org.base",
+    "packReadiness": "ready",
+    "status": "hit",
+    "layerHint": "L1",
+    "severityHint": "medium",
+    "matchType": "direct_hit"
+  },
+  {
+    "ruleId": "construction_org_duplicate_sections",
+    "packId": "construction_org.base",
+    "packReadiness": "ready",
+    "status": "hit",
+    "layerHint": "L1",
+    "severityHint": "medium",
+    "matchType": "direct_hit"
+  },
+  {
+    "ruleId": "construction_org_attachment_visibility",
+    "packId": "construction_org.base",
+    "packReadiness": "ready",
+    "status": "manual_review_needed",
+    "layerHint": "L1",
+    "severityHint": "medium",
+    "matchType": "visibility_gap"
+  },
+  {
+    "ruleId": "construction_org_special_scheme_gap",
+    "packId": "construction_org.base",
+    "packReadiness": "ready",
+    "status": "manual_review_needed",
+    "layerHint": "L1",
+    "severityHint": "high",
+    "matchType": "direct_hit"
+  },
+  {
+    "ruleId": "construction_org_emergency_plan_targeted",
+    "packId": "construction_org.base",
+    "packReadiness": "ready",
+    "status": "pass",
+    "layerHint": "L2",
+    "severityHint": "medium",
+    "matchType": "direct_hit"
+  },
+  {
+    "ruleId": "construction_org_shutdown_resource_conflict",
+    "packId": "construction_org.base",
+    "packReadiness": "ready",
+    "status": "hit",
+    "layerHint": "L3",
+    "severityHint": "medium",
+    "matchType": "inferred_risk"
+  },
+  {
+    "ruleId": "lifting_operations_special_scheme_linkage",
+    "packId": "lifting_operations.base",
+    "packReadiness": "ready",
+    "status": "manual_review_needed",
+    "layerHint": "L1",
+    "severityHint": "high",
+    "matchType": "direct_hit"
+  },
+  {
+    "ruleId": "lifting_operations_calculation_traceability",
+    "packId": "lifting_operations.base",
+    "packReadiness": "ready",
+    "status": "pass",
+    "layerHint": "L2",
+    "severityHint": "high",
+    "matchType": "direct_hit"
+  },
+  {
+    "ruleId": "temporary_power_control_linkage",
+    "packId": "temporary_power.base",
+    "packReadiness": "ready",
+    "status": "pass",
+    "layerHint": "L2",
+    "severityHint": "medium",
+    "matchType": "inferred_risk"
+  },
+  {
+    "ruleId": "hot_work_emergency_targeted",
+    "packId": "hot_work.base",
+    "packReadiness": "ready",
+    "status": "hit",
+    "layerHint": "L2",
+    "severityHint": "medium",
+    "matchType": "direct_hit"
+  },
+  {
+    "ruleId": "gas_area_ops_control_linkage",
+    "packId": "gas_area_ops.base",
+    "packReadiness": "ready",
+    "status": "hit",
+    "layerHint": "L2",
+    "severityHint": "high",
+    "matchType": "inferred_risk"
+  }
+]

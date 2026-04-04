@@ -1,0 +1,3308 @@
+{
+  "projectFacts": {
+    "documentTypeHint": "construction_org",
+    "projectName": null,
+    "projectCode": null,
+    "location": null,
+    "duplicateSections": [],
+    "specialEquipmentMentioned": true,
+    "contextOnly": false,
+    "sectionCount": 813,
+    "tableCount": 0,
+    "sectionPresence": {
+      "engineeringOverview": true,
+      "preparationBasis": true,
+      "constructionPlan": false,
+      "schedulePlan": true,
+      "resourcePlan": false,
+      "layoutPlan": true,
+      "processMethod": true,
+      "safetyMeasures": true,
+      "emergencyPlan": true,
+      "calculationBook": true,
+      "monitoringPlan": false
+    }
+  },
+  "hazardFacts": {
+    "liftingOperation": true,
+    "gasArea": false,
+    "hotWork": true,
+    "temporaryPower": true,
+    "highRiskCategories": [
+      "temporary_power",
+      "working_at_height",
+      "lifting_operations",
+      "hot_work"
+    ],
+    "craneCapacityTon": 50,
+    "calculatedLiftWeightTon": null,
+    "specialSchemePlanStatus": "generic_mention_only",
+    "calculationEvidencePresent": true,
+    "measureSectionPresent": true,
+    "monitoringSectionPresent": false,
+    "measureKeywordCount": 2
+  },
+  "scheduleFacts": {
+    "shutdownWindowDays": null,
+    "attachmentRefs": []
+  },
+  "resourceFacts": {
+    "laborTotal": null,
+    "laborBreakdown": {}
+  },
+  "attachmentFacts": {
+    "attachments": [],
+    "visibility": {
+      "parseMode": "pdf_text_only",
+      "parserLimited": true,
+      "fileType": "pdf",
+      "attachmentCount": 0,
+      "counts": {
+        "parsed": 0,
+        "attachment_unparsed": 0,
+        "referenced_only": 0,
+        "missing": 0,
+        "unknown": 0
+      },
+      "reasonCounts": {},
+      "duplicateSectionTitles": [],
+      "parseWarnings": [
+        "pdf_text_extraction_only",
+        "pdf_tables_not_preserved",
+        "pdf_attachment_visibility_may_be_unknown",
+        "pdf_figures_images_not_parsed",
+        "pdf_appendix_title_candidates:0",
+        "pdf_table_caption_candidates:93",
+        "pdf_figure_caption_candidates:82",
+        "pdf_source_pages:276",
+        "pdf_extracted_pages:261"
+      ],
+      "manualReviewNeeded": false,
+      "manualReviewReason": null
+    }
+  },
+  "emergencyFacts": {
+    "planTitles": [],
+    "targetedPlanCount": 0
+  },
+  "factEvidence": {
+    "project.projectName": [],
+    "project.projectCode": [],
+    "project.location": [],
+    "project.duplicateSections": [],
+    "project.specialEquipmentMentioned": [
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-3573",
+          "sectionId": "section-354"
+        },
+        "excerpt": "行车大车轨道安装",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-3574",
+          "sectionId": "section-354"
+        },
+        "excerpt": "行车轨道安装一定要认真，否则回引起行车不正常运行，一定要按照下列技术要",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-3581",
+          "sectionId": "section-354"
+        },
+        "excerpt": "行车的拼装及吊装",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-3582",
+          "sectionId": "section-354"
+        },
+        "excerpt": "1）行车拼装",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-3589",
+          "sectionId": "section-356"
+        },
+        "excerpt": "2）行车吊装",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-3593",
+          "sectionId": "section-356"
+        },
+        "excerpt": "行车机械部分的安装",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-3613",
+          "sectionId": "section-356"
+        },
+        "excerpt": "均比较小，而且为动静滑配合，所以行车和滑线之间相对位置一定要配合好，否则试",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-3615",
+          "sectionId": "section-356"
+        },
+        "excerpt": "行车试验",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      }
+    ],
+    "project.contextOnly": [],
+    "project.sectionPresence.engineeringOverview": [
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-32",
+          "sectionId": "section-22"
+        },
+        "excerpt": "5.7 降水工程概况---------------------------------------------------------------------74",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-1262",
+          "sectionId": "section-219"
+        },
+        "excerpt": "5.3.1 地下连续墙工程概况",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-1722",
+          "sectionId": "section-233"
+        },
+        "excerpt": "5.6.1 MJS 工程概况",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      }
+    ],
+    "project.sectionPresence.preparationBasis": [
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-6",
+          "sectionId": "section-2"
+        },
+        "excerpt": "1.2 编制依据-------------------------------------------------------------------------------1",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      }
+    ],
+    "project.sectionPresence.constructionPlan": [],
+    "project.sectionPresence.schedulePlan": [
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-20",
+          "sectionId": "section-13"
+        },
+        "excerpt": "4.6 工程进度计划-----------------------------------------------------------------------26",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-6658",
+          "sectionId": "section-720"
+        },
+        "excerpt": "1 附表01 培花初期雨水调蓄池建设工程进度计划表",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-6943",
+          "sectionId": "section-746"
+        },
+        "excerpt": "1 1 施工总进度计划 680 个工20作24日年5月25日 2026年4月5日",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      }
+    ],
+    "project.sectionPresence.resourcePlan": [],
+    "project.sectionPresence.layoutPlan": [
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-6659",
+          "sectionId": "section-721"
+        },
+        "excerpt": "2 附图01 总体平面布置图",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-6665",
+          "sectionId": "section-727"
+        },
+        "excerpt": "8 附图07 第一道支撑平面布置图",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-6666",
+          "sectionId": "section-728"
+        },
+        "excerpt": "9 附图08 第二、三道支撑平面布置图",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-6667",
+          "sectionId": "section-729"
+        },
+        "excerpt": "10 附图09 第四、五、六道支撑平面布置图",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-6671",
+          "sectionId": "section-733"
+        },
+        "excerpt": "14 附图13 调蓄池降水井平面布置图",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-6675",
+          "sectionId": "section-737"
+        },
+        "excerpt": "18 附图17 进水井沟槽加固及降水井平面布置图",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-6676",
+          "sectionId": "section-738"
+        },
+        "excerpt": "19 附图18 进水管沟槽第一道支撑平面布置图",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-6677",
+          "sectionId": "section-739"
+        },
+        "excerpt": "20 附图19 进水管沟槽第二、三道支撑平面布置图",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-6679",
+          "sectionId": "section-741"
+        },
+        "excerpt": "22 附图21 进水管沟槽第二、三道支撑平面布置图",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      }
+    ],
+    "project.sectionPresence.processMethod": [
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-993",
+          "sectionId": "section-198"
+        },
+        "excerpt": "5.2.2 钻孔灌注桩施工工艺",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-1213",
+          "sectionId": "section-214"
+        },
+        "excerpt": "5.3.2.4 施工工艺",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-1293",
+          "sectionId": "section-221"
+        },
+        "excerpt": "5.3.2 主要施工工艺及技术要点",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-3376",
+          "sectionId": "section-326"
+        },
+        "excerpt": "5.12.1 微顶管工艺流程图",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      }
+    ],
+    "project.sectionPresence.safetyMeasures": [
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-51",
+          "sectionId": "section-37"
+        },
+        "excerpt": "7.4 安全保证措施---------------------------------------------------------------------193",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-53",
+          "sectionId": "section-39"
+        },
+        "excerpt": "7.7 危大工程清单及安全管理措施------------------------------------------------206",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-2404",
+          "sectionId": "section-276"
+        },
+        "excerpt": "5.8.6 基坑开挖安全保证措施",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-4695",
+          "sectionId": "section-506"
+        },
+        "excerpt": "7.4.1 主要职业健康安全管理措施",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-4933",
+          "sectionId": "section-518"
+        },
+        "excerpt": "7.4.3 脚手架施工安全管理措施",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-4995",
+          "sectionId": "section-519"
+        },
+        "excerpt": "7.4.4 临边及通道安全保证措施",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-5014",
+          "sectionId": "section-521"
+        },
+        "excerpt": "7.4.5 吊装作业安全保证措施",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-5044",
+          "sectionId": "section-522"
+        },
+        "excerpt": "7.4.6 防洪安全保证措施",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-5045",
+          "sectionId": "section-523"
+        },
+        "excerpt": "7.4.6.1 施工防洪安全保证措施",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-5056",
+          "sectionId": "section-524"
+        },
+        "excerpt": "7.4.6.2 基坑工程施工防洪安全保证措施",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-5345",
+          "sectionId": "section-564"
+        },
+        "excerpt": "7.7.2 安全管理措施",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-5651",
+          "sectionId": "section-584"
+        },
+        "excerpt": "8.2.3.2 民工住宿安全管理措施",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-5669",
+          "sectionId": "section-585"
+        },
+        "excerpt": "8.2.3.3 治安联防安全管理措施",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-5697",
+          "sectionId": "section-586"
+        },
+        "excerpt": "8.2.3.4 重大节假日安全管理措施",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      }
+    ],
+    "project.sectionPresence.emergencyPlan": [
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-5141",
+          "sectionId": "section-535"
+        },
+        "excerpt": "1 施工前针对可能发生的灾害制定应急预案。",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-5159",
+          "sectionId": "section-539"
+        },
+        "excerpt": "7 隧道内所有施工作业人员必须经过应急救援培训。",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      }
+    ],
+    "project.sectionPresence.calculationBook": [
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-1837",
+          "sectionId": "section-241"
+        },
+        "excerpt": "5.7.2 抗突涌稳定性验算",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      }
+    ],
+    "project.sectionPresence.monitoringPlan": [],
+    "hazard.liftingOperation": [
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-395",
+          "sectionId": "section-122"
+        },
+        "excerpt": "1）起吊前通过我公司自行研发的钢筋笼吊装",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-398",
+          "sectionId": "section-122"
+        },
+        "excerpt": "起吊 大。 现场采用整体制作吊装入槽。",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-474",
+          "sectionId": "section-127"
+        },
+        "excerpt": "3.2.3 钢筋笼吊装",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-477",
+          "sectionId": "section-127"
+        },
+        "excerpt": "2）通过公司钢筋笼吊装分析和计算软件进行模拟计算，得出最优吊装方案；",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-575",
+          "sectionId": "section-132"
+        },
+        "excerpt": "保护隔离桩施 钻孔灌注桩与井点施工设备：2台GPS-15钻机，1台50t汽车吊",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-577",
+          "sectionId": "section-132"
+        },
+        "excerpt": "开挖、结构施工 开挖与结构设备：1台50t履带吊，1台25t汽车吊，1台长臂挖掘，2台0.4m",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-582",
+          "sectionId": "section-132"
+        },
+        "excerpt": "钻孔灌注桩与井点施工设备：2台GPS-10钻机，1台50t汽车吊",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-586",
+          "sectionId": "section-132"
+        },
+        "excerpt": "开挖与结构设备：1台25t汽车吊，1台长臂挖掘机，1台0.4m³液压挖掘机。",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-592",
+          "sectionId": "section-132"
+        },
+        "excerpt": "室外总体施工 1台25t汽车吊，1台0.4m³液压挖掘机。",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-697",
+          "sectionId": "section-139"
+        },
+        "excerpt": "地下连续墙钢筋笼吊装施工方案 2024.07 总公司 是 /",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-718",
+          "sectionId": "section-139"
+        },
+        "excerpt": "装 吊装安全专项施工方案 2025.04 总公司 否",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-749",
+          "sectionId": "section-159"
+        },
+        "excerpt": "17 汽车吊 25t 1 中国 2017 / 良好 材料吊运 /",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-1271",
+          "sectionId": "section-220"
+        },
+        "excerpt": "2）成槽设备及吊装机械选型",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-1272",
+          "sectionId": "section-220"
+        },
+        "excerpt": "（1）吊装机械",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-1273",
+          "sectionId": "section-220"
+        },
+        "excerpt": "本工程地下连续墙钢筋笼吊装拟采用 1 台 320T 履带吊作为主吊、1 台 150T 履",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-1440",
+          "sectionId": "section-221"
+        },
+        "excerpt": "平幅钢筋笼钢筋笼采用 6道共24个吊点吊装钢筋笼，其中320t 主吊吊车起吊钢",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-1448",
+          "sectionId": "section-221"
+        },
+        "excerpt": "L型幅钢筋笼上节采用6 道共18个吊点吊装钢筋笼，其中320t主吊吊车起吊钢",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-1476",
+          "sectionId": "section-221"
+        },
+        "excerpt": "（10）为了防止钢筋笼在吊装过程中产生不可复原的变形，需要设计对钢筋笼设",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-1483",
+          "sectionId": "section-221"
+        },
+        "excerpt": "单位验收签证，否则不可进行吊装作业。",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-1488",
+          "sectionId": "section-221"
+        },
+        "excerpt": "④ 钢筋笼吊装到位后将管内注满清水，管口内利用铁丝缠裹布塞置入管内（塞",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-1533",
+          "sectionId": "section-221"
+        },
+        "excerpt": "钢筋笼竖起后，由主吊单机吊装钢筋笼，吊",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-2414",
+          "sectionId": "section-276"
+        },
+        "excerpt": "4）高处悬空吊装作业人员，采取有效的防护措施，做到：安全带能生根，安全",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-2590",
+          "sectionId": "section-279"
+        },
+        "excerpt": "等待工作面挖出后进行吊装，将钢支撑两端吊装置于地墙牛腿上，保持两端水平，保",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-2741",
+          "sectionId": "section-280"
+        },
+        "excerpt": "螺栓进行连接拼装，拼装完成后吊装至地连墙上的指定位置。",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-2771",
+          "sectionId": "section-281"
+        },
+        "excerpt": "④支撑梁逐块切割后由叉车运到吊点，然后采用汽车吊将混凝土块体吊放到平板",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-2776",
+          "sectionId": "section-282"
+        },
+        "excerpt": "3.6t，将支撑分割成4~5m小块，采用50t汽车吊调运出基坑。",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-2781",
+          "sectionId": "section-282"
+        },
+        "excerpt": "钢支撑采用Φ800×20/Φ609×16，采用 100t 汽车吊起吊，放置在完成的结构",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-3188",
+          "sectionId": "section-314"
+        },
+        "excerpt": "等待工作面挖出后进行吊装，将钢支撑两端吊装置于地墙牛腿上，保持两端水平，保",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-3210",
+          "sectionId": "section-314"
+        },
+        "excerpt": "间通过法兰盘以及螺栓连接的方法，由50t汽车吊整体起吊安装。由于构件较长，采",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-3214",
+          "sectionId": "section-314"
+        },
+        "excerpt": "③直撑安装：钢支撑（直撑）吊装到位，不松开吊钩，将两端活络头子拉出顶住",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-3509",
+          "sectionId": "section-341"
+        },
+        "excerpt": "检验方法：吊装时观察检查。",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-3569",
+          "sectionId": "section-354"
+        },
+        "excerpt": "的吊装工具安全吊装。",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-3581",
+          "sectionId": "section-354"
+        },
+        "excerpt": "行车的拼装及吊装",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-3589",
+          "sectionId": "section-356"
+        },
+        "excerpt": "2）行车吊装",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-3590",
+          "sectionId": "section-356"
+        },
+        "excerpt": "吊装方案采用部件吊装。主要分二大部分（大车主梁和小跑车一台），单件重量",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-3591",
+          "sectionId": "section-356"
+        },
+        "excerpt": "为 5t 左右，因吊装位置限制，选用 15t 汽车起重机起吊。起吊时吊点位置要选择适",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-3592",
+          "sectionId": "section-356"
+        },
+        "excerpt": "当，确保吊装时设备不变形。",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-3606",
+          "sectionId": "section-356"
+        },
+        "excerpt": "确保在吊装额定荷载时，吊物上升或下降时能迅速制动。",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-3663",
+          "sectionId": "section-378"
+        },
+        "excerpt": "2）闸门体吊装",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-3672",
+          "sectionId": "section-378"
+        },
+        "excerpt": "（2）将丝杆旋入启闭器的铜活令内，对准中心孔进行吊装。",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-5014",
+          "sectionId": "section-521"
+        },
+        "excerpt": "7.4.5 吊装作业安全保证措施",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-5022",
+          "sectionId": "section-521"
+        },
+        "excerpt": "4）起重吊装区域，不得有人停留或通过。并设置警示标识。",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-5026",
+          "sectionId": "section-521"
+        },
+        "excerpt": "8）吊装施工前做好安全技术交底工作，使施工人员了解施工过程的内容、注意",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-5027",
+          "sectionId": "section-521"
+        },
+        "excerpt": "事项和准备工作，同时明确组织机构，成立吊装指挥小组，负责整个过程的指挥工作。",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-5033",
+          "sectionId": "section-521"
+        },
+        "excerpt": "12）吊装作业前，应对起重吊装设备、钢丝绳、缆风绳、链条、吊钩等各种机具",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-5035",
+          "sectionId": "section-521"
+        },
+        "excerpt": "13）严禁利用管道、管架、电杆、机电设备等做吊装锚点。未经机电、建筑部门",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-5039",
+          "sectionId": "section-521"
+        },
+        "excerpt": "14）吊装作业时，必须按规定负荷进行吊装，吊具、索具经计算选择使用，严禁",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-5040",
+          "sectionId": "section-521"
+        },
+        "excerpt": "负荷运行。所吊重物接近或达到额定起重吊装能力时，应检查制动，用低高度、短行",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-5042",
+          "sectionId": "section-521"
+        },
+        "excerpt": "15）任何人不得随同吊装重物或吊装机械升降。在特殊情况下，必须随之升降的，",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-5238",
+          "sectionId": "section-559"
+        },
+        "excerpt": "起吊重量在10KN及以上的起重吊装工",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-5249",
+          "sectionId": "section-559"
+        },
+        "excerpt": "吊装 程； 墙钢筋笼采用“双 定规模",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-5253",
+          "sectionId": "section-559"
+        },
+        "excerpt": "装拆 起吊重量在100KN及以上的起重吊装工 履带吊等起重机 分项工",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-5393",
+          "sectionId": "section-565"
+        },
+        "excerpt": "备吊装允许荷载。",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-5407",
+          "sectionId": "section-566"
+        },
+        "excerpt": "（7）为防止在吊装过程中碰撞安装好的钢支撑，在钢支撑及围檩下放过程中采",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-5421",
+          "sectionId": "section-567"
+        },
+        "excerpt": "（4）施工区域分区进行切割后经叉车统一吊装。",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-5875",
+          "sectionId": "section-607"
+        },
+        "excerpt": "吊放 备管理；②人员资格审查；③优化并严格执行吊装方案；④加强钢筋笼质",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-6022",
+          "sectionId": "section-627"
+        },
+        "excerpt": "1.吊装操作做到指定专人；",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-6023",
+          "sectionId": "section-627"
+        },
+        "excerpt": "管节吊装",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-6024",
+          "sectionId": "section-627"
+        },
+        "excerpt": "工作井 2.在重物吊装过程中，严禁任何人员在重物或扒杆的正下方，严",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-6028",
+          "sectionId": "section-628"
+        },
+        "excerpt": "3.吊装时必须使用专用的夹具和锁具",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-6083",
+          "sectionId": "section-632"
+        },
+        "excerpt": "（1）所有吊点在吊装前均应进行检查，检查焊接质量与吊索、吊环的牢固性和",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-6085",
+          "sectionId": "section-632"
+        },
+        "excerpt": "（2）吊装时必须采用粗麻绳作系于钢筋笼上作为牵引绳。",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-6086",
+          "sectionId": "section-632"
+        },
+        "excerpt": "（3）平吊时吊装指挥人员必须做到两台吊车同步起吊，在钢筋笼转体至竖直过",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-6301",
+          "sectionId": "section-636"
+        },
+        "excerpt": "1、吊装操作做到指定专人；",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-6302",
+          "sectionId": "section-636"
+        },
+        "excerpt": "管节吊装",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-6303",
+          "sectionId": "section-636"
+        },
+        "excerpt": "工作井 2、在重物吊装过程中，严禁任何人员在重物或扒杆的正下方，严",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-6307",
+          "sectionId": "section-637"
+        },
+        "excerpt": "3、吊装时必须使用专用的夹具和锁具",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-6554",
+          "sectionId": "section-674"
+        },
+        "excerpt": "25 水泥吊装网兜 个 2",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-6618",
+          "sectionId": "section-711"
+        },
+        "excerpt": "3 吊车驾驶 2名 负责设备的吊装",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-6619",
+          "sectionId": "section-712"
+        },
+        "excerpt": "4 吊车指挥 1名 负责设备的吊装时定位和安全工作",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      }
+    ],
+    "hazard.gasArea": [],
+    "hazard.hotWork": [
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-5109",
+          "sectionId": "section-530"
+        },
+        "excerpt": "瓶之间距离、气瓶与动火区的安全距离要符合规定，乙",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-5117",
+          "sectionId": "section-531"
+        },
+        "excerpt": "气焊作业由培训合格的专业技术人员操作，并申请动火",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-5436",
+          "sectionId": "section-568"
+        },
+        "excerpt": "层上进行电焊、气焊和其他动火作业时，应采取防火措施，并应设专人监护。",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      }
+    ],
+    "hazard.temporaryPower": [
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-108",
+          "sectionId": "section-67"
+        },
+        "excerpt": "17 JGJ46-2012 《施工现场临时用电安全技术规范》",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-639",
+          "sectionId": "section-137"
+        },
+        "excerpt": "5）施工道路与场地硬化 6）施工排水 7）施工用电",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-640",
+          "sectionId": "section-137"
+        },
+        "excerpt": "施工用电：",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-687",
+          "sectionId": "section-139"
+        },
+        "excerpt": "前期 施工用电方案 2024.05 总公司 否 /",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-4316",
+          "sectionId": "section-433"
+        },
+        "excerpt": "（2）地下有限空间临时用电应符合GB/T13869 的规定。",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-4869",
+          "sectionId": "section-509"
+        },
+        "excerpt": "1 现场施工用电采用三相五线制。",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-4876",
+          "sectionId": "section-512"
+        },
+        "excerpt": "施工用电编制施工方案，并有可靠的安全技术措施，",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-4899",
+          "sectionId": "section-513"
+        },
+        "excerpt": "2）施工用电安全保证措施",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-4900",
+          "sectionId": "section-513"
+        },
+        "excerpt": "表7.4.22 施工用电安全保证措施表",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-4905",
+          "sectionId": "section-513"
+        },
+        "excerpt": "临时施工用电在已建成隧道内设线架用绝缘子固定",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-5439",
+          "sectionId": "section-568"
+        },
+        "excerpt": "（9）脚手架与架空输电线路的安全距离、工地临时用电线路架设及脚手架接地、",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-5440",
+          "sectionId": "section-568"
+        },
+        "excerpt": "防雷措施，应按现行行业标准《施工现场临时用电安全技术规范》JGJ46的有关",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-6030",
+          "sectionId": "section-628"
+        },
+        "excerpt": "施工用电 2.定期检查供电线路、绝缘情况；",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-6104",
+          "sectionId": "section-632"
+        },
+        "excerpt": "③备好施工用电、用水，修好道路及其他设施。",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-6309",
+          "sectionId": "section-637"
+        },
+        "excerpt": "施工用电 2、定期检查供电线路、绝缘情况；",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      }
+    ],
+    "hazard.specialSchemePlanStatus": [
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-476",
+          "sectionId": "section-127"
+        },
+        "excerpt": "1）精心编制专项施工方案，并进行专家论证；",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-702",
+          "sectionId": "section-139"
+        },
+        "excerpt": "施工 管 基坑开挖及结构回筑专项施工方案 2024.09 总公司 否 /",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-708",
+          "sectionId": "section-139"
+        },
+        "excerpt": "放空 钢沉井施工安全专项施工方案 2025.03 总公司 否 /",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-710",
+          "sectionId": "section-139"
+        },
+        "excerpt": "顶管施工安全专项施工方案 2025.03 总公司 否 /",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-712",
+          "sectionId": "section-139"
+        },
+        "excerpt": "装饰 砌筑工程专项施工方案 2025.04 项管部 否 /",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-713",
+          "sectionId": "section-139"
+        },
+        "excerpt": "装修 门窗安装工程专项施工方案 2025.04 项管部 否 /",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-715",
+          "sectionId": "section-139"
+        },
+        "excerpt": "与机 装饰工程安全专项施工方案 2025.04 项管部 否 /",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-717",
+          "sectionId": "section-139"
+        },
+        "excerpt": "电安 机电安装安全专项施工方案 2025.04 总公司 否",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-718",
+          "sectionId": "section-139"
+        },
+        "excerpt": "装 吊装安全专项施工方案 2025.04 总公司 否",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-2236",
+          "sectionId": "section-268"
+        },
+        "excerpt": "点、内容和验收小组名单的申请报告及专项施工方案专家评审报告报送安监站。",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-2785",
+          "sectionId": "section-283"
+        },
+        "excerpt": "结构施工方案以后需上报模板支架专项施工方案为准。",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-5346",
+          "sectionId": "section-564"
+        },
+        "excerpt": "1）专项施工方案管理",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-5347",
+          "sectionId": "section-564"
+        },
+        "excerpt": "在危大工程施工前组织工程项目技术人员编制专项施工方案，单位技术负责人审",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-5349",
+          "sectionId": "section-564"
+        },
+        "excerpt": "大工程实行分包的，专项施工方案可由相关专业分包单位组织编制，总承包单位技术",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-5352",
+          "sectionId": "section-564"
+        },
+        "excerpt": "对于超过一定规模的危大工程，应组织召开专家论证会对专项施工方案进行论证。",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-5353",
+          "sectionId": "section-564"
+        },
+        "excerpt": "专家论证前专项施工方案应通过施工单位审核和总监理工程师审查。",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-5359",
+          "sectionId": "section-564"
+        },
+        "excerpt": "专项施工方案实施前，由编制人员或者项目技术负责人向施工现场管理人员进行",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-5362",
+          "sectionId": "section-564"
+        },
+        "excerpt": "严格按照专项施工方案组织施工，不得擅自修改专项施工方案。",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-5366",
+          "sectionId": "section-564"
+        },
+        "excerpt": "安全生产管理人员对专项施工方案实施情况进行现场监督，对未按照专项施工方案施",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-5375",
+          "sectionId": "section-564"
+        },
+        "excerpt": "将专项施工方案及审核、专家论证、交底、现场检查、验收及整改等相关资料纳",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-5445",
+          "sectionId": "section-568"
+        },
+        "excerpt": "（1）模板工程应编制专项施工方案。滑模、爬模等工具式模板工程及高大模板",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-5446",
+          "sectionId": "section-568"
+        },
+        "excerpt": "支架工程的专项施工方案，应进行技术论证。",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      }
+    ],
+    "hazard.craneCapacityTon": [
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-2776",
+          "sectionId": "section-282"
+        },
+        "excerpt": "3.6t，将支撑分割成4~5m小块，采用50t汽车吊调运出基坑。",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      }
+    ],
+    "hazard.calculatedLiftWeightTon": [],
+    "hazard.highRiskCategories": [
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-108",
+          "sectionId": "section-67"
+        },
+        "excerpt": "17 JGJ46-2012 《施工现场临时用电安全技术规范》",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-110",
+          "sectionId": "section-69"
+        },
+        "excerpt": "19 JGJ80-2016 《建筑施工高处作业安全技术规范》",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-5022",
+          "sectionId": "section-521"
+        },
+        "excerpt": "4）起重吊装区域，不得有人停留或通过。并设置警示标识。",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-5436",
+          "sectionId": "section-568"
+        },
+        "excerpt": "层上进行电焊、气焊和其他动火作业时，应采取防火措施，并应设专人监护。",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      }
+    ],
+    "hazard.calculationEvidencePresent": [
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-1478",
+          "sectionId": "section-221"
+        },
+        "excerpt": "的安全性进行全面的验算，给出相关的要求及图纸，保证钢筋笼吊运的安全。",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-1837",
+          "sectionId": "section-241"
+        },
+        "excerpt": "5.7.2 抗突涌稳定性验算",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-1841",
+          "sectionId": "section-241"
+        },
+        "excerpt": "图5.7.2-1 基坑抗承压水突涌稳定性验算原理示意图",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-1867",
+          "sectionId": "section-241"
+        },
+        "excerpt": "当验算得 w w 时，我们认为基坑当前开挖面处于抗承压水突涌稳",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-1887",
+          "sectionId": "section-241"
+        },
+        "excerpt": "算结果如下表 5.7.2-1 基坑抗承压水突涌稳定性验算表。",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-1890",
+          "sectionId": "section-241"
+        },
+        "excerpt": "表5.7.2-1：基坑抗承压水突涌稳定性验算（安全系数1.05）",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-1906",
+          "sectionId": "section-241"
+        },
+        "excerpt": "注：在正式降压之前应根据现场实际承压水初始水头标高进行复核验算，严格执行“按需减",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-6109",
+          "sectionId": "section-632"
+        },
+        "excerpt": "放坡、排水、边坡支护应根据有关规范要求进行设计，边坡支护要有设计计算书。",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      }
+    ],
+    "hazard.measureSectionPresent": [
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-51",
+          "sectionId": "section-37"
+        },
+        "excerpt": "7.4 安全保证措施---------------------------------------------------------------------193",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-53",
+          "sectionId": "section-39"
+        },
+        "excerpt": "7.7 危大工程清单及安全管理措施------------------------------------------------206",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-2404",
+          "sectionId": "section-276"
+        },
+        "excerpt": "5.8.6 基坑开挖安全保证措施",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-4693",
+          "sectionId": "section-504"
+        },
+        "excerpt": "安全保证措施",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-4695",
+          "sectionId": "section-506"
+        },
+        "excerpt": "7.4.1 主要职业健康安全管理措施",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-4749",
+          "sectionId": "section-506"
+        },
+        "excerpt": "3）季节性安全管理措施",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-4750",
+          "sectionId": "section-506"
+        },
+        "excerpt": "表7.4.1-3 季节性安全管理措施一览表",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-4783",
+          "sectionId": "section-507"
+        },
+        "excerpt": "4）施工现场安全管理措施",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-4784",
+          "sectionId": "section-507"
+        },
+        "excerpt": "表7.4.1-4 施工现场安全管理措施一览表",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-4861",
+          "sectionId": "section-507"
+        },
+        "excerpt": "安全 开工前制订好安全生产计划，编制安全技术措施，",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-4876",
+          "sectionId": "section-512"
+        },
+        "excerpt": "施工用电编制施工方案，并有可靠的安全技术措施，",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-4894",
+          "sectionId": "section-513"
+        },
+        "excerpt": "全标志，不使用无有效安全技术措施的电气设备。",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-4899",
+          "sectionId": "section-513"
+        },
+        "excerpt": "2）施工用电安全保证措施",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-4900",
+          "sectionId": "section-513"
+        },
+        "excerpt": "表7.4.22 施工用电安全保证措施表",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-4933",
+          "sectionId": "section-518"
+        },
+        "excerpt": "7.4.3 脚手架施工安全管理措施",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-4934",
+          "sectionId": "section-518"
+        },
+        "excerpt": "表7.4.3-1 脚手架施工安全保证措施表",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-4995",
+          "sectionId": "section-519"
+        },
+        "excerpt": "7.4.4 临边及通道安全保证措施",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-4996",
+          "sectionId": "section-519"
+        },
+        "excerpt": "表7.4.4-1 临边及通道安全保证措施表",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-5014",
+          "sectionId": "section-521"
+        },
+        "excerpt": "7.4.5 吊装作业安全保证措施",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-5044",
+          "sectionId": "section-522"
+        },
+        "excerpt": "7.4.6 防洪安全保证措施",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-5045",
+          "sectionId": "section-523"
+        },
+        "excerpt": "7.4.6.1 施工防洪安全保证措施",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-5056",
+          "sectionId": "section-524"
+        },
+        "excerpt": "7.4.6.2 基坑工程施工防洪安全保证措施",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-5184",
+          "sectionId": "section-554"
+        },
+        "excerpt": "危大工程清单及安全管理措施",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-5345",
+          "sectionId": "section-564"
+        },
+        "excerpt": "7.7.2 安全管理措施",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-5651",
+          "sectionId": "section-584"
+        },
+        "excerpt": "8.2.3.2 民工住宿安全管理措施",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-5669",
+          "sectionId": "section-585"
+        },
+        "excerpt": "8.2.3.3 治安联防安全管理措施",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-5697",
+          "sectionId": "section-586"
+        },
+        "excerpt": "8.2.3.4 重大节假日安全管理措施",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-培花初期雨水调蓄池建设工程",
+        "locator": {
+          "blockId": "block-6106",
+          "sectionId": "section-632"
+        },
+        "excerpt": "（2）基坑开挖安全技术措施",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      }
+    ],
+    "hazard.monitoringSectionPresent": [],
+    "schedule.shutdownWindowDays": [],
+    "resource.laborTotal": [],
+    "resource.laborBreakdown": [],
+    "schedule.attachmentRefs": [],
+    "emergency.planTitles": []
+  },
+  "unresolvedFacts": [
+    {
+      "code": "missing_project_name",
+      "factKey": "project.projectName",
+      "summary": "未解析到项目名称，需人工确认文档基础信息。"
+    },
+    {
+      "code": "missing_project_code",
+      "factKey": "project.projectCode",
+      "summary": "未解析到项目编号，需人工确认文档标识信息。"
+    },
+    {
+      "code": "missing_calculated_lift_weight_ton",
+      "factKey": "hazard.calculatedLiftWeightTon",
+      "summary": "已识别起重吊装作业，但未解析到计算起重量参数。"
+    },
+    {
+      "code": "missing_shutdown_window_days",
+      "factKey": "schedule.shutdownWindowDays",
+      "summary": "未解析到停机窗口时长，需人工确认工期窗口。"
+    },
+    {
+      "code": "missing_labor_total",
+      "factKey": "resource.laborTotal",
+      "summary": "未解析到劳动力合计人数，需人工确认资源投入。"
+    },
+    {
+      "code": "missing_emergency_plan_titles",
+      "factKey": "emergency.planTitles",
+      "summary": "未解析到针对性应急预案标题，需人工确认应急安排。"
+    }
+  ]
+}

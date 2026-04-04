@@ -61,5 +61,10 @@ next-env.d.ts
 *credentials*.json
 *.keystore
 
-# Fixtures
-fixtures/任务书/
+# Fixtures — archive only (V0.3 prompts / guides should be tracked)
+fixtures/任务书/archive/
+fixtures/任务书/V0.2 优化round1-prompt.md
+fixtures/任务书/V0.2 优化round2-prompt.md
+fixtures/任务书/V0.2 研究设计与实施总文档-prompt.md
+fixtures/任务书/V0.2 能力分析.md
+fixtures/任务书/V0.2 总结文档.md

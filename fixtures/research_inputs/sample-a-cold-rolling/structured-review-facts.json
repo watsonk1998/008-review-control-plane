@@ -1,0 +1,2433 @@
+{
+  "projectFacts": {
+    "documentTypeHint": "construction_org",
+    "projectName": "冷轧厂2030单元三台行车电气系统改造",
+    "projectCode": "230235",
+    "location": "宝钢宝山基地冷轧厂2030区域",
+    "duplicateSections": [
+      "防火安全",
+      "环境管理计划"
+    ],
+    "specialEquipmentMentioned": true,
+    "contextOnly": false,
+    "sectionCount": 308,
+    "tableCount": 19,
+    "sectionPresence": {
+      "engineeringOverview": true,
+      "preparationBasis": true,
+      "constructionPlan": true,
+      "schedulePlan": false,
+      "resourcePlan": false,
+      "layoutPlan": true,
+      "processMethod": true,
+      "safetyMeasures": true,
+      "emergencyPlan": true,
+      "calculationBook": false,
+      "monitoringPlan": true
+    }
+  },
+  "hazardFacts": {
+    "liftingOperation": true,
+    "gasArea": true,
+    "hotWork": true,
+    "temporaryPower": true,
+    "highRiskCategories": [
+      "working_at_height",
+      "gas_area_ops",
+      "hot_work",
+      "temporary_power"
+    ],
+    "craneCapacityTon": 50,
+    "calculatedLiftWeightTon": 2.86,
+    "specialSchemePlanStatus": "generic_mention_only",
+    "calculationEvidencePresent": true,
+    "measureSectionPresent": true,
+    "monitoringSectionPresent": true,
+    "measureKeywordCount": 4
+  },
+  "scheduleFacts": {
+    "shutdownWindowDays": 7,
+    "attachmentRefs": [
+      "attachment-1",
+      "attachment-2"
+    ]
+  },
+  "resourceFacts": {
+    "laborTotal": 37,
+    "laborBreakdown": {
+      "电工": 16,
+      "焊工": 4,
+      "钳 工": 8,
+      "起重工": 6,
+      "辅助工": 3
+    }
+  },
+  "attachmentFacts": {
+    "attachments": [
+      {
+        "id": "attachment-1",
+        "attachmentNumber": "1",
+        "title": "附件1：施工网络进度表",
+        "visibility": "parsed",
+        "parseState": "parsed",
+        "manualReviewNeeded": false,
+        "reason": "attachment_body_visible",
+        "referenceBlockIds": [
+          "block-67",
+          "block-186",
+          "block-490"
+        ],
+        "titleBlockId": "block-490"
+      },
+      {
+        "id": "attachment-2",
+        "attachmentNumber": "2",
+        "title": "附件2：施工总平面布置图",
+        "visibility": "attachment_unparsed",
+        "parseState": "attachment_unparsed",
+        "manualReviewNeeded": true,
+        "reason": "title_detected_without_attachment_body",
+        "referenceBlockIds": [
+          "block-429",
+          "block-492"
+        ],
+        "titleBlockId": "block-492"
+      }
+    ],
+    "visibility": {
+      "parseMode": "docx_structured",
+      "parserLimited": false,
+      "fileType": "docx",
+      "attachmentCount": 2,
+      "counts": {
+        "parsed": 1,
+        "attachment_unparsed": 1,
+        "referenced_only": 0,
+        "missing": 0,
+        "unknown": 0
+      },
+      "reasonCounts": {
+        "attachment_body_visible": 1,
+        "title_detected_without_attachment_body": 1
+      },
+      "duplicateSectionTitles": [
+        "防火安全",
+        "环境管理计划"
+      ],
+      "parseWarnings": [],
+      "manualReviewNeeded": true,
+      "manualReviewReason": "title_detected_without_attachment_body"
+    }
+  },
+  "emergencyFacts": {
+    "planTitles": [
+      "高处作业事故应急预案 标题：高处作业事故应急预案 标题：高处作业事故应急预案",
+      "触电事故应急预案 标题：触电事故应急预案 标题：触电事故应急预案",
+      "起重伤害事故应急预案 标题：起重伤害事故应急预案 标题：起重伤害事故应急预案",
+      "高温中暑事故应急预案 标题：高温中暑事故应急预案 标题：高温中暑事故应急预案"
+    ],
+    "targetedPlanCount": 4
+  },
+  "factEvidence": {
+    "project.projectName": [
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-10",
+          "sectionId": "section-2"
+        },
+        "excerpt": "项目名称：冷轧厂2030单元三台行车电气系统改造",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      }
+    ],
+    "project.projectCode": [
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-3",
+          "sectionId": null
+        },
+        "excerpt": "项目编号：230235",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      }
+    ],
+    "project.location": [
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-12",
+          "sectionId": "section-2"
+        },
+        "excerpt": "施工地点：宝钢宝山基地冷轧厂2030区域",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      }
+    ],
+    "project.duplicateSections": [
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-317",
+          "sectionId": "section-175"
+        },
+        "excerpt": "第五节 防火安全",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-329",
+          "sectionId": "section-187"
+        },
+        "excerpt": "第七节 防火安全",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-394",
+          "sectionId": "section-234"
+        },
+        "excerpt": "第七章 环境管理计划",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-395",
+          "sectionId": "section-235"
+        },
+        "excerpt": "第一节 环境管理计划",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      }
+    ],
+    "project.specialEquipmentMentioned": [
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-2",
+          "sectionId": null
+        },
+        "excerpt": "冷轧厂2030单元三台行车电气系统改造",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-10",
+          "sectionId": "section-2"
+        },
+        "excerpt": "项目名称：冷轧厂2030单元三台行车电气系统改造",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-15",
+          "sectionId": "section-2"
+        },
+        "excerpt": "冷轧厂2030单元三台行车电气系统改造项目是对冷轧2030区域的4-2、4-4、6-1行车电气控制系统改造为变频控制，配备变频器及对应的配套件（更换行车主卷扬、大车、小车、副钩、副小车变频电机、配套控制使用的电阻箱、电气控制盘、移动电缆、电缆卷筒装置、滑车、操作台、及配电、进线开关、除湿器、起升制动器、6-1行车电磁系统等以及其他的适应性改造）。具体内容如下：",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-16",
+          "sectionId": "section-3"
+        },
+        "excerpt": "1.4-2，4-4行车：更新行车配电屏，更新起升机构、大车、小车机构传动控制屏及配套电阻器，更新电缆卷筒、电缆滑车、全车电缆及部分辅助设备，新增PLC控制系统，主起升电机及底座、副起升电机、小车电机、副小车电机、大车电机更新，整车电缆、电缆滑车更新，电气室增加保温材料做保温处理等。",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-17",
+          "sectionId": "section-4"
+        },
+        "excerpt": "2.6-1行车：更新行车配电屏，更新起升机构、大车、小车机构传动控制屏及配套电阻器，更新电缆滑车、全车电缆及部分辅助设备，新增PLC控制系统、电缆卷筒，更新吸力模块及控制系统，照明变压器需更新，主起升电机及底座、小车电机、大车电机更新，整车电缆、电缆滑车更新，电气室增加保温材料做保温处理等。",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-18",
+          "sectionId": "section-4"
+        },
+        "excerpt": "3.冷轧厂3台行车电缆接线、校验到位，所有进出线口做好耐磨保护及采用耐火泥封堵。",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-21",
+          "sectionId": "section-6"
+        },
+        "excerpt": "1.1 生产较忙，需与生产协调，在有限的时间内合理安排施工计划，在行车停机期间集中人员进行施工作业，并保证施工足够场地。",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-22",
+          "sectionId": "section-7"
+        },
+        "excerpt": "1.2 行车改造施工，设备吊装和安装均为高处作业，对安全作业要求较高。现场危险源较多，本次改造在生产区域，施工与生产同步进行，施工的同时必须保证其它设备的正常生产，改造时必须服从生产安排。现场场地狭小，行车停放位置、吊装站位必须事先规划，确保不与生产及物流发生冲突，需要组织精细，合理安排、确保施工进度及施工安全。",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-24",
+          "sectionId": "section-9"
+        },
+        "excerpt": "1.4 行车改造纳入特种设备管理范畴，三台行车的大车、小车电机、起升电机等部分需要更新，共有22台电动机，拆除后的电机接手需要重新更换、调整联轴器精度等。",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-26",
+          "sectionId": "section-10"
+        },
+        "excerpt": "2.1 难点：主起升电机底座更换、三台行车起升、大小车电机对中对施工精度要求较高。",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-28",
+          "sectionId": "section-11"
+        },
+        "excerpt": "2.2 难点：6-1行车停机位置下方为库区，施工期间做好人员安全防护及工器具防坠。",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-29",
+          "sectionId": "section-11"
+        },
+        "excerpt": "对应措施：对施工作业人员做好安全教育，了解存在的危险源及控制措施，提高施工人员安全意识。在行车上拉放生命绳，设置硬质栏杆，工器具安装防坠绳，施工区域拉设红白绳，地面安排人员监护。",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-30",
+          "sectionId": "section-12"
+        },
+        "excerpt": "2.3难点：4-2行车、4-4行车施工区域地面汽车吊站位空间受限，施工区域为煤气区域，施工过程管控动火作业。",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-53",
+          "sectionId": "section-19"
+        },
+        "excerpt": "1 《冷轧厂2030单元三台行车电气系统改造可行性研究报告》。",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-54",
+          "sectionId": "section-20"
+        },
+        "excerpt": "2 施工合同、冷轧厂2030单元三台行车电气系统改造施工图。",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-66",
+          "sectionId": "section-27"
+        },
+        "excerpt": "冷轧厂2030单元三台行车电气系统改造施工，依据现场生产情况，计划施工时间：2026年5月：6-1行车改造施工；2026年6月：4-2、4-4行车改造施工；分区具体区域及具体停机施工时间以甲方通知为准。施工单台行车停机改造时间为7天，施工前期准备工作：设备电缆进场、安全标化、用能申请、汽车吊报监等工作。",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-77",
+          "sectionId": "section-36"
+        },
+        "excerpt": "1.6 施工前将所需的工器具、设备、材料准备就位，三台行车改造涉及区域不同具体，详见单台车施工部署。",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-79",
+          "sectionId": "section-38"
+        },
+        "excerpt": "1.8施工前需按要求办理特种设备安装、改造、维修的施工告知、报监手续。",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-82",
+          "sectionId": "section-40"
+        },
+        "excerpt": "冷轧2030区域.更新罩式炉区域4-2，4-4行车电控系统，更新平整前库6-1电磁吊行车电控系统及电磁系统，主要作业区域为行车电气室内、大梁上及电气室外、小车等。",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-83",
+          "sectionId": "section-41"
+        },
+        "excerpt": "2.1冷轧2030区域4-2、4-4行车施工内容",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-84",
+          "sectionId": "section-41"
+        },
+        "excerpt": "4-2，4-4行车为同类型行车，原设备及布置情况一致，施工内容以4-2行车改造为例。",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-85",
+          "sectionId": "section-41"
+        },
+        "excerpt": "图2.1 4-2行车停机位置",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-86",
+          "sectionId": "section-41"
+        },
+        "excerpt": "图2.2 4-4行车停机位置",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-87",
+          "sectionId": "section-41"
+        },
+        "excerpt": "行车供配电系统：进线开关箱、配电控制屏、照明变压器、控制变压器更新，供电集电器利旧；",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-88",
+          "sectionId": "section-41"
+        },
+        "excerpt": "图2.3原行车控制屏",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-90",
+          "sectionId": "section-41"
+        },
+        "excerpt": "图2.4原行车主起升系统",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-92",
+          "sectionId": "section-41"
+        },
+        "excerpt": "图2.5原行车副起升系统",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-99",
+          "sectionId": "section-41"
+        },
+        "excerpt": "图2.7原行车移动电缆",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-100",
+          "sectionId": "section-42"
+        },
+        "excerpt": "2.2冷轧2030区域6-1行车施工内容",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-101",
+          "sectionId": "section-42"
+        },
+        "excerpt": "图2.8 行车停机位置",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-102",
+          "sectionId": "section-42"
+        },
+        "excerpt": "1）行车供配电系统：进线开关箱、配电控制屏、照明变压器、控制变压器更新，供电集电器利旧；",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-103",
+          "sectionId": "section-42"
+        },
+        "excerpt": "图2.9原行车控制屏",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-111",
+          "sectionId": "section-43"
+        },
+        "excerpt": "三、行车改造施工方法",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-112",
+          "sectionId": "section-43"
+        },
+        "excerpt": "本次行车改造任务中的3台行车基本类似，以4-2行车实施改造为例，其它行车（4-4、6-1行车）不做说明。",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-113",
+          "sectionId": "section-43"
+        },
+        "excerpt": "行车改造包括起升机构、大车机构、小车机构、电控系统、司机室联动台、电气室增加隔舱及保温和整机电缆敷设。行车改造示意见图3.1。",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-114",
+          "sectionId": "section-43"
+        },
+        "excerpt": "图3.1行车改造示意",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-115",
+          "sectionId": "section-43"
+        },
+        "excerpt": "起吊量最重为主起升电机，故以4-2行车主起升电机起吊为例。汽车吊选型计算如下:",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-147",
+          "sectionId": "section-48"
+        },
+        "excerpt": "盘柜安装在桥架腹内，将配电屏、PLC屏等按吊装顺序编号。首先将离设备进入到吊装孔最远处吊入，靠人工搬运到位，按照此顺序将第二台、第三台...倒运到位。吊装盘柜应用有塑料保护套的钢丝绳吊装，吊索与行车吊钩夹角不得大于60°。",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-157",
+          "sectionId": "section-52"
+        },
+        "excerpt": "1.2行车上所有电缆线槽内部增加电缆分隔板，电缆较多位置（如：电气室、小车导电架、两个主梁连接处）电缆线槽底部要先垫好绝缘垫然后再敷设电缆。",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-182",
+          "sectionId": "section-67"
+        },
+        "excerpt": "1、2026年5月：6-1行车改造施工；",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-183",
+          "sectionId": "section-67"
+        },
+        "excerpt": "2、2026年6月：4-2、4-4行车改造施工；",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-184",
+          "sectionId": "section-67"
+        },
+        "excerpt": "具体开工时间以甲方通知为准，冷轧厂2030区域3台行车改造完成后进行项目交工。",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-324",
+          "sectionId": "section-182"
+        },
+        "excerpt": "七、4-2、4-2行车上动火作业点敷设石棉布做好防火星坠落措施，地面罩式炉四周使用石棉布遮盖防止火星落入地下室，对地面作业人员进行交底，动火作业时对罩式炉周围做好监护。",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-328",
+          "sectionId": "section-186"
+        },
+        "excerpt": "三、使用起重设备如：行车，必须专人指挥，指挥信号要明确，口令要清楚，手势要准确，严禁多人指挥。指吊人员必须跟车指挥，并负责沿途鸣哨警示疏散吊运范围内、途经吊运路线下的人员避让。吊索、吊具在使用前必须认真检查，确认无误后方可使。",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-358",
+          "sectionId": "section-214"
+        },
+        "excerpt": "一、在对每台行车进行施工作业时，通过警示灯、红白绳划定施工区域及生产区域，使行车与施工人员互不干涉。",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-361",
+          "sectionId": "section-217"
+        },
+        "excerpt": "四、在对每台行车进行施工作业时小车内侧轨道拉放生命绳、设置硬质栏杆。",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-379",
+          "sectionId": "section-231"
+        },
+        "excerpt": "施工单位：中冶宝钢技术服务有限公司 工程名称：冷轧厂2030单元三台行车电气系统改造项目",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-380",
+          "sectionId": "section-231"
+        },
+        "excerpt": "序号 | 施工阶段 | 作业活动 | 危险源 | 可能导致的事故 | 作业现场危险性 | 作业现场危险性 | 作业现场危险性 | 作业现场危险性 | 风险级别 | 现有控制措施 | 备注\n序号 | 施工阶段 | 作业活动 | 危险源 | 可能导致的事故 | L | E | C | D | 风险级别 | 现有控制措施 | 备注\n1 | 冷轧厂20 30 区域 3 台行车电气系统改造项目 | 高处作业 | 高处临边作业的人未采取有效措施或未系挂安全带 | 高处坠落 | 7 | 1 | 15 | 105 | Ⅲ | A、C、D、E、F、G | \n2 | 冷轧厂20 30 区域 3 台行车电气系统改造项目 | 高处作业 | 安全带系挂方法不当或未有效生根 | 高处坠落 | 3 | 1 | 3 | 9 | Ⅴ | C、E | \n3 | 冷轧厂20 30 区域 3 台行车电气系统改造项目 | 高处作业",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-384",
+          "sectionId": "section-232"
+        },
+        "excerpt": "施工单位：中冶宝钢技术服务有限公司 工程名称：冷轧厂2030单元三台行车电气系统改造项目",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-385",
+          "sectionId": "section-232"
+        },
+        "excerpt": "序号 | 施工内容 | 重大风险 | 可能导致的事故或事件 | 作业现场危险性 | 作业现场危险性 | 作业现场危险性 | 作业现场危险性 | 风险级别 | 现有控制措施 | 备注\n序号 | 施工内容 | 重大风险 | 可能导致的事故或事件 | L | E | C | D | 风险级别 | 现有控制措施 | 备注\n1 | 冷轧厂2030单元三台行车电气系统改造项目 | 高处临边作业的人未采取有效措施或未系挂安全带 | 高处坠落 | 7 | 1 | 15 | 105 | Ⅲ | A、C、D、E、F、G | \n1 | 冷轧厂2030单元三台行车电气系统改造项目 | 高处临边作业坠物未采取有效散小物件装入箱，防止坠落或飞物伤人措施 | 高处坠落 | 7 | 1 | 15 | 105 | Ⅲ | A、C、D、E、F、G | \n2 | 冷轧厂2030单元三台行车电气系统改造项目 | 带电的物体，违反",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-390",
+          "sectionId": "section-233"
+        },
+        "excerpt": "编制：谢建明 | 冷轧厂2030单元三台行车电气系统改造工程应急预案1 | 签发：张秋杰\n审核：戴旭 | 冷轧厂2030单元三台行车电气系统改造工程应急预案1 | 日期：2026.3.5\n标题：高处作业事故应急预案 | 标题：高处作业事故应急预案 | 标题：高处作业事故应急预案\n一、目的 确保在冷轧厂2030单元三台行车电气系统改造工程项目施工中发生高处作业事故以后，能迅速有效地开展抢救工作，最大限度降低员工及相关方生命安全风险，特制定本预案。 二、组织机构及职责 成立应急响应指挥及协调小组。 组长：张秋杰 组员：戴旭 谢建明 尚海丰 具体分工如下： 1、张秋杰：负责现场,任务是掌握了解事故情况,组织现场抢救。 2、戴旭：负责联络，任务是根据指挥小组命令，及时布置现场抢救。 3、尚海丰：负责维持现场秩序，做好当事人、周围人员的问讯记录。 4、谢建明：负责妥善处理善后工作，负责保持与当地相关",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-391",
+          "sectionId": "section-233"
+        },
+        "excerpt": "编制：谢建明 | 冷轧厂2030单元三台行车电气系统改造工程应急预案2 | 签发：张秋杰\n审核：戴旭 | 冷轧厂2030单元三台行车电气系统改造工程应急预案2 | 日期：2026.3.5\n标题：触电事故应急预案 | 标题：触电事故应急预案 | 标题：触电事故应急预案\n一、目的 确保在冷轧厂2030单元三台行车电气系统改造工程项目施工中发生触电事故以后，能迅速有效地开展抢救工作，最大限度降低员工及相关方生命安全风险，特制定本预案。 二、组织机构及职责 成立应急响应指挥及协调小组。 组长：张秋杰 组员：戴旭 谢建明 尚海丰 具体分工如下： 1、张秋杰：负责现场,任务是掌握了解事故情况,组织现场抢救。 2、戴旭：负责联络，任务是根据指挥小组命令，及时布置现场抢救。 3、尚海丰：负责维持现场秩序，做好当事人、周围人员的问讯记录。 4、谢建明：负责妥善处理善后工作，负责保持与当地相关上级部门的沟通联",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-392",
+          "sectionId": "section-233"
+        },
+        "excerpt": "编制：谢建明 | 冷轧厂2030单元三台行车电气系统改造工程应急预案3 | 签发：张秋杰\n审核：戴旭 | 冷轧厂2030单元三台行车电气系统改造工程应急预案3 | 日期：2026.3.5\n标题：起重伤害事故应急预案 | 标题：起重伤害事故应急预案 | 标题：起重伤害事故应急预案\n一、目的 确保在冷轧厂2030单元三台行车电气系统改造工程项目施工中发生起重伤害事故以后，能迅速有效地开展抢救工作，最大限度降低员工及相关方生命安全风险，特制定本预案。 二、组织机构及职责 成立应急响应指挥及协调小组。 组长：张秋杰 组员：戴旭 谢建明 尚海丰 具体分工如下： 1、张秋杰：负责现场,任务是掌握了解事故情况,组织现场抢救。 2、戴旭：负责联络，任务是根据指挥小组命令，及时布置现场抢救。 3、尚海丰：负责维持现场秩序，做好当事人、周围人员的问讯记录。 4、谢建明：负责妥善处理善后工作，负责保持与当地相关",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-393",
+          "sectionId": "section-233"
+        },
+        "excerpt": "编制：谢建明 | 冷轧厂2030单元三台行车电气系统改造工程应急预案4 | 签发：张秋杰\n审核：戴旭 | 冷轧厂2030单元三台行车电气系统改造工程应急预案4 | 日期：2026.3.5\n标题：高温中暑事故应急预案 | 标题：高温中暑事故应急预案 | 标题：高温中暑事故应急预案\n一、目的 确保在冷轧厂2030单元三台行车电气系统改造工程项目施工中发生起重伤害事故以后，能迅速有效地开展抢救工作，最大限度降低员工及相关方生命安全风险，特制定本预案。 二、组织机构及职责 成立应急响应指挥及协调小组。 组长：张秋杰 组员：戴旭 谢建明 尚海丰 具体分工如下： 1、张秋杰：负责现场,任务是掌握了解事故情况,组织现场抢救。 2、戴旭：负责联络，任务是根据指挥小组命令，及时布置现场抢救。 3、尚海丰：负责维持现场秩序，做好当事人、周围人员的问讯记录。 4、谢建明：负责妥善处理善后工作，负责保持与当地相关",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-410",
+          "sectionId": "section-246"
+        },
+        "excerpt": "施工单位：中冶宝钢技术服务有限公司 工程名称：冷轧厂2030单元三台行车电气系统改造项目",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-458",
+          "sectionId": "section-284"
+        },
+        "excerpt": "序号 | 项目内容 | 工种 | 工种 | 工种 | 工种 | 工种 | 工种\n序号 | 项目内容 | 电工 | 焊工 | 钳 工 | 起重工 | 辅助工 | 合计人数\n | 冷轧厂2030单元三台行车电气系统改造6-1行车 | 16 | 4 | 8 | 6 | 3 | 37\n | 冷轧厂2030单元三台行车电气系统改造4-2行车 | 16 | 4 | 8 | 6 | 3 | 37\n | 冷轧厂2030单元三台行车电气系统改造4-4行车 | 16 | 4 | 8 | 6 | 3 | 37",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-489",
+          "sectionId": "section-306"
+        },
+        "excerpt": "单位工程 | 序号 | 分部工程名称 | 序号 | 分项工程名称 | 检验批名称\n冷轧厂2030单元三台行车电气系统改造 | 1 | 电气设备安装分部 | 1 | 起重机电气设备安装分项 | 起重机电气设备安装检验批\n冷轧厂2030单元三台行车电气系统改造 | 1 | 电气设备安装分部 | 2 | 滑触线和移动式软电缆安装分项 | 滑触线和移动式软电缆安装检验批\n冷轧厂2030单元三台行车电气系统改造 | 2 | 机械设备安装分部 | 1 | 4-2行车机械安装分项 | \n冷轧厂2030单元三台行车电气系统改造 | 2 | 机械设备安装分部 | 2 | 4-4行车机械安装分项 | ",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      }
+    ],
+    "project.contextOnly": [],
+    "project.sectionPresence.engineeringOverview": [
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-8",
+          "sectionId": "section-1"
+        },
+        "excerpt": "第一章 工程简介",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-9",
+          "sectionId": "section-2"
+        },
+        "excerpt": "第一节 工程概况",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-422",
+          "sectionId": "section-256"
+        },
+        "excerpt": "7 大力推进标准化施工，现场设置“五牌二图”，即工程概况牌、安全纪律牌、防火须知牌、安全无重大事故计时牌、安全生产、文明施工牌、施工现场平面图、项目经理部机构及人员名单图。利用工地简报等形式宣传标准化作业，开展精神文明建设。",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      }
+    ],
+    "project.sectionPresence.preparationBasis": [
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-51",
+          "sectionId": "section-17"
+        },
+        "excerpt": "第二节 编制依据",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-52",
+          "sectionId": "section-18"
+        },
+        "excerpt": "一、编制依据",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      }
+    ],
+    "project.sectionPresence.constructionPlan": [
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-21",
+          "sectionId": "section-6"
+        },
+        "excerpt": "1.1 生产较忙，需与生产协调，在有限的时间内合理安排施工计划，在行车停机期间集中人员进行施工作业，并保证施工足够场地。",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-77",
+          "sectionId": "section-36"
+        },
+        "excerpt": "1.6 施工前将所需的工器具、设备、材料准备就位，三台行车改造涉及区域不同具体，详见单台车施工部署。",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-81",
+          "sectionId": "section-40"
+        },
+        "excerpt": "二、机电设备安装施工阶段施工部署",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      }
+    ],
+    "project.sectionPresence.schedulePlan": [],
+    "project.sectionPresence.resourcePlan": [],
+    "project.sectionPresence.layoutPlan": [
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-419",
+          "sectionId": "section-253"
+        },
+        "excerpt": "4 严格按业主批准后的施工总平面布置图，设立临时施工设施，合理使用场地，认真听取和尊重建设单位意见，临时设施整齐规范化，搞好环境卫生，环境保护制度化，保证每天有人负责现场卫生清扫。",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-428",
+          "sectionId": "section-262"
+        },
+        "excerpt": "第一节 施工平面布置",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-492",
+          "sectionId": "section-308"
+        },
+        "excerpt": "附件2：施工总平面布置图",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      }
+    ],
+    "project.sectionPresence.processMethod": [
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-111",
+          "sectionId": "section-43"
+        },
+        "excerpt": "三、行车改造施工方法",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-463",
+          "sectionId": "section-288"
+        },
+        "excerpt": "二、根据施工工艺安排设备及材料进场；",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      }
+    ],
+    "project.sectionPresence.safetyMeasures": [
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-75",
+          "sectionId": "section-34"
+        },
+        "excerpt": "1.4 做好进场前的安全教育工作。根据现场实际情况进行安全技术措施交底，接受交底人员当场签名。",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-295",
+          "sectionId": "section-155"
+        },
+        "excerpt": "第一节 安全保证措施",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-299",
+          "sectionId": "section-157"
+        },
+        "excerpt": "第二节 安全管理措施",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      }
+    ],
+    "project.sectionPresence.emergencyPlan": [
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-376",
+          "sectionId": "section-230"
+        },
+        "excerpt": "第十二节 危险源辨识及应急预案",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-388",
+          "sectionId": "section-233"
+        },
+        "excerpt": "三、应急预案",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      }
+    ],
+    "project.sectionPresence.calculationBook": [],
+    "project.sectionPresence.monitoringPlan": [
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-365",
+          "sectionId": "section-221"
+        },
+        "excerpt": "第十节 监测监控措施",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      }
+    ],
+    "hazard.liftingOperation": [
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-22",
+          "sectionId": "section-7"
+        },
+        "excerpt": "1.2 行车改造施工，设备吊装和安装均为高处作业，对安全作业要求较高。现场危险源较多，本次改造在生产区域，施工与生产同步进行，施工的同时必须保证其它设备的正常生产，改造时必须服从生产安排。现场场地狭小，行车停放位置、吊装站位必须事先规划，确保不与生产及物流发生冲突，需要组织精细，合理安排、确保施工进度及施工安全。",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-30",
+          "sectionId": "section-12"
+        },
+        "excerpt": "2.3难点：4-2行车、4-4行车施工区域地面汽车吊站位空间受限，施工区域为煤气区域，施工过程管控动火作业。",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-31",
+          "sectionId": "section-13"
+        },
+        "excerpt": "对应措施：施工前做好现场勘察，明确汽车吊站位，对汽车吊司机做好交底；动火作业严格执行动火审批、专人监护、配备消费器材，做好动火后复查工作。",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-66",
+          "sectionId": "section-27"
+        },
+        "excerpt": "冷轧厂2030单元三台行车电气系统改造施工，依据现场生产情况，计划施工时间：2026年5月：6-1行车改造施工；2026年6月：4-2、4-4行车改造施工；分区具体区域及具体停机施工时间以甲方通知为准。施工单台行车停机改造时间为7天，施工前期准备工作：设备电缆进场、安全标化、用能申请、汽车吊报监等工作。",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-80",
+          "sectionId": "section-39"
+        },
+        "excerpt": "1.9 施工前将项目中所使用的汽车吊等设备进行报监。",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-115",
+          "sectionId": "section-43"
+        },
+        "excerpt": "起吊量最重为主起升电机，故以4-2行车主起升电机起吊为例。汽车吊选型计算如下:",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-124",
+          "sectionId": "section-43"
+        },
+        "excerpt": "④依据作业半径R=12m，计算起重量Q计=2.86t，臂长25.06m，查阅汽车吊性能表选用50T汽车吊，此工况下50T汽车吊额定起重量为7.9t＞Q计=2.86t符合吊装要求。",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-126",
+          "sectionId": "section-43"
+        },
+        "excerpt": "图3.3吊装区域示意",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-134",
+          "sectionId": "section-44"
+        },
+        "excerpt": "起重机施工吊装采用50t汽车吊施工，将起重机开到指定的起重机停靠位置，整体挂牌断电，确认满足安全要求，为便于电机更换，将50t汽车移动至图示合适位置，此时起重机要紧靠车档停放，给汽车吊需留出约4m间隔距离，便于汽车吊把杆有空间起降，利用50t汽车吊将需要更换的电机、支座等拆除的部件吊至地面，在地面上。新电机安装前安装好联轴器接手，再使用汽车吊将新电机吊至安装位置就位。电机吊装方法基相同，逐一按要求更换需要更换的电机。电机吊装示意图如下：",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-135",
+          "sectionId": "section-44"
+        },
+        "excerpt": "图3.5电机吊装位置示意",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-146",
+          "sectionId": "section-48"
+        },
+        "excerpt": "更新配电控制屏、起升控制屏、小车控制屏、1#大车控制屏、2#大车控制屏，新增1台PLC控制屏，更新进线开关箱、更新电阻箱，新开关箱安装在原有底电气盘柜安装部位分为直接安装在桥架梁面上和桥架腹内。电阻箱（2组）安装在桥架梁面上，直接将电阻箱吊运至规定的设备底座上，按图顺序吊装，依次吊运安装到位。",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-147",
+          "sectionId": "section-48"
+        },
+        "excerpt": "盘柜安装在桥架腹内，将配电屏、PLC屏等按吊装顺序编号。首先将离设备进入到吊装孔最远处吊入，靠人工搬运到位，按照此顺序将第二台、第三台...倒运到位。吊装盘柜应用有塑料保护套的钢丝绳吊装，吊索与行车吊钩夹角不得大于60°。",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-148",
+          "sectionId": "section-48"
+        },
+        "excerpt": "图3.9配电屏、柜及电阻箱等吊装示意",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-352",
+          "sectionId": "section-209"
+        },
+        "excerpt": "十六、设备吊装、调试作业中，严禁翻越设备，安全通道科学合理设置。",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-456",
+          "sectionId": "section-283"
+        },
+        "excerpt": "序号 | 名称 | 规格型号 | 单位 | 数量 | 备注\n1 | 汽车吊 | 50t | 台班 | 18 | \n2 | 随机吊 | 5t | 台班 | 15 | \n3 | 五十铃 |  | 台班 | 60 | \n4 | 钢丝绳 | Φ25×8m | 根 | 4 | ",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      }
+    ],
+    "hazard.gasArea": [
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-30",
+          "sectionId": "section-12"
+        },
+        "excerpt": "2.3难点：4-2行车、4-4行车施工区域地面汽车吊站位空间受限，施工区域为煤气区域，施工过程管控动火作业。",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-390",
+          "sectionId": "section-233"
+        },
+        "excerpt": "编制：谢建明 | 冷轧厂2030单元三台行车电气系统改造工程应急预案1 | 签发：张秋杰\n审核：戴旭 | 冷轧厂2030单元三台行车电气系统改造工程应急预案1 | 日期：2026.3.5\n标题：高处作业事故应急预案 | 标题：高处作业事故应急预案 | 标题：高处作业事故应急预案\n一、目的 确保在冷轧厂2030单元三台行车电气系统改造工程项目施工中发生高处作业事故以后，能迅速有效地开展抢救工作，最大限度降低员工及相关方生命安全风险，特制定本预案。 二、组织机构及职责 成立应急响应指挥及协调小组。 组长：张秋杰 组员：戴旭 谢建明 尚海丰 具体分工如下： 1、张秋杰：负责现场,任务是掌握了解事故情况,组织现场抢救。 2、戴旭：负责联络，任务是根据指挥小组命令，及时布置现场抢救。 3、尚海丰：负责维持现场秩序，做好当事人、周围人员的问讯记录。 4、谢建明：负责妥善处理善后工作，负责保持与当地相关",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-391",
+          "sectionId": "section-233"
+        },
+        "excerpt": "编制：谢建明 | 冷轧厂2030单元三台行车电气系统改造工程应急预案2 | 签发：张秋杰\n审核：戴旭 | 冷轧厂2030单元三台行车电气系统改造工程应急预案2 | 日期：2026.3.5\n标题：触电事故应急预案 | 标题：触电事故应急预案 | 标题：触电事故应急预案\n一、目的 确保在冷轧厂2030单元三台行车电气系统改造工程项目施工中发生触电事故以后，能迅速有效地开展抢救工作，最大限度降低员工及相关方生命安全风险，特制定本预案。 二、组织机构及职责 成立应急响应指挥及协调小组。 组长：张秋杰 组员：戴旭 谢建明 尚海丰 具体分工如下： 1、张秋杰：负责现场,任务是掌握了解事故情况,组织现场抢救。 2、戴旭：负责联络，任务是根据指挥小组命令，及时布置现场抢救。 3、尚海丰：负责维持现场秩序，做好当事人、周围人员的问讯记录。 4、谢建明：负责妥善处理善后工作，负责保持与当地相关上级部门的沟通联",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-392",
+          "sectionId": "section-233"
+        },
+        "excerpt": "编制：谢建明 | 冷轧厂2030单元三台行车电气系统改造工程应急预案3 | 签发：张秋杰\n审核：戴旭 | 冷轧厂2030单元三台行车电气系统改造工程应急预案3 | 日期：2026.3.5\n标题：起重伤害事故应急预案 | 标题：起重伤害事故应急预案 | 标题：起重伤害事故应急预案\n一、目的 确保在冷轧厂2030单元三台行车电气系统改造工程项目施工中发生起重伤害事故以后，能迅速有效地开展抢救工作，最大限度降低员工及相关方生命安全风险，特制定本预案。 二、组织机构及职责 成立应急响应指挥及协调小组。 组长：张秋杰 组员：戴旭 谢建明 尚海丰 具体分工如下： 1、张秋杰：负责现场,任务是掌握了解事故情况,组织现场抢救。 2、戴旭：负责联络，任务是根据指挥小组命令，及时布置现场抢救。 3、尚海丰：负责维持现场秩序，做好当事人、周围人员的问讯记录。 4、谢建明：负责妥善处理善后工作，负责保持与当地相关",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-393",
+          "sectionId": "section-233"
+        },
+        "excerpt": "编制：谢建明 | 冷轧厂2030单元三台行车电气系统改造工程应急预案4 | 签发：张秋杰\n审核：戴旭 | 冷轧厂2030单元三台行车电气系统改造工程应急预案4 | 日期：2026.3.5\n标题：高温中暑事故应急预案 | 标题：高温中暑事故应急预案 | 标题：高温中暑事故应急预案\n一、目的 确保在冷轧厂2030单元三台行车电气系统改造工程项目施工中发生起重伤害事故以后，能迅速有效地开展抢救工作，最大限度降低员工及相关方生命安全风险，特制定本预案。 二、组织机构及职责 成立应急响应指挥及协调小组。 组长：张秋杰 组员：戴旭 谢建明 尚海丰 具体分工如下： 1、张秋杰：负责现场,任务是掌握了解事故情况,组织现场抢救。 2、戴旭：负责联络，任务是根据指挥小组命令，及时布置现场抢救。 3、尚海丰：负责维持现场秩序，做好当事人、周围人员的问讯记录。 4、谢建明：负责妥善处理善后工作，负责保持与当地相关",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      }
+    ],
+    "hazard.hotWork": [
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-30",
+          "sectionId": "section-12"
+        },
+        "excerpt": "2.3难点：4-2行车、4-4行车施工区域地面汽车吊站位空间受限，施工区域为煤气区域，施工过程管控动火作业。",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-31",
+          "sectionId": "section-13"
+        },
+        "excerpt": "对应措施：施工前做好现场勘察，明确汽车吊站位，对汽车吊司机做好交底；动火作业严格执行动火审批、专人监护、配备消费器材，做好动火后复查工作。",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-321",
+          "sectionId": "section-179"
+        },
+        "excerpt": "四、动火作业按要求配备灭火器材和监护人员。",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-322",
+          "sectionId": "section-180"
+        },
+        "excerpt": "五、焊割作业必须严格执行动火“十不烧”的规定。做到氧气瓶有罩、安全阀、压力表完好有效，严禁沾染油脂；乙炔瓶必须装有防回火装置，压力表、安全阀完好有效。暂放和使用时必须靠边、垂直，固定捆绑；氧气瓶、乙炔瓶之间的安全距离不得少于5m，距明火不得少于10m，并按照安全规程搬运，不准碰撞、滚运；注意与相关联单位动火点的气瓶保持安全距离。",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-324",
+          "sectionId": "section-182"
+        },
+        "excerpt": "七、4-2、4-2行车上动火作业点敷设石棉布做好防火星坠落措施，地面罩式炉四周使用石棉布遮盖防止火星落入地下室，对地面作业人员进行交底，动火作业时对罩式炉周围做好监护。",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-333",
+          "sectionId": "section-191"
+        },
+        "excerpt": "四、高空焊接作业，在动火点处采取遮挡措施，防止火花飞溅，在焊接点下方做好易燃易爆品的清理工作，并派专人进行监护。",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-334",
+          "sectionId": "section-192"
+        },
+        "excerpt": "五、电气梁动火动火作业结束后，监火人除在半小时至四十五分钟内到现场进行检查、确认外，一小时至一个半小时之内，必须到现场再进行一次检查。",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-338",
+          "sectionId": "section-195"
+        },
+        "excerpt": "二、施工班组接受任务后，必须及时进行调查，对未知情况及时了解，弄清现场的危险因素，针对性的制定作业方案，填写“危险预知卡”，需要动火的作业项目及时办理好“动火申请许可证”。",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      }
+    ],
+    "hazard.temporaryPower": [
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-304",
+          "sectionId": "section-162"
+        },
+        "excerpt": "五、施工用电中照明、配电箱、开关箱、接地接零等部分必须严格按规程操作、布置。电工必须持证上岗，应编制用电施工组织设计，实行定期检查制度。",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-306",
+          "sectionId": "section-164"
+        },
+        "excerpt": "第三节 施工用电安全",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-310",
+          "sectionId": "section-168"
+        },
+        "excerpt": "四、用电管理：安装、维修或拆除临时用电工程，必须由电工完成，电工必须持证上岗，实行定期检查制度，并做好检查记录。",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-355",
+          "sectionId": "section-212"
+        },
+        "excerpt": "十九、现场临时用电，配电箱金属外壳应作接地或接零保护。现场用电实行“一机一闸、一漏一箱”管理。",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-370",
+          "sectionId": "section-226"
+        },
+        "excerpt": "五、施工用电中临时照明、配电箱、开关箱、架空线、接地接零等部分必须严格按规程操作、布置。电工必须持证上岗。",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-471",
+          "sectionId": "section-293"
+        },
+        "excerpt": "焊接、砂轮机、照明等需要检修电源。需容量为AC380V/100A三相五线制临时专用电源。临时电源应符合临时用电安全规定要求，漏电保护可靠，盘箱接地牢固，符合接地电阻要求。临时用电应有专人管理，若遇本路电源断电时，能快速处理，及时协调用电，满足现场施工要求。",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-474",
+          "sectionId": "section-296"
+        },
+        "excerpt": "二、 配备好施工现场的临时用电器具。",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      }
+    ],
+    "hazard.specialSchemePlanStatus": [
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-177",
+          "sectionId": "section-65"
+        },
+        "excerpt": "5.2 专项施工方案计划",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-381",
+          "sectionId": "section-231"
+        },
+        "excerpt": "控制措施：A、施工组织设计、施工方案、专项施工方案。B、分部、分项施工方案。C、制定目标、指标和管理方案。D、作业许可确认。E、安全交底、教育、班前危险预知交底。F、旁站监管、监督检查、设置警戒区域、对安全防护设施进行检验确认。G、制定应急预案。",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-387",
+          "sectionId": "section-232"
+        },
+        "excerpt": "控制措施：A、施工组织设计、施工方案、专项施工方案。B、分部、分项施工方案。C、制定目标、指标和管理方案。D、作业许可确认。E、安全交底、教育、班前危险预知交底。F、旁站监管、监督检查、设置警戒区域、对安全防护设施进行检验确认。G、制定应急预案。",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      }
+    ],
+    "hazard.craneCapacityTon": [
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-124",
+          "sectionId": "section-43"
+        },
+        "excerpt": "④依据作业半径R=12m，计算起重量Q计=2.86t，臂长25.06m，查阅汽车吊性能表选用50T汽车吊，此工况下50T汽车吊额定起重量为7.9t＞Q计=2.86t符合吊装要求。",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      }
+    ],
+    "hazard.calculatedLiftWeightTon": [
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-124",
+          "sectionId": "section-43"
+        },
+        "excerpt": "④依据作业半径R=12m，计算起重量Q计=2.86t，臂长25.06m，查阅汽车吊性能表选用50T汽车吊，此工况下50T汽车吊额定起重量为7.9t＞Q计=2.86t符合吊装要求。",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      }
+    ],
+    "hazard.highRiskCategories": [
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-22",
+          "sectionId": "section-7"
+        },
+        "excerpt": "1.2 行车改造施工，设备吊装和安装均为高处作业，对安全作业要求较高。现场危险源较多，本次改造在生产区域，施工与生产同步进行，施工的同时必须保证其它设备的正常生产，改造时必须服从生产安排。现场场地狭小，行车停放位置、吊装站位必须事先规划，确保不与生产及物流发生冲突，需要组织精细，合理安排、确保施工进度及施工安全。",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-30",
+          "sectionId": "section-12"
+        },
+        "excerpt": "2.3难点：4-2行车、4-4行车施工区域地面汽车吊站位空间受限，施工区域为煤气区域，施工过程管控动火作业。",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-30",
+          "sectionId": "section-12"
+        },
+        "excerpt": "2.3难点：4-2行车、4-4行车施工区域地面汽车吊站位空间受限，施工区域为煤气区域，施工过程管控动火作业。",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-304",
+          "sectionId": "section-162"
+        },
+        "excerpt": "五、施工用电中照明、配电箱、开关箱、接地接零等部分必须严格按规程操作、布置。电工必须持证上岗，应编制用电施工组织设计，实行定期检查制度。",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      }
+    ],
+    "hazard.calculationEvidencePresent": [],
+    "hazard.measureSectionPresent": [
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-75",
+          "sectionId": "section-34"
+        },
+        "excerpt": "1.4 做好进场前的安全教育工作。根据现场实际情况进行安全技术措施交底，接受交底人员当场签名。",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-295",
+          "sectionId": "section-155"
+        },
+        "excerpt": "第一节 安全保证措施",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-299",
+          "sectionId": "section-157"
+        },
+        "excerpt": "第二节 安全管理措施",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      }
+    ],
+    "hazard.monitoringSectionPresent": [
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-365",
+          "sectionId": "section-221"
+        },
+        "excerpt": "第十节 监测监控措施",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      }
+    ],
+    "schedule.shutdownWindowDays": [
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "blockId": "block-66",
+          "sectionId": "section-27"
+        },
+        "excerpt": "冷轧厂2030单元三台行车电气系统改造施工，依据现场生产情况，计划施工时间：2026年5月：6-1行车改造施工；2026年6月：4-2、4-4行车改造施工；分区具体区域及具体停机施工时间以甲方通知为准。施工单台行车停机改造时间为7天，施工前期准备工作：设备电缆进场、安全标化、用能申请、汽车吊报监等工作。",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      }
+    ],
+    "resource.laborTotal": [
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "tableId": "table-17",
+          "sectionId": "section-284"
+        },
+        "excerpt": "序号 | 项目内容 | 工种 | 工种 | 工种 | 工种 | 工种 | 工种\n序号 | 项目内容 | 电工 | 焊工 | 钳 工 | 起重工 | 辅助工 | 合计人数\n | 冷轧厂2030单元三台行车电气系统改造6-1行车 | 16 | 4 | 8 | 6 | 3 | 37\n | 冷轧厂2030单元三台行车电气系统改造4-2行车 | 16 | 4 | 8 | 6 | 3 | 37\n | 冷轧厂2030单元三台行车电气系统改造4-4行车 | 16 | 4 | 8 | 6 | 3 | 37",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      }
+    ],
+    "resource.laborBreakdown": [
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "tableId": "table-17",
+          "sectionId": "section-284"
+        },
+        "excerpt": "序号 | 项目内容 | 工种 | 工种 | 工种 | 工种 | 工种 | 工种\n序号 | 项目内容 | 电工 | 焊工 | 钳 工 | 起重工 | 辅助工 | 合计人数\n | 冷轧厂2030单元三台行车电气系统改造6-1行车 | 16 | 4 | 8 | 6 | 3 | 37\n | 冷轧厂2030单元三台行车电气系统改造4-2行车 | 16 | 4 | 8 | 6 | 3 | 37\n | 冷轧厂2030单元三台行车电气系统改造4-4行车 | 16 | 4 | 8 | 6 | 3 | 37",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      }
+    ],
+    "schedule.attachmentRefs": [
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "attachmentId": "attachment-1"
+        },
+        "excerpt": "附件1：施工网络进度表",
+        "visibility": "parsed",
+        "confidence": "medium",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "attachmentId": "attachment-2"
+        },
+        "excerpt": "附件2：施工总平面布置图",
+        "visibility": "attachment_unparsed",
+        "confidence": "medium",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      }
+    ],
+    "emergency.planTitles": [
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "tableId": "table-11",
+          "sectionId": "section-233"
+        },
+        "excerpt": "编制：谢建明 | 冷轧厂2030单元三台行车电气系统改造工程应急预案1 | 签发：张秋杰\n审核：戴旭 | 冷轧厂2030单元三台行车电气系统改造工程应急预案1 | 日期：2026.3.5\n标题：高处作业事故应急预案 | 标题：高处作业事故应急预案 | 标题：高处作业事故应急预案\n一、目的 确保在冷轧厂2030单元三台行车电气系统改造工程项目施工中发生高处作业事故以后，能迅速有效地开展抢救工作，最大限度降低员工及相关方生命安全风险，特制定本预案。 二、组织机构及职责 成立应急响应指挥及协调小组。 组长：张秋杰 组员：戴旭 谢建明 尚海丰 具体分工如下： 1、张秋杰：负责现场,任务是掌握了解事故情况,组织现场抢救。 2、戴旭：负责联络，任务是根据指挥小组命令，及时布置现场抢救。 3、尚海丰：负责维持现场秩序，做好当事人、周围人员的问讯记录。 4、谢建明：负责妥善处理善后工作，负责保持与当地相关",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "tableId": "table-12",
+          "sectionId": "section-233"
+        },
+        "excerpt": "编制：谢建明 | 冷轧厂2030单元三台行车电气系统改造工程应急预案2 | 签发：张秋杰\n审核：戴旭 | 冷轧厂2030单元三台行车电气系统改造工程应急预案2 | 日期：2026.3.5\n标题：触电事故应急预案 | 标题：触电事故应急预案 | 标题：触电事故应急预案\n一、目的 确保在冷轧厂2030单元三台行车电气系统改造工程项目施工中发生触电事故以后，能迅速有效地开展抢救工作，最大限度降低员工及相关方生命安全风险，特制定本预案。 二、组织机构及职责 成立应急响应指挥及协调小组。 组长：张秋杰 组员：戴旭 谢建明 尚海丰 具体分工如下： 1、张秋杰：负责现场,任务是掌握了解事故情况,组织现场抢救。 2、戴旭：负责联络，任务是根据指挥小组命令，及时布置现场抢救。 3、尚海丰：负责维持现场秩序，做好当事人、周围人员的问讯记录。 4、谢建明：负责妥善处理善后工作，负责保持与当地相关上级部门的沟通联",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "tableId": "table-13",
+          "sectionId": "section-233"
+        },
+        "excerpt": "编制：谢建明 | 冷轧厂2030单元三台行车电气系统改造工程应急预案3 | 签发：张秋杰\n审核：戴旭 | 冷轧厂2030单元三台行车电气系统改造工程应急预案3 | 日期：2026.3.5\n标题：起重伤害事故应急预案 | 标题：起重伤害事故应急预案 | 标题：起重伤害事故应急预案\n一、目的 确保在冷轧厂2030单元三台行车电气系统改造工程项目施工中发生起重伤害事故以后，能迅速有效地开展抢救工作，最大限度降低员工及相关方生命安全风险，特制定本预案。 二、组织机构及职责 成立应急响应指挥及协调小组。 组长：张秋杰 组员：戴旭 谢建明 尚海丰 具体分工如下： 1、张秋杰：负责现场,任务是掌握了解事故情况,组织现场抢救。 2、戴旭：负责联络，任务是根据指挥小组命令，及时布置现场抢救。 3、尚海丰：负责维持现场秩序，做好当事人、周围人员的问讯记录。 4、谢建明：负责妥善处理善后工作，负责保持与当地相关",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "施工组织设计-冷轧厂2030单元三台行车电气系统改造",
+        "locator": {
+          "tableId": "table-14",
+          "sectionId": "section-233"
+        },
+        "excerpt": "编制：谢建明 | 冷轧厂2030单元三台行车电气系统改造工程应急预案4 | 签发：张秋杰\n审核：戴旭 | 冷轧厂2030单元三台行车电气系统改造工程应急预案4 | 日期：2026.3.5\n标题：高温中暑事故应急预案 | 标题：高温中暑事故应急预案 | 标题：高温中暑事故应急预案\n一、目的 确保在冷轧厂2030单元三台行车电气系统改造工程项目施工中发生起重伤害事故以后，能迅速有效地开展抢救工作，最大限度降低员工及相关方生命安全风险，特制定本预案。 二、组织机构及职责 成立应急响应指挥及协调小组。 组长：张秋杰 组员：戴旭 谢建明 尚海丰 具体分工如下： 1、张秋杰：负责现场,任务是掌握了解事故情况,组织现场抢救。 2、戴旭：负责联络，任务是根据指挥小组命令，及时布置现场抢救。 3、尚海丰：负责维持现场秩序，做好当事人、周围人员的问讯记录。 4、谢建明：负责妥善处理善后工作，负责保持与当地相关",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": null,
+        "evidenceGapReason": null
+      }
+    ]
+  },
+  "unresolvedFacts": []
+}

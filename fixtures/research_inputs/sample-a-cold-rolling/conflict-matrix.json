@@ -1,0 +1,26 @@
+{
+  "values": {
+    "scheduleVsResources": {
+      "shutdownWindowDays": 7,
+      "laborTotal": 37,
+      "highRiskCategories": [
+        "working_at_height",
+        "gas_area_ops",
+        "hot_work",
+        "temporary_power"
+      ],
+      "issueTriggered": true
+    },
+    "hazardVsMeasures": {
+      "highRiskCategories": [
+        "working_at_height",
+        "gas_area_ops",
+        "hot_work",
+        "temporary_power"
+      ],
+      "measureSectionPresent": true,
+      "monitoringSectionPresent": true,
+      "issueTriggered": false
+    }
+  }
+}

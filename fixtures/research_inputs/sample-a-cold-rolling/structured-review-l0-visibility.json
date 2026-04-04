@@ -1,0 +1,62 @@
+{
+  "parseMode": "docx_structured",
+  "parserLimited": false,
+  "parseWarnings": [],
+  "visibility": {
+    "parseMode": "docx_structured",
+    "parserLimited": false,
+    "fileType": "docx",
+    "attachmentCount": 2,
+    "counts": {
+      "parsed": 1,
+      "attachment_unparsed": 1,
+      "referenced_only": 0,
+      "missing": 0,
+      "unknown": 0
+    },
+    "reasonCounts": {
+      "attachment_body_visible": 1,
+      "title_detected_without_attachment_body": 1
+    },
+    "duplicateSectionTitles": [
+      "防火安全",
+      "环境管理计划"
+    ],
+    "parseWarnings": [],
+    "manualReviewNeeded": true,
+    "manualReviewReason": "title_detected_without_attachment_body"
+  },
+  "manualReviewNeeded": true,
+  "manualReviewReason": "title_detected_without_attachment_body",
+  "attachmentVisibility": [
+    {
+      "id": "attachment-1",
+      "attachmentNumber": "1",
+      "title": "附件1：施工网络进度表",
+      "visibility": "parsed",
+      "parseState": "parsed",
+      "manualReviewNeeded": false,
+      "reason": "attachment_body_visible",
+      "referenceBlockIds": [
+        "block-67",
+        "block-186",
+        "block-490"
+      ],
+      "titleBlockId": "block-490"
+    },
+    {
+      "id": "attachment-2",
+      "attachmentNumber": "2",
+      "title": "附件2：施工总平面布置图",
+      "visibility": "attachment_unparsed",
+      "parseState": "attachment_unparsed",
+      "manualReviewNeeded": true,
+      "reason": "title_detected_without_attachment_body",
+      "referenceBlockIds": [
+        "block-429",
+        "block-492"
+      ],
+      "titleBlockId": "block-492"
+    }
+  ]
+}
