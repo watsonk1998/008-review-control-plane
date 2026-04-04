@@ -1,5 +1,13 @@
 # Latest Eval Summary
 
+> **⚠️ 快照声明**
+> - 本文件是某次本地执行 `make eval-review` 等命令后自动生成的**阶段性评测快照**
+> - **不等于长期仓库 truth**，不替代 `fixtures/review_eval/README.md` 的版本语义与 stage gate 定义
+> - 不能因为本次 eval 通过就自动认定差距已关闭或边界可以放宽
+> - 使用时应与 GitHub 仓库事实（README / formal-review.md）和样本级结构化证据（`fixtures/research_inputs/`）联合解读
+> - 生成来源：本地 `artifacts/research-pack/`（被 .gitignore 排除的运行产物目录）
+
+
 ## 执行环境
 - 生成时间：2026-04-05T00:51:14+08:00
 - 仓库：`/Users/lucas/repos/review/008-review-control-plane`

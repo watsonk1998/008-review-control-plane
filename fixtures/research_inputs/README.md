@@ -47,22 +47,30 @@ fixtures/research_inputs/
 
 ## 精选原则
 
-从 `artifacts/research-pack/` 中精选时，遵循以下原则：
+本目录只纳入"研究型 AI 做三角对比研究、差距裁决、truth 分层时直接需要消费的结构化工件"。不是所有运行产物都适合入仓。
 
-**已纳入（高研究价值、可直接消费）：**
-- `structured-review-result.json` — 最核心，包含 issues / visibility / resolvedProfile 等完整结果
-- `structured-review-l0-visibility.json` — L0 可视域层关键
-- `structured-review-rule-hits.json` — 规则命中层关键
-- `structured-review-facts.json` — 事实抽取层关键
-- 5 种 matrix — 小文件，高信息密度
+### 为什么只保留这 9 类样本工件
 
-**未纳入（运行产物噪声或冗余）：**
-- `structured-review-parse.json` — 原始解析输出，过大（576K~2.6M），研究价值低
-- `structured-review-candidates.json` — 候选问题中间产物
-- `structured-review-report.md` — 已在 `fixtures/supervision/` 中以 V0.2 结果存在
-- `structured-review-report-buckets.json` — 中间分类桶
-- `eval/*.json` — 评测系统专用 JSON，体积大，latest-eval-summary.md 已提供摘要
-- `logs/` — 原始运行日志
+| 文件 | 纳入理由 |
+|------|---------|
+| `structured-review-result.json` | **最核心** — 包含 issues / visibility / resolvedProfile 等完整结果对象，是差距分析和 truth 分层的主要依据 |
+| `structured-review-l0-visibility.json` | **L0 关键** — 可视域快照，直接决定 visibility truth 判断 |
+| `structured-review-rule-hits.json` | **L1/L2 关键** — 规则命中清单，差距裁决的直接证据 |
+| `structured-review-facts.json` | **L2 关键** — 事实抽取结果，fact → rule hit → evidence 闭环的起点 |
+| 5 种 matrix | **高密度** — 小文件（<73K），提供附件可视域 / 冲突 / 危险源 / 规则命中 / 章节结构的矩阵视图 |
+
+### 为什么不纳入以下文件
+
+| 文件 | 不纳入理由 |
+|------|-----------|
+| `structured-review-parse.json` | **过大**（576K~2.6M）——是原始 PDF 文本解析输出，研究型 AI 不直接消费它做差距分析；facts.json 已是其下游精选产物 |
+| `structured-review-candidates.json` | **中间产物** — 候选问题列表，是 rules→issues 过程中的中间结果，result.json 已包含最终 issues |
+| `structured-review-report.md` | **已有重复** — 同一份 Markdown 报告已在 `fixtures/supervision/V0.2-*.md` 中存在，无需二次入仓 |
+| `structured-review-report-buckets.json` | **中间桶分类** — 报告分桶的中间产物，研究型 AI 不直接消费 |
+| `eval/*.json`（4 文件，共 940K） | **评测系统专用** — 主要用于 `make eval-review` 等自动化评测，`latest-eval-summary.md`（3.8K）已提供足够的治理快照 |
+| `logs/`（4 文件，共 960K） | **原始运行日志** — 调试用途，非研究输入 |
+
+> **这不是遗漏，是有意精选。** 如果后续发现某个未纳入文件确实被研究型 AI 频繁需要，可以按"精选原则"评估后增补。
 
 ## 与其他目录的关系
 
