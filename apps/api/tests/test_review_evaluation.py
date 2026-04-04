@@ -163,11 +163,14 @@ def test_review_eval_harness_reports_stage_metrics_and_versioned_diagnostics(tmp
     assert 'issue_recall' in main_payload['aggregate']
     assert 'facts_accuracy' in main_payload['aggregate']
     assert 'rule_hit_accuracy' in main_payload['aggregate']
+    assert main_payload['layeredMetrics']['L0']['metrics']['attachment_visibility_accuracy'] == 1.0
+    assert main_payload['layeredMetrics']['L3']['diagnosticOnly'] is True
     assert 'versionedDiagnostics' in main_payload
     assert len(main_payload['versionedDiagnostics']['cases']) == 1
     assert main_payload['versionedStageThresholds']['facts_accuracy'] == 0.9
     assert main_payload['versionedStageGate']['caseIds'] == ['versioned-hz-001']
     assert main_payload['versionedStageGate']['passed'] is True
+    assert main_payload['versionedStageGate']['layeredMetrics']['L2']['metrics']['facts_accuracy'] == 1.0
     diagnostics = main_payload['versionedDiagnostics']['cases'][0]['evaluationDiagnostics']
     assert diagnostics['usedDirectFacts'] is True
     assert diagnostics['usedDirectRuleHits'] is True
@@ -180,13 +183,16 @@ def test_review_eval_harness_reports_stage_metrics_and_versioned_diagnostics(tmp
     assert 'baseline' in ablation_payload['variants']
     assert 'disable_rule_engine' in ablation_payload['variants']
     assert 'facts_accuracy' in ablation_payload['variants']['baseline']['aggregate']
+    assert ablation_payload['variants']['baseline']['layeredMetrics']['L2']['metrics']['facts_accuracy'] == 1.0
 
     cross_pack_code, cross_pack_payload = run_cross_pack(tmp_path)
     assert cross_pack_code == 0
     assert 'auto' in cross_pack_payload['variants']
     assert 'expected_packs_forced' in cross_pack_payload['variants']
+    assert cross_pack_payload['variants']['auto']['layeredMetrics']['CrossCutting']['metrics']['pack_selection_accuracy'] == 1.0
 
     cross_model_code, cross_model_payload = run_cross_model(tmp_path)
     assert cross_model_code == 0
     assert 'deterministic' in cross_model_payload['models']
     assert 'fallback' in cross_model_payload['models']
+    assert cross_model_payload['models']['deterministic']['layeredMetrics']['L1']['metrics']['issue_recall'] == 1.0

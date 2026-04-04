@@ -343,7 +343,7 @@ export interface ReviewerDecisionUpdateRequest {
 export interface SupportScopeResponse {
   documentTypes: Array<{
     documentType: ReviewDocumentType;
-    readiness: "official" | "skeleton";
+    readiness: "official" | "experimental" | "skeleton";
   }>;
   packs: Array<{
     packId: string;

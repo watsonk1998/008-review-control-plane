@@ -776,7 +776,9 @@ def test_support_scope_route_returns_official_and_placeholder_scope():
     document_types = {item['documentType']: item['readiness'] for item in payload['documentTypes']}
     assert document_types['construction_org'] == 'official'
     assert document_types['hazardous_special_scheme'] == 'official'
-    assert document_types['construction_scheme'] == 'skeleton'
+    assert document_types['construction_scheme'] == 'experimental'
+    assert document_types['supervision_plan'] == 'experimental'
+    assert document_types['review_support_material'] == 'experimental'
     packs = {item['packId']: item['readiness'] for item in payload['packs']}
     assert packs['construction_org.base'] == 'ready'
     assert packs['construction_scheme.base'] == 'ready'
@@ -802,9 +804,42 @@ def test_upload_route_returns_source_document_ref(monkeypatch, tmp_path: Path):
     payload = response.json()
     assert payload['sourceType'] == 'upload'
     assert payload['fileType'] == 'md'
+    assert payload['mediaType'] == 'text/markdown'
     stored_path = Path(payload['storagePath'])
     assert stored_path.exists()
     assert stored_path.read_text(encoding='utf-8') == '# demo\n\ncontent\n'
+
+
+def test_upload_route_rejects_missing_filename(monkeypatch, tmp_path: Path):
+    monkeypatch.setattr(
+        uploads_route,
+        'get_settings',
+        lambda: SimpleNamespace(uploads_dir=tmp_path),
+    )
+    client = TestClient(app)
+
+    response = client.post(
+        '/api/uploads/documents',
+        files={'file': ('   ', b'content', 'text/plain')},
+    )
+    assert response.status_code == 400
+    assert response.json()['detail'] == 'Invalid upload filename: missing file name'
+
+
+def test_upload_route_rejects_unexpected_content_type(monkeypatch, tmp_path: Path):
+    monkeypatch.setattr(
+        uploads_route,
+        'get_settings',
+        lambda: SimpleNamespace(uploads_dir=tmp_path),
+    )
+    client = TestClient(app)
+
+    response = client.post(
+        '/api/uploads/documents',
+        files={'file': ('uploaded.pdf', b'%PDF-1.4', 'text/plain')},
+    )
+    assert response.status_code == 400
+    assert response.json()['detail'] == 'Unexpected content type for .pdf upload: text/plain'
 
 
 def test_task_routes_list_recent_tasks(monkeypatch):

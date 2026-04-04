@@ -26,7 +26,7 @@
 
 7. **P0 正式支持范围仍有限**
    - 当前正式支持仅 `construction_org` 与 `hazardous_special_scheme`。
-   - `construction_scheme`、`supervision_plan`、`review_support_material` 虽已有 ready base packs，但 documentType 仍只处于 skeleton / experimental 范围，不计入 P0 成功标准。
+   - `construction_scheme`、`supervision_plan`、`review_support_material` 虽已有 ready base packs，但 documentType 当前仍只处于 experimental 范围，不计入 P0 成功标准。
 
 8. **PDF 仍是 text-only 降级路径**
    - PDF 当前会显式输出 `pdf_text_extraction_only`、`pdf_tables_not_preserved`、`pdf_attachment_visibility_may_be_unknown` 等 warnings。

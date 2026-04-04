@@ -100,7 +100,7 @@ make eval-review-cross-model
 - P0 正式支持：
   - `construction_org`
   - `hazardous_special_scheme`
-- skeleton / experimental 覆盖：
+- experimental 覆盖：
   - `construction_scheme`
   - `supervision_plan`
   - `review_support_material`
@@ -113,6 +113,7 @@ make eval-review-cross-model
 - `result.visibility` 与 `unresolvedFacts` 可被 API/UI/eval 一致消费
 - `result.visibility.parseWarnings` 是 canonical 解析告警来源
 - `summary.visibilitySummary` 仅作为 display summary 保留
+- `structured-review-l0-visibility.json` 会单独输出 L0 可视域工件，但不替代 `result.visibility`
 - 能识别重复章节、附件可视域缺口、专项方案挂接不清、停机窗口与资源压力
 - 能识别施工组织设计核心章节完整性缺口
 - 能识别一般施工方案核心章节完整性缺口
@@ -141,6 +142,12 @@ make eval-review-cross-model
   - hazard identification accuracy ≥ `0.90`
   - attachment visibility accuracy ≥ `0.90`
   - manual review flag accuracy ≥ `0.80`
+- eval JSON 会补充 `layeredMetrics` 视图：
+  - `L0`：`attachment_visibility_accuracy / manual_review_flag_accuracy`
+  - `L1`：`issue_recall / l1_hit_rate / high_severity_issue_recall / hard_evidence_accuracy / severity_accuracy`
+  - `L2`：`facts_accuracy / rule_hit_accuracy / policy_ref_accuracy / hazard_identification_accuracy`
+  - `CrossCutting`：`pack_selection_accuracy`
+  - `L3`：仅保留 `diagnosticOnly: true`
 - experimental versioned cases进入 diagnostics，但不提升 skeleton documentType 为 official CI gate
 - `review_assist` 回归失败数 = `0`
 

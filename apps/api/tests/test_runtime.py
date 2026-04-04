@@ -343,3 +343,58 @@ async def test_runtime_structured_review_accepts_source_document_ref_without_fix
     assert saved.result['summary']['manualReviewNeeded'] is True
     assert 'fixture' not in saved.result
     assert any(issue['title'] == '附件处于可视域缺口，需人工复核原件' for issue in saved.result['issues'])
+
+
+async def test_runtime_structured_review_fixture_and_upload_stay_contract_equivalent(tmp_path: Path):
+    runtime, store = build_runtime(tmp_path, deeptutor=None)
+
+    fixture_task = create_task(
+        id='task-fixture-parity',
+        taskType='structured_review',
+        capabilityMode='auto',
+        query='对该施工组织设计执行正式结构化审查',
+        fixtureId='sample-doc',
+        documentType='construction_org',
+        disciplineTags=['lifting_operations', 'temporary_power', 'hot_work'],
+        strictMode=True,
+        policyPackIds=['construction_org.base'],
+    )
+    upload_source = tmp_path / 'uploaded-structured-review.md'
+    upload_source.write_text((tmp_path / 'fixtures' / 'sample.md').read_text(encoding='utf-8'), encoding='utf-8')
+    upload_task = create_task(
+        id='task-upload-parity',
+        taskType='structured_review',
+        capabilityMode='auto',
+        query='对该施工组织设计执行正式结构化审查',
+        fixtureId=None,
+        sourceDocumentRef=SourceDocumentRef(
+            refId='upload-ref-parity',
+            sourceType='upload',
+            fileName=upload_source.name,
+            fileType='md',
+            storagePath=str(upload_source),
+            displayName='上传同构样本',
+        ),
+        documentType='construction_org',
+        disciplineTags=['lifting_operations', 'temporary_power', 'hot_work'],
+        strictMode=True,
+        policyPackIds=['construction_org.base'],
+    )
+    store.create_task(fixture_task)
+    store.create_task(upload_task)
+
+    await runtime.execute_task(fixture_task.id)
+    await runtime.execute_task(upload_task.id)
+
+    fixture_saved = store.get_task(fixture_task.id)
+    upload_saved = store.get_task(upload_task.id)
+    assert fixture_saved is not None and upload_saved is not None
+    assert fixture_saved.result is not None and upload_saved.result is not None
+
+    assert fixture_saved.result['summary']['documentType'] == upload_saved.result['summary']['documentType']
+    assert fixture_saved.result['resolvedProfile'] == upload_saved.result['resolvedProfile']
+    assert fixture_saved.result['visibility'] == upload_saved.result['visibility']
+    assert [issue['findingType'] for issue in fixture_saved.result['issues']] == [issue['findingType'] for issue in upload_saved.result['issues']]
+    assert [(item['name'], item['category']) for item in fixture_saved.result['artifactIndex']] == [
+        (item['name'], item['category']) for item in upload_saved.result['artifactIndex']
+    ]

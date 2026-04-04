@@ -9,9 +9,9 @@ import type {
 const DOCUMENT_TYPE_OPTIONS: Array<{ value: ReviewDocumentType; label: string }> = [
   { value: "construction_org", label: "施工组织设计" },
   { value: "hazardous_special_scheme", label: "危大专项方案" },
-  { value: "construction_scheme", label: "一般施工方案（骨架）" },
-  { value: "supervision_plan", label: "监理规划（骨架）" },
-  { value: "review_support_material", label: "审查辅助材料（骨架）" },
+  { value: "construction_scheme", label: "一般施工方案（experimental）" },
+  { value: "supervision_plan", label: "监理规划（experimental）" },
+  { value: "review_support_material", label: "审查辅助材料（experimental）" },
 ];
 
 const DISCIPLINE_OPTIONS = [
@@ -50,6 +50,12 @@ export function StructuredReviewForm({
   });
   const readyPacks = relevantPacks.filter((pack) => pack.readiness === "ready");
   const placeholderPacks = relevantPacks.filter((pack) => pack.readiness === "placeholder");
+  const readinessHint =
+    documentReadiness === "official"
+      ? "当前 documentType 属于 official support。"
+      : documentReadiness === "experimental"
+        ? "当前 documentType 属于 experimental：已有 ready packs，但不等同 official support。"
+        : "当前 documentType 仍属 skeleton：仅保留未来扩展位。";
 
   return (
     <section className="stack-lg">
@@ -58,12 +64,17 @@ export function StructuredReviewForm({
           <p className="eyebrow">Structured Review Profile</p>
           <h3>正式审查参数</h3>
         </div>
-        <p className="muted small">支持范围只以 `/api/tasks/support-scope` 为准；文档类型的 official / skeleton 与 pack readiness 不再前端硬编码。</p>
+        <p className="muted small">支持范围只以 `/api/tasks/support-scope` 为准；文档类型的 official / experimental / skeleton 与 pack readiness 不再前端硬编码。</p>
       </div>
 
+      {documentReadiness === "experimental" ? (
+        <div className="callout warning-callout">
+          当前所选文档类型属于 experimental。系统会如实展示已 ready 的 pack，但不会把该 documentType 伪装成 official support。
+        </div>
+      ) : null}
       {documentReadiness === "skeleton" ? (
         <div className="callout warning-callout">
-          当前所选文档类型仍属 skeleton / experimental。系统会如实展示已 ready 的 pack，但不会把该 documentType 伪装成 official support。
+          当前所选文档类型仍属 skeleton。系统只展示当前可见范围，不承诺已具备稳定审查能力。
         </div>
       ) : null}
       {!documentReadiness ? <div className="callout">support-scope 加载中；未返回前不展示本地 fallback 结论。</div> : null}
@@ -141,6 +152,7 @@ export function StructuredReviewForm({
         <div className="callout">
           <strong>当前 support-scope</strong>
           <p>documentType readiness：{documentReadiness}</p>
+          <p>{readinessHint}</p>
           <p>ready packs：{readyPacks.map((pack) => pack.packId).join("，") || "无"}</p>
           <p>placeholder packs：{placeholderPacks.map((pack) => pack.packId).join("，") || "无"}</p>
         </div>

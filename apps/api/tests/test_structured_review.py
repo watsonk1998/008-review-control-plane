@@ -272,3 +272,11 @@ def test_structured_review_executor_builds_full_artifact_catalog(tmp_path: Path)
 
     artifact_categories = {artifact['category'] for artifact in result['artifactIndex']}
     assert {'parse', 'facts', 'rule_hits', 'candidates', 'result', 'matrices', 'report'}.issubset(artifact_categories)
+    artifact_names = {artifact['name'] for artifact in result['artifactIndex']}
+    assert 'structured-review-l0-visibility' in artifact_names
+    l0_payload = json.loads((tmp_path / 'structured-review-l0-visibility.json').read_text(encoding='utf-8'))
+    assert l0_payload['parseMode'] == 'docx_structured'
+    assert l0_payload['parserLimited'] is False
+    assert l0_payload['visibility'] == result['visibility']
+    assert l0_payload['manualReviewNeeded'] == result['visibility']['manualReviewNeeded']
+    assert any(item['visibility'] == 'attachment_unparsed' for item in l0_payload['attachments'])

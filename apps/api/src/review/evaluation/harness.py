@@ -83,6 +83,13 @@ _AGGREGATE_METRICS = [
     'hazard_identification_accuracy',
 ]
 
+_LAYERED_METRIC_GROUPS = {
+    'L0': ['attachment_visibility_accuracy', 'manual_review_flag_accuracy'],
+    'L1': ['issue_recall', 'l1_hit_rate', 'high_severity_issue_recall', 'hard_evidence_accuracy', 'severity_accuracy'],
+    'L2': ['facts_accuracy', 'rule_hit_accuracy', 'policy_ref_accuracy', 'hazard_identification_accuracy'],
+    'CrossCutting': ['pack_selection_accuracy'],
+}
+
 
 def _aggregate(case_summaries: list[dict[str, Any]]) -> dict[str, float]:
     if not case_summaries:
@@ -91,6 +98,19 @@ def _aggregate(case_summaries: list[dict[str, Any]]) -> dict[str, float]:
         name: round(statistics.mean(case['metrics'][name] for case in case_summaries), 4)
         for name in _AGGREGATE_METRICS
     }
+
+
+def _build_layered_metrics(aggregate: dict[str, float]) -> dict[str, Any]:
+    payload: dict[str, Any] = {}
+    for group, keys in _LAYERED_METRIC_GROUPS.items():
+        payload[group] = {
+            'metrics': {
+                key: aggregate.get(key, 0.0)
+                for key in keys
+            }
+        }
+    payload['L3'] = {'diagnosticOnly': True, 'metrics': {}}
+    return payload
 
 
 def _dataset_guard(case_root: Path) -> tuple[list[dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]], dict[str, int]]:
@@ -267,17 +287,20 @@ def run_main(case_root: Path) -> tuple[int, dict[str, Any]]:
         'mode': 'main',
         'passed': passed,
         'aggregate': aggregate,
+        'layeredMetrics': _build_layered_metrics(aggregate),
         'thresholds': THRESHOLDS,
         'versionedStageThresholds': VERSIONED_STAGE_THRESHOLDS,
         'datasetCounts': counts,
         'cases': stable_summaries,
         'versionedStageGate': {
             'aggregate': versioned_gate_aggregate,
+            'layeredMetrics': _build_layered_metrics(versioned_gate_aggregate),
             'caseIds': [case['caseId'] for case in versioned_gate_cases],
             'passed': (not versioned_gate_cases or _passes_versioned_stage_thresholds(versioned_gate_aggregate)),
         },
         'versionedDiagnostics': {
             'aggregate': _aggregate(versioned_summaries) if versioned_summaries else {},
+            'layeredMetrics': _build_layered_metrics(_aggregate(versioned_summaries) if versioned_summaries else {}),
             'cases': versioned_summaries,
         },
     }
@@ -298,6 +321,7 @@ def run_ablations(case_root: Path) -> tuple[int, dict[str, Any]]:
         case_summaries = _run_cases(cases, llm=DeterministicLLM(), execution_options=options, run_label=name)
         results[name] = {
             'aggregate': _aggregate(case_summaries),
+            'layeredMetrics': _build_layered_metrics(_aggregate(case_summaries)),
             'cases': case_summaries,
             'executionOptions': options,
             'ablationMode': name != 'baseline',
@@ -325,10 +349,12 @@ def run_cross_pack(case_root: Path) -> tuple[int, dict[str, Any]]:
         'variants': {
             'auto': {
                 'aggregate': _aggregate(auto_case_summaries),
+                'layeredMetrics': _build_layered_metrics(_aggregate(auto_case_summaries)),
                 'cases': auto_case_summaries,
             },
             'expected_packs_forced': {
                 'aggregate': _aggregate(forced_case_summaries),
+                'layeredMetrics': _build_layered_metrics(_aggregate(forced_case_summaries)),
                 'cases': forced_case_summaries,
             },
         },
@@ -348,6 +374,7 @@ def run_cross_model(case_root: Path) -> tuple[int, dict[str, Any]]:
         case_summaries = _run_cases(cases, llm=llm)
         payload['models'][model_name] = {
             'aggregate': _aggregate(case_summaries),
+            'layeredMetrics': _build_layered_metrics(_aggregate(case_summaries)),
             'cases': case_summaries,
         }
     return 0, payload

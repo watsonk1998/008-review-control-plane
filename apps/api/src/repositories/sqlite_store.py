@@ -6,7 +6,7 @@ import json
 import sqlite3
 from typing import Any
 
-from src.domain.models import SourceDocumentRef, TaskEvent, TaskRecord
+from src.domain.models import ReviewerDecision, SourceDocumentRef, TaskEvent, TaskRecord
 
 
 _TASK_EXTRA_COLUMNS = {
@@ -261,7 +261,7 @@ class SQLiteTaskStore:
             status=row['status'],
             plan=json.loads(row['plan_json']) if row['plan_json'] else None,
             result=json.loads(row['result_json']) if row['result_json'] else None,
-            reviewerDecision=json.loads(row['reviewer_decision_json']) if row['reviewer_decision_json'] else None,
+            reviewerDecision=ReviewerDecision.model_validate(json.loads(row['reviewer_decision_json'])) if row['reviewer_decision_json'] else None,
             error=json.loads(row['error_json']) if row['error_json'] else None,
             createdAt=datetime.fromisoformat(row['created_at']),
             updatedAt=datetime.fromisoformat(row['updated_at']),

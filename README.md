@@ -55,7 +55,7 @@
 - `construction_org`
 - `hazardous_special_scheme`
 
-以下类型已具备 ready base pack，但 documentType 仍只保留 skeleton / experimental 入口，不计入 P0 成功标准：
+以下类型已具备 ready base pack，但 documentType 当前只保留 experimental 入口，不计入 P0 成功标准：
 
 - `construction_scheme`
 - `supervision_plan`
