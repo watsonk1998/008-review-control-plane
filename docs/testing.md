@@ -124,6 +124,7 @@ make eval-review-cross-model
 - `missing` 只在有明确证据时产出
 - artifact API 可列出和下载工件，且与 `result.artifactIndex` 同口径；对新任务 `artifactIndex` 即使为空也优先于目录扫描
 - 详情页优先展示 `resolvedProfile / visibility / unresolvedFacts / artifactIndex / reviewerDecision`，再展示报告与原始 JSON
+- reviewer 结果页以结构化方式展示 `attachmentVisibility / ruleHits / conflicts / sectionStructure`；raw JSON 只保留为折叠调试信息
 
 ## P1 主门槛
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 
 import { ReviewDecisionPanel } from "@/components/review-decision-panel";
@@ -12,8 +12,12 @@ import {
   resolveApiUrl,
 } from "@/lib/api";
 import type {
+  AttachmentVisibilityMatrixItem,
+  ConflictMatrix,
   EvidenceSpan,
   ReviewIssue,
+  RuleHitMatrixRow,
+  SectionStructureMatrixItem,
   StructuredReviewResult,
   TaskArtifact,
   TaskEvent,
@@ -107,6 +111,243 @@ function ArtifactList({ artifacts }: { artifacts: TaskArtifact[] }) {
         </a>
       ))}
     </div>
+  );
+}
+
+function humanizeToken(value: string) {
+  const withSpaces = value
+    .replace(/([a-z])([A-Z])/g, "$1 $2")
+    .replace(/[_-]+/g, " ")
+    .trim();
+  return withSpaces ? withSpaces.charAt(0).toUpperCase() + withSpaces.slice(1) : value;
+}
+
+function renderScalar(value: unknown): string {
+  if (value === null || value === undefined || value === "") return "—";
+  if (typeof value === "boolean") return value ? "是" : "否";
+  if (Array.isArray(value)) return value.length ? value.map((item) => renderScalar(item)).join("，") : "—";
+  if (typeof value === "object") return renderJson(value);
+  return String(value);
+}
+
+function CompactJsonDetails({ summary, data }: { summary: string; data: unknown }) {
+  return (
+    <details>
+      <summary>{summary}</summary>
+      <pre className="code-block compact">{renderJson(data)}</pre>
+    </details>
+  );
+}
+
+function ReviewKeyValueList({ items }: { items: Array<{ label: string; value: ReactNode }> }) {
+  if (!items.length) {
+    return <p className="muted">无</p>;
+  }
+  return (
+    <dl className="review-kv-list">
+      {items.map((item, index) => (
+        <div className="review-kv-row" key={`${item.label}-${index}`}>
+          <dt>{item.label}</dt>
+          <dd>{item.value}</dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+
+function ReviewTokenList({ items, emptyLabel = "无" }: { items: string[]; emptyLabel?: string }) {
+  if (!items.length) {
+    return <p className="muted">{emptyLabel}</p>;
+  }
+  return (
+    <div className="review-token-list">
+      {items.map((item, index) => (
+        <span className="status-pill is-neutral" key={`${item}-${index}`}>
+          {item}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+function VisibilitySummaryPanel({ visibility }: { visibility: StructuredReviewResult["visibility"] }) {
+  const countItems = Object.entries(visibility.counts || {}).map(([key, value]) => ({
+    label: humanizeToken(key),
+    value: String(value),
+  }));
+  const reasonItems = Object.entries(visibility.reasonCounts || {}).map(([key, value]) => ({
+    label: key,
+    value: String(value),
+  }));
+
+  return (
+    <div className="stack-md">
+      <ReviewKeyValueList
+        items={[
+          { label: "parserLimited", value: visibility.parserLimited ? "true" : "false" },
+          { label: "fileType", value: visibility.fileType || "unknown" },
+          { label: "attachmentCount", value: String(visibility.attachmentCount) },
+          { label: "manualReviewNeeded", value: visibility.manualReviewNeeded ? "true" : "false" },
+        ]}
+      />
+      <div className="stack-sm">
+        <strong>状态计数</strong>
+        <ReviewKeyValueList items={countItems} />
+      </div>
+      <div className="stack-sm">
+        <strong>原因计数</strong>
+        <ReviewKeyValueList items={reasonItems} />
+      </div>
+      <div className="stack-sm">
+        <strong>重复章节</strong>
+        <ReviewTokenList items={visibility.duplicateSectionTitles} />
+      </div>
+      <div className="stack-sm">
+        <strong>Parse warnings</strong>
+        <ReviewTokenList items={visibility.parseWarnings} />
+      </div>
+    </div>
+  );
+}
+
+function AttachmentVisibilityList({ items }: { items: AttachmentVisibilityMatrixItem[] }) {
+  if (!items.length) {
+    return <p className="muted">当前没有附件可视域条目。</p>;
+  }
+  return (
+    <ul className="source-list">
+      {items.map((item) => (
+        <li key={item.id}>
+          <div className="section-heading compact">
+            <div>
+              <strong>
+                {item.attachmentNumber ? `附件${item.attachmentNumber}` : item.id} · {item.title}
+              </strong>
+              <p className="muted small">
+                parseState={item.parseState} · titleBlock={item.titleBlockId || "none"}
+              </p>
+            </div>
+            <div className="pill-row">
+              <span className={`status-pill ${item.manualReviewNeeded ? "is-warning" : "is-healthy"}`}>{item.visibility}</span>
+              <span className={`status-pill ${item.manualReviewNeeded ? "is-warning" : "is-neutral"}`}>
+                {item.manualReviewNeeded ? "manual review" : "visible"}
+              </span>
+            </div>
+          </div>
+          <ReviewKeyValueList
+            items={[
+              { label: "reason", value: item.reason || "—" },
+              {
+                label: "referenceBlockIds",
+                value: item.referenceBlockIds.length ? item.referenceBlockIds.join("，") : "—",
+              },
+            ]}
+          />
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function RuleHitList({ items }: { items: RuleHitMatrixRow[] }) {
+  if (!items.length) {
+    return <p className="muted">暂无规则命中。</p>;
+  }
+  return (
+    <ul className="source-list">
+      {items.map((row) => (
+        <li key={`${row.packId}-${row.ruleId}`}>
+          <div className="section-heading compact">
+            <div>
+              <strong>{row.ruleId}</strong>
+              <p className="muted small">pack={row.packId}</p>
+            </div>
+            <div className="pill-row">
+              <span className={`status-pill ${row.packReadiness === "ready" ? "is-healthy" : "is-warning"}`}>
+                {row.packReadiness}
+              </span>
+              <span className={`status-pill ${row.status === "pass" ? "is-healthy" : row.status === "not_applicable" ? "is-neutral" : "is-warning"}`}>
+                {row.status}
+              </span>
+            </div>
+          </div>
+          <ReviewKeyValueList
+            items={[
+              { label: "layer", value: row.layerHint },
+              { label: "severity", value: row.severityHint },
+              { label: "matchType", value: row.matchType },
+            ]}
+          />
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function ConflictList({ conflicts }: { conflicts: ConflictMatrix }) {
+  const entries = Object.entries(conflicts.values || {});
+  if (!entries.length) {
+    return <p className="muted">暂无冲突矩阵。</p>;
+  }
+  return (
+    <div className="grid two-up">
+      {entries.map(([key, value]) => (
+        <article className="boundary-item subtle stack-sm" key={key}>
+          <strong>{humanizeToken(key)}</strong>
+          <ReviewKeyValueList
+            items={Object.entries((value as Record<string, unknown>) || {}).map(([nestedKey, nestedValue]) => ({
+              label: nestedKey,
+              value: renderScalar(nestedValue),
+            }))}
+          />
+        </article>
+      ))}
+    </div>
+  );
+}
+
+function SectionStructureList({ sections }: { sections: SectionStructureMatrixItem[] }) {
+  if (!sections.length) {
+    return <p className="muted">暂无章节结构。</p>;
+  }
+  return (
+    <ul className="source-list">
+      {sections.map((section) => (
+        <li key={section.id}>
+          <div
+            className="section-heading compact review-section-row"
+            style={{ paddingLeft: `${Math.max(section.level - 1, 0) * 16}px` }}
+          >
+            <div>
+              <strong>{section.title}</strong>
+              <p className="muted small">
+                level={section.level} · parent={section.parentId || "root"}
+              </p>
+            </div>
+            {section.duplicate ? <span className="status-pill is-warning">duplicate</span> : null}
+          </div>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function HazardIdentificationList({
+  values,
+}: {
+  values: StructuredReviewResult["matrices"]["hazardIdentification"]["values"];
+}) {
+  const entries = Object.entries(values || {});
+  if (!entries.length) {
+    return <p className="muted">暂无 hazard identification 数据。</p>;
+  }
+  return (
+    <ReviewKeyValueList
+      items={entries.map(([key, value]) => ({
+        label: key,
+        value: renderScalar(value),
+      }))}
+    />
   );
 }
 
@@ -561,22 +802,17 @@ export function TaskDetail({ taskId }: { taskId: string }) {
                   </div>
                   <div className="callout">
                     <strong>Canonical Visibility</strong>
-                    <p>parserLimited：{structuredResult.visibility.parserLimited ? "true" : "false"}</p>
-                    <p>fileType：{structuredResult.visibility.fileType || "unknown"}</p>
-                    <p>附件数量：{structuredResult.visibility.attachmentCount}</p>
-                    <p>状态计数：{renderJson(structuredResult.visibility.counts)}</p>
-                    <p>原因计数：{renderJson(structuredResult.visibility.reasonCounts)}</p>
-                    <p>重复章节：{structuredResult.visibility.duplicateSectionTitles.join("，") || "无"}</p>
-                    <p>parse warnings：{structuredResult.visibility.parseWarnings.join("，") || "无"}</p>
-                    <p>需人工复核：{structuredResult.visibility.manualReviewNeeded ? "true" : "false"}</p>
+                    <VisibilitySummaryPanel visibility={structuredResult.visibility} />
                   </div>
                   <div className="callout">
                     <strong>Unresolved Facts</strong>
                     {structuredResult.unresolvedFacts.length ? (
-                      <ul>
+                      <ul className="source-list">
                         {structuredResult.unresolvedFacts.map((item) => (
                           <li key={`${item.code}-${item.factKey}`}>
-                            {item.code} · {item.summary}
+                            <strong>{item.code}</strong>
+                            <p className="muted small">{item.factKey}</p>
+                            <p>{item.summary}</p>
                           </li>
                         ))}
                       </ul>
@@ -662,7 +898,11 @@ export function TaskDetail({ taskId }: { taskId: string }) {
                     <strong>Attachment Visibility Matrix</strong>
                     <p>top-level visibility 已在上方 canonical contract 卡片中展示；这里保留结构化明细。</p>
                   </div>
-                  <pre className="code-block compact">{renderJson(structuredResult.matrices.attachmentVisibility)}</pre>
+                  <AttachmentVisibilityList items={structuredResult.matrices.attachmentVisibility} />
+                  <CompactJsonDetails
+                    summary="查看 attachment visibility JSON"
+                    data={structuredResult.matrices.attachmentVisibility}
+                  />
                 </article>
 
                 <article className="card stack-lg">
@@ -673,33 +913,18 @@ export function TaskDetail({ taskId }: { taskId: string }) {
                   <div className="stack-md">
                     <div>
                       <strong>Hazard Identification</strong>
-                      <pre className="code-block compact">{renderJson(structuredResult.matrices.hazardIdentification.values)}</pre>
+                      <HazardIdentificationList values={structuredResult.matrices.hazardIdentification.values} />
                     </div>
                     <div>
                       <strong>Rule Hits</strong>
-                      {structuredResult.matrices.ruleHits.length ? (
-                        <ul className="source-list">
-                          {structuredResult.matrices.ruleHits.map((row) => (
-                            <li key={`${row.packId}-${row.ruleId}`}>
-                              <strong>{row.ruleId}</strong>
-                              <p className="muted small">
-                                pack={row.packId} · readiness={row.packReadiness} · status={row.status}
-                              </p>
-                              <p className="muted small">
-                                layer={row.layerHint} · severity={row.severityHint} · match={row.matchType}
-                              </p>
-                            </li>
-                          ))}
-                        </ul>
-                      ) : (
-                        <p className="muted">暂无规则命中。</p>
-                      )}
+                      <RuleHitList items={structuredResult.matrices.ruleHits} />
                     </div>
                     <div>
                       <strong>Conflicts</strong>
-                      <pre className="code-block compact">{renderJson(structuredResult.matrices.conflicts.values)}</pre>
+                      <ConflictList conflicts={structuredResult.matrices.conflicts} />
                     </div>
                   </div>
+                  <CompactJsonDetails summary="查看 matrices JSON" data={structuredResult.matrices} />
                 </article>
 
                 <article className="card stack-lg">
@@ -707,7 +932,11 @@ export function TaskDetail({ taskId }: { taskId: string }) {
                     <p className="eyebrow">Structure</p>
                     <h2>章节结构</h2>
                   </div>
-                  <pre className="code-block compact">{renderJson(structuredResult.matrices.sectionStructure)}</pre>
+                  <SectionStructureList sections={structuredResult.matrices.sectionStructure} />
+                  <CompactJsonDetails
+                    summary="查看 section structure JSON"
+                    data={structuredResult.matrices.sectionStructure}
+                  />
                 </article>
               </section>
 

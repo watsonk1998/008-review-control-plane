@@ -37,6 +37,7 @@ P0 的稳定结果字段：
 - parse 结果内部使用 typed `visibility`、`parseMode`、`parserLimited`
 - `result.visibility` 是 top-level canonical visibility 对象，并直接携带 `parseWarnings`
 - `summary.visibilitySummary` 仅负责总览；`matrices.attachmentVisibility` 负责结构化明细
+- task-detail 结果页优先以结构化 reviewer 视图呈现 `attachmentVisibility / ruleHits / conflicts / sectionStructure`，raw JSON 仅作为折叠调试信息
 
 ## 当前正式支持的文档类型
 
