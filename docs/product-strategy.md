@@ -1,3 +1,4 @@
+本文档即《产品思路与路线图》，仓库落位路径为 docs/product-strategy.md。
 # 《产品思路与路线图》
 
 以下文本按仓库当前 `README`、`docs/architecture.md`、`docs/formal-review.md`、`fixtures/review_eval/README.md`、`fixtures/research_inputs/README.md`、`latest-eval-summary`，以及 `fixtures/任务书/` 中的上游研究、边界、差距裁决与双样本监督材料综合起草。仓库当前在 `fixtures/任务书/` 下同时存在成文稿与 prompt 形态文件；本文只吸收其中已经稳定的产品边界、治理约束与路线判断，不把这些材料混写成实施任务书。 ([GitHub][1])
