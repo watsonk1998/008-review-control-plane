@@ -77,14 +77,19 @@ fixtures/review_eval/README.md 已明确版本语义：
 
 你的研究输入与证据层级
 
-你必须基于以下四层证据开展裁决工作，并始终尊重它们的层级差异：
+在本轮《双样本人工复核裁决稿（internal reviewed adjudication notes）》中，证据与约束优先级必须明确区分：
+	1.	README.md、docs/formal-review.md、fixtures/review_eval/README.md
+——作为系统边界真相源，优先级最高；
+	2.	fixtures/任务书/《V0.3 边界声明》.md
+——作为本轮 internal-reviewed 裁决的边界上限；
+	3.	fixtures/任务书/《V0.2→V0.3 差距裁决与反过拟合约束清单》.md
+——作为本轮已确认 / 降级 / 延后 / 否决的治理结论与裁决闸门；
+	4.	fixtures/任务书/三角对比研究结果.md
+——作为研究发现、候选问题模式与分层归因来源；
+	5.	fixtures/research_inputs/、fixtures/supervision/、Gemini seed
+——分别作为样本级结构化证据源、人类可读呈现层与 candidate reference。
 
-| 层级 | 来源 | 定位 | 注意事项 |
-|------|------|------|----------|
-| 第 1 层：GitHub 仓库事实 | README、docs/formal-review.md、fixtures/review_eval/README.md | 系统边界真相源 | 所有裁决的顶层约束 |
-| 第 2 层：本地 research pack | fixtures/research_inputs/ | 样本级结构化证据源 | 双样本 JSON / matrices / visibility / rule-hits 等结构化工件；issue truth / visibility truth / evidence truth 的判断必须优先依托此层 |
-| 第 3 层：Markdown 报告 | structured-review-report.md 等 | 人类可读呈现层 | 适合快速浏览，但不应作为 truth 分层的主要依据 |
-| 第 4 层：Gemini | Gemini deepresearch 结果 | seed / candidate reference | 仅可用于候选问题发现；不可替代结构化证据做 truth 分层 |
+当样本级裁决观察与《V0.3 边界声明》或《V0.2→V0.3 差距裁决与反过拟合约束清单》的已定稿结论存在张力时，以《V0.3 边界声明》与《V0.2→V0.3 差距裁决与反过拟合约束清单》为本轮 internal-reviewed 裁决上限；但这两份文档本身也不得推翻 GitHub 仓库事实这一最高层系统边界真相源。
 
 补充说明：
 	•	样本 A 结构化工件路径：fixtures/research_inputs/sample-a-cold-rolling/
@@ -345,13 +350,20 @@ D. 双样本 V0.0 / V0.2 / Gemini 对照材料（第 3 层 + 第 4 层）
 	•	横向对比
 	•	但最终做的是内部裁决，不是简单比较
 
-E. 已完成的上游文档
+E. 三份直接上游文档（必须同时处理且不得混淆角色）
 
-	•	《三角对比研究结果》- 研究底稿
-	•	《V0.3 边界声明》- 上位约束
-	•	《差距裁决与反过拟合约束清单》- 差距闸门
+你必须同时处理以下三份上游文档，但不得混淆其角色：
+	•	fixtures/任务书/三角对比研究结果.md
+角色：提供 V0.0 / V0.2 / Gemini 三方差距、L0/L1/L2/L3 分层归因、以及 anti-overfit 初步观察；
+限制：它是研究底稿，不直接等于 internal-reviewed 裁决。
+	•	fixtures/任务书/《V0.3 边界声明》.md
+角色：提供本轮已收敛的 scope / governance / anti-overfit 边界；
+限制：它定义本轮裁决边界上限，但不得与 GitHub 仓库事实冲突。
+	•	fixtures/任务书/《V0.2→V0.3 差距裁决与反过拟合约束清单》.md
+角色：提供本轮差距的 Confirmed / Partially Confirmed / Deferred / Rejected 结论，以及 official / experimental / diagnostics / out-of-scope 的治理落点；
+限制：它定义本轮 internal-reviewed 裁决的治理闸门，但不直接等于 expert-golden truth。
 
-你的所有裁决必须在这三份上游文档的框架内进行，不得越界。
+你的任务不是在双样本裁决阶段重新发明边界，也不是用单样本观察推翻已定稿的差距裁决，而是在既定边界与裁决框架内，对样本级问题进行 truth layering、provenance 标注、可进入 v0.2.0-internal-reviewed 的条目筛选，以及暂不进入条目的说明。
 
 ⸻
 
@@ -561,6 +573,7 @@ E. 已完成的上游文档
 	10.	我是否避免把双样本表面词语直接写成通用 truth？
 	11.	我的 truth 分层判断是否优先依据了 research pack 中的结构化 JSON / matrices / visibility 对象？
 	12.	我是否在证据基础章节中说明了四层证据层级？
+	13.	我是否明确做到了：样本级 truth layering 服从差距裁决清单，差距裁决清单服从边界声明，边界声明服从 GitHub 仓库事实；没有把双样本局部观察直接抬高成新的主线差距、治理边界或产品范围结论？
 
 如果以上任一项没有满足，请继续完善，而不是提前结束。
 
