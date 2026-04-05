@@ -18,6 +18,8 @@ VERSIONED_STAGE_THRESHOLDS = {
     'facts_accuracy': 0.90,
     'rule_hit_accuracy': 0.85,
     'hazard_identification_accuracy': 0.90,
+    # V0.3 keeps this at 0.90. Any ratchet to 0.95 belongs to a later stage-gate pass,
+    # not to the current closeout delta.
     'attachment_visibility_accuracy': 0.90,
     'manual_review_flag_accuracy': 0.80,
 }

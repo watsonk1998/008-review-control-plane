@@ -76,14 +76,26 @@ class EvidenceBuilder:
                 continue
             doc_evidence = self._collect_doc_evidence(hit.factRefs, facts)
             policy_evidence = self.clause_store.get_policy_evidence(hit.ruleId, selected_pack_ids)
-            visibility_gap = any(span.visibility and span.visibility.value != 'parsed' for span in doc_evidence)
-            manual_review_needed = hit.status == 'manual_review_needed' or visibility_gap
-            evidence_missing = bool(hit.missingFactKeys) or not doc_evidence or not policy_evidence
+            base_finding_type = self._finding_types.get(hit.ruleId, FindingType.hard_evidence)
+            visibility_gap = hit.applicabilityState == 'blocked_by_visibility' or any(
+                span.visibility and span.visibility.value != 'parsed' for span in doc_evidence
+            )
+            manual_review_needed = hit.status == 'manual_review_needed' or hit.applicabilityState in {
+                'blocked_by_visibility',
+                'partial',
+            }
+            if hit.applicabilityState == 'blocked_by_visibility':
+                evidence_missing = False
+            elif hit.applicabilityState == 'blocked_by_missing_fact':
+                evidence_missing = True
+            else:
+                evidence_missing = bool(hit.missingFactKeys) or not doc_evidence or not policy_evidence
             blocking_reasons = list(hit.blockingReasons)
             if visibility_gap:
                 blocking_reasons.append('visibility_gap')
             if evidence_missing and hit.missingFactKeys:
                 blocking_reasons.append('missing_fact')
+            finding_type = FindingType.visibility_gap if hit.applicabilityState == 'blocked_by_visibility' else base_finding_type
             candidates.append(
                 IssueCandidate(
                     candidateId=hit.ruleId,
@@ -91,7 +103,7 @@ class EvidenceBuilder:
                     ruleHits=[hit],
                     layerHint=hit.layerHint,
                     severityHint=hit.severityHint,
-                    findingType=self._finding_types.get(hit.ruleId, FindingType.hard_evidence),
+                    findingType=finding_type,
                     docEvidence=doc_evidence,
                     policyEvidence=policy_evidence,
                     evidenceMissing=evidence_missing,
@@ -101,6 +113,8 @@ class EvidenceBuilder:
                         manual_review_needed=manual_review_needed,
                         evidence_missing=evidence_missing,
                         doc_evidence=doc_evidence,
+                        applicability_state=hit.applicabilityState,
+                        blocking_reasons=blocking_reasons,
                     ),
                     missingFactKeys=list(hit.missingFactKeys),
                     blockingReasons=list(dict.fromkeys(blocking_reasons)),
@@ -108,11 +122,24 @@ class EvidenceBuilder:
             )
         return candidates
 
-    def _resolve_manual_review_reason(self, *, rule_id: str, manual_review_needed: bool, evidence_missing: bool, doc_evidence):
-        if not manual_review_needed:
+    def _resolve_manual_review_reason(
+        self,
+        *,
+        rule_id: str,
+        manual_review_needed: bool,
+        evidence_missing: bool,
+        doc_evidence,
+        applicability_state: str,
+        blocking_reasons: list[str],
+    ):
+        if not manual_review_needed and applicability_state != 'blocked_by_visibility':
             return None
         if rule_id in self._manual_review_reasons:
             return self._manual_review_reasons[rule_id]
+        if applicability_state == 'blocked_by_visibility':
+            reason = self._resolve_visibility_reason(blocking_reasons=blocking_reasons, doc_evidence=doc_evidence)
+            if reason:
+                return reason
         visibilities = [span.visibility.value for span in doc_evidence if span.visibility is not None]
         if 'unknown' in visibilities:
             return 'visibility_unknown'
@@ -123,6 +150,21 @@ class EvidenceBuilder:
         if evidence_missing:
             return 'evidence_gap'
         return 'manual_confirmation_required'
+
+    def _resolve_visibility_reason(self, *, blocking_reasons: list[str], doc_evidence) -> str | None:
+        reasons = set(blocking_reasons)
+        visibilities = {span.visibility.value for span in doc_evidence if span.visibility is not None}
+        if {'parser_limited_pdf_requires_manual_review', 'parser_limited_source'} & reasons:
+            return 'parser_limited_pdf_requires_manual_review'
+        if 'unknown' in visibilities or {'visibility_unknown', 'attachment_unknown'} & reasons:
+            return 'visibility_unknown'
+        if 'attachment_unparsed' in visibilities or 'attachment_unparsed' in reasons:
+            return 'attachment_unparsed'
+        if 'referenced_only' in visibilities or 'referenced_only' in reasons:
+            return 'referenced_only'
+        if 'visibility_gap' in reasons:
+            return 'visibility_gap'
+        return None
 
     def _collect_doc_evidence(self, fact_refs: list[str], facts: ExtractedFacts):
         evidence = []

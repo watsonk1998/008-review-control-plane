@@ -14,6 +14,14 @@ ReviewerTaskState = Literal['pending', 'accepted', 'rejected', 'needs_attachment
 ReviewerItemState = Literal['pending', 'confirmed', 'dismissed', 'needs_attachment']
 IssueKind = Literal['hard_defect', 'visibility_gap', 'evidence_gap', 'enhancement']
 ApplicabilityState = Literal['applies', 'partial', 'blocked_by_visibility', 'blocked_by_missing_fact']
+ReviewPreparationSourceTier = Literal[
+    'runtime_only',
+    'seed',
+    'bootstrap_seed',
+    'ci_stage_gate',
+    'internal_reviewed',
+    'expert_golden',
+]
 ReviewDocumentType = Literal[
     'construction_org',
     'construction_scheme',
@@ -197,6 +205,22 @@ class ReviewerDecisionUpdateRequest(BaseModel):
     attachments: list[ReviewerAttachmentDecision] = Field(default_factory=list)
 
 
+class ReviewPreparationProvenance(BaseModel):
+    sourceTier: ReviewPreparationSourceTier = 'runtime_only'
+    caseId: str | None = None
+    caseVersion: str | None = None
+    labelStatus: str | None = None
+    truthLevel: str | None = None
+    reviewStatus: str | None = None
+    inferred: bool = False
+    taskId: str | None = None
+    taskType: TaskType | None = None
+    resultArtifactNames: list[str] = Field(default_factory=list)
+    resultArtifactPrimary: str | None = None
+    usesRuntimeReviewerDecision: bool = True
+    usesRuntimeStructuredReviewResult: bool = True
+
+
 class ReviewPreparationSummary(BaseModel):
     truthTier: Literal['runtime_only', 'internal_reviewed_preparation'] = 'internal_reviewed_preparation'
     readyForPromotion: bool = False
@@ -206,6 +230,7 @@ class ReviewPreparationSummary(BaseModel):
     rejectedIssueIds: list[str] = Field(default_factory=list)
     eligibleAttachmentIds: list[str] = Field(default_factory=list)
     deferredAttachmentIds: list[str] = Field(default_factory=list)
+    provenance: ReviewPreparationProvenance = Field(default_factory=ReviewPreparationProvenance)
     disclaimer: str | None = None
 
 
@@ -243,7 +268,7 @@ class ReviewPreparationAsset(BaseModel):
     blockingReasons: list[str] = Field(default_factory=list)
     issueDecisions: list[ReviewPreparationIssueRecord] = Field(default_factory=list)
     attachmentDecisions: list[ReviewPreparationAttachmentRecord] = Field(default_factory=list)
-    provenance: dict[str, Any] = Field(default_factory=dict)
+    provenance: ReviewPreparationProvenance = Field(default_factory=ReviewPreparationProvenance)
     disclaimer: str | None = None
 
 

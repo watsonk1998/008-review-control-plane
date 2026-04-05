@@ -5,6 +5,7 @@ from pathlib import Path
 
 from src.review.evaluation.dataset import load_cases
 from src.review.evaluation.harness import run_ablations, run_cross_model, run_cross_pack, run_main, run_replay
+from src.review.evaluation.metrics import _evidence_traceability
 
 
 def _write_json(path: Path, payload) -> None:
@@ -219,3 +220,60 @@ def test_review_eval_harness_reports_stage_metrics_and_versioned_diagnostics(tmp
     assert replay_case['artifactCapture'] is not None
     assert 'structured-review-result.json' in replay_case['artifactCapture']['artifacts']
     assert Path(replay_case['artifactCapture']['path']).exists()
+
+
+def test_evidence_traceability_covers_rule_hit_layer_states():
+    result = {
+        'matrices': {
+            'ruleHits': [
+                {
+                    'ruleId': 'rule-visibility',
+                    'status': 'manual_review_needed',
+                    'applicabilityState': 'blocked_by_visibility',
+                    'blockingReasons': ['visibility_gap'],
+                    'missingFactKeys': [],
+                },
+                {
+                    'ruleId': 'rule-missing-fact',
+                    'status': 'hit',
+                    'applicabilityState': 'blocked_by_missing_fact',
+                    'blockingReasons': ['missing_fact'],
+                    'missingFactKeys': ['attachments.special_scheme'],
+                },
+                {
+                    'ruleId': 'rule-partial',
+                    'status': 'manual_review_needed',
+                    'applicabilityState': 'partial',
+                    'blockingReasons': ['manual_confirmation_required'],
+                    'missingFactKeys': [],
+                },
+                {
+                    'ruleId': 'rule-applies',
+                    'status': 'hit',
+                    'applicabilityState': 'applies',
+                    'blockingReasons': [],
+                    'missingFactKeys': [],
+                },
+            ]
+        },
+        'issues': [
+            {
+                'id': 'ISSUE-001',
+                'applicabilityState': 'blocked_by_missing_fact',
+                'evidenceMissing': True,
+                'missingFactKeys': ['attachments.special_scheme'],
+                'blockingReasons': ['missing_fact'],
+            }
+        ],
+        'unresolvedFacts': [
+            {
+                'factKey': 'attachments.special_scheme',
+                'sourceExtractor': 'project_facts',
+                'blockingRuleIds': ['rule-missing-fact'],
+            }
+        ],
+    }
+
+    score, checks = _evidence_traceability(result)
+    assert checks >= 6
+    assert score == 1.0

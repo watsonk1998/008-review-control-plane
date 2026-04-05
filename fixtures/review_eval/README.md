@@ -27,6 +27,13 @@
 - 若 case 仍存在 `parser_limited_pdf_requires_manual_review`、`attachment_unparsed`、`referenced_only` 等 blocking 语义，只能进入 reviewed-preparation，不得直接宣称完成 reviewed promotion
 - provenance 必须能回指 seed / reviewer decision / artifacts；不得把最新一次 eval snapshot 当作长期 truth
 - runtime 侧的 `GET /api/tasks/{taskId}/review-preparation` 只负责导出 reviewed-preparation 候选资产；是否写入 `fixtures/review_eval/**` 仍需人工筛选与复核
+- runtime provenance 的 `sourceTier` 当前固定映射：
+  - `v0.1.0-gemini-seed -> seed`
+  - `v0.1.0-bootstrap-seed -> bootstrap_seed`
+  - `v0.1.0-ci-stage-gate -> ci_stage_gate`
+  - `v0.2.0-internal-reviewed -> internal_reviewed`
+  - `v1.0.0-expert-golden -> expert_golden`
+  - 未命中版本化 metadata -> `runtime_only`
 
 ## 非协商原则
 1. 不得把 Gemini 结果直接当作专家 truth

@@ -88,6 +88,7 @@ class RuleHit(BaseModel):
     packReadiness: Literal['ready', 'placeholder'] = 'ready'
     matchType: Literal['direct_hit', 'inferred_risk', 'visibility_gap']
     status: Literal['hit', 'pass', 'not_applicable', 'manual_review_needed']
+    applicabilityState: ApplicabilityState = 'applies'
     layerHint: ReviewLayer
     severityHint: str
     factRefs: list[str] = Field(default_factory=list)
@@ -149,6 +150,7 @@ class RuleHitMatrixRow(BaseModel):
     packId: str
     packReadiness: Literal['ready', 'placeholder'] = 'ready'
     status: str
+    applicabilityState: ApplicabilityState = 'applies'
     layerHint: str
     severityHint: str
     matchType: str

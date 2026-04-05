@@ -404,6 +404,7 @@ function RuleHitList({ items }: { items: RuleHitMatrixRow[] }) {
               { label: "layer", value: row.layerHint },
               { label: "severity", value: row.severityHint },
               { label: "matchType", value: row.matchType },
+              { label: "applicabilityState", value: row.applicabilityState },
               {
                 label: "requiredFactKeys",
                 value: row.requiredFactKeys?.length ? row.requiredFactKeys.join("，") : "—",
@@ -983,6 +984,17 @@ export function TaskDetail({ taskId }: { taskId: string }) {
                           ? reviewPreparation.blockingReasons.join("，")
                           : " 无"}
                       </p>
+                      <ReviewKeyValueList
+                        items={[
+                          { label: "sourceTier", value: reviewPreparation.provenance.sourceTier },
+                          { label: "caseId", value: reviewPreparation.provenance.caseId || "—" },
+                          { label: "caseVersion", value: reviewPreparation.provenance.caseVersion || "—" },
+                          { label: "truthLevel", value: reviewPreparation.provenance.truthLevel || "—" },
+                          { label: "labelStatus", value: reviewPreparation.provenance.labelStatus || "—" },
+                          { label: "reviewStatus", value: reviewPreparation.provenance.reviewStatus || "—" },
+                          { label: "inferred", value: reviewPreparation.provenance.inferred ? "true" : "false" },
+                        ]}
+                      />
                     </div>
                   ) : null}
                 </section>

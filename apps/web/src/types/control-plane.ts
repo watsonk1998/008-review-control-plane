@@ -173,6 +173,7 @@ export interface RuleHitMatrixRow {
   packId: string;
   packReadiness: "ready" | "placeholder";
   status: string;
+  applicabilityState: ApplicabilityState;
   layerHint: string;
   severityHint: string;
   matchType: string;
@@ -272,7 +273,24 @@ export interface ReviewPreparationSummary {
   rejectedIssueIds: string[];
   eligibleAttachmentIds: string[];
   deferredAttachmentIds: string[];
+  provenance: ReviewPreparationProvenance;
   disclaimer?: string | null;
+}
+
+export interface ReviewPreparationProvenance {
+  sourceTier: "runtime_only" | "seed" | "bootstrap_seed" | "ci_stage_gate" | "internal_reviewed" | "expert_golden";
+  caseId?: string | null;
+  caseVersion?: string | null;
+  labelStatus?: string | null;
+  truthLevel?: string | null;
+  reviewStatus?: string | null;
+  inferred: boolean;
+  taskId?: string | null;
+  taskType?: TaskType | null;
+  resultArtifactNames: string[];
+  resultArtifactPrimary?: string | null;
+  usesRuntimeReviewerDecision: boolean;
+  usesRuntimeStructuredReviewResult: boolean;
 }
 
 export interface TaskRecord {

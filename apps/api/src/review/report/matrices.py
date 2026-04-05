@@ -48,6 +48,7 @@ def build_review_matrices(parse_result, facts, rule_hits, final_issues) -> Struc
             packId=hit.packId,
             packReadiness=hit.packReadiness,
             status=hit.status,
+            applicabilityState=hit.applicabilityState,
             layerHint=hit.layerHint.value,
             severityHint=hit.severityHint,
             matchType=hit.matchType,

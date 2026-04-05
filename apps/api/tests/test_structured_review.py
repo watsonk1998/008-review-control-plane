@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 
 from src.services.document_loader import DocumentLoader
+from src.review.parser.attachment_indexer import build_attachment_index
 from src.review.pipeline import StructuredReviewExecutor
 
 
@@ -212,6 +213,8 @@ def test_document_loader_parse_pdf_document_uses_explicit_pdf_parser():
     assert 'parser_limited_pdf' in result.visibility.preflight.blockingReasons
     assert result.visibility.counts['unknown'] >= 1
     assert result.visibility.counts['missing'] == 0
+    assert result.attachments[0].visibility == 'unknown'
+    assert result.attachments[0].reason == 'title_detected_but_body_not_reliably_parsed'
     assert any(warning.startswith('pdf_appendix_title_candidates:') for warning in result.parseWarnings)
     assert any(warning.startswith('pdf_table_caption_candidates:') for warning in result.parseWarnings)
     assert any(warning.startswith('pdf_figure_caption_candidates:') for warning in result.parseWarnings)
@@ -245,6 +248,7 @@ def test_structured_review_executor_frontloads_manual_review_for_parser_limited_
         row['ruleId'] == 'construction_org_emergency_plan_targeted'
         and row['clauseIds']
         and row['blockingReasons']
+        and row['applicabilityState'] == 'blocked_by_missing_fact'
         for row in result['matrices']['ruleHits']
     )
     assert any(
@@ -253,6 +257,44 @@ def test_structured_review_executor_frontloads_manual_review_for_parser_limited_
         and fact['blockingRuleIds']
         for fact in result['unresolvedFacts']
     )
+
+
+def test_attachment_index_freezes_parser_limited_unknown_and_missing_boundaries():
+    title_only_blocks = [{'id': 'b1', 'text': '附件1：吊装平面图'}]
+    attachments, _ = build_attachment_index(title_only_blocks, parser_limited=True, file_type='pdf')
+    assert attachments[0]['visibility'] == 'unknown'
+    assert attachments[0]['reason'] == 'title_detected_but_body_not_reliably_parsed'
+
+    reference_only_blocks = [{'id': 'b2', 'text': '详见附件2。'}]
+    attachments, _ = build_attachment_index(reference_only_blocks, parser_limited=True, file_type='pdf')
+    assert attachments[0]['visibility'] == 'unknown'
+    assert attachments[0]['reason'] == 'reference_detected_in_limited_parser'
+
+    non_limited_title_only = [{'id': 'b3', 'text': '附件3：应急平面布置图'}]
+    attachments, _ = build_attachment_index(non_limited_title_only, parser_limited=False, file_type='docx')
+    assert attachments[0]['visibility'] == 'attachment_unparsed'
+    assert attachments[0]['reason'] == 'title_detected_without_attachment_body'
+
+    explicit_missing_blocks = [{'id': 'b4', 'text': '附件4：吊装验算书（后补，暂缺）'}]
+    attachments, _ = build_attachment_index(explicit_missing_blocks, parser_limited=False, file_type='docx')
+    assert attachments[0]['visibility'] == 'missing'
+    assert attachments[0]['reason'] == 'explicit_missing_marker'
+
+
+def test_structured_review_rule_hits_expose_applicability_state_and_keep_visibility_gap_out_of_hard_defect():
+    executor = StructuredReviewExecutor(document_loader=DocumentLoader(), llm_gateway=DummyLLM(), fast_adapter=None)
+    result = executor.run_sync(
+        task_id='structured-review-visibility-applicability-test',
+        query='对该施工组织设计执行正式结构化审查',
+        source_document_path=str(SAMPLE_DOC),
+        fixture_id='supervision-cold-rolling-construction-plan',
+    )
+
+    attachment_row = next(row for row in result['matrices']['ruleHits'] if row['ruleId'] == 'construction_org_attachment_visibility')
+    assert attachment_row['applicabilityState'] == 'blocked_by_visibility'
+    attachment_issue = next(issue for issue in result['issues'] if issue['title'] == '附件处于可视域缺口，需人工复核原件')
+    assert attachment_issue['issueKind'] == 'visibility_gap'
+    assert attachment_issue['applicabilityState'] == 'blocked_by_visibility'
 
 
 def test_structured_review_executor_supports_gas_area_ops_pack(tmp_path: Path):

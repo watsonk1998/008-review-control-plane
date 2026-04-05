@@ -127,13 +127,13 @@ make eval-review-replay
 - `missing` 只在有明确证据时产出
 - parser-limited PDF 必须前置触发 `manualReviewNeeded=true`，且 `visibility.preflight.gateDecision=manual_review_required`
 - `structured-review-l0-visibility.json` 必须包含 `checklist / blockingReasons / parserLimitations / attachmentTaxonomySummary`
-- `structured-review-rule-hits.json` 与 `rule-hit-matrix.json` 必须包含 `requiredFactKeys / missingFactKeys / clauseIds / blockingReasons`
+- `structured-review-rule-hits.json` 与 `rule-hit-matrix.json` 必须包含 `applicabilityState / requiredFactKeys / missingFactKeys / clauseIds / blockingReasons`
 - `unresolvedFacts` 必须包含 `sourceExtractor / blockingReason / visibilityLimited / blockingRuleIds / blockingIssueIds`
 - artifact API 可列出和下载工件，且与 `result.artifactIndex` 同口径；对新任务 `artifactIndex` 即使为空也优先于目录扫描
 - 详情页优先展示 `resolvedProfile / visibility / unresolvedFacts / artifactIndex / reviewerDecision`，再展示报告与原始 JSON
 - reviewer 结果页以结构化方式展示 `attachmentVisibility / ruleHits / conflicts / sectionStructure`；raw JSON 只保留为折叠调试信息
-- reviewer 结果页需同时展示 `reviewPreparation` 摘要，但必须保留“仅用于 internal-reviewed preparation，不是 reviewed truth”的语义边界
-- `GET /api/tasks/{taskId}/review-preparation` 必须返回带 provenance 的 preparation asset，供 reviewed-preparation 资料承接
+- reviewer 结果页需同时展示 `reviewPreparation` 摘要，并至少暴露 `provenance.sourceTier / caseVersion`；同时保留“仅用于 internal-reviewed preparation，不是 reviewed truth”的语义边界
+- `GET /api/tasks/{taskId}/review-preparation` 必须返回带 provenance 的 preparation asset；未命中版本化样本时必须显式回退 `sourceTier=runtime_only`
 - `/api/tasks/support-scope` 需同时返回 pack `promotionCriteria`；表单/UI 不得自行发明 official/experimental/promotion 结论
 
 ## P1 主门槛

@@ -285,9 +285,51 @@ def _preflight_gate_consistency(result: dict[str, Any]) -> tuple[float, int]:
     return (1.0 if passed else 0.0, 1)
 
 
-def _evidence_traceability(result: dict[str, Any]) -> tuple[float, int]:
+def _has_visibility_block_reason(reasons: list[str]) -> bool:
+    visibility_reasons = {
+        'visibility_gap',
+        'attachment_unparsed',
+        'referenced_only',
+        'visibility_unknown',
+        'parser_limited_pdf_requires_manual_review',
+        'parser_limited_source',
+        'attachment_unknown',
+        'attachment_missing_confirmed',
+    }
+    return bool(visibility_reasons & set(reasons))
+
+
+def _evidence_traceability(
+    result: dict[str, Any],
+    evaluation_artifacts: dict[str, Any] | None = None,
+) -> tuple[float, int]:
     checks = 0
     hits = 0
+    actual_rule_hits = _build_actual_rule_hit_map(result, evaluation_artifacts)
+    for rule_hit in actual_rule_hits.values():
+        if not isinstance(rule_hit, dict):
+            continue
+        checks += 1
+        applicability_state = rule_hit.get('applicabilityState')
+        blocking_reasons = [str(reason) for reason in rule_hit.get('blockingReasons', []) if reason]
+        missing_fact_keys = [str(key) for key in rule_hit.get('missingFactKeys', []) if key]
+        status = rule_hit.get('status')
+        if applicability_state == 'blocked_by_visibility':
+            if blocking_reasons and _has_visibility_block_reason(blocking_reasons):
+                hits += 1
+            continue
+        if applicability_state == 'blocked_by_missing_fact':
+            if missing_fact_keys:
+                hits += 1
+            continue
+        if applicability_state == 'partial':
+            if status == 'manual_review_needed' or blocking_reasons:
+                hits += 1
+            continue
+        if applicability_state == 'applies':
+            if not missing_fact_keys and not _has_visibility_block_reason(blocking_reasons) and 'missing_fact' not in blocking_reasons:
+                hits += 1
+            continue
     for issue in result.get('issues', []):
         if not isinstance(issue, dict):
             continue
@@ -411,7 +453,7 @@ def compute_metrics(
     suggestion_separation_accuracy, suggestion_separation_checks = _suggestion_defect_separation(case, result)
     remediation_bucket_consistency, remediation_bucket_checks = _remediation_bucket_consistency(result, evaluation_artifacts)
     preflight_gate_consistency, preflight_gate_checks = _preflight_gate_consistency(result)
-    evidence_traceability, evidence_traceability_checks = _evidence_traceability(result)
+    evidence_traceability, evidence_traceability_checks = _evidence_traceability(result, evaluation_artifacts)
 
     issue_recall = len(matched_titles) / len(expected_titles) if expected_titles else 1.0
     l1_hit_rate = l1_matched / len(l1_expected) if l1_expected else 1.0

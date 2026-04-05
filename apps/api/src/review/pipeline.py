@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any, Callable
 
 from src.domain.models import (
+    ApplicabilityState,
     ArtifactCategory,
     AttachmentLocator,
     AttachmentVisibility,
@@ -455,7 +456,10 @@ class StructuredReviewExecutor:
             blocking_reasons = list(hit.blockingReasons)
             if hit.matchType == 'visibility_gap':
                 blocking_reasons.append('visibility_gap')
-            if parse_result.visibility.parserLimited and attachment_visibility.get('attachmentCount', 0) == 0:
+            if self._rule_hit_depends_on_visibility(hit, required_fact_keys) and self._visibility_is_parser_limited_without_reliable_attachment(
+                parse_result=parse_result,
+                attachment_visibility=attachment_visibility,
+            ):
                 blocking_reasons.append('parser_limited_source')
             if missing_fact_keys:
                 blocking_reasons.append('missing_fact')
@@ -465,6 +469,7 @@ class StructuredReviewExecutor:
             hit.missingFactKeys = missing_fact_keys
             hit.clauseIds = clause_ids
             hit.blockingReasons = list(dict.fromkeys(blocking_reasons))
+            hit.applicabilityState = self._derive_rule_hit_applicability_state(hit)
         return rule_hits
 
     def _link_unresolved_facts_to_rule_hits(self, unresolved_facts: list[UnresolvedFact], rule_hits) -> list[UnresolvedFact]:
@@ -527,3 +532,41 @@ class StructuredReviewExecutor:
             unresolved = UnresolvedFact.model_validate(item)
             deduped[(unresolved.code, unresolved.factKey)] = unresolved
         return list(deduped.values())
+
+    def _rule_hit_depends_on_visibility(self, hit, required_fact_keys: list[str]) -> bool:
+        if hit.matchType == 'visibility_gap':
+            return True
+        refs = [*required_fact_keys, *(hit.factRefs or [])]
+        return any(str(ref).startswith('attachments.') for ref in refs)
+
+    def _visibility_is_parser_limited_without_reliable_attachment(
+        self,
+        *,
+        parse_result: DocumentParseResult,
+        attachment_visibility: dict[str, Any],
+    ) -> bool:
+        if not parse_result.visibility.parserLimited:
+            return False
+        parsed_count = int((attachment_visibility or {}).get('counts', {}).get('parsed', 0))
+        attachment_count = int((attachment_visibility or {}).get('attachmentCount', len(parse_result.attachments) or 0))
+        return attachment_count == 0 or parsed_count == 0
+
+    def _derive_rule_hit_applicability_state(self, hit) -> ApplicabilityState:
+        blocking_reasons = set(hit.blockingReasons or [])
+        visibility_reasons = {
+            'visibility_gap',
+            'attachment_unparsed',
+            'referenced_only',
+            'visibility_unknown',
+            'parser_limited_pdf_requires_manual_review',
+            'parser_limited_source',
+            'attachment_unknown',
+            'attachment_missing_confirmed',
+        }
+        if hit.matchType == 'visibility_gap' or blocking_reasons & visibility_reasons:
+            return 'blocked_by_visibility'
+        if hit.missingFactKeys:
+            return 'blocked_by_missing_fact'
+        if hit.status == 'manual_review_needed':
+            return 'partial'
+        return 'applies'

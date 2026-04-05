@@ -735,6 +735,7 @@ def test_task_routes_update_reviewer_decision(monkeypatch):
     assert payload['reviewPreparation']['readyForPromotion'] is False
     assert 'visibility_manual_review_required' in payload['reviewPreparation']['blockingReasons']
     assert 'pending_attachment_review' in payload['reviewPreparation']['blockingReasons']
+    assert payload['reviewPreparation']['provenance']['sourceTier'] == 'runtime_only'
 
 
 def test_task_routes_expose_review_preparation_asset(monkeypatch):
@@ -891,8 +892,160 @@ def test_task_routes_expose_review_preparation_asset(monkeypatch):
     assert payload['issueDecisions'][0]['issueId'] == 'ISSUE-001'
     assert payload['issueDecisions'][0]['issueKind'] == 'visibility_gap'
     assert payload['attachmentDecisions'][0]['attachmentId'] == 'attachment-1'
+    assert payload['provenance']['sourceTier'] == 'runtime_only'
     assert payload['provenance']['resultArtifactPrimary'] == 'structured-review-result'
     assert payload['provenance']['usesRuntimeReviewerDecision'] is True
+
+
+def test_task_routes_expose_review_preparation_case_provenance_from_review_eval(monkeypatch):
+    now = datetime.now(timezone.utc)
+
+    class FakeService:
+        def get_task(self, task_id: str):
+            return TaskRecord(
+                id=task_id,
+                taskType='structured_review',
+                capabilityMode='auto',
+                query='query',
+                fixtureId='cn_hz_attachment_missing_ci',
+                sourceDocumentRef=SourceDocumentRef(
+                    refId='cn_hz_attachment_missing_ci',
+                    sourceType='fixture',
+                    fileName='source.md',
+                    fileType='md',
+                    storagePath='/tmp/runtime/source.md',
+                    fixtureId='cn_hz_attachment_missing_ci',
+                ),
+                sourceUrls=[],
+                documentType='hazardous_special_scheme',
+                disciplineTags=['lifting_operations'],
+                strictMode=True,
+                policyPackIds=['hazardous_special_scheme.base', 'lifting_operations.base'],
+                reviewerDecision={
+                    'taskState': 'accepted',
+                    'note': 'checked by reviewer',
+                    'issues': [{'issueId': 'ISSUE-001', 'state': 'dismissed', 'note': 'not confirmed'}],
+                    'attachments': [{'attachmentId': 'attachment-1', 'state': 'dismissed', 'note': 'checked original'}],
+                    'updatedAt': now.isoformat(),
+                },
+                status='succeeded',
+                result={
+                    'summary': {
+                        'overallConclusion': 'demo',
+                        'documentType': 'hazardous_special_scheme',
+                        'selectedPacks': ['hazardous_special_scheme.base', 'lifting_operations.base'],
+                        'manualReviewNeeded': False,
+                        'issueCount': 1,
+                        'layerCounts': {'L1': 1},
+                        'stats': {},
+                        'visibilitySummary': {
+                            'attachmentCount': 1,
+                            'counts': {'parsed': 1},
+                            'duplicateSectionTitles': [],
+                            'parseWarnings': [],
+                            'reasonCounts': {'attachment_body_visible': 1},
+                            'manualReviewNeeded': False,
+                        },
+                    },
+                    'visibility': {
+                        'parseMode': 'markdown_text',
+                        'attachmentCount': 1,
+                        'counts': {'parsed': 1},
+                        'reasonCounts': {'attachment_body_visible': 1},
+                        'duplicateSectionTitles': [],
+                        'parseWarnings': [],
+                        'manualReviewNeeded': False,
+                        'manualReviewReason': None,
+                        'parserLimited': False,
+                        'fileType': 'md',
+                        'preflight': {
+                            'gateDecision': 'ready',
+                            'blockingReasons': [],
+                            'checklist': [],
+                            'parserLimitations': [],
+                            'attachmentTaxonomySummary': {'attachmentCount': 1, 'counts': {'parsed': 1}},
+                        },
+                    },
+                    'resolvedProfile': {
+                        'requestedDocumentType': 'hazardous_special_scheme',
+                        'requestedDisciplineTags': ['lifting_operations'],
+                        'requestedPolicyPackIds': [],
+                        'documentType': 'hazardous_special_scheme',
+                        'disciplineTags': ['lifting_operations'],
+                        'policyPackIds': ['hazardous_special_scheme.base', 'lifting_operations.base'],
+                        'strictMode': True,
+                    },
+                    'issues': [
+                        {
+                            'id': 'ISSUE-001',
+                            'title': '专项方案附件处于可视域缺口，需人工复核原件',
+                            'layer': 'L1',
+                            'severity': 'medium',
+                            'findingType': 'visibility_gap',
+                            'summary': '专项方案附件处于可视域缺口，需人工复核原件',
+                            'manualReviewNeeded': True,
+                            'evidenceMissing': False,
+                            'manualReviewReason': 'visibility_gap',
+                            'issueKind': 'visibility_gap',
+                            'applicabilityState': 'blocked_by_visibility',
+                            'missingFactKeys': [],
+                            'blockingReasons': ['visibility_gap'],
+                            'docEvidence': [],
+                            'policyEvidence': [],
+                            'recommendation': [],
+                            'confidence': 'medium',
+                        }
+                    ],
+                    'matrices': {
+                        'hazardIdentification': {'values': {}},
+                        'ruleHits': [],
+                        'conflicts': {'values': {}},
+                        'attachmentVisibility': [
+                            {
+                                'id': 'attachment-1',
+                                'attachmentNumber': '1',
+                                'title': '附件1',
+                                'visibility': 'parsed',
+                                'parseState': 'parsed',
+                                'manualReviewNeeded': False,
+                                'reason': 'attachment_body_visible',
+                                'referenceBlockIds': [],
+                                'titleBlockId': None,
+                            }
+                        ],
+                        'sectionStructure': [],
+                        'issueLayerCounts': {'L1': 1},
+                    },
+                    'artifactIndex': [],
+                    'reportMarkdown': '# demo',
+                    'artifacts': [],
+                    'unresolvedFacts': [],
+                    'capabilitiesUsed': ['structured_review_executor'],
+                    'finalAnswer': 'demo',
+                },
+                createdAt=now,
+                updatedAt=now,
+            )
+
+    monkeypatch.setattr(tasks_route, 'get_task_service', lambda: FakeService())
+    client = TestClient(app)
+
+    task_response = client.get('/api/tasks/task-route-2')
+    assert task_response.status_code == 200
+    task_payload = task_response.json()
+    assert task_payload['reviewPreparation']['provenance']['sourceTier'] == 'ci_stage_gate'
+    assert task_payload['reviewPreparation']['provenance']['caseId'] == 'cn_hz_attachment_missing_ci'
+    assert task_payload['reviewPreparation']['provenance']['caseVersion'] == 'v0.1.0-ci-stage-gate'
+
+    asset_response = client.get('/api/tasks/task-route-2/review-preparation')
+    assert asset_response.status_code == 200
+    asset_payload = asset_response.json()
+    assert asset_payload['provenance']['sourceTier'] == 'ci_stage_gate'
+    assert asset_payload['provenance']['caseId'] == 'cn_hz_attachment_missing_ci'
+    assert asset_payload['provenance']['caseVersion'] == 'v0.1.0-ci-stage-gate'
+    assert asset_payload['provenance']['labelStatus'] == 'stage_gate_curated'
+    assert asset_payload['provenance']['truthLevel'] == 'repo_runtime_aligned'
+    assert asset_payload['provenance']['usesRuntimeStructuredReviewResult'] is True
 
 
 def test_task_routes_accept_source_document_ref_without_fixture(monkeypatch):
