@@ -67,6 +67,11 @@ class EvidenceBuilder:
             'construction_org_special_scheme_gap': 'special_scheme_reference_requires_manual_confirmation',
             'lifting_operations_special_scheme_linkage': 'special_scheme_reference_requires_manual_confirmation',
         }
+        self._closed_negative_fact_prefixes = ('project.sectionPresence.',)
+        self._closed_negative_fact_keys = {
+            'hazard.measureSectionPresent',
+            'hazard.monitoringSectionPresent',
+        }
 
     def build(self, rule_hits: list[RuleHit], facts: ExtractedFacts, parse_result, packs) -> list[IssueCandidate]:
         candidates: list[IssueCandidate] = []
@@ -84,13 +89,20 @@ class EvidenceBuilder:
                 'blocked_by_visibility',
                 'partial',
             }
+            blocking_reasons = list(hit.blockingReasons)
             if hit.applicabilityState == 'blocked_by_visibility':
                 evidence_missing = False
             elif hit.applicabilityState == 'blocked_by_missing_fact':
                 evidence_missing = True
             else:
-                evidence_missing = bool(hit.missingFactKeys) or not doc_evidence or not policy_evidence
-            blocking_reasons = list(hit.blockingReasons)
+                closed_negative_hit = self._is_closed_negative_hit(hit)
+                evidence_missing = False
+                if not policy_evidence:
+                    evidence_missing = True
+                    blocking_reasons.append('policy_evidence_unavailable')
+                elif not doc_evidence and not closed_negative_hit:
+                    evidence_missing = True
+                    blocking_reasons.append('document_evidence_unavailable')
             if visibility_gap:
                 blocking_reasons.append('visibility_gap')
             if evidence_missing and hit.missingFactKeys:
@@ -165,6 +177,17 @@ class EvidenceBuilder:
         if 'visibility_gap' in reasons:
             return 'visibility_gap'
         return None
+
+    def _is_closed_negative_hit(self, hit: RuleHit) -> bool:
+        if hit.missingFactKeys:
+            return False
+        required_fact_keys = list(hit.requiredFactKeys or hit.factRefs or [])
+        if not required_fact_keys:
+            return False
+        return all(self._is_closed_negative_fact_key(fact_key) for fact_key in required_fact_keys)
+
+    def _is_closed_negative_fact_key(self, fact_key: str) -> bool:
+        return fact_key.startswith(self._closed_negative_fact_prefixes) or fact_key in self._closed_negative_fact_keys
 
     def _collect_doc_evidence(self, fact_refs: list[str], facts: ExtractedFacts):
         evidence = []

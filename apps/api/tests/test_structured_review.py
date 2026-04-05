@@ -297,6 +297,57 @@ def test_structured_review_rule_hits_expose_applicability_state_and_keep_visibil
     assert attachment_issue['applicabilityState'] == 'blocked_by_visibility'
 
 
+def test_structured_review_visible_scope_negative_facts_stay_hard_defects():
+    executor = StructuredReviewExecutor(document_loader=DocumentLoader(), llm_gateway=DummyLLM(), fast_adapter=None)
+    result = executor.run_sync(
+        task_id='structured-review-negative-fact-closure',
+        query='对该施工组织设计执行正式结构化审查',
+        source_document_path=str(SAMPLE_DOC),
+        fixture_id='supervision-cold-rolling-construction-plan',
+    )
+
+    structure_row = next(row for row in result['matrices']['ruleHits'] if row['ruleId'] == 'construction_org_structure_completeness')
+    structure_issue = next(issue for issue in result['issues'] if issue['title'] == '施工组织设计核心章节不完整')
+    assert structure_row['applicabilityState'] == 'applies'
+    assert structure_row['missingFactKeys'] == []
+    assert structure_row['blockingReasons'] == []
+    assert structure_issue['issueKind'] == 'hard_defect'
+    assert structure_issue['applicabilityState'] == 'applies'
+    assert structure_issue['evidenceMissing'] is False
+    assert structure_issue['missingFactKeys'] == []
+    assert structure_issue['blockingReasons'] == []
+
+
+def test_structured_review_parser_limited_negative_facts_stay_blocked_with_explainability():
+    executor = StructuredReviewExecutor(document_loader=DocumentLoader(), llm_gateway=DummyLLM(), fast_adapter=None)
+    result = executor.run_sync(
+        task_id='structured-review-parser-limited-negative-facts',
+        query='对该危大专项方案执行正式结构化审查',
+        source_document_path=str(SAMPLE_PDF),
+        fixture_id='cn_hz_pdf_unknown_visibility_ci',
+        document_type='hazardous_special_scheme',
+        discipline_tags=['lifting_operations'],
+    )
+
+    core_row = next(row for row in result['matrices']['ruleHits'] if row['ruleId'] == 'hazardous_special_scheme_core_sections')
+    core_issue = next(issue for issue in result['issues'] if issue['title'] == '危大专项方案核心章节不完整')
+    unresolved_fact = next(
+        fact for fact in result['unresolvedFacts'] if fact['factKey'] == 'project.sectionPresence.engineeringOverview'
+    )
+    assert core_row['applicabilityState'] == 'blocked_by_missing_fact'
+    assert core_row['missingFactKeys']
+    assert 'missing_fact' in core_row['blockingReasons']
+    assert 'parser_limited_source' in core_row['blockingReasons']
+    assert core_issue['issueKind'] == 'evidence_gap'
+    assert core_issue['applicabilityState'] == 'blocked_by_missing_fact'
+    assert core_issue['evidenceMissing'] is True
+    assert core_issue['missingFactKeys']
+    assert 'parser_limited_source' in core_issue['blockingReasons']
+    assert unresolved_fact['visibilityLimited'] is True
+    assert 'hazardous_special_scheme_core_sections' in unresolved_fact['blockingRuleIds']
+    assert core_issue['id'] in unresolved_fact['blockingIssueIds']
+
+
 def test_structured_review_executor_supports_gas_area_ops_pack(tmp_path: Path):
     sample = tmp_path / 'construction_org_gas_area.md'
     sample.write_text(
@@ -376,6 +427,7 @@ def test_structured_review_executor_builds_full_artifact_catalog(tmp_path: Path)
     result_payload = json.loads((tmp_path / 'structured-review-result.json').read_text(encoding='utf-8'))
     assert result_payload['artifactIndex']
     assert result_payload['reportMarkdown']
+    assert result_payload['visibility'] == l0_payload['visibility']
     assert result_payload['visibility']['preflight']['gateDecision'] == 'manual_review_required'
     report_buckets = json.loads((tmp_path / 'structured-review-report-buckets.json').read_text(encoding='utf-8'))
     assert 'visibility_gap' in report_buckets

@@ -531,6 +531,13 @@ def test_task_routes_fresh_structured_review_result_uses_canonical_visibility_on
                         'manualReviewReason': 'title_detected_without_attachment_body',
                         'parserLimited': False,
                         'fileType': 'docx',
+                        'preflight': {
+                            'gateDecision': 'manual_review_required',
+                            'blockingReasons': ['attachment_unparsed'],
+                            'checklist': [],
+                            'parserLimitations': [],
+                            'attachmentTaxonomySummary': {'attachmentCount': 1, 'counts': {'attachment_unparsed': 1}},
+                        },
                     },
                     'resolvedProfile': {
                         'requestedDocumentType': 'construction_org',
@@ -592,6 +599,8 @@ def test_task_routes_fresh_structured_review_result_uses_canonical_visibility_on
     assert result_payload['visibility']['parseMode'] == 'docx_structured'
     assert result_payload['visibility']['parseWarnings'] == ['canonical-visibility-warning']
     assert result_payload['visibility']['manualReviewReason'] == 'title_detected_without_attachment_body'
+    assert result_payload['visibility']['preflight']['gateDecision'] == 'manual_review_required'
+    assert result_payload['visibility']['preflight']['blockingReasons'] == ['attachment_unparsed']
     assert 'whetherManualReviewNeeded' not in result_payload['issues'][0]
 
 

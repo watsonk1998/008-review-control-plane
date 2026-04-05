@@ -299,6 +299,16 @@ def _has_visibility_block_reason(reasons: list[str]) -> bool:
     return bool(visibility_reasons & set(reasons))
 
 
+def _has_evidence_gap_block_reason(reasons: list[str]) -> bool:
+    evidence_gap_reasons = {
+        'missing_fact',
+        'parser_limited_source',
+        'document_evidence_unavailable',
+        'policy_evidence_unavailable',
+    }
+    return bool(evidence_gap_reasons & set(reasons))
+
+
 def _evidence_traceability(
     result: dict[str, Any],
     evaluation_artifacts: dict[str, Any] | None = None,
@@ -333,17 +343,21 @@ def _evidence_traceability(
     for issue in result.get('issues', []):
         if not isinstance(issue, dict):
             continue
-        if not issue.get('evidenceMissing') and issue.get('applicabilityState') not in {
+        applicability_state = issue.get('applicabilityState')
+        blocking_reasons = [str(reason) for reason in issue.get('blockingReasons', []) if reason]
+        missing_fact_keys = [str(key) for key in issue.get('missingFactKeys', []) if key]
+        issue_kind = issue.get('issueKind')
+        if not issue.get('evidenceMissing') and issue_kind != 'evidence_gap' and applicability_state not in {
             'blocked_by_visibility',
             'blocked_by_missing_fact',
         }:
             continue
         checks += 1
-        if issue.get('applicabilityState') == 'blocked_by_missing_fact':
-            if issue.get('missingFactKeys'):
+        if applicability_state == 'blocked_by_missing_fact' or issue_kind == 'evidence_gap' or issue.get('evidenceMissing'):
+            if missing_fact_keys or _has_evidence_gap_block_reason(blocking_reasons):
                 hits += 1
             continue
-        if issue.get('blockingReasons'):
+        if blocking_reasons:
             hits += 1
     for fact in result.get('unresolvedFacts', []):
         if not isinstance(fact, dict):

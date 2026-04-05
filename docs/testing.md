@@ -115,6 +115,7 @@ make eval-review-replay
 - `result.visibility.parseMode / parseWarnings / manualReviewReason / preflight` 是 canonical L0 消费入口
 - `summary.visibilitySummary` 仅作为 display summary 保留
 - `artifactIndex` 中必须包含 `structured-review-l0-visibility`；report 语义工件会额外输出 `structured-review-report-buckets`
+- fresh task 的 `structured-review-l0-visibility.json.visibility` 必须与 `structured-review-result.json.visibility` 一致
 - issue 会显式输出 `issueKind / applicabilityState / missingFactKeys / blockingReasons`
 - 能识别重复章节、附件可视域缺口、专项方案挂接不清、停机窗口与资源压力
 - 能识别施工组织设计核心章节完整性缺口
@@ -129,6 +130,9 @@ make eval-review-replay
 - `structured-review-l0-visibility.json` 必须包含 `checklist / blockingReasons / parserLimitations / attachmentTaxonomySummary`
 - `structured-review-rule-hits.json` 与 `rule-hit-matrix.json` 必须包含 `applicabilityState / requiredFactKeys / missingFactKeys / clauseIds / blockingReasons`
 - `unresolvedFacts` 必须包含 `sourceExtractor / blockingReason / visibilityLimited / blockingRuleIds / blockingIssueIds`
+- visible-scope 内的章节/监测监控缺失必须落为 `hard_defect / applies`，不得因为空 `docEvidence` 漂移为 `evidence_gap`
+- parser-limited 下的章节/监测监控缺失必须落为 `blocked_by_missing_fact`，且 `missingFactKeys / blockingReasons` 至少其一可解释
+- `evidence_gap` 若出现，必须具备显式 explainability；空 `docEvidence` 不能单独成为证据缺口依据
 - artifact API 可列出和下载工件，且与 `result.artifactIndex` 同口径；对新任务 `artifactIndex` 即使为空也优先于目录扫描
 - 详情页优先展示 `resolvedProfile / visibility / unresolvedFacts / artifactIndex / reviewerDecision`，再展示报告与原始 JSON
 - reviewer 结果页以结构化方式展示 `attachmentVisibility / ruleHits / conflicts / sectionStructure`；raw JSON 只保留为折叠调试信息

@@ -10,6 +10,11 @@ _CRANE_RE = re.compile(r'(?:选用|采用)\s*(\d+)T汽车吊', re.IGNORECASE)
 
 _MEASURE_KEYWORDS = ['安全保证措施', '安全技术措施', '监测监控', '危险源', '风险辨识']
 
+_HAZARD_PRESENCE_LABELS = {
+    'hazard.measureSectionPresent': '安全措施/控制措施',
+    'hazard.monitoringSectionPresent': '监测监控',
+}
+
 
 def extract_hazard_facts(parse_result) -> tuple[dict[str, Any], dict[str, list[str]], list[str]]:
     text = parse_result.normalizedText
@@ -134,4 +139,19 @@ def extract_hazard_facts(parse_result) -> tuple[dict[str, Any], dict[str, list[s
                 'visibilityLimited': bool(parse_result.parserLimited),
             }
         )
+    if parse_result.parserLimited and facts['highRiskCategories']:
+        for fact_key, label in _HAZARD_PRESENCE_LABELS.items():
+            short_key = fact_key.split('.', 1)[1]
+            if facts.get(short_key):
+                continue
+            unresolved.append(
+                {
+                    'code': f'unresolved_{short_key}',
+                    'factKey': fact_key,
+                    'summary': f'已识别高风险场景，但当前解析路径为 parser-limited，无法稳定确认“{label}”是否在正文中明确出现。',
+                    'sourceExtractor': 'hazard_facts',
+                    'blockingReason': 'parser_limited_source',
+                    'visibilityLimited': True,
+                }
+            )
     return facts, block_refs, unresolved

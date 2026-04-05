@@ -463,6 +463,11 @@ class StructuredReviewExecutor:
                 blocking_reasons.append('parser_limited_source')
             if missing_fact_keys:
                 blocking_reasons.append('missing_fact')
+            blocking_reasons.extend(
+                unresolved.blockingReason
+                for fact_key in missing_fact_keys
+                if (unresolved := unresolved_by_fact.get(fact_key)) is not None and unresolved.blockingReason
+            )
             if hit.status == 'manual_review_needed' and hit.matchType != 'visibility_gap':
                 blocking_reasons.append('manual_confirmation_required')
             hit.requiredFactKeys = required_fact_keys
@@ -497,6 +502,11 @@ class StructuredReviewExecutor:
                 blocking_reasons.append('missing_fact')
             if issue.applicabilityState == 'blocked_by_visibility':
                 blocking_reasons.append('visibility_gap')
+            blocking_reasons.extend(
+                unresolved.blockingReason
+                for fact_key in issue.missingFactKeys
+                if (unresolved := unresolved_by_fact.get(fact_key)) is not None and unresolved.blockingReason
+            )
             issue.blockingReasons = list(dict.fromkeys(blocking_reasons))
             for fact_key in issue.missingFactKeys:
                 unresolved = unresolved_by_fact.get(fact_key)
@@ -559,7 +569,6 @@ class StructuredReviewExecutor:
             'referenced_only',
             'visibility_unknown',
             'parser_limited_pdf_requires_manual_review',
-            'parser_limited_source',
             'attachment_unknown',
             'attachment_missing_confirmed',
         }

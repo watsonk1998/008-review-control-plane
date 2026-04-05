@@ -190,11 +190,14 @@ python scripts/build_research_pack.py
 - issue 结果会保留 `evidenceMissing / manualReviewReason / missingFactKeys / blockingReasons`
 - parse 结果会保留 typed `visibility` / `parseMode` / `parserLimited`
 - `result.visibility` 是唯一 canonical visibility contract，并直接暴露 `parseMode / manualReviewReason / preflight`
+- fresh task 的 `structured-review-l0-visibility.json.visibility` 与 `result.visibility` 必须同口径；legacy fallback 仅限只读回放兼容
 - `summary.visibilitySummary` 统一表达附件状态计数、重复章节、parse warnings 与 visibility reason counts，但不再作为第二事实源
 - `artifactIndex` 额外输出 `structured-review-l0-visibility` 与 `structured-review-report-buckets`
 - `structured-review-l0-visibility.json` 是唯一 L0 preflight 工件，会显式输出 `gateDecision / blockingReasons / checklist / parserLimitations / attachmentTaxonomySummary`
 - `structured-review-rule-hits.json` 与 `rule-hit-matrix.json` 会稳定输出 `applicabilityState / requiredFactKeys / missingFactKeys / clauseIds / blockingReasons`
 - `unresolvedFacts` 会保留 `sourceExtractor / blockingReason / visibilityLimited / blockingRuleIds / blockingIssueIds`
+- visible-scope 的负向事实（例如章节缺失、监测监控缺失）会保留为 `hard_defect + applies`；只有 parser-limited / fact-unresolved 才进入 `evidence_gap + blocked_by_missing_fact`
+- `evidenceMissing` 不能再由空 `docEvidence` 自动推导；若为 `true`，必须能由 `missingFactKeys` 或显式 `blockingReasons` 解释
 - `disable_visibility_check` 仅保留给 eval / ablation 内部路径，不能作为公开任务入口参数
 - `/api/tasks/support-scope` 会返回 pack 的 `promotionCriteria`，作为 ready/placeholder 之外的补充治理信号；`ready pack ≠ official support`
 - 任务详情现在支持最小 reviewer decision：task-level / issue-level / attachment-level 复核状态与备注；UI 会把稳定的 on-wire enum 映射为 reviewer 语义标签，但不更改持久化字段

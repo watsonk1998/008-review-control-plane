@@ -12,6 +12,7 @@
 ## 版本语义
 - `v0.1.0-gemini-seed`：基于 Gemini deepresearch 结果构建的 seed labels
 - `v0.1.0-bootstrap-seed`：从既有 legacy / fixture 样本转换出的最小 versioned seed
+- `v0.1.0-ci-stage-gate`：进入 official versioned stage gate 的运行时对齐样本
 - `v0.2.0-internal-reviewed`：内部人工复核后的版本
 - `v1.0.0-expert-golden`：专家确认后的正式 gold 版本
 
@@ -24,6 +25,7 @@
   - visibility truth
   - evidence truth
   - enhancement-only observations
+- visible-scope 内已闭合的负向事实可以进入 issue truth；parser-limited 导致的章节/事实缺口只能保留为 explainable `evidence_gap`
 - 若 case 仍存在 `parser_limited_pdf_requires_manual_review`、`attachment_unparsed`、`referenced_only` 等 blocking 语义，只能进入 reviewed-preparation，不得直接宣称完成 reviewed promotion
 - provenance 必须能回指 seed / reviewer decision / artifacts；不得把最新一次 eval snapshot 当作长期 truth
 - runtime 侧的 `GET /api/tasks/{taskId}/review-preparation` 只负责导出 reviewed-preparation 候选资产；是否写入 `fixtures/review_eval/**` 仍需人工筛选与复核

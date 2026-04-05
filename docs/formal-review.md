@@ -138,6 +138,7 @@ LLM 不负责：
 - `structured-review-facts.json` 中的 `unresolvedFacts` 会保留 `sourceExtractor / blockingReason / visibilityLimited / blockingRuleIds / blockingIssueIds`
 - `structured-review-rule-hits.json` 与 `rule-hit-matrix.json` 会保留 `applicabilityState / requiredFactKeys / missingFactKeys / clauseIds / blockingReasons`
 - `structured-review-result.json` 与 API 返回共享同一条 canonical 结果主链，不再容忍 artifact/result 漂移
+- fresh task 的 `structured-review-l0-visibility.json.visibility` 与 `structured-review-result.json.visibility` 必须保持同口径；`summary.visibilitySummary` 不得反向生成 canonical visibility
 
 ## manual review 语义
 
@@ -146,6 +147,9 @@ LLM 不负责：
 - `FinalIssue` 会保留 `evidenceMissing` 与 `manualReviewReason`
 - `FinalIssue` 会保留 `missingFactKeys / blockingReasons`，并与 `unresolvedFacts` 建立最小可回放闭环
 - `FinalIssue.issueKind` 与 `FinalIssue.applicabilityState` 是 reviewer / report / eval 共享的最小派生语义
+- visible-scope 内已闭合的负向事实（如核心章节缺失、监测监控缺失）保留为 `hard_defect + applies`
+- parser-limited 或 fact-unresolved 的负向结论才进入 `evidence_gap + blocked_by_missing_fact`
+- `evidenceMissing=true` 必须具备显式 explainability：`missingFactKeys` 或 `blockingReasons` 至少其一非空
 - `result.visibility` 是唯一 canonical visibility contract，并直接承载 `parseMode / manualReviewReason / preflight`
 - `summary.visibilitySummary` 会统一输出附件计数、状态计数、reason counts、重复章节与 parse warnings，但不再反向生成 canonical visibility
 - reviewer decision 以单个 task-scoped JSON 保存：`taskState + note + issues[] + attachments[] + updatedAt`

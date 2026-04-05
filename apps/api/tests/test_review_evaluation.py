@@ -277,3 +277,24 @@ def test_evidence_traceability_covers_rule_hit_layer_states():
     score, checks = _evidence_traceability(result)
     assert checks >= 6
     assert score == 1.0
+
+
+def test_evidence_traceability_fails_unexplained_evidence_gap_issue():
+    result = {
+        'matrices': {'ruleHits': []},
+        'issues': [
+            {
+                'id': 'ISSUE-001',
+                'issueKind': 'evidence_gap',
+                'applicabilityState': 'applies',
+                'evidenceMissing': True,
+                'missingFactKeys': [],
+                'blockingReasons': [],
+            }
+        ],
+        'unresolvedFacts': [],
+    }
+
+    score, checks = _evidence_traceability(result)
+    assert checks == 1
+    assert score == 0.0

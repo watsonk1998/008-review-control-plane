@@ -128,16 +128,24 @@ class FinalIssue(ReviewIssue):
 
     @model_validator(mode='after')
     def _derive_review_semantics(self):
+        effective_evidence_missing = bool(
+            self.evidenceMissing or _has_explicit_evidence_gap(self.missingFactKeys, self.blockingReasons)
+        )
         self.issueKind = _derive_issue_kind(
             finding_type=self.findingType,
-            evidence_missing=self.evidenceMissing,
+            evidence_missing=effective_evidence_missing,
+            missing_fact_keys=self.missingFactKeys,
+            blocking_reasons=self.blockingReasons,
         )
         self.applicabilityState = _derive_applicability_state(
             issue_kind=self.issueKind,
             manual_review_needed=self.manualReviewNeeded,
             manual_review_reason=self.manualReviewReason,
-            evidence_missing=self.evidenceMissing,
+            evidence_missing=effective_evidence_missing,
+            missing_fact_keys=self.missingFactKeys,
+            blocking_reasons=self.blockingReasons,
         )
+        self.evidenceMissing = self.issueKind == 'evidence_gap'
         return self
 
 
@@ -353,6 +361,13 @@ _VISIBILITY_BLOCKING_REASONS = {
     'parser_limited_pdf_requires_manual_review',
 }
 
+_EVIDENCE_GAP_BLOCKING_REASONS = {
+    'missing_fact',
+    'parser_limited_source',
+    'document_evidence_unavailable',
+    'policy_evidence_unavailable',
+}
+
 _VISIBILITY_REASON_PRIORITY = [
     'explicit_missing_marker',
     'title_detected_but_body_not_reliably_parsed',
@@ -458,12 +473,22 @@ def _derive_visibility_preflight(visibility: VisibilityAssessment) -> Visibility
     )
 
 
-def _derive_issue_kind(*, finding_type: FindingType, evidence_missing: bool) -> IssueKind:
+def _has_explicit_evidence_gap(missing_fact_keys: list[str], blocking_reasons: list[str]) -> bool:
+    return bool(missing_fact_keys or (_EVIDENCE_GAP_BLOCKING_REASONS & set(blocking_reasons or [])))
+
+
+def _derive_issue_kind(
+    *,
+    finding_type: FindingType,
+    evidence_missing: bool,
+    missing_fact_keys: list[str],
+    blocking_reasons: list[str],
+) -> IssueKind:
     if finding_type == FindingType.visibility_gap:
         return 'visibility_gap'
     if finding_type == FindingType.suggestion_enhancement:
         return 'enhancement'
-    if evidence_missing:
+    if evidence_missing and _has_explicit_evidence_gap(missing_fact_keys, blocking_reasons):
         return 'evidence_gap'
     return 'hard_defect'
 
@@ -474,10 +499,12 @@ def _derive_applicability_state(
     manual_review_needed: bool,
     manual_review_reason: str | None,
     evidence_missing: bool,
+    missing_fact_keys: list[str],
+    blocking_reasons: list[str],
 ) -> ApplicabilityState:
     if manual_review_reason in _VISIBILITY_BLOCKING_REASONS or issue_kind == 'visibility_gap':
         return 'blocked_by_visibility'
-    if evidence_missing:
+    if issue_kind == 'evidence_gap' or (evidence_missing and _has_explicit_evidence_gap(missing_fact_keys, blocking_reasons)):
         return 'blocked_by_missing_fact'
     if manual_review_needed:
         return 'partial'

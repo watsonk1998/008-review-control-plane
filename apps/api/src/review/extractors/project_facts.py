@@ -41,6 +41,20 @@ _CONTEXT_ONLY_MARKERS = (
     '仅供审查参考',
 )
 
+_SECTION_PRESENCE_LABELS = {
+    'engineeringOverview': '工程概况',
+    'preparationBasis': '编制依据',
+    'constructionPlan': '施工部署/施工计划',
+    'schedulePlan': '施工进度计划',
+    'resourcePlan': '资源配置计划',
+    'layoutPlan': '施工平面布置',
+    'processMethod': '施工工艺/施工方法',
+    'safetyMeasures': '安全措施',
+    'emergencyPlan': '应急预案',
+    'calculationBook': '计算书/验算',
+    'monitoringPlan': '监测监控',
+}
+
 
 def _infer_document_type_hint(text: str) -> str:
     for document_type, keywords in _DOC_TYPE_HINTS.items():
@@ -180,4 +194,18 @@ def extract_project_facts(parse_result) -> tuple[dict[str, Any], dict[str, list[
                 'visibilityLimited': bool(parse_result.parserLimited),
             }
         )
+    if parse_result.parserLimited:
+        for key, label in _SECTION_PRESENCE_LABELS.items():
+            if section_presence.get(key):
+                continue
+            unresolved.append(
+                {
+                    'code': f'unresolved_section_presence_{key}',
+                    'factKey': f'project.sectionPresence.{key}',
+                    'summary': f'当前解析路径为 parser-limited，无法稳定确认“{label}”章节是否真实缺失。',
+                    'sourceExtractor': 'project_facts',
+                    'blockingReason': 'parser_limited_source',
+                    'visibilityLimited': True,
+                }
+            )
     return facts, refs, unresolved
