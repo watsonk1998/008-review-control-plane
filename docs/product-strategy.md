@@ -24,6 +24,35 @@
 
 `review_assist` 与 `structured_review` 的关系，也必须持续双轨区分：前者承担辅助性、快速性、总结型能力，解决“先看一眼、先归纳一下”的问题；后者承担正式结构化审查能力，解决“是否形成可追溯、可复核、可评测的正式审查结果”的问题。前者可以帮助用户更快进入问题域，后者才是 V0.3 的产品主线。 ([GitHub][3])
 
+
+### 产品结构图
+
+以下是当前仓库的产品结构与 formal-review spine 主链示意：
+
+```
+008-review-control-plane
+|
+|-- review_assist                          <-- 快速辅助 / 总结 / 预览（非正式审查）
+|
++-- structured_review                      <-- 正式结构化审查主链
+    |
+    |   +----------- formal-review spine -----------+
+    |   |                                           |
+    |-- parse ........... 文档解析 + parseMode/Warnings
+    |-- facts ........... 事实抽取 + unresolvedFacts
+    |-- rules ........... 规则/条文适用 + applicabilityState
+    |-- evidence ........ 证据链闭合 + evidence gap
+    |-- report .......... 报告 + artifacts + artifactIndex
+    |   |                                           |
+    |   +-------------------------------------------+
+    |
+    |-- reviewer gate ... 人工复核分流（manualReviewNeeded）
+    +-- eval gate ....... 版本化评测拦截（versioned cases + layered metrics）
+
+支撑层：前端界面 / runtime 编排 / 外部能力适配器
+未来层：OCR / 多模态 / 图纸平台化 / 多文档联合 / ontology / graph-first / workflow 产品化
+```
+
 ## 3. 为什么 V0.3 要“收边界、硬内核、补证据、强评测”
 
 V0.3 的中心定义必须明确写死，而不是作为附注：**V0.3 不是扩范围版本，而是收边界、硬内核、补证据、强评测的版本。目标是在 official scope 内，把 structured_review 做成：可审前置、可视域诚实、证据可追溯、规则可命中、结果可复核、评测可闭环的 formal-review spine。**这不是一句口号，而是对当前仓库最短板的直接响应。 ([GitHub][4])
@@ -90,7 +119,18 @@ V0.3 之所以不是继续“大扩张”，是因为上游研究已经证明：
 
 综合来看，**文档可视域层、事实抽取层、规则 / 条文适用层、证据与 unresolved facts 层、报告与 artifact 层、reviewer gate 层、eval gate 层**，共同构成当前正式主线；前端界面、runtime 编排、外部能力适配器属于支撑层；OCR、多模态、图纸平台化、多文档联合审查、ontology / graph-first 与企业级 workflow 壳，则都属于未来层。 ([GitHub][6])
 
-## 7. 外部参考项目的借鉴边界
+## 7. 外部参考项目与借鉴边界
+
+以下五个外部项目在研究过程中被系统性参考。本节不是征引它们的先进性，而是为后续实施设计划定"借什么、不借什么、为什么不借更多"的明确边界，防止实施层跑偏。
+
+| 项目 | 可借鉴 | V0.3 适用性 | 明确不借 | 借过头会偏向 |
+|---|---|---|---|---|
+| OpenContracts | 证据对象模型 / annotation / relationship / provenance | **当前可用**：强化 evidence traceability | 整体协作壳、annotation-first 工作方式、技术栈迁移 | 文档标注与语料管理平台 |
+| AEC-Bench | 评测任务设计 / scope taxonomy / replay 方法论 | **当前可用**：让 eval 更像可诊断基准系统 | multimodal benchmark 壳、agent sandbox、评测平台产品路线 | 面向多模态 agent 的 benchmark 平台 |
+| claude-legal-skill | pre-review checklist / 审查前置纪律 / 输出桶方法 | **当前可用**：加强 reviewer gate 和 pre-review gate | 法律 redline、市场基准、法律文书输出壳、法律域内容本体 | 文档审阅写作 copilot |
+| AEC3PO | schema discipline / 术语关系命名 / 概念边界 | **中长期储备**：为 facts/rules/evidence 命名一致性做准备 | ontology-first 重构路线、整套知识本体工程化 | 先做知识本体、后谈审查主链的知识工程项目 |
+| AWS RAPID | 人在回路工作流 / 队列编排 / 产品化参考 | **长期参考**：008 当前短板不在壳层 | 作为当前主借鉴对象、企业工作流产品化整套实现 | 流程很完整的工作流 SaaS，审查内核仍发软 |
+
 
 ### OpenContracts
 
@@ -115,6 +155,43 @@ RAPID 对 008 的帮助，主要在 **未来的人在回路工作流、队列编
 ## 8. 中期与长期路线图
 
 路线可以写，但必须分层，而且每一层都必须有进入前提。任何未来能力都不能伪装成 V0.3 的当下任务。进入后续路线的共同前提只有一个：official scope 内的 formal-review spine 必须先足够硬，尤其是 L0 可视域诚实、L2 适用性与证据闭环、reviewer gate 和 eval gate 稳定成立。 ([GitHub][4])
+
+### 路线分层总览
+
+```
+时间层        主要目标                                          进入前提
+────────────────────────────────────────────────────────────────────────────────
+当前 V0.3     收边界 · 硬内核 · 补证据 · 强评测                  <-- 当前主线
+              |-- official scope 内 formal-review spine 做硬
+              |-- 主攻 L0（可视域 / parser 诚实）+ L2（证据闭环）
+              +-- reviewer gate + eval gate 成为正式制度
+────────────────────────────────────────────────────────────────────────────────
+中期          扩边界 · 补承接 · 强治理                          V0.3 主链足够硬
+              |-- 更多 ready packs 通过治理晋升为 official        |-- L0 visibility
+              |-- 补 internal-reviewed / gold 承接层             |   contract 稳定
+              +-- 加强 reviewer workflow / adjudication          |-- L2 evidence
+                                                                |   闭环可信
+                                                                +-- eval gate
+                                                                    stage gate 成立
+────────────────────────────────────────────────────────────────────────────────
+中远期        扩输入 · 扩文档                                    中期治理成熟
+              |-- OCR / 多模态 / 图纸平台化                      |-- visibility
+              +-- 多文档联合审查                                 |   contract 可吸收
+                                                                |   复杂输入
+                                                                +-- 单文档 spine
+                                                                    已可信
+────────────────────────────────────────────────────────────────────────────────
+长期          扩模型 · 扩平台                                    中远期能力稳定
+              |-- ontology / graph-first                        |-- 证据对象模型
+              |-- 完整 workflow / 产品化                         |   已稳定
+              +-- 审查控制平台级能力                             +-- pack / doc type
+                                                                    覆盖足以支撑
+                                                                    抽象建模
+────────────────────────────────────────────────────────────────────────────────
+```
+
+**关键原则**：每一层路线的进入必须以上一层主链"足够硬"为前提，不允许以"技术上做得到"替代"产品上接得住"。
+
 
 ### 8.1 中期路线
 
@@ -144,7 +221,40 @@ RAPID 对 008 的帮助，主要在 **未来的人在回路工作流、队列编
 
 第四，**研究、边界、裁决、实施四层文档关系应长期维护**。研究文档负责发现问题与形成输入；边界文档负责收口“做什么 / 不做什么”；差距裁决负责把问题分流到 official mainline、experimental、diagnostics、internal-reviewed preparation 或 out of scope；实施文档只负责在既定边界内拆设计、拆任务、拆验证。实施层不应反向重写研究层、边界层与裁决层。 ([GitHub][2])
 
-## 10. 对后续《V0.3 实施设计 / 执行任务书》的输入要求
+## 10. V0.3 的成功判据
+
+### 什么叫 V0.3 在产品层面成功
+
+V0.3 成功的判断标准不是"产出更多"，而是"主链更硬"。具体而言：
+
+- **可审前置成立**：L0 visibility / parser warnings / manual review 语义已前置成独立 gate，系统在审查开始前就诚实表达"看到了什么、没看到什么、为什么没看到"
+- **可视域诚实可验证**：`attachment_visibility_accuracy` 有系统性提升，且提升来自 contract 硬度增强而非样本特判
+- **证据可追溯**：facts → rules → policy refs → issues → evidence 的关系链可以在 artifacts 中被完整回溯，而非仅存在于 reportMarkdown 叙述中
+- **规则可命中**：`applicabilityState`、clause applicability 与 rule coverage 在 official scope 内可被 versioned cases 稳定复现
+- **结果可复核**：reviewer gate 能把"系统可判"与"需人工复核"的边界显式分流，而非让模型在盲区里硬判
+- **评测可闭环**：eval gate 通过 versioned cases + layered metrics 实现 stage gate 拦截，而非依赖单次快照
+
+### 什么不算成功
+
+以下情形即使出现，也不应被误读为 V0.3 产品层面的成功：
+
+- 报告文风更像 Gemini 或更像"专家话术"，但证据链未变硬
+- 某次样本 A/B 对比得分更高，但提升来自 wording 优化而非 contract 加固
+- 多了更多 experimental 方向或 ready base pack，但 official scope 主链硬度未提升
+- 讲了更多远期愿景，但 L0 / L2 的具体短板仍未闭合
+- diagnostics 层某项指标提升，但被误解为 official readiness 提升
+
+### 哪些指标只是辅助，不应被误读
+
+- **某次 eval 快照**不是长期真相——它是阶段性 snapshot，不代表主线已成熟
+- **某次样本表现提升**不代表 formal-review spine 已可信——必须区分是 contract 硬度提升还是 prompt / wording 调优
+- **diagnostics 层提升**不等于 official readiness——L3 维度在当前阶段明确定义为可增强但不应成为主战场
+- **`hard_evidence_accuracy` 等单项改善**不代表证据链闭环已成立——必须看整条 facts → rules → evidence → artifacts 链路的系统性
+
+V0.3 成功判据的核心是 **anti-overfit**：不追样本追分，不追文风追像，不追指标追高；而是追可视域诚实、追证据可追溯、追规则可命中、追 gate 可拦截、追评测可闭环。
+
+
+## 11. 对后续《V0.3 实施设计 / 执行任务书》的输入要求
 
 这份《产品思路与路线图》对后续实施任务书的首要约束，是：**后续文档不应再重新讨论产品身份**。实施层不应再争论“008 到底是不是 review control plane”“structured_review 到底是不是正式主链”“V0.3 到底要不要扩范围”。这些问题在本文件及上游边界材料中已经定性完成。 ([GitHub][2])
 
@@ -154,7 +264,7 @@ RAPID 对 008 的帮助，主要在 **未来的人在回路工作流、队列编
 
 外部借鉴里，**可以进入实施层** 的，只应是方法和局部对象：例如 OpenContracts 的 annotation / provenance 对象意识，AEC-Bench 的 task/scope taxonomy 与 replay 纪律，claude-legal-skill 的 pre-review checklist 与输出桶方法。**只能保留在产品思路层** 的，则包括 AEC3PO 式 ontology-first 重构、RAPID 式 workflow / queue / 并发产品壳，以及任何“整体迁移其技术栈或产品壳”的想法。 ([GitHub][14])
 
-## 11. 最终结论
+## 12. 最终结论
 
 `008-review-control-plane` 当前不是万能工程 AI，不是自动签发机，也不是更像 Gemini 的写作器。它当前是一个 **review control plane**，而它在 V0.3 这一阶段的唯一正确主线，是在 official scope 内把 `structured_review` 收成一条真正可信的 **formal-review spine**：先把可视域讲清楚，再把事实与规则连起来，再把证据与 unresolved facts 落实到 artifacts，再把 reviewer gate 与 eval gate 做成可复核、可拦截、可回放的制度化能力。 ([GitHub][3])
 
