@@ -47,6 +47,10 @@ class StructuredReviewReportBuilder:
                 'ruleHitCount': sum(1 for item in matrices.ruleHits if item.status in {'hit', 'manual_review_needed'}),
                 'unresolvedFactCount': len(unresolved_facts),
                 'issueKindCounts': dict(Counter(issue.issueKind for issue in issues)),
+                'preflightGateDecision': visibility.preflight.gateDecision,
+                'blockedIssueCount': sum(
+                    1 for issue in issues if issue.applicabilityState in {'blocked_by_visibility', 'blocked_by_missing_fact'}
+                ),
             },
             visibilitySummary=visibility_summary,
         )
@@ -97,12 +101,25 @@ class StructuredReviewReportBuilder:
             f'- parser limited：{"yes" if parse_result.visibility.parserLimited else "no"}',
             f'- file type：{parse_result.visibility.fileType or parse_result.fileType}',
             f'- manual review reason：{parse_result.visibility.manualReviewReason or "无"}',
+            f'- preflight gate：{parse_result.visibility.preflight.gateDecision}',
+            f'- preflight blocking reasons：{", ".join(parse_result.visibility.preflight.blockingReasons) or "无"}',
             f'- 可视域计数：{json.dumps(parse_result.visibility.counts, ensure_ascii=False)}',
             f'- 可视域原因计数：{json.dumps(parse_result.visibility.reasonCounts, ensure_ascii=False)}',
             f'- duplicate sections：{", ".join(parse_result.visibility.duplicateSectionTitles) or "无"}',
             f'- parse warnings：{", ".join(parse_result.visibility.parseWarnings) or "无"}',
             '',
         ]
+        if parse_result.visibility.preflight.checklist:
+            lines.extend(
+                [
+                    '## Pre-review Checklist',
+                    *[
+                        f'- {item.key}: {item.status} · {item.summary}'
+                        for item in parse_result.visibility.preflight.checklist
+                    ],
+                    '',
+                ]
+            )
         if unresolved_facts:
             lines.extend(
                 [
@@ -137,6 +154,8 @@ class StructuredReviewReportBuilder:
                         f'- manual_review_needed: {"yes" if issue.manualReviewNeeded else "no"}',
                         f'- manual_review_reason: {issue.manualReviewReason or "none"}',
                         f'- evidence_missing: {"yes" if issue.evidenceMissing else "no"}',
+                        f'- missing_fact_keys: {", ".join(issue.missingFactKeys) or "none"}',
+                        f'- blocking_reasons: {", ".join(issue.blockingReasons) or "none"}',
                         f'- recommendations: {"；".join(issue.recommendation)}',
                         '',
                     ]
@@ -161,6 +180,8 @@ class StructuredReviewReportBuilder:
                         f'- manual_review_needed: {"yes" if issue.manualReviewNeeded else "no"}',
                         f'- manual_review_reason: {issue.manualReviewReason or "none"}',
                         f'- evidence_missing: {"yes" if issue.evidenceMissing else "no"}',
+                        f'- missing_fact_keys: {", ".join(issue.missingFactKeys) or "none"}',
+                        f'- blocking_reasons: {", ".join(issue.blockingReasons) or "none"}',
                         f'- recommendations: {"；".join(issue.recommendation)}',
                         '',
                     ]

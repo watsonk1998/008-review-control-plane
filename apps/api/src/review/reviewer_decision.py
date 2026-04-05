@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 
 from src.domain.models import (
+    ReviewPreparationSummary,
     ReviewerAttachmentDecision,
     ReviewerDecision,
     ReviewerDecisionUpdateRequest,
@@ -24,6 +25,47 @@ def build_default_reviewer_decision(task: TaskRecord) -> ReviewerDecision:
 def resolve_reviewer_decision(task: TaskRecord) -> ReviewerDecision:
     decision = task.reviewerDecision or build_default_reviewer_decision(task)
     return _normalize_reviewer_decision(task, decision, touch_updated_at=False, strict=False)
+
+
+def build_review_preparation_summary(task: TaskRecord) -> ReviewPreparationSummary:
+    decision = resolve_reviewer_decision(task)
+    issue_ids = _extract_issue_ids(task)
+    attachment_ids = _extract_attachment_ids(task)
+    eligible_issue_ids = [item.issueId for item in decision.issues if item.state == 'confirmed']
+    rejected_issue_ids = [item.issueId for item in decision.issues if item.state == 'dismissed']
+    deferred_issue_ids = [item.issueId for item in decision.issues if item.state in {'pending', 'needs_attachment'}]
+    eligible_attachment_ids = [item.attachmentId for item in decision.attachments if item.state == 'dismissed']
+    deferred_attachment_ids = [
+        item.attachmentId for item in decision.attachments if item.state in {'pending', 'needs_attachment'}
+    ]
+    blocking_reasons: list[str] = []
+    result = task.result or {}
+    visibility = result.get('visibility', {}) if isinstance(result, dict) else {}
+    if visibility.get('manualReviewNeeded'):
+        blocking_reasons.append('visibility_manual_review_required')
+    if deferred_issue_ids:
+        blocking_reasons.append('pending_issue_review')
+    if deferred_attachment_ids:
+        blocking_reasons.append('pending_attachment_review')
+    if not decision.note:
+        blocking_reasons.append('missing_reviewer_note')
+    ready_for_promotion = (
+        bool(issue_ids or attachment_ids)
+        and not deferred_issue_ids
+        and not deferred_attachment_ids
+        and bool(decision.note)
+    )
+    return ReviewPreparationSummary(
+        truthTier='internal_reviewed_preparation',
+        readyForPromotion=ready_for_promotion,
+        blockingReasons=list(dict.fromkeys(blocking_reasons)),
+        eligibleIssueIds=eligible_issue_ids,
+        deferredIssueIds=deferred_issue_ids,
+        rejectedIssueIds=rejected_issue_ids,
+        eligibleAttachmentIds=eligible_attachment_ids,
+        deferredAttachmentIds=deferred_attachment_ids,
+        disclaimer='该对象仅表示 runtime reviewer decision 对 internal-reviewed preparation 的承接状态，不构成 reviewed truth。',
+    )
 
 
 def merge_reviewer_decision(task: TaskRecord, payload: ReviewerDecisionUpdateRequest) -> ReviewerDecision:

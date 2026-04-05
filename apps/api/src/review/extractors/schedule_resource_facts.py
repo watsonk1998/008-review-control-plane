@@ -103,6 +103,9 @@ def extract_schedule_resource_facts(parse_result) -> tuple[dict[str, Any], dict[
                 'code': 'missing_shutdown_window_days',
                 'factKey': 'schedule.shutdownWindowDays',
                 'summary': '未解析到停机窗口时长，需人工确认工期窗口。',
+                'sourceExtractor': 'schedule_resource_facts',
+                'blockingReason': 'parser_limited_source' if parse_result.parserLimited else 'missing_fact',
+                'visibilityLimited': bool(parse_result.parserLimited),
             }
         )
     if labor_total is None:
@@ -111,6 +114,9 @@ def extract_schedule_resource_facts(parse_result) -> tuple[dict[str, Any], dict[
                 'code': 'missing_labor_total',
                 'factKey': 'resource.laborTotal',
                 'summary': '未解析到劳动力合计人数，需人工确认资源投入。',
+                'sourceExtractor': 'schedule_resource_facts',
+                'blockingReason': 'parser_limited_source' if parse_result.parserLimited else 'missing_fact',
+                'visibilityLimited': bool(parse_result.parserLimited),
             }
         )
     if not emergency_titles:
@@ -119,6 +125,9 @@ def extract_schedule_resource_facts(parse_result) -> tuple[dict[str, Any], dict[
                 'code': 'missing_emergency_plan_titles',
                 'factKey': 'emergency.planTitles',
                 'summary': '未解析到针对性应急预案标题，需人工确认应急安排。',
+                'sourceExtractor': 'schedule_resource_facts',
+                'blockingReason': 'parser_limited_source' if parse_result.parserLimited else 'missing_fact',
+                'visibilityLimited': bool(parse_result.parserLimited),
             }
         )
     return facts, refs, unresolved

@@ -197,6 +197,18 @@ class ReviewerDecisionUpdateRequest(BaseModel):
     attachments: list[ReviewerAttachmentDecision] = Field(default_factory=list)
 
 
+class ReviewPreparationSummary(BaseModel):
+    truthTier: Literal['runtime_only', 'internal_reviewed_preparation'] = 'internal_reviewed_preparation'
+    readyForPromotion: bool = False
+    blockingReasons: list[str] = Field(default_factory=list)
+    eligibleIssueIds: list[str] = Field(default_factory=list)
+    deferredIssueIds: list[str] = Field(default_factory=list)
+    rejectedIssueIds: list[str] = Field(default_factory=list)
+    eligibleAttachmentIds: list[str] = Field(default_factory=list)
+    deferredAttachmentIds: list[str] = Field(default_factory=list)
+    disclaimer: str | None = None
+
+
 class TaskRecord(BaseModel):
     id: str
     taskType: TaskType

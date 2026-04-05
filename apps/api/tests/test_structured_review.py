@@ -11,6 +11,7 @@ from src.review.pipeline import StructuredReviewExecutor
 REPO_ROOT = Path(__file__).resolve().parents[3]
 SAMPLE_DOC = REPO_ROOT / 'fixtures' / 'supervision' / '施工组织设计-冷轧厂2030单元三台行车电气系统改造.docx'
 SAMPLE_PDF = REPO_ROOT / 'fixtures' / 'review_eval' / 'hazardous_special_scheme' / 'ci' / 'cn_hz_pdf_unknown_visibility_ci' / 'v0.1.0-ci-stage-gate' / 'source.pdf'
+SAMPLE_PUHUA_PDF = REPO_ROOT / 'fixtures' / 'supervision' / '施工组织设计-培花初期雨水调蓄池建设工程.pdf'
 
 
 class DummyLLM:
@@ -205,7 +206,10 @@ def test_document_loader_parse_pdf_document_uses_explicit_pdf_parser():
     assert result.parserLimited is True
     assert result.visibility.parseMode == 'pdf_text_only'
     assert result.visibility.parserLimited is True
+    assert result.visibility.manualReviewNeeded is True
     assert result.visibility.manualReviewReason == 'title_detected_but_body_not_reliably_parsed'
+    assert result.visibility.preflight.gateDecision == 'manual_review_required'
+    assert 'parser_limited_pdf' in result.visibility.preflight.blockingReasons
     assert result.visibility.counts['unknown'] >= 1
     assert result.visibility.counts['missing'] == 0
     assert any(warning.startswith('pdf_appendix_title_candidates:') for warning in result.parseWarnings)
@@ -213,6 +217,42 @@ def test_document_loader_parse_pdf_document_uses_explicit_pdf_parser():
     assert any(warning.startswith('pdf_figure_caption_candidates:') for warning in result.parseWarnings)
     assert any(warning.startswith('pdf_source_pages:') for warning in result.parseWarnings)
     assert any(warning.startswith('pdf_extracted_pages:') for warning in result.parseWarnings)
+
+
+def test_structured_review_executor_frontloads_manual_review_for_parser_limited_pdf():
+    executor = StructuredReviewExecutor(document_loader=DocumentLoader(), llm_gateway=DummyLLM(), fast_adapter=None)
+    result = executor.run_sync(
+        task_id='construction-org-puhua-review-test',
+        query='对该施工组织设计执行正式结构化审查',
+        source_document_path=str(SAMPLE_PUHUA_PDF),
+        fixture_id='puhua-review-fixture',
+        document_type='construction_org',
+        discipline_tags=['lifting_operations', 'temporary_power', 'hot_work'],
+    )
+
+    assert result['visibility']['parseMode'] == 'pdf_text_only'
+    assert result['visibility']['parserLimited'] is True
+    assert result['visibility']['manualReviewNeeded'] is True
+    assert result['visibility']['manualReviewReason'] == 'parser_limited_pdf_requires_manual_review'
+    assert result['visibility']['preflight']['gateDecision'] == 'manual_review_required'
+    assert 'parser_limited_pdf' in result['visibility']['preflight']['blockingReasons']
+    assert result['summary']['manualReviewNeeded'] is True
+    assert any(
+        issue['applicabilityState'] == 'blocked_by_missing_fact' and issue['missingFactKeys']
+        for issue in result['issues']
+    )
+    assert any(
+        row['ruleId'] == 'construction_org_emergency_plan_targeted'
+        and row['clauseIds']
+        and row['blockingReasons']
+        for row in result['matrices']['ruleHits']
+    )
+    assert any(
+        fact['factKey'] == 'emergency.planTitles'
+        and fact['sourceExtractor'] == 'schedule_resource_facts'
+        and fact['blockingRuleIds']
+        for fact in result['unresolvedFacts']
+    )
 
 
 def test_structured_review_executor_supports_gas_area_ops_pack(tmp_path: Path):
@@ -290,6 +330,11 @@ def test_structured_review_executor_builds_full_artifact_catalog(tmp_path: Path)
     assert l0_payload['manualReviewReason'] == 'title_detected_without_attachment_body'
     assert l0_payload['visibility']['parseMode'] == 'docx_structured'
     assert l0_payload['visibility']['manualReviewReason'] == 'title_detected_without_attachment_body'
+    assert l0_payload['preflight']['gateDecision'] == 'manual_review_required'
+    result_payload = json.loads((tmp_path / 'structured-review-result.json').read_text(encoding='utf-8'))
+    assert result_payload['artifactIndex']
+    assert result_payload['reportMarkdown']
+    assert result_payload['visibility']['preflight']['gateDecision'] == 'manual_review_required'
     report_buckets = json.loads((tmp_path / 'structured-review-report-buckets.json').read_text(encoding='utf-8'))
     assert 'visibility_gap' in report_buckets
     assert any(item['title'] == '附件处于可视域缺口，需人工复核原件' for item in report_buckets['visibility_gap'])

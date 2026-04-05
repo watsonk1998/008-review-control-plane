@@ -17,6 +17,7 @@ from src.domain.models import (
     TableLocator,
     TaskArtifact,
 )
+from src.review.evidence.clause_store import ClauseStore
 from src.review.evidence.evidence_builder import EvidenceBuilder
 from src.review.extractors.hazard_facts import extract_hazard_facts
 from src.review.extractors.project_facts import extract_project_facts
@@ -43,6 +44,7 @@ class StructuredReviewExecutor:
         self.fast_adapter = fast_adapter
         self.rule_engine = ReviewRuleEngine()
         self.evidence_builder = EvidenceBuilder()
+        self.clause_store = self.evidence_builder.clause_store or ClauseStore()
         self.report_builder = StructuredReviewReportBuilder()
 
     async def run(
@@ -95,10 +97,6 @@ class StructuredReviewExecutor:
             emit('parse', 'structured_review', 'completed', 'Document parsed for structured review', artifact_path=parse_artifact)
 
         facts = self._extract_facts(parse_result)
-        facts_artifact = write_json_artifact('structured-review-facts', facts.model_dump(mode='json')) if write_json_artifact else None
-        self._record_artifact(artifact_records, facts_artifact, category='facts', stage='extract')
-        if emit:
-            emit('extract', 'structured_review', 'completed', 'Structured facts extracted', artifact_path=facts_artifact)
 
         resolved_profile, packs, executable_packs = resolve_review_profile(
             structured_task,
@@ -109,6 +107,12 @@ class StructuredReviewExecutor:
             rule_hits = []
         else:
             rule_hits = self.rule_engine.run(facts, executable_packs, parse_result)
+        rule_hits = self._enrich_rule_hits(rule_hits, facts=facts, parse_result=parse_result)
+        facts.unresolvedFacts = self._link_unresolved_facts_to_rule_hits(facts.unresolvedFacts, rule_hits)
+        facts_artifact = write_json_artifact('structured-review-facts', facts.model_dump(mode='json')) if write_json_artifact else None
+        self._record_artifact(artifact_records, facts_artifact, category='facts', stage='extract')
+        if emit:
+            emit('extract', 'structured_review', 'completed', 'Structured facts extracted', artifact_path=facts_artifact)
         rules_artifact = write_json_artifact('structured-review-rule-hits', [hit.model_dump(mode='json') for hit in rule_hits]) if write_json_artifact else None
         self._record_artifact(artifact_records, rules_artifact, category='rule_hits', stage='rules')
         if emit:
@@ -132,6 +136,8 @@ class StructuredReviewExecutor:
 
         llm_gateway = None if options.get('disable_llm_explanation') else self.llm_gateway
         final_issues = await finalize_issues(candidates, llm_gateway=llm_gateway)
+        final_issues = self._link_issues_to_unresolved_facts(final_issues, facts.unresolvedFacts)
+        facts.unresolvedFacts = self._link_unresolved_facts_to_issues(facts.unresolvedFacts, final_issues)
         matrices = build_review_matrices(parse_result, facts, rule_hits, final_issues)
         summary = self.report_builder.build_summary(
             document_type=resolved_profile.documentType,
@@ -155,15 +161,6 @@ class StructuredReviewExecutor:
 
         report_artifacts: list[str] = []
         if write_json_artifact:
-            report_artifacts.append(write_json_artifact('structured-review-result', {
-                'summary': summary.model_dump(mode='json'),
-                'visibility': parse_result.visibility.model_dump(mode='json'),
-                'resolvedProfile': resolved_profile.model_dump(mode='json'),
-                'issues': [issue.model_dump(mode='json') for issue in final_issues],
-                'matrices': matrices.model_dump(mode='json'),
-                'unresolvedFacts': [item.model_dump(mode='json') for item in facts.unresolvedFacts],
-                'executionOptions': options,
-            }))
             report_artifacts.append(write_json_artifact('hazard-identification-matrix', matrices.hazardIdentification.model_dump(mode='json')))
             report_artifacts.append(write_json_artifact('rule-hit-matrix', [item.model_dump(mode='json') for item in matrices.ruleHits]))
             report_artifacts.append(write_json_artifact('conflict-matrix', matrices.conflicts.model_dump(mode='json')))
@@ -172,9 +169,7 @@ class StructuredReviewExecutor:
             report_artifacts.append(write_json_artifact('structured-review-report-buckets', self.report_builder.build_issue_buckets(final_issues)))
         if write_text_artifact:
             report_artifacts.append(write_text_artifact('structured-review-report', report_markdown, '.md'))
-        if report_artifacts:
-            self._record_artifact(artifact_records, report_artifacts[0], category='result', stage='report')
-        for path in report_artifacts[1:-1]:
+        for path in report_artifacts[:-1] if write_text_artifact and report_artifacts else report_artifacts:
             self._record_artifact(artifact_records, path, category='matrices', stage='report')
         if write_text_artifact and report_artifacts:
             self._record_artifact(artifact_records, report_artifacts[-1], category='report', stage='report', primary=True)
@@ -198,6 +193,19 @@ class StructuredReviewExecutor:
             finalAnswer=report_markdown,
             notice='这是正式结构化审查结果；若存在 visibility_gap / manual_review_needed，请结合附件原件人工复核。',
         )
+        if write_json_artifact:
+            result_artifact = write_json_artifact(
+                'structured-review-result',
+                result.model_dump(mode='json') | {'executionOptions': options},
+            )
+            self._record_artifact(artifact_records, result_artifact, category='result', stage='report')
+            artifact_index = self._build_artifact_index(task_id, artifact_records)
+            result.artifactIndex = artifact_index
+            result.artifacts = [artifact.downloadUrl for artifact in artifact_index]
+            write_json_artifact(
+                'structured-review-result',
+                result.model_dump(mode='json') | {'executionOptions': options},
+            )
         return result.model_dump(mode='json')
 
     def run_sync(
@@ -345,6 +353,7 @@ class StructuredReviewExecutor:
             'parserLimited': parse_result.parserLimited,
             'parseWarnings': list(parse_result.parseWarnings),
             'visibility': parse_result.visibility.model_dump(mode='json'),
+            'preflight': parse_result.visibility.preflight.model_dump(mode='json'),
             'manualReviewNeeded': parse_result.visibility.manualReviewNeeded,
             'manualReviewReason': parse_result.visibility.manualReviewReason,
             'attachmentVisibility': [item.model_dump(mode='json') for item in parse_result.attachments],
@@ -429,6 +438,88 @@ class StructuredReviewExecutor:
                 )
             )
         return index
+
+    def _enrich_rule_hits(
+        self,
+        rule_hits,
+        *,
+        facts: ExtractedFacts,
+        parse_result: DocumentParseResult,
+    ):
+        unresolved_by_fact = {item.factKey: item for item in facts.unresolvedFacts}
+        attachment_visibility = (facts.attachmentFacts.get('visibility') or {}) if isinstance(facts.attachmentFacts, dict) else {}
+        for hit in rule_hits:
+            required_fact_keys = list(dict.fromkeys(hit.requiredFactKeys or hit.factRefs))
+            missing_fact_keys = [fact_key for fact_key in required_fact_keys if fact_key in unresolved_by_fact]
+            clause_ids = list(dict.fromkeys(hit.clauseIds or self.clause_store.get_clause_ids(hit.ruleId)))
+            blocking_reasons = list(hit.blockingReasons)
+            if hit.matchType == 'visibility_gap':
+                blocking_reasons.append('visibility_gap')
+            if parse_result.visibility.parserLimited and attachment_visibility.get('attachmentCount', 0) == 0:
+                blocking_reasons.append('parser_limited_source')
+            if missing_fact_keys:
+                blocking_reasons.append('missing_fact')
+            if hit.status == 'manual_review_needed' and hit.matchType != 'visibility_gap':
+                blocking_reasons.append('manual_confirmation_required')
+            hit.requiredFactKeys = required_fact_keys
+            hit.missingFactKeys = missing_fact_keys
+            hit.clauseIds = clause_ids
+            hit.blockingReasons = list(dict.fromkeys(blocking_reasons))
+        return rule_hits
+
+    def _link_unresolved_facts_to_rule_hits(self, unresolved_facts: list[UnresolvedFact], rule_hits) -> list[UnresolvedFact]:
+        if not unresolved_facts:
+            return unresolved_facts
+        blocking_rules_by_fact: dict[str, list[str]] = {}
+        for hit in rule_hits:
+            for fact_key in hit.missingFactKeys:
+                blocking_rules_by_fact.setdefault(fact_key, []).append(hit.ruleId)
+        for item in unresolved_facts:
+            item.blockingRuleIds = list(dict.fromkeys(blocking_rules_by_fact.get(item.factKey, [])))
+        return unresolved_facts
+
+    def _link_issues_to_unresolved_facts(
+        self,
+        final_issues,
+        unresolved_facts: list[UnresolvedFact],
+    ):
+        if not final_issues or not unresolved_facts:
+            return final_issues
+        unresolved_by_fact = {item.factKey: item for item in unresolved_facts}
+        for issue in final_issues:
+            blocking_reasons = list(issue.blockingReasons or [])
+            if issue.missingFactKeys:
+                blocking_reasons.append('missing_fact')
+            if issue.applicabilityState == 'blocked_by_visibility':
+                blocking_reasons.append('visibility_gap')
+            issue.blockingReasons = list(dict.fromkeys(blocking_reasons))
+            for fact_key in issue.missingFactKeys:
+                unresolved = unresolved_by_fact.get(fact_key)
+                if unresolved is None:
+                    continue
+                unresolved.blockingIssueIds = list(dict.fromkeys([*unresolved.blockingIssueIds, issue.id]))
+                unresolved.blockingIssueTitles = list(dict.fromkeys([*unresolved.blockingIssueTitles, issue.title]))
+        return final_issues
+
+    def _link_unresolved_facts_to_issues(
+        self,
+        unresolved_facts: list[UnresolvedFact],
+        final_issues,
+    ) -> list[UnresolvedFact]:
+        if not unresolved_facts:
+            return unresolved_facts
+        issue_ids_by_fact: dict[str, list[str]] = {}
+        issue_titles_by_fact: dict[str, list[str]] = {}
+        for issue in final_issues:
+            for fact_key in issue.missingFactKeys:
+                issue_ids_by_fact.setdefault(fact_key, []).append(issue.id)
+                issue_titles_by_fact.setdefault(fact_key, []).append(issue.title)
+        for item in unresolved_facts:
+            item.blockingIssueIds = list(dict.fromkeys([*item.blockingIssueIds, *issue_ids_by_fact.get(item.factKey, [])]))
+            item.blockingIssueTitles = list(
+                dict.fromkeys([*item.blockingIssueTitles, *issue_titles_by_fact.get(item.factKey, [])])
+            )
+        return unresolved_facts
 
     def _dedupe_unresolved_facts(self, items: list[dict[str, Any]]) -> list[UnresolvedFact]:
         deduped: dict[tuple[str, str], UnresolvedFact] = {}

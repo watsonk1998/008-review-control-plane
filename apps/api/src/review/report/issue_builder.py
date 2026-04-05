@@ -44,7 +44,7 @@ async def finalize_issues(candidates: list[IssueCandidate], llm_gateway=None) ->
                 payloads = llm_gateway.explain_issue_candidates(candidates)
             else:
                 payloads = _fallback_issue_payloads(candidates)
-            return [FinalIssue.model_validate(payload) for payload in payloads]
+            return [FinalIssue.model_validate(payload) for payload in _hydrate_issue_payloads(candidates, payloads)]
         except Exception:
             pass
     return [FinalIssue.model_validate(payload) for payload in _fallback_issue_payloads(candidates)]
@@ -68,9 +68,33 @@ def _fallback_issue_payloads(candidates: list[IssueCandidate]) -> list[dict]:
                 'policyEvidence': [span.model_dump(mode='json') for span in candidate.policyEvidence],
                 'recommendation': _fallback_recommendations(candidate),
                 'confidence': ConfidenceLevel.low if candidate.manualReviewNeeded else ConfidenceLevel.medium,
+                'missingFactKeys': list(candidate.missingFactKeys),
+                'blockingReasons': list(candidate.blockingReasons),
             }
         )
     return payloads
+
+
+def _hydrate_issue_payloads(candidates: list[IssueCandidate], payloads: list[dict]) -> list[dict]:
+    hydrated: list[dict] = []
+    for index, candidate in enumerate(candidates):
+        payload = dict(payloads[index]) if index < len(payloads) else {}
+        payload.setdefault('title', candidate.title)
+        payload.setdefault('layer', candidate.layerHint)
+        payload.setdefault('severity', candidate.severityHint)
+        payload.setdefault('findingType', candidate.findingType)
+        payload.setdefault('summary', _build_summary(candidate))
+        payload.setdefault('manualReviewNeeded', candidate.manualReviewNeeded)
+        payload.setdefault('evidenceMissing', candidate.evidenceMissing)
+        payload.setdefault('manualReviewReason', candidate.manualReviewReason)
+        payload.setdefault('docEvidence', [span.model_dump(mode='json') for span in candidate.docEvidence])
+        payload.setdefault('policyEvidence', [span.model_dump(mode='json') for span in candidate.policyEvidence])
+        payload.setdefault('recommendation', _fallback_recommendations(candidate))
+        payload.setdefault('confidence', ConfidenceLevel.low if candidate.manualReviewNeeded else ConfidenceLevel.medium)
+        payload.setdefault('missingFactKeys', list(candidate.missingFactKeys))
+        payload.setdefault('blockingReasons', list(candidate.blockingReasons))
+        hydrated.append(payload)
+    return hydrated
 
 
 def _build_summary(candidate: IssueCandidate) -> str:

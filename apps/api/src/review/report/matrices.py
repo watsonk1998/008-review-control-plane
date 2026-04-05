@@ -51,6 +51,10 @@ def build_review_matrices(parse_result, facts, rule_hits, final_issues) -> Struc
             layerHint=hit.layerHint.value,
             severityHint=hit.severityHint,
             matchType=hit.matchType,
+            requiredFactKeys=list(hit.requiredFactKeys),
+            missingFactKeys=list(hit.missingFactKeys),
+            clauseIds=list(hit.clauseIds),
+            blockingReasons=list(hit.blockingReasons),
         )
         for hit in rule_hits
     ]

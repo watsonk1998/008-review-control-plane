@@ -145,6 +145,8 @@ function parseModeLabel(value: string | null | undefined) {
 
 function manualReviewReasonLabel(value: string | null | undefined) {
   switch (value) {
+    case "parser_limited_pdf_requires_manual_review":
+      return "PDF 当前仅 text-only 可视域，需按 parser-limited 路径人工复核";
     case "explicit_missing_marker":
       return "附件被正文显式标记为缺失/后补";
     case "title_detected_but_body_not_reliably_parsed":
@@ -165,6 +167,17 @@ function manualReviewReasonLabel(value: string | null | undefined) {
       return "当前可视域无法确定";
     case "manual_confirmation_required":
       return "需要人工确认";
+    default:
+      return value || "—";
+  }
+}
+
+function preflightGateLabel(value: string | null | undefined) {
+  switch (value) {
+    case "manual_review_required":
+      return "manual_review_required（需先进入人工复核）";
+    case "ready":
+      return "ready（未触发前置阻断）";
     default:
       return value || "—";
   }
@@ -251,6 +264,7 @@ function VisibilitySummaryPanel({ visibility }: { visibility: StructuredReviewRe
           { label: "attachmentCount", value: String(visibility.attachmentCount) },
           { label: "manualReviewNeeded", value: visibility.manualReviewNeeded ? "true" : "false" },
           { label: "manualReviewReason", value: manualReviewReasonLabel(visibility.manualReviewReason) },
+          { label: "preflightGate", value: preflightGateLabel(visibility.preflight?.gateDecision) },
         ]}
       />
       {visibility.parserLimited || visibility.manualReviewReason ? (
@@ -266,6 +280,44 @@ function VisibilitySummaryPanel({ visibility }: { visibility: StructuredReviewRe
           ) : null}
         </div>
       ) : null}
+      <div className="stack-sm">
+        <strong>Pre-review gate</strong>
+        <ReviewKeyValueList
+          items={[
+            {
+              label: "blockingReasons",
+              value: visibility.preflight?.blockingReasons?.length
+                ? visibility.preflight.blockingReasons.map((item) => humanizeToken(item)).join("，")
+                : "—",
+            },
+            {
+              label: "parserLimitations",
+              value: visibility.preflight?.parserLimitations?.length
+                ? visibility.preflight.parserLimitations.join("，")
+                : "—",
+            },
+          ]}
+        />
+      </div>
+      <div className="stack-sm">
+        <strong>Pre-review checklist</strong>
+        {visibility.preflight?.checklist?.length ? (
+          <ul className="source-list">
+            {visibility.preflight.checklist.map((item) => (
+              <li key={item.key}>
+                <strong>{item.key}</strong>
+                <p className="muted small">
+                  {item.status}
+                  {item.blocking ? " · blocking" : ""}
+                </p>
+                <p>{item.summary}</p>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="muted">无</p>
+        )}
+      </div>
       <div className="stack-sm">
         <strong>状态计数</strong>
         <ReviewKeyValueList items={countItems} />
@@ -306,7 +358,7 @@ function AttachmentVisibilityList({ items }: { items: AttachmentVisibilityMatrix
             <div className="pill-row">
               <span className={`status-pill ${item.manualReviewNeeded ? "is-warning" : "is-healthy"}`}>{item.visibility}</span>
               <span className={`status-pill ${item.manualReviewNeeded ? "is-warning" : "is-neutral"}`}>
-                {item.manualReviewNeeded ? "manual review" : "visible"}
+              {item.manualReviewNeeded ? "manual review" : "visible"}
               </span>
             </div>
           </div>
@@ -352,6 +404,22 @@ function RuleHitList({ items }: { items: RuleHitMatrixRow[] }) {
               { label: "layer", value: row.layerHint },
               { label: "severity", value: row.severityHint },
               { label: "matchType", value: row.matchType },
+              {
+                label: "requiredFactKeys",
+                value: row.requiredFactKeys?.length ? row.requiredFactKeys.join("，") : "—",
+              },
+              {
+                label: "missingFactKeys",
+                value: row.missingFactKeys?.length ? row.missingFactKeys.join("，") : "—",
+              },
+              {
+                label: "clauseIds",
+                value: row.clauseIds?.length ? row.clauseIds.join("，") : "—",
+              },
+              {
+                label: "blockingReasons",
+                value: row.blockingReasons?.length ? row.blockingReasons.join("，") : "—",
+              },
             ]}
           />
         </li>
@@ -731,6 +799,7 @@ export function TaskDetail({ taskId }: { taskId: string }) {
       updatedAt: reviewerDecision.updatedAt || null,
     };
   }, [reviewerDecision]);
+  const reviewPreparation = task?.reviewPreparation || null;
 
   const streamFreshness = useMemo(() => {
     if (!lastStreamHeartbeatAt) return "等待心跳";
@@ -896,8 +965,26 @@ export function TaskDetail({ taskId }: { taskId: string }) {
                         label: "updatedAt",
                         value: reviewerSummary.updatedAt ? new Date(reviewerSummary.updatedAt).toLocaleString() : "—",
                       },
+                      {
+                        label: "reviewPreparation",
+                        value: reviewPreparation
+                          ? `${reviewPreparation.truthTier} / ${reviewPreparation.readyForPromotion ? "ready" : "not ready"}`
+                          : "—",
+                      },
                     ]}
                   />
+                  {reviewPreparation ? (
+                    <div className="callout">
+                      <strong>Internal-reviewed preparation</strong>
+                      <p>{reviewPreparation.disclaimer}</p>
+                      <p>
+                        blocking reasons：
+                        {reviewPreparation.blockingReasons.length
+                          ? reviewPreparation.blockingReasons.join("，")
+                          : " 无"}
+                      </p>
+                    </div>
+                  ) : null}
                 </section>
               ) : null}
 
@@ -906,14 +993,9 @@ export function TaskDetail({ taskId }: { taskId: string }) {
                 issues={structuredResult.issues}
                 attachments={structuredResult.matrices.attachmentVisibility}
                 decision={reviewerDecision}
-                onSaved={(nextDecision) =>
+                onSaved={(nextTask) =>
                   setTask((current) =>
-                    current
-                      ? {
-                          ...current,
-                          reviewerDecision: nextDecision,
-                        }
-                      : current,
+                    current ? { ...current, reviewerDecision: nextTask.reviewerDecision, reviewPreparation: nextTask.reviewPreparation } : current,
                   )
                 }
               />
@@ -952,6 +1034,15 @@ export function TaskDetail({ taskId }: { taskId: string }) {
                             <strong>{item.code}</strong>
                             <p className="muted small">{item.factKey}</p>
                             <p>{item.summary}</p>
+                            {"sourceExtractor" in item || "blockingRuleIds" in item ? (
+                              <p className="muted small">
+                                source={String((item as Record<string, unknown>).sourceExtractor || "—")} · blockingRules=
+                                {Array.isArray((item as Record<string, unknown>).blockingRuleIds) &&
+                                ((item as Record<string, unknown>).blockingRuleIds as string[]).length
+                                  ? ((item as Record<string, unknown>).blockingRuleIds as string[]).join("，")
+                                  : "—"}
+                              </p>
+                            ) : null}
                           </li>
                         ))}
                       </ul>

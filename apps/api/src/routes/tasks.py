@@ -9,7 +9,7 @@ from fastapi.responses import FileResponse, StreamingResponse
 
 from src.domain.models import CreateTaskRequest, ReviewerDecisionUpdateRequest
 from src.main_dependencies import get_task_service
-from src.review.reviewer_decision import resolve_reviewer_decision
+from src.review.reviewer_decision import build_review_preparation_summary, resolve_reviewer_decision
 from src.review.support_scope import get_support_scope_payload
 
 router = APIRouter(prefix='/api/tasks', tags=['tasks'])
@@ -37,6 +37,17 @@ def _serialize_structured_review_result(result):
             'manualReviewReason': None,
             'parserLimited': False,
             'fileType': None,
+            'preflight': {
+                'gateDecision': 'manual_review_required' if visibility_summary.get('manualReviewNeeded', False) else 'ready',
+                'blockingReasons': ['legacy_visibility_summary_only'] if visibility_summary.get('manualReviewNeeded', False) else [],
+                'checklist': [],
+                'parserLimitations': [],
+                'attachmentTaxonomySummary': {
+                    'attachmentCount': visibility_summary.get('attachmentCount', 0),
+                    'counts': visibility_summary.get('counts', {}),
+                    'reasonCounts': visibility_summary.get('reasonCounts', {}),
+                },
+            },
         }
     if is_legacy_payload:
         payload['issues'] = [
@@ -53,6 +64,7 @@ def _serialize_task(task):
     payload = task.model_dump(mode='json')
     if task.taskType == 'structured_review':
         payload['reviewerDecision'] = resolve_reviewer_decision(task).model_dump(mode='json')
+        payload['reviewPreparation'] = build_review_preparation_summary(task).model_dump(mode='json')
     payload['result'] = _serialize_structured_review_result(payload.get('result'))
     return payload
 

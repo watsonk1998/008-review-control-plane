@@ -81,6 +81,8 @@ _AGGREGATE_METRICS = [
     'facts_accuracy',
     'rule_hit_accuracy',
     'hazard_identification_accuracy',
+    'preflight_gate_consistency',
+    'evidence_traceability',
     'suggestion_defect_separation',
     'remediation_bucket_consistency',
 ]
@@ -101,6 +103,7 @@ def _build_layered_metrics(aggregate: dict[str, float]) -> dict[str, Any]:
             'metrics': {
                 'attachment_visibility_accuracy': aggregate.get('attachment_visibility_accuracy', 0.0),
                 'manual_review_flag_accuracy': aggregate.get('manual_review_flag_accuracy', 0.0),
+                'preflight_gate_consistency': aggregate.get('preflight_gate_consistency', 0.0),
             }
         },
         'L1': {
@@ -118,6 +121,7 @@ def _build_layered_metrics(aggregate: dict[str, float]) -> dict[str, Any]:
                 'rule_hit_accuracy': aggregate.get('rule_hit_accuracy', 0.0),
                 'policy_ref_accuracy': aggregate.get('policy_ref_accuracy', 0.0),
                 'hazard_identification_accuracy': aggregate.get('hazard_identification_accuracy', 0.0),
+                'evidence_traceability': aggregate.get('evidence_traceability', 0.0),
             }
         },
         'L3': {

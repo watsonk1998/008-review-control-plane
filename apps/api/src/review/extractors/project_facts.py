@@ -164,6 +164,9 @@ def extract_project_facts(parse_result) -> tuple[dict[str, Any], dict[str, list[
                 'code': 'missing_project_name',
                 'factKey': 'project.projectName',
                 'summary': '未解析到项目名称，需人工确认文档基础信息。',
+                'sourceExtractor': 'project_facts',
+                'blockingReason': 'parser_limited_source' if parse_result.parserLimited else 'missing_fact',
+                'visibilityLimited': bool(parse_result.parserLimited),
             }
         )
     if not project_code:
@@ -172,6 +175,9 @@ def extract_project_facts(parse_result) -> tuple[dict[str, Any], dict[str, list[
                 'code': 'missing_project_code',
                 'factKey': 'project.projectCode',
                 'summary': '未解析到项目编号，需人工确认文档标识信息。',
+                'sourceExtractor': 'project_facts',
+                'blockingReason': 'parser_limited_source' if parse_result.parserLimited else 'missing_fact',
+                'visibilityLimited': bool(parse_result.parserLimited),
             }
         )
     return facts, refs, unresolved

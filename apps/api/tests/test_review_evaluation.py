@@ -165,7 +165,9 @@ def test_review_eval_harness_reports_stage_metrics_and_versioned_diagnostics(tmp
     assert 'rule_hit_accuracy' in main_payload['aggregate']
     assert 'layeredMetrics' in main_payload
     assert main_payload['layeredMetrics']['L0']['metrics']['attachment_visibility_accuracy'] >= 0
+    assert main_payload['layeredMetrics']['L0']['metrics']['preflight_gate_consistency'] >= 0
     assert main_payload['layeredMetrics']['L2']['metrics']['facts_accuracy'] >= 0
+    assert main_payload['layeredMetrics']['L2']['metrics']['evidence_traceability'] >= 0
     assert main_payload['layeredMetrics']['L3']['diagnosticOnly'] is True
     assert 'versionedDiagnostics' in main_payload
     assert len(main_payload['versionedDiagnostics']['cases']) == 1

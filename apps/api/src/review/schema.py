@@ -92,6 +92,10 @@ class RuleHit(BaseModel):
     severityHint: str
     factRefs: list[str] = Field(default_factory=list)
     evidenceRefs: list[str] = Field(default_factory=list)
+    requiredFactKeys: list[str] = Field(default_factory=list)
+    missingFactKeys: list[str] = Field(default_factory=list)
+    clauseIds: list[str] = Field(default_factory=list)
+    blockingReasons: list[str] = Field(default_factory=list)
     rationale: str | None = None
 
 
@@ -107,6 +111,8 @@ class IssueCandidate(BaseModel):
     evidenceMissing: bool = False
     manualReviewNeeded: bool = False
     manualReviewReason: str | None = None
+    missingFactKeys: list[str] = Field(default_factory=list)
+    blockingReasons: list[str] = Field(default_factory=list)
 
 
 class FinalIssue(ReviewIssue):
@@ -116,6 +122,8 @@ class FinalIssue(ReviewIssue):
     policyEvidence: list[EvidenceSpan] = Field(default_factory=list)
     recommendation: list[str] = Field(default_factory=list)
     confidence: ConfidenceLevel = ConfidenceLevel.medium
+    missingFactKeys: list[str] = Field(default_factory=list)
+    blockingReasons: list[str] = Field(default_factory=list)
 
     @model_validator(mode='after')
     def _derive_review_semantics(self):
@@ -144,6 +152,10 @@ class RuleHitMatrixRow(BaseModel):
     layerHint: str
     severityHint: str
     matchType: str
+    requiredFactKeys: list[str] = Field(default_factory=list)
+    missingFactKeys: list[str] = Field(default_factory=list)
+    clauseIds: list[str] = Field(default_factory=list)
+    blockingReasons: list[str] = Field(default_factory=list)
 
 
 class ConflictMatrix(BaseModel):
@@ -162,6 +174,21 @@ class AttachmentVisibilityMatrixItem(BaseModel):
     titleBlockId: str | None = None
 
 
+class VisibilityPreflightChecklistItem(BaseModel):
+    key: str
+    status: Literal['pass', 'manual_review_required', 'info'] = 'info'
+    summary: str
+    blocking: bool = False
+
+
+class VisibilityPreflight(BaseModel):
+    gateDecision: Literal['ready', 'manual_review_required'] = 'ready'
+    blockingReasons: list[str] = Field(default_factory=list)
+    checklist: list[VisibilityPreflightChecklistItem] = Field(default_factory=list)
+    parserLimitations: list[str] = Field(default_factory=list)
+    attachmentTaxonomySummary: dict[str, Any] = Field(default_factory=dict)
+
+
 class VisibilityAssessment(BaseModel):
     parseMode: Literal['docx_structured', 'pdf_text_only', 'markdown_text', 'plain_text'] | None = None
     parserLimited: bool = False
@@ -173,6 +200,7 @@ class VisibilityAssessment(BaseModel):
     parseWarnings: list[str] = Field(default_factory=list)
     manualReviewNeeded: bool = False
     manualReviewReason: str | None = None
+    preflight: VisibilityPreflight = Field(default_factory=VisibilityPreflight)
 
 
 class DocumentParseResult(BaseModel):
@@ -218,8 +246,22 @@ class DocumentParseResult(BaseModel):
         self.visibility.parseMode = self.parseMode
         self.parserLimited = self.visibility.parserLimited
         self.visibility.parseWarnings = list(dict.fromkeys(self.parseWarnings or self.visibility.parseWarnings))
+        attachment_requires_manual_review = any(
+            (self.visibility.counts or {}).get(state, 0) > 0
+            for state in ['attachment_unparsed', 'referenced_only', 'missing', 'unknown']
+        )
+        parser_requires_manual_review = self.parseMode == 'pdf_text_only' and self.visibility.parserLimited
+        self.visibility.manualReviewNeeded = bool(
+            self.visibility.manualReviewNeeded or attachment_requires_manual_review or parser_requires_manual_review
+        )
+        if not self.visibility.manualReviewReason:
+            self.visibility.manualReviewReason = _default_manual_review_reason_from_visibility(
+                self.visibility,
+                parser_requires_manual_review=parser_requires_manual_review,
+            )
         if not self.visibility.manualReviewNeeded:
             self.visibility.manualReviewReason = None
+        self.visibility.preflight = _derive_visibility_preflight(self.visibility)
         self.parseWarnings = list(self.visibility.parseWarnings)
         self.visibilityReport = self.visibility.model_dump(mode='json')
         return self
@@ -229,6 +271,12 @@ class UnresolvedFact(BaseModel):
     code: str
     factKey: str
     summary: str
+    sourceExtractor: str | None = None
+    blockingReason: str | None = None
+    visibilityLimited: bool = False
+    blockingRuleIds: list[str] = Field(default_factory=list)
+    blockingIssueIds: list[str] = Field(default_factory=list)
+    blockingIssueTitles: list[str] = Field(default_factory=list)
 
 
 class ExtractedFacts(BaseModel):
@@ -300,7 +348,112 @@ _VISIBILITY_BLOCKING_REASONS = {
     'attachment_unparsed',
     'referenced_only',
     'visibility_unknown',
+    'parser_limited_pdf_requires_manual_review',
 }
+
+_VISIBILITY_REASON_PRIORITY = [
+    'explicit_missing_marker',
+    'title_detected_but_body_not_reliably_parsed',
+    'title_detected_without_attachment_body',
+    'reference_detected_in_limited_parser',
+    'reference_detected_without_attachment_body',
+]
+
+
+def _default_manual_review_reason_from_visibility(
+    visibility: VisibilityAssessment,
+    *,
+    parser_requires_manual_review: bool,
+) -> str | None:
+    reason_counts = visibility.reasonCounts or {}
+    for reason in _VISIBILITY_REASON_PRIORITY:
+        if reason_counts.get(reason, 0) > 0:
+            return reason
+    counts = visibility.counts or {}
+    if counts.get('attachment_unparsed', 0) > 0:
+        return 'attachment_unparsed'
+    if counts.get('referenced_only', 0) > 0:
+        return 'referenced_only'
+    if counts.get('unknown', 0) > 0:
+        return 'visibility_unknown'
+    if parser_requires_manual_review:
+        return 'parser_limited_pdf_requires_manual_review'
+    return None
+
+
+def _derive_visibility_preflight(visibility: VisibilityAssessment) -> VisibilityPreflight:
+    counts = visibility.counts or {}
+    parser_limitations = [
+        warning
+        for warning in (visibility.parseWarnings or [])
+        if warning.startswith('pdf_') or warning.startswith('text_')
+    ]
+    blocking_reasons: list[str] = []
+    if visibility.parserLimited:
+        blocking_reasons.append('parser_limited_pdf')
+    if counts.get('attachment_unparsed', 0) > 0:
+        blocking_reasons.append('attachment_unparsed')
+    if counts.get('referenced_only', 0) > 0:
+        blocking_reasons.append('referenced_only')
+    if counts.get('unknown', 0) > 0:
+        blocking_reasons.append('attachment_unknown')
+    if counts.get('missing', 0) > 0:
+        blocking_reasons.append('attachment_missing_confirmed')
+    blocking_reasons = list(dict.fromkeys(blocking_reasons))
+
+    attachment_gap_count = sum(
+        counts.get(state, 0)
+        for state in ['attachment_unparsed', 'referenced_only', 'missing', 'unknown']
+    )
+    checklist = [
+        VisibilityPreflightChecklistItem(
+            key='parse_source_readiness',
+            status='manual_review_required' if visibility.parserLimited else 'pass',
+            summary='当前解析路径为 parser-limited，应按保守口径进入人工复核。'
+            if visibility.parserLimited
+            else '当前解析路径未触发 parser-limited gate。',
+            blocking=visibility.parserLimited,
+        ),
+        VisibilityPreflightChecklistItem(
+            key='attachment_visibility',
+            status='manual_review_required' if attachment_gap_count else 'pass',
+            summary=f'存在 {attachment_gap_count} 个附件/附图条目未完全进入当前可视域。'
+            if attachment_gap_count
+            else '附件可视域未触发额外前置阻断。',
+            blocking=attachment_gap_count > 0,
+        ),
+        VisibilityPreflightChecklistItem(
+            key='section_structure_signal',
+            status='info' if visibility.duplicateSectionTitles else 'pass',
+            summary='检测到重复章节标题，需在正式审查中谨慎解释定位结果。'
+            if visibility.duplicateSectionTitles
+            else '章节结构未检测到重复标题信号。',
+            blocking=False,
+        ),
+        VisibilityPreflightChecklistItem(
+            key='manual_review_gate',
+            status='manual_review_required' if visibility.manualReviewNeeded else 'pass',
+            summary='当前任务已满足人工复核前置条件。'
+            if visibility.manualReviewNeeded
+            else '当前任务未触发额外人工复核 gate。',
+            blocking=visibility.manualReviewNeeded,
+        ),
+    ]
+    gate_decision: Literal['ready', 'manual_review_required'] = (
+        'manual_review_required' if visibility.manualReviewNeeded or blocking_reasons else 'ready'
+    )
+    return VisibilityPreflight(
+        gateDecision=gate_decision,
+        blockingReasons=blocking_reasons,
+        checklist=checklist,
+        parserLimitations=parser_limitations,
+        attachmentTaxonomySummary={
+            'attachmentCount': visibility.attachmentCount,
+            'counts': dict(counts),
+            'reasonCounts': dict(visibility.reasonCounts or {}),
+            'manualReviewReason': visibility.manualReviewReason,
+        },
+    )
 
 
 def _derive_issue_kind(*, finding_type: FindingType, evidence_missing: bool) -> IssueKind:

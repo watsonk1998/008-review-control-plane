@@ -60,3 +60,6 @@ class ClauseStore:
                 )
             )
         return evidence
+
+    def get_clause_ids(self, rule_id: str) -> list[str]:
+        return list(_RULE_TO_CLAUSE_IDS.get(rule_id, []))

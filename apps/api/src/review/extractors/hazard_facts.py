@@ -118,6 +118,9 @@ def extract_hazard_facts(parse_result) -> tuple[dict[str, Any], dict[str, list[s
                 'code': 'missing_crane_capacity_ton',
                 'factKey': 'hazard.craneCapacityTon',
                 'summary': '已识别起重吊装作业，但未解析到汽车吊吨位参数。',
+                'sourceExtractor': 'hazard_facts',
+                'blockingReason': 'parser_limited_source' if parse_result.parserLimited else 'missing_fact',
+                'visibilityLimited': bool(parse_result.parserLimited),
             }
         )
     if facts['liftingOperation'] and not facts['calculatedLiftWeightTon']:
@@ -126,6 +129,9 @@ def extract_hazard_facts(parse_result) -> tuple[dict[str, Any], dict[str, list[s
                 'code': 'missing_calculated_lift_weight_ton',
                 'factKey': 'hazard.calculatedLiftWeightTon',
                 'summary': '已识别起重吊装作业，但未解析到计算起重量参数。',
+                'sourceExtractor': 'hazard_facts',
+                'blockingReason': 'parser_limited_source' if parse_result.parserLimited else 'missing_fact',
+                'visibilityLimited': bool(parse_result.parserLimited),
             }
         )
     return facts, block_refs, unresolved

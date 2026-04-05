@@ -78,7 +78,12 @@ class EvidenceBuilder:
             policy_evidence = self.clause_store.get_policy_evidence(hit.ruleId, selected_pack_ids)
             visibility_gap = any(span.visibility and span.visibility.value != 'parsed' for span in doc_evidence)
             manual_review_needed = hit.status == 'manual_review_needed' or visibility_gap
-            evidence_missing = not doc_evidence or not policy_evidence
+            evidence_missing = bool(hit.missingFactKeys) or not doc_evidence or not policy_evidence
+            blocking_reasons = list(hit.blockingReasons)
+            if visibility_gap:
+                blocking_reasons.append('visibility_gap')
+            if evidence_missing and hit.missingFactKeys:
+                blocking_reasons.append('missing_fact')
             candidates.append(
                 IssueCandidate(
                     candidateId=hit.ruleId,
@@ -97,6 +102,8 @@ class EvidenceBuilder:
                         evidence_missing=evidence_missing,
                         doc_evidence=doc_evidence,
                     ),
+                    missingFactKeys=list(hit.missingFactKeys),
+                    blockingReasons=list(dict.fromkeys(blocking_reasons)),
                 )
             )
         return candidates

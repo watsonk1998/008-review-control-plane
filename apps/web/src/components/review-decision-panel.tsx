@@ -9,6 +9,7 @@ import type {
   ReviewerDecision,
   ReviewerDecisionUpdateRequest,
   ReviewerIssueDecision,
+  TaskRecord,
 } from "@/types/control-plane";
 
 const TASK_STATE_OPTIONS: Array<{
@@ -78,7 +79,7 @@ export function ReviewDecisionPanel({
   issues: ReviewIssue[];
   attachments: AttachmentVisibilityMatrixItem[];
   decision?: ReviewerDecision | null;
-  onSaved: (next: ReviewerDecision) => void;
+  onSaved: (next: TaskRecord) => void;
 }) {
   const fallbackDecision = useMemo(() => buildFallbackDecision(issues, attachments), [attachments, issues]);
   const [form, setForm] = useState<ReviewerDecisionUpdateRequest>(
@@ -112,7 +113,7 @@ export function ReviewDecisionPanel({
     setError(null);
     try {
       const nextTask = await updateReviewerDecision(taskId, form);
-      onSaved(nextTask.reviewerDecision || { ...form, updatedAt: new Date().toISOString() });
+      onSaved(nextTask);
     } catch (err) {
       setError(err instanceof Error ? err.message : "保存复核结论失败");
     } finally {

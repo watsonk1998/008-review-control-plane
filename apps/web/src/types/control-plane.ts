@@ -90,6 +90,8 @@ export interface ReviewIssue {
   policyEvidence: EvidenceSpan[];
   recommendation: string[];
   confidence: ConfidenceLevel;
+  missingFactKeys?: string[];
+  blockingReasons?: string[];
 }
 
 export interface StructuredReviewVisibilitySummary {
@@ -112,6 +114,22 @@ export interface VisibilityAssessment {
   parseWarnings: string[];
   manualReviewNeeded: boolean;
   manualReviewReason?: string | null;
+  preflight: VisibilityPreflight;
+}
+
+export interface VisibilityPreflightChecklistItem {
+  key: string;
+  status: "pass" | "manual_review_required" | "info";
+  summary: string;
+  blocking: boolean;
+}
+
+export interface VisibilityPreflight {
+  gateDecision: "ready" | "manual_review_required";
+  blockingReasons: string[];
+  checklist: VisibilityPreflightChecklistItem[];
+  parserLimitations: string[];
+  attachmentTaxonomySummary: Record<string, unknown>;
 }
 
 export interface StructuredReviewSummary {
@@ -158,6 +176,10 @@ export interface RuleHitMatrixRow {
   layerHint: string;
   severityHint: string;
   matchType: string;
+  requiredFactKeys?: string[];
+  missingFactKeys?: string[];
+  clauseIds?: string[];
+  blockingReasons?: string[];
 }
 
 export interface ConflictMatrix {
@@ -206,6 +228,12 @@ export interface StructuredReviewResult {
     code: string;
     factKey: string;
     summary: string;
+    sourceExtractor?: string;
+    blockingReason?: string | null;
+    visibilityLimited?: boolean;
+    blockingRuleIds?: string[];
+    blockingIssueIds?: string[];
+    blockingIssueTitles?: string[];
   }>;
   plan?: Record<string, unknown> | null;
   capabilitiesUsed: string[];
@@ -235,6 +263,18 @@ export interface ReviewerDecision {
   updatedAt?: string | null;
 }
 
+export interface ReviewPreparationSummary {
+  truthTier: "runtime_only" | "internal_reviewed_preparation";
+  readyForPromotion: boolean;
+  blockingReasons: string[];
+  eligibleIssueIds: string[];
+  deferredIssueIds: string[];
+  rejectedIssueIds: string[];
+  eligibleAttachmentIds: string[];
+  deferredAttachmentIds: string[];
+  disclaimer?: string | null;
+}
+
 export interface TaskRecord {
   id: string;
   taskType: TaskType;
@@ -255,6 +295,7 @@ export interface TaskRecord {
   plan?: Record<string, unknown> | null;
   result?: Record<string, unknown> | StructuredReviewResult | null;
   reviewerDecision?: ReviewerDecision | null;
+  reviewPreparation?: ReviewPreparationSummary | null;
   error?: Record<string, unknown> | null;
   createdAt: string;
   updatedAt: string;

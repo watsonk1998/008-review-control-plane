@@ -270,6 +270,48 @@ def _hazard_identification_accuracy(
     return ((hits / checks) if checks else 1.0, checks)
 
 
+def _preflight_gate_consistency(result: dict[str, Any]) -> tuple[float, int]:
+    visibility = result.get('visibility') or {}
+    preflight = visibility.get('preflight') or {}
+    manual_review_needed = bool(visibility.get('manualReviewNeeded', False))
+    expected_gate = 'manual_review_required' if manual_review_needed else 'ready'
+    actual_gate = preflight.get('gateDecision')
+    blocking_reasons = preflight.get('blockingReasons') or []
+    passed = actual_gate == expected_gate
+    if manual_review_needed and not blocking_reasons:
+        passed = False
+    if not manual_review_needed and actual_gate == 'ready' and blocking_reasons:
+        passed = False
+    return (1.0 if passed else 0.0, 1)
+
+
+def _evidence_traceability(result: dict[str, Any]) -> tuple[float, int]:
+    checks = 0
+    hits = 0
+    for issue in result.get('issues', []):
+        if not isinstance(issue, dict):
+            continue
+        if not issue.get('evidenceMissing') and issue.get('applicabilityState') not in {
+            'blocked_by_visibility',
+            'blocked_by_missing_fact',
+        }:
+            continue
+        checks += 1
+        if issue.get('applicabilityState') == 'blocked_by_missing_fact':
+            if issue.get('missingFactKeys'):
+                hits += 1
+            continue
+        if issue.get('blockingReasons'):
+            hits += 1
+    for fact in result.get('unresolvedFacts', []):
+        if not isinstance(fact, dict):
+            continue
+        checks += 1
+        if fact.get('sourceExtractor') and fact.get('blockingRuleIds') is not None:
+            hits += 1
+    return ((hits / checks) if checks else 1.0, checks)
+
+
 def compute_metrics(
     case: dict[str, Any],
     result: dict[str, Any],
@@ -368,6 +410,8 @@ def compute_metrics(
     hazard_accuracy, hazard_checks = _hazard_identification_accuracy(case, result, evaluation_artifacts)
     suggestion_separation_accuracy, suggestion_separation_checks = _suggestion_defect_separation(case, result)
     remediation_bucket_consistency, remediation_bucket_checks = _remediation_bucket_consistency(result, evaluation_artifacts)
+    preflight_gate_consistency, preflight_gate_checks = _preflight_gate_consistency(result)
+    evidence_traceability, evidence_traceability_checks = _evidence_traceability(result)
 
     issue_recall = len(matched_titles) / len(expected_titles) if expected_titles else 1.0
     l1_hit_rate = l1_matched / len(l1_expected) if l1_expected else 1.0
@@ -391,11 +435,15 @@ def compute_metrics(
         'facts_accuracy': round(facts_accuracy, 4),
         'rule_hit_accuracy': round(rule_hit_accuracy, 4),
         'hazard_identification_accuracy': round(hazard_accuracy, 4),
+        'preflight_gate_consistency': round(preflight_gate_consistency, 4),
+        'evidence_traceability': round(evidence_traceability, 4),
         'suggestion_defect_separation': round(suggestion_separation_accuracy, 4),
         'remediation_bucket_consistency': round(remediation_bucket_consistency, 4),
         'facts_checks': facts_checks,
         'rule_hit_checks': rule_hit_checks,
         'hazard_identification_checks': hazard_checks,
+        'preflight_gate_checks': preflight_gate_checks,
+        'evidence_traceability_checks': evidence_traceability_checks,
         'suggestion_defect_separation_checks': suggestion_separation_checks,
         'remediation_bucket_checks': remediation_bucket_checks,
         'expected_issue_count': len(expected_titles),
