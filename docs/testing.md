@@ -20,7 +20,6 @@ pytest -q
 
 ```bash
 cd apps/web
-npm run lint
 npm run build
 ```
 
@@ -111,10 +110,10 @@ make eval-review-cross-model
 - `structured_review` 同时支持 `fixtureId` 与 `sourceDocumentRef`
 - public API 不接受 `disable_visibility_check`
 - `result.visibility` 与 `unresolvedFacts` 可被 API/UI/eval 一致消费
-- `result.visibility.parseMode / parseWarnings / manualReviewReason` 是 canonical L0 消费入口
+- `result.visibility.parseMode / parseWarnings / manualReviewReason / preflight` 是 canonical L0 消费入口
 - `summary.visibilitySummary` 仅作为 display summary 保留
 - `artifactIndex` 中必须包含 `structured-review-l0-visibility`；report 语义工件会额外输出 `structured-review-report-buckets`
-- issue 会显式输出 `issueKind` 与 `applicabilityState`
+- issue 会显式输出 `issueKind / applicabilityState / missingFactKeys / blockingReasons`
 - 能识别重复章节、附件可视域缺口、专项方案挂接不清、停机窗口与资源压力
 - 能识别施工组织设计核心章节完整性缺口
 - 能识别一般施工方案核心章节完整性缺口
@@ -124,9 +123,14 @@ make eval-review-cross-model
 - 能识别煤气区域作业控制与应急链路缺口
 - 能区分 `attachment_unparsed / referenced_only / unknown / missing`
 - `missing` 只在有明确证据时产出
+- parser-limited PDF 必须前置触发 `manualReviewNeeded=true`，且 `visibility.preflight.gateDecision=manual_review_required`
+- `structured-review-l0-visibility.json` 必须包含 `checklist / blockingReasons / parserLimitations / attachmentTaxonomySummary`
+- `structured-review-rule-hits.json` 与 `rule-hit-matrix.json` 必须包含 `requiredFactKeys / missingFactKeys / clauseIds / blockingReasons`
+- `unresolvedFacts` 必须包含 `sourceExtractor / blockingReason / visibilityLimited / blockingRuleIds / blockingIssueIds`
 - artifact API 可列出和下载工件，且与 `result.artifactIndex` 同口径；对新任务 `artifactIndex` 即使为空也优先于目录扫描
 - 详情页优先展示 `resolvedProfile / visibility / unresolvedFacts / artifactIndex / reviewerDecision`，再展示报告与原始 JSON
 - reviewer 结果页以结构化方式展示 `attachmentVisibility / ruleHits / conflicts / sectionStructure`；raw JSON 只保留为折叠调试信息
+- reviewer 结果页需同时展示 `reviewPreparation` 摘要，但必须保留“仅用于 internal-reviewed preparation，不是 reviewed truth”的语义边界
 - `/api/tasks/support-scope` 需同时返回 pack `promotionCriteria`；表单/UI 不得自行发明 official/experimental/promotion 结论
 
 ## P1 主门槛
@@ -147,6 +151,8 @@ make eval-review-cross-model
   - manual review flag accuracy ≥ `0.80`
 - experimental versioned cases进入 diagnostics，但不提升 skeleton documentType 为 official CI gate
 - `layeredMetrics` 必须按 `L0 / L1 / L2 / L3 / CrossCutting` 分组输出，其中 L3 当前允许 `diagnosticOnly=true`
+- `L0` 必须额外输出 `preflight_gate_consistency`
+- `L2` 必须额外输出 `evidence_traceability`
 - `review_assist` 回归失败数 = `0`
 
 ## 推荐回归命令

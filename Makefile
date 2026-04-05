@@ -1,7 +1,7 @@
 SHELL := /bin/bash
 ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
 
-.PHONY: bootstrap dev-bridge dev-api dev-web dev test test-review-unit test-review-integration smoke verify-connectivity eval-review eval-review-ablations eval-review-cross-pack eval-review-cross-model
+.PHONY: bootstrap dev-bridge dev-api dev-web dev test test-review-unit test-review-integration smoke verify-connectivity eval-review eval-review-ablations eval-review-cross-pack eval-review-cross-model eval-review-replay
 
 bootstrap:
 	$(ROOT)/scripts/bootstrap.sh
@@ -39,6 +39,9 @@ eval-review-cross-pack:
 
 eval-review-cross-model:
 	cd $(ROOT)/apps/api && . .venv/bin/activate && python -m src.review.evaluation.harness --mode cross-model
+
+eval-review-replay:
+	cd $(ROOT)/apps/api && . .venv/bin/activate && python -m src.review.evaluation.harness --mode replay $(if $(CASE_ID),--case-id $(CASE_ID),) $(if $(CASE_VERSION),--case-version $(CASE_VERSION),) $(if $(DOC_TYPE),--doc-type $(DOC_TYPE),) $(if $(OUTPUT_DIR),--output-dir $(OUTPUT_DIR),)
 
 smoke:
 	$(ROOT)/scripts/smoke.sh

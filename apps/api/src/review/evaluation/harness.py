@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
+import shutil
 import statistics
 import sys
 import tempfile
@@ -186,12 +187,22 @@ def _run_cases(
     execution_options: dict[str, Any] | None = None,
     force_policy_pack_ids: list[str] | None = None,
     run_label: str | None = None,
+    artifact_capture_root: Path | None = None,
 ) -> list[dict[str, Any]]:
     executor = StructuredReviewExecutor(document_loader=DocumentLoader(), llm_gateway=llm, fast_adapter=None)
     summaries = []
     for case in cases:
-        with tempfile.TemporaryDirectory(prefix=f"review-eval-{case['caseId']}-") as artifact_dir:
-            artifact_dir_path = Path(artifact_dir)
+        artifact_dir_path: Path
+        temp_dir: tempfile.TemporaryDirectory[str] | None = None
+        if artifact_capture_root is not None:
+            artifact_dir_path = artifact_capture_root / str(case['caseId'])
+            if artifact_dir_path.exists():
+                shutil.rmtree(artifact_dir_path)
+            artifact_dir_path.mkdir(parents=True, exist_ok=True)
+        else:
+            temp_dir = tempfile.TemporaryDirectory(prefix=f"review-eval-{case['caseId']}-")
+            artifact_dir_path = Path(temp_dir.name)
+        try:
 
             def write_json_artifact(name: str, payload: Any) -> str:
                 path = artifact_dir_path / f'{name}.json'
@@ -230,6 +241,12 @@ def _run_cases(
                     'summary': result.get('summary', {}),
                     'executionOptions': execution_options or {},
                     'runLabel': run_label,
+                    'artifactCapture': {
+                        'path': str(artifact_dir_path),
+                        'artifacts': sorted(path.name for path in artifact_dir_path.iterdir() if path.is_file()),
+                    }
+                    if artifact_capture_root is not None
+                    else None,
                     'evaluationDiagnostics': {
                         'artifactCategories': sorted((evaluation_artifacts.get('byCategory') or {}).keys()),
                         'artifactNames': sorted((evaluation_artifacts.get('byName') or {}).keys()),
@@ -240,6 +257,9 @@ def _run_cases(
                     },
                 }
             )
+        finally:
+            if temp_dir is not None:
+                temp_dir.cleanup()
     return summaries
 
 
@@ -331,6 +351,7 @@ def run_main(case_root: Path) -> tuple[int, dict[str, Any]]:
     passed = _passes_thresholds(aggregate) and (not versioned_gate_cases or _passes_versioned_stage_thresholds(versioned_gate_aggregate))
     main_payload = {
         'mode': 'main',
+        'gateRole': 'blocking',
         'passed': passed,
         'aggregate': aggregate,
         'layeredMetrics': _build_layered_metrics(aggregate),
@@ -339,14 +360,17 @@ def run_main(case_root: Path) -> tuple[int, dict[str, Any]]:
         'datasetCounts': counts,
         'cases': stable_summaries,
         'versionedStageGate': {
+            'gateRole': 'blocking',
             'aggregate': versioned_gate_aggregate,
             'layeredMetrics': _build_layered_metrics(versioned_gate_aggregate) if versioned_gate_aggregate else {},
             'caseIds': [case['caseId'] for case in versioned_gate_cases],
             'passed': (not versioned_gate_cases or _passes_versioned_stage_thresholds(versioned_gate_aggregate)),
         },
         'versionedDiagnostics': {
+            'gateRole': 'diagnostic',
             'aggregate': _aggregate(versioned_summaries) if versioned_summaries else {},
             'layeredMetrics': _build_layered_metrics(_aggregate(versioned_summaries)) if versioned_summaries else {},
+            'byDocumentTypeReadiness': _aggregate_by_doc_type_readiness(versioned_summaries) if versioned_summaries else {},
             'cases': versioned_summaries,
         },
     }
@@ -370,12 +394,14 @@ def run_ablations(case_root: Path) -> tuple[int, dict[str, Any]]:
         results[name] = {
             'aggregate': aggregate,
             'layeredMetrics': _build_layered_metrics(aggregate),
+            'byDocumentTypeReadiness': _aggregate_by_doc_type_readiness(case_summaries),
             'cases': case_summaries,
             'executionOptions': options,
             'ablationMode': name != 'baseline',
+            'gateRole': 'diagnostic',
         }
     passed = bool(results)
-    return 0 if passed else 1, {'mode': 'ablations', 'passed': passed, 'datasetCounts': counts, 'variants': results}
+    return 0 if passed else 1, {'mode': 'ablations', 'gateRole': 'diagnostic', 'passed': passed, 'datasetCounts': counts, 'variants': results}
 
 
 def run_cross_pack(case_root: Path) -> tuple[int, dict[str, Any]]:
@@ -392,6 +418,7 @@ def run_cross_pack(case_root: Path) -> tuple[int, dict[str, Any]]:
         )
     payload = {
         'mode': 'cross-pack',
+        'gateRole': 'diagnostic',
         'passed': True,
         'datasetCounts': counts,
         'variants': {
@@ -400,12 +427,14 @@ def run_cross_pack(case_root: Path) -> tuple[int, dict[str, Any]]:
                 'layeredMetrics': _build_layered_metrics(_aggregate(auto_case_summaries)),
                 'byDocumentTypeReadiness': _aggregate_by_doc_type_readiness(auto_case_summaries),
                 'cases': auto_case_summaries,
+                'gateRole': 'diagnostic',
             },
             'expected_packs_forced': {
                 'aggregate': _aggregate(forced_case_summaries),
                 'layeredMetrics': _build_layered_metrics(_aggregate(forced_case_summaries)),
                 'byDocumentTypeReadiness': _aggregate_by_doc_type_readiness(forced_case_summaries),
                 'cases': forced_case_summaries,
+                'gateRole': 'diagnostic',
             },
         },
     }
@@ -419,21 +448,107 @@ def run_cross_model(case_root: Path) -> tuple[int, dict[str, Any]]:
         'deterministic': DeterministicLLM(),
         'fallback': FallbackLLM(),
     }
-    payload = {'mode': 'cross-model', 'passed': True, 'datasetCounts': counts, 'models': {}}
+    payload = {'mode': 'cross-model', 'gateRole': 'diagnostic', 'passed': True, 'datasetCounts': counts, 'models': {}}
     for model_name, llm in model_runs.items():
         case_summaries = _run_cases(cases, llm=llm)
         aggregate = _aggregate(case_summaries)
         payload['models'][model_name] = {
             'aggregate': aggregate,
             'layeredMetrics': _build_layered_metrics(aggregate),
+            'byDocumentTypeReadiness': _aggregate_by_doc_type_readiness(case_summaries),
             'cases': case_summaries,
+            'gateRole': 'diagnostic',
         }
+    return 0, payload
+
+
+def run_replay(
+    case_root: Path,
+    *,
+    case_ids: list[str] | None = None,
+    case_versions: list[str] | None = None,
+    doc_types: list[str] | None = None,
+    output_dir: Path | None = None,
+) -> tuple[int, dict[str, Any]]:
+    all_cases, stable_cases, versioned_cases, counts = _dataset_guard(case_root)
+    selected_case_ids = {value for value in (case_ids or []) if value}
+    selected_versions = {value for value in (case_versions or []) if value}
+    selected_doc_types = {value for value in (doc_types or []) if value}
+
+    if selected_case_ids or selected_versions or selected_doc_types:
+        selected_cases = [
+            case
+            for case in all_cases
+            if (not selected_case_ids or case.get('caseId') in selected_case_ids)
+            and (not selected_versions or case.get('caseVersion') in selected_versions)
+            and (not selected_doc_types or case.get('docType') in selected_doc_types)
+        ]
+    else:
+        versioned_gate_cases = [
+            case
+            for case in versioned_cases
+            if case.get('docType') and is_official_document_type(case.get('docType')) and case.get('ciEnabled', False)
+        ]
+        selected_cases = [*stable_cases, *versioned_gate_cases]
+
+    replay_output_dir = output_dir or (Path(__file__).resolve().parents[5] / 'artifacts' / 'eval-replay')
+    if replay_output_dir.exists():
+        shutil.rmtree(replay_output_dir)
+    replay_output_dir.mkdir(parents=True, exist_ok=True)
+
+    if not selected_cases:
+        payload = {
+            'mode': 'replay',
+            'gateRole': 'diagnostic',
+            'passed': False,
+            'datasetCounts': counts,
+            'selection': {
+                'caseIds': sorted(selected_case_ids),
+                'caseVersions': sorted(selected_versions),
+                'docTypes': sorted(selected_doc_types),
+                'matchedCaseCount': 0,
+                'outputDirectory': str(replay_output_dir),
+            },
+            'error': 'no review evaluation cases matched the replay filters',
+            'cases': [],
+        }
+        return 1, payload
+
+    case_summaries = _run_cases(
+        selected_cases,
+        llm=DeterministicLLM(),
+        run_label='replay',
+        artifact_capture_root=replay_output_dir,
+    )
+    aggregate = _aggregate(case_summaries)
+    payload = {
+        'mode': 'replay',
+        'gateRole': 'diagnostic',
+        'passed': True,
+        'datasetCounts': counts,
+        'selection': {
+            'caseIds': [case.get('caseId') for case in selected_cases],
+            'caseVersions': sorted({str(case.get('caseVersion')) for case in selected_cases if case.get('caseVersion')}),
+            'docTypes': sorted({str(case.get('docType')) for case in selected_cases if case.get('docType')}),
+            'matchedCaseCount': len(selected_cases),
+            'outputDirectory': str(replay_output_dir),
+            'defaultSelection': not (selected_case_ids or selected_versions or selected_doc_types),
+        },
+        'aggregate': aggregate,
+        'layeredMetrics': _build_layered_metrics(aggregate),
+        'byDocumentTypeReadiness': _aggregate_by_doc_type_readiness(case_summaries),
+        'cases': case_summaries,
+    }
     return 0, payload
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument('--mode', choices=['main', 'ablations', 'cross-pack', 'cross-model'], default='main')
+    parser.add_argument('--mode', choices=['main', 'ablations', 'cross-pack', 'cross-model', 'replay'], default='main')
+    parser.add_argument('--case-id', action='append', default=[])
+    parser.add_argument('--case-version', action='append', default=[])
+    parser.add_argument('--doc-type', action='append', default=[])
+    parser.add_argument('--output-dir')
     args = parser.parse_args(argv)
 
     repo_root = Path(__file__).resolve().parents[5]
@@ -444,6 +559,14 @@ def main(argv: list[str] | None = None) -> int:
         code, payload = run_ablations(case_root)
     elif args.mode == 'cross-pack':
         code, payload = run_cross_pack(case_root)
+    elif args.mode == 'replay':
+        code, payload = run_replay(
+            case_root,
+            case_ids=args.case_id,
+            case_versions=args.case_version,
+            doc_types=args.doc_type,
+            output_dir=Path(args.output_dir).resolve() if args.output_dir else None,
+        )
     else:
         code, payload = run_cross_model(case_root)
     print(json.dumps(payload, ensure_ascii=False, indent=2))

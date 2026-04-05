@@ -9,7 +9,11 @@ from fastapi.responses import FileResponse, StreamingResponse
 
 from src.domain.models import CreateTaskRequest, ReviewerDecisionUpdateRequest
 from src.main_dependencies import get_task_service
-from src.review.reviewer_decision import build_review_preparation_summary, resolve_reviewer_decision
+from src.review.reviewer_decision import (
+    build_review_preparation_asset,
+    build_review_preparation_summary,
+    resolve_reviewer_decision,
+)
 from src.review.support_scope import get_support_scope_payload
 
 router = APIRouter(prefix='/api/tasks', tags=['tasks'])
@@ -219,6 +223,17 @@ async def update_reviewer_decision(task_id: str, request: ReviewerDecisionUpdate
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     return _serialize_task(task)
+
+
+@router.get('/{task_id}/review-preparation')
+async def get_review_preparation(task_id: str):
+    service = get_task_service()
+    task = service.get_task(task_id)
+    if task is None:
+        raise HTTPException(status_code=404, detail='Task not found')
+    if task.taskType != 'structured_review':
+        raise HTTPException(status_code=400, detail='review preparation is only supported for structured_review tasks')
+    return build_review_preparation_asset(task).model_dump(mode='json')
 
 
 @router.get('/{task_id}/events')

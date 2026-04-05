@@ -15,11 +15,24 @@
 - `v0.2.0-internal-reviewed`：内部人工复核后的版本
 - `v1.0.0-expert-golden`：专家确认后的正式 gold 版本
 
+## truth layering / promotion discipline
+
+- `seed` 只能作为研究输入与候选标签来源，不能直接视为 reviewed truth
+- `internal-reviewed preparation` 是 reviewer / artifact / eval 之间的承接层，不等于 `v0.2.0-internal-reviewed`
+- promotion 必须至少区分：
+  - issue truth
+  - visibility truth
+  - evidence truth
+  - enhancement-only observations
+- 若 case 仍存在 `parser_limited_pdf_requires_manual_review`、`attachment_unparsed`、`referenced_only` 等 blocking 语义，只能进入 reviewed-preparation，不得直接宣称完成 reviewed promotion
+- provenance 必须能回指 seed / reviewer decision / artifacts；不得把最新一次 eval snapshot 当作长期 truth
+
 ## 非协商原则
 1. 不得把 Gemini 结果直接当作专家 truth
 2. 必须区分 issue truth 与 visibility truth
 3. 必须显式记录 provenance
 4. 不得把“未解析附件”直接标成“缺失”
+5. internal-reviewed preparation 只是准备层，不得冒充 internal-reviewed
 
 ## 当前已初始化 case
 - construction_org / electromechanical / cn_baosteel_coldrolling_crane_230235 / v0.1.0-gemini-seed

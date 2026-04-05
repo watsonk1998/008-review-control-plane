@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 
 from src.review.evaluation.dataset import load_cases
-from src.review.evaluation.harness import run_ablations, run_cross_model, run_cross_pack, run_main
+from src.review.evaluation.harness import run_ablations, run_cross_model, run_cross_pack, run_main, run_replay
 
 
 def _write_json(path: Path, payload) -> None:
@@ -201,7 +201,21 @@ def test_review_eval_harness_reports_stage_metrics_and_versioned_diagnostics(tmp
     assert 'deterministic' in cross_model_payload['models']
     assert 'fallback' in cross_model_payload['models']
     assert 'layeredMetrics' in cross_model_payload['models']['deterministic']
+    assert cross_model_payload['models']['deterministic']['gateRole'] == 'diagnostic'
+    assert 'official' in cross_model_payload['models']['deterministic']['byDocumentTypeReadiness']
     assert (
         cross_model_payload['models']['deterministic']['aggregate']['facts_accuracy']
         == cross_model_payload['models']['fallback']['aggregate']['facts_accuracy']
     )
+
+    replay_code, replay_payload = run_replay(tmp_path, case_ids=['versioned-hz-001'], output_dir=tmp_path / 'replay-output')
+    assert replay_code == 0
+    assert replay_payload['mode'] == 'replay'
+    assert replay_payload['gateRole'] == 'diagnostic'
+    assert replay_payload['selection']['matchedCaseCount'] == 1
+    assert replay_payload['selection']['caseIds'] == ['versioned-hz-001']
+    assert replay_payload['selection']['outputDirectory'] == str((tmp_path / 'replay-output').resolve())
+    replay_case = replay_payload['cases'][0]
+    assert replay_case['artifactCapture'] is not None
+    assert 'structured-review-result.json' in replay_case['artifactCapture']['artifacts']
+    assert Path(replay_case['artifactCapture']['path']).exists()

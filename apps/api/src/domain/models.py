@@ -209,6 +209,44 @@ class ReviewPreparationSummary(BaseModel):
     disclaimer: str | None = None
 
 
+class ReviewPreparationIssueRecord(BaseModel):
+    issueId: str
+    state: ReviewerItemState = 'pending'
+    note: str | None = None
+    issueKind: IssueKind | None = None
+    applicabilityState: ApplicabilityState | None = None
+    manualReviewNeeded: bool = False
+    manualReviewReason: str | None = None
+    evidenceMissing: bool = False
+    missingFactKeys: list[str] = Field(default_factory=list)
+    blockingReasons: list[str] = Field(default_factory=list)
+
+
+class ReviewPreparationAttachmentRecord(BaseModel):
+    attachmentId: str
+    state: ReviewerItemState = 'pending'
+    note: str | None = None
+    visibility: AttachmentVisibility | None = None
+    parseState: str | None = None
+    manualReviewNeeded: bool = False
+    reason: str | None = None
+
+
+class ReviewPreparationAsset(BaseModel):
+    schemaVersion: Literal['v0.1'] = 'v0.1'
+    truthTier: Literal['internal_reviewed_preparation'] = 'internal_reviewed_preparation'
+    taskId: str
+    documentType: ReviewDocumentType | None = None
+    sourceDocumentRef: SourceDocumentRef | None = None
+    reviewerDecisionUpdatedAt: datetime | None = None
+    readyForPromotion: bool = False
+    blockingReasons: list[str] = Field(default_factory=list)
+    issueDecisions: list[ReviewPreparationIssueRecord] = Field(default_factory=list)
+    attachmentDecisions: list[ReviewPreparationAttachmentRecord] = Field(default_factory=list)
+    provenance: dict[str, Any] = Field(default_factory=dict)
+    disclaimer: str | None = None
+
+
 class TaskRecord(BaseModel):
     id: str
     taskType: TaskType
