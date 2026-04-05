@@ -32,6 +32,7 @@ make eval-review
 make eval-review-ablations
 make eval-review-cross-pack
 make eval-review-cross-model
+make eval-review-replay
 ```
 
 - `test-review-unit`：跑 `tests/test_structured_review.py`
@@ -40,6 +41,7 @@ make eval-review-cross-model
 - `eval-review-ablations`：输出 parser / visibility / rule engine / llm explanation 的消融结果；其中 `disable_visibility_check` 仅允许走内部 ablation wiring
 - `eval-review-cross-pack`：对比自动 pack 选择与强制 expected packs 的结果
 - `eval-review-cross-model`：固定 facts/rules，仅替换 explanation model；facts / rule hits / policy refs 不应漂移
+- `eval-review-replay`：按 case 回放 structured_review，并保留真实工件到 `artifacts/eval-replay/`；默认回放 legacy stable + official versioned stage-gate cases，也可通过 `CASE_ID / CASE_VERSION / DOC_TYPE / OUTPUT_DIR` 过滤
 
 ## 功能测试矩阵
 
@@ -131,6 +133,7 @@ make eval-review-cross-model
 - 详情页优先展示 `resolvedProfile / visibility / unresolvedFacts / artifactIndex / reviewerDecision`，再展示报告与原始 JSON
 - reviewer 结果页以结构化方式展示 `attachmentVisibility / ruleHits / conflicts / sectionStructure`；raw JSON 只保留为折叠调试信息
 - reviewer 结果页需同时展示 `reviewPreparation` 摘要，但必须保留“仅用于 internal-reviewed preparation，不是 reviewed truth”的语义边界
+- `GET /api/tasks/{taskId}/review-preparation` 必须返回带 provenance 的 preparation asset，供 reviewed-preparation 资料承接
 - `/api/tasks/support-scope` 需同时返回 pack `promotionCriteria`；表单/UI 不得自行发明 official/experimental/promotion 结论
 
 ## P1 主门槛
@@ -153,6 +156,7 @@ make eval-review-cross-model
 - `layeredMetrics` 必须按 `L0 / L1 / L2 / L3 / CrossCutting` 分组输出，其中 L3 当前允许 `diagnosticOnly=true`
 - `L0` 必须额外输出 `preflight_gate_consistency`
 - `L2` 必须额外输出 `evidence_traceability`
+- eval 输出必须显式区分 `gateRole=blocking` 与 `gateRole=diagnostic`
 - `review_assist` 回归失败数 = `0`
 
 ## 推荐回归命令

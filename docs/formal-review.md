@@ -114,6 +114,7 @@ LLM 不负责：
 - `GET /api/tasks/{taskId}/artifacts`
 - `GET /api/tasks/{taskId}/artifacts/{artifactName}`
 - `PUT /api/tasks/{taskId}/reviewer-decision`
+- `GET /api/tasks/{taskId}/review-preparation`
 
 典型工件包括：
 
@@ -150,6 +151,7 @@ LLM 不负责：
 - reviewer decision 以单个 task-scoped JSON 保存：`taskState + note + issues[] + attachments[] + updatedAt`
 - reviewer cockpit 的 UI 文案会将稳定的 on-wire enum 映射为 reviewer 语义（如 `dismissed -> rejected`、`needs_attachment -> needs supplement`），但不改变持久化字段
 - task 详情会额外提供 `reviewPreparation` 摘要：`truthTier / readyForPromotion / blockingReasons / eligibleIssueIds / deferredIssueIds / rejectedIssueIds`，用于 internal-reviewed preparation 承接，但不代表 reviewed truth
+- `GET /api/tasks/{taskId}/review-preparation` 会返回带 provenance 的 preparation asset，细化到 `issueDecisions / attachmentDecisions`，用于 future reviewed-preparation 资料沉淀，但不进入 canonical formal-review 结果 contract
 - `disable_visibility_check` 仅保留给 eval / ablation 内部路径
 
 PDF 仍保持 `pdf_text_only + parserLimited=True` 的受限路径；本轮只新增轻量结构提示，不引入 OCR / 多模态：
@@ -197,6 +199,7 @@ make eval-review
 make eval-review-ablations
 make eval-review-cross-pack
 make eval-review-cross-model
+make eval-review-replay
 ```
 
 评测输出会额外提供 `layeredMetrics`：
@@ -211,3 +214,5 @@ make eval-review-cross-model
 
 - `L0.preflight_gate_consistency` 要求 `visibility.manualReviewNeeded` 与 `visibility.preflight.gateDecision` 同步
 - `L2.evidence_traceability` 要求 blocked issue 与 unresolved facts 能回指 `missingFactKeys / blockingReasons / sourceExtractor / blockingRuleIds`
+- `main` 与 `versionedStageGate` 的 `gateRole` 是 `blocking`；`ablations / cross-pack / cross-model / replay` 的 `gateRole` 是 `diagnostic`
+- `replay` 命令默认回放 legacy stable + official versioned stage-gate cases，并把每个 case 的工件落到 `artifacts/eval-replay/`；也可通过 `--case-id / --case-version / --doc-type / --output-dir` 过滤

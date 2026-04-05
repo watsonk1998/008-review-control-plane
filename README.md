@@ -121,6 +121,7 @@ make eval-review
 make eval-review-ablations
 make eval-review-cross-pack
 make eval-review-cross-model
+make eval-review-replay
 make smoke
 make verify-connectivity
 ```
@@ -180,6 +181,7 @@ python scripts/build_research_pack.py
 - `GET /api/tasks/{taskId}/artifacts`
 - `GET /api/tasks/{taskId}/artifacts/{artifactName}`
 - `PUT /api/tasks/{taskId}/reviewer-decision`
+- `GET /api/tasks/{taskId}/review-preparation`
 
 ## structured_review 结果约束
 
@@ -197,6 +199,7 @@ python scripts/build_research_pack.py
 - `/api/tasks/support-scope` 会返回 pack 的 `promotionCriteria`，作为 ready/placeholder 之外的补充治理信号；`ready pack ≠ official support`
 - 任务详情现在支持最小 reviewer decision：task-level / issue-level / attachment-level 复核状态与备注；UI 会把稳定的 on-wire enum 映射为 reviewer 语义标签，但不更改持久化字段
 - 任务详情会额外给出 `reviewPreparation` 摘要，用于 internal-reviewed preparation 承接；它不是 reviewed truth，只是 promotion governance 的准备层
+- `GET /api/tasks/{taskId}/review-preparation` 会返回带 provenance 的 preparation asset，用于 future internal-reviewed dataset 承接，但不代表 reviewed truth
 - 系统不得把“未解析附件 / 当前不可视”直接写成“文档缺失”
 
 ## 配置原则
