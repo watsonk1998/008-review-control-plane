@@ -37,16 +37,16 @@ def main():
     
     files_to_review = [
         {
-            "task_id": "review-peihua-v0.2",
+            "task_id": "review-peihua-v0.3",
             "path": repo_root / "fixtures/supervision/施工组织设计-培花初期雨水调蓄池建设工程.pdf",
             "type": "construction_org",
-            "out": repo_root / "fixtures/supervision/V0.2-review-control-plane审查结果-施工组织设计培花初期雨水调蓄池建设工程.md"
+            "out": repo_root / "fixtures/supervision/V0.3-review-control-plane审查结果-施工组织设计培花初期雨水调蓄池建设工程.md"
         },
         {
-            "task_id": "review-cold-rolling-v0.2",
+            "task_id": "review-cold-rolling-v0.3",
             "path": repo_root / "fixtures/supervision/施工组织设计-冷轧厂2030单元三台行车电气系统改造.docx",
             "type": "construction_org",
-            "out": repo_root / "fixtures/supervision/V0.2-review-control-plane审查结果-施工组织设计-冷轧厂2030单元三台行车电气系统改造.md"
+            "out": repo_root / "fixtures/supervision/V0.3-review-control-plane审查结果-施工组织设计-冷轧厂2030单元三台行车电气系统改造.md"
         }
     ]
     
