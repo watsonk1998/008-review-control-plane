@@ -25,10 +25,10 @@ const DISCIPLINE_OPTIONS = [
 
 function renderPromotionCriteria(criteria: Record<string, boolean>) {
   const order = [
-    ["testsReady", "tests"],
-    ["versionedCasesReady", "versioned cases"],
-    ["policyEvidenceReady", "policy evidence"],
-    ["ruleCoverage", "rule coverage"],
+    ["testsReady", "测试用例"],
+    ["versionedCasesReady", "基准样本"],
+    ["policyEvidenceReady", "政策依据"],
+    ["ruleCoverage", "规则覆盖率"],
   ] as const;
   return order
     .map(([key, label]) => `${label}:${criteria[key] ? "✓" : "✗"}`)
@@ -40,6 +40,14 @@ interface StructuredReviewFormProps {
   setForm: React.Dispatch<React.SetStateAction<CreateTaskRequest>>;
   supportScope?: SupportScopeResponse | null;
 }
+
+const READINESS_MAP: Record<string, string> = {
+  official: "稳定支持",
+  experimental: "实验性特性",
+  skeleton: "骨架开发中",
+  ready: "正式就绪",
+  placeholder: "占位开发中",
+};
 
 export function StructuredReviewForm({
   form,
@@ -67,7 +75,7 @@ export function StructuredReviewForm({
     <section className="stack-lg">
       <div className="section-heading compact">
         <div>
-          <p className="eyebrow">Structured Review Profile</p>
+          <p className="eyebrow">结构化审查级联配置</p>
           <h3>正式审查参数</h3>
         </div>
           <p className="muted small">支持范围只以 `/api/tasks/support-scope` 为准；documentType readiness 与 pack readiness 明确分离。</p>
@@ -156,18 +164,18 @@ export function StructuredReviewForm({
 
       {documentReadiness ? (
         <div className="callout">
-          <strong>当前 support-scope</strong>
-          <p>documentType readiness：{documentReadiness}</p>
-          <p>ready packs：{readyPacks.map((pack) => pack.packId).join("，") || "无"}</p>
-          <p>placeholder packs：{placeholderPacks.map((pack) => pack.packId).join("，") || "无"}</p>
+          <strong>当前链路支持度 (support-scope)</strong>
+          <p>主文档可用性：{READINESS_MAP[documentReadiness] || documentReadiness}</p>
+          <p>已就绪模块 (ready packs)：{readyPacks.map((pack) => pack.packId).join("，") || "无"}</p>
+          <p>排期模块 (placeholder packs)：{placeholderPacks.map((pack) => pack.packId).join("，") || "无"}</p>
           {relevantPacks.length ? (
             <div className="stack-sm">
-              <strong>pack promotion criteria</strong>
+              <strong>策略包晋升准入条件 (pack promotion criteria)</strong>
               <ul className="source-list">
                 {relevantPacks.map((pack) => (
                   <li key={pack.packId}>
                     <strong>
-                      {pack.packId} · {pack.readiness}
+                      {pack.packId} · {READINESS_MAP[pack.readiness] || pack.readiness}
                     </strong>
                     <p className="muted small">{renderPromotionCriteria(pack.promotionCriteria || {})}</p>
                   </li>

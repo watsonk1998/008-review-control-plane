@@ -143,7 +143,7 @@ export function ReviewDecisionPanel({
   return (
     <section className="card stack-lg">
       <div>
-        <p className="eyebrow">Reviewer Decision</p>
+        <p className="eyebrow">人工复核决策台 (Reviewer Decision)</p>
         <h2>最小人工复核面板</h2>
       </div>
 

@@ -1,0 +1,16 @@
+{
+  "exclude": [
+    "**/node_modules",
+    "**/.venv",
+    "**/fixtures",
+    "**/logs",
+    "**/artifacts"
+  ],
+  "ignore": [
+    "**/node_modules",
+    "**/.venv",
+    "**/fixtures",
+    "**/logs",
+    "**/artifacts"
+  ]
+}

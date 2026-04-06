@@ -1,0 +1,17 @@
+[tool.pyright]
+exclude = [
+    "**/node_modules",
+    "**/.venv",
+    "**/fixtures",
+    "**/logs",
+    "**/artifacts"
+]
+
+[tool.ruff]
+exclude = [
+    ".venv",
+    "node_modules",
+    "fixtures",
+    "logs",
+    "artifacts"
+]

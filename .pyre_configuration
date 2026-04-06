@@ -1,0 +1,14 @@
+{
+  "source_directories": [
+    "apps/api/src",
+    "apps/api/tests",
+    "scripts"
+  ],
+  "exclude": [
+    ".*/\\.venv/.*",
+    ".*/node_modules/.*",
+    ".*/fixtures/.*",
+    ".*/logs/.*",
+    ".*/artifacts/.*"
+  ]
+}
