@@ -39,6 +39,9 @@ function formatDistanceFromNow(value?: string | null) {
   return `${days} 天前`;
 }
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export async function RecentTasks() {
   const recentTasks = await fetchRecentTasks(8).catch(() => []);
 
@@ -53,17 +56,20 @@ export async function RecentTasks() {
 
       {recentTasks.length ? (
         <div className="task-list">
-          {recentTasks.map((task) => (
+          {recentTasks.map((task) => {
+            const safeType = (task.taskType || "").trim().toLowerCase();
+            const safeStatus = (task.status || "").trim().toLowerCase();
+            return (
             <Link className="task-item" href={`/tasks/${task.id}`} key={task.id}>
               <div className="task-meta">
-                <p>{TASK_TYPE_MAP[task.taskType] || task.taskType}</p>
+                <p>{TASK_TYPE_MAP[safeType] || task.taskType}</p>
                 <span>{formatDistanceFromNow(task.updatedAt)}</span>
               </div>
               <span className={`status-pill ${taskStatusTone(task.status)}`}>
-                {TASK_STATUS_MAP[task.status] || task.status.toUpperCase()}
+                {TASK_STATUS_MAP[safeStatus] || task.status.toUpperCase()}
               </span>
             </Link>
-          ))}
+          )})}
         </div>
       ) : (
         <p className="muted small">暂无最近任务</p>

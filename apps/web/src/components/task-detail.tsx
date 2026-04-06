@@ -895,13 +895,13 @@ export function TaskDetail({ taskId }: { taskId: string }) {
                           : "is-neutral"
                   }`}
                 >
-                  {TASK_STATUS_MAP[task.status] || task.status.toUpperCase()}
+                  {TASK_STATUS_MAP[(task.status || "").trim().toLowerCase()] || task.status.toUpperCase()}
                 </span>
               </div>
               <dl className="meta-grid">
                 <div>
                   <dt>任务类型 (taskType)</dt>
-                  <dd>{TASK_TYPE_MAP[task.taskType] || task.taskType}</dd>
+                  <dd>{TASK_TYPE_MAP[(task.taskType || "").trim().toLowerCase()] || task.taskType}</dd>
                 </div>
                 <div>
                   <dt>capabilityMode</dt>

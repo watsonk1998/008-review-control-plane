@@ -165,7 +165,7 @@ export function StructuredReviewForm({
       {documentReadiness ? (
         <div className="callout">
           <strong>当前链路支持度 (support-scope)</strong>
-          <p>主文档可用性：{READINESS_MAP[documentReadiness] || documentReadiness}</p>
+          <p>主文档可用性：{READINESS_MAP[(documentReadiness || "").trim().toLowerCase()] || documentReadiness}</p>
           <p>已就绪模块 (ready packs)：{readyPacks.map((pack) => pack.packId).join("，") || "无"}</p>
           <p>排期模块 (placeholder packs)：{placeholderPacks.map((pack) => pack.packId).join("，") || "无"}</p>
           {relevantPacks.length ? (
@@ -175,7 +175,7 @@ export function StructuredReviewForm({
                 {relevantPacks.map((pack) => (
                   <li key={pack.packId}>
                     <strong>
-                      {pack.packId} · {READINESS_MAP[pack.readiness] || pack.readiness}
+                      {pack.packId} · {READINESS_MAP[(pack.readiness || "").trim().toLowerCase()] || pack.readiness}
                     </strong>
                     <p className="muted small">{renderPromotionCriteria(pack.promotionCriteria || {})}</p>
                   </li>
