@@ -127,17 +127,20 @@ make eval-review-replay
 - 能区分 `attachment_unparsed / referenced_only / unknown / missing`
 - `missing` 只在有明确证据时产出
 - parser-limited PDF 必须前置触发 `manualReviewNeeded=true`，且 `visibility.preflight.gateDecision=manual_review_required`
+- 重复的一级/二级关键章节或附件边界标题若会破坏 canonical section extraction，必须前置触发 `weak_section_structure_signal`
 - `structured-review-l0-visibility.json` 必须包含 `checklist / blockingReasons / parserLimitations / attachmentTaxonomySummary`
 - `structured-review-rule-hits.json` 与 `rule-hit-matrix.json` 必须包含 `applicabilityState / requiredFactKeys / missingFactKeys / clauseIds / blockingReasons`
 - `unresolvedFacts` 必须包含 `sourceExtractor / blockingReason / visibilityLimited / blockingRuleIds / blockingIssueIds`
 - visible-scope 内的章节/监测监控缺失必须落为 `hard_defect / applies`，不得因为空 `docEvidence` 漂移为 `evidence_gap`
 - parser-limited 下的章节/监测监控缺失必须落为 `blocked_by_missing_fact`，且 `missingFactKeys / blockingReasons` 至少其一可解释
 - `evidence_gap` 若出现，必须具备显式 explainability；空 `docEvidence` 不能单独成为证据缺口依据
+- blocked issue 的 `docEvidence / policyEvidence` 必须携带 `evidenceGapReason`；document-side evidence 必须有 `sourceProvenance`
 - artifact API 可列出和下载工件，且与 `result.artifactIndex` 同口径；对新任务 `artifactIndex` 即使为空也优先于目录扫描
 - 详情页优先展示 `resolvedProfile / visibility / unresolvedFacts / artifactIndex / reviewerDecision`，再展示报告与原始 JSON
 - reviewer 结果页以结构化方式展示 `attachmentVisibility / ruleHits / conflicts / sectionStructure`；raw JSON 只保留为折叠调试信息
 - reviewer 结果页需同时展示 `reviewPreparation` 摘要，并至少暴露 `provenance.sourceTier / caseVersion`；同时保留“仅用于 internal-reviewed preparation，不是 reviewed truth”的语义边界
 - `GET /api/tasks/{taskId}/review-preparation` 必须返回带 provenance 的 preparation asset；未命中版本化样本时必须显式回退 `sourceTier=runtime_only`
+- review-preparation summary/asset 必须对 issue / attachment 显式表达 `eligible / deferred / rejected` promotion disposition；attachment summary 需额外暴露 `rejectedAttachmentIds`
 - `/api/tasks/support-scope` 需同时返回 pack `promotionCriteria`；表单/UI 不得自行发明 official/experimental/promotion 结论
 
 ## P1 主门槛
@@ -160,6 +163,7 @@ make eval-review-replay
 - `layeredMetrics` 必须按 `L0 / L1 / L2 / L3 / CrossCutting` 分组输出，其中 L3 当前允许 `diagnosticOnly=true`
 - `L0` 必须额外输出 `preflight_gate_consistency`
 - `L2` 必须额外输出 `evidence_traceability`
+- `CrossCutting` 必须额外输出 diagnostic-only 的 `review_preparation_provenance_consistency`
 - eval 输出必须显式区分 `gateRole=blocking` 与 `gateRole=diagnostic`
 - `review_assist` 回归失败数 = `0`
 

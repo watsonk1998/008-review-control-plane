@@ -6,6 +6,7 @@ import { updateReviewerDecision } from "@/lib/api";
 import type {
   AttachmentVisibilityMatrixItem,
   ReviewIssue,
+  ReviewPreparationSummary,
   ReviewerDecision,
   ReviewerDecisionUpdateRequest,
   ReviewerIssueDecision,
@@ -68,17 +69,30 @@ function deriveTaskState(
   return "pending";
 }
 
+function reviewPreparationDispositionLabel(value: string | null | undefined) {
+  switch (value) {
+    case "eligible":
+      return "eligible（可进入 preparation）";
+    case "rejected":
+      return "rejected（明确不进入 promotion）";
+    default:
+      return "deferred（仍待补充/待确认）";
+  }
+}
+
 export function ReviewDecisionPanel({
   taskId,
   issues,
   attachments,
   decision,
+  reviewPreparation,
   onSaved,
 }: {
   taskId: string;
   issues: ReviewIssue[];
   attachments: AttachmentVisibilityMatrixItem[];
   decision?: ReviewerDecision | null;
+  reviewPreparation?: ReviewPreparationSummary | null;
   onSaved: (next: TaskRecord) => void;
 }) {
   const fallbackDecision = useMemo(() => buildFallbackDecision(issues, attachments), [attachments, issues]);
@@ -176,6 +190,11 @@ export function ReviewDecisionPanel({
               state: "pending" as const,
               note: "",
             };
+            const issueDisposition = reviewPreparation?.eligibleIssueIds?.includes(issue.id)
+              ? "eligible"
+              : reviewPreparation?.rejectedIssueIds?.includes(issue.id)
+                ? "rejected"
+                : "deferred";
             return (
               <article className="boundary-item" key={issue.id}>
                 <div className="section-heading compact">
@@ -186,6 +205,7 @@ export function ReviewDecisionPanel({
                     <p className="muted small">
                       {issue.layer} / {issue.severity} / {issue.findingType}
                     </p>
+                    <p className="muted small">promotion disposition={reviewPreparationDispositionLabel(issueDisposition)}</p>
                   </div>
                 </div>
                 <div className="form-grid two-columns">
@@ -250,6 +270,11 @@ export function ReviewDecisionPanel({
               state: "pending" as const,
               note: "",
             };
+            const attachmentDisposition = reviewPreparation?.eligibleAttachmentIds?.includes(item.id)
+              ? "eligible"
+              : reviewPreparation?.rejectedAttachmentIds?.includes(item.id)
+                ? "rejected"
+                : "deferred";
             return (
               <article className="boundary-item" key={item.id}>
                 <div className="section-heading compact">
@@ -260,6 +285,7 @@ export function ReviewDecisionPanel({
                     <p className="muted small">
                       visibility={item.visibility} / parseState={item.parseState}
                     </p>
+                    <p className="muted small">promotion disposition={reviewPreparationDispositionLabel(attachmentDisposition)}</p>
                   </div>
                 </div>
                 <div className="form-grid two-columns">

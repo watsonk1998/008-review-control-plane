@@ -39,12 +39,17 @@ def build_review_preparation_summary(task: TaskRecord) -> ReviewPreparationSumma
     issue_ids = _extract_issue_ids(task)
     attachment_ids = _extract_attachment_ids(task)
     provenance = _resolve_review_preparation_provenance(task)
-    eligible_issue_ids = [item.issueId for item in decision.issues if item.state == 'confirmed']
-    rejected_issue_ids = [item.issueId for item in decision.issues if item.state == 'dismissed']
-    deferred_issue_ids = [item.issueId for item in decision.issues if item.state in {'pending', 'needs_attachment'}]
-    eligible_attachment_ids = [item.attachmentId for item in decision.attachments if item.state == 'dismissed']
+    eligible_issue_ids = [item.issueId for item in decision.issues if _issue_review_preparation_disposition(item.state) == 'eligible']
+    rejected_issue_ids = [item.issueId for item in decision.issues if _issue_review_preparation_disposition(item.state) == 'rejected']
+    deferred_issue_ids = [item.issueId for item in decision.issues if _issue_review_preparation_disposition(item.state) == 'deferred']
+    eligible_attachment_ids = [
+        item.attachmentId for item in decision.attachments if _attachment_review_preparation_disposition(item.state) == 'eligible'
+    ]
     deferred_attachment_ids = [
-        item.attachmentId for item in decision.attachments if item.state in {'pending', 'needs_attachment'}
+        item.attachmentId for item in decision.attachments if _attachment_review_preparation_disposition(item.state) == 'deferred'
+    ]
+    rejected_attachment_ids = [
+        item.attachmentId for item in decision.attachments if _attachment_review_preparation_disposition(item.state) == 'rejected'
     ]
     blocking_reasons: list[str] = []
     result = task.result or {}
@@ -55,12 +60,15 @@ def build_review_preparation_summary(task: TaskRecord) -> ReviewPreparationSumma
         blocking_reasons.append('pending_issue_review')
     if deferred_attachment_ids:
         blocking_reasons.append('pending_attachment_review')
+    if rejected_attachment_ids:
+        blocking_reasons.append('rejected_attachment_promotion')
     if not decision.note:
         blocking_reasons.append('missing_reviewer_note')
     ready_for_promotion = (
         bool(issue_ids or attachment_ids)
         and not deferred_issue_ids
         and not deferred_attachment_ids
+        and not rejected_attachment_ids
         and bool(decision.note)
     )
     return ReviewPreparationSummary(
@@ -72,6 +80,7 @@ def build_review_preparation_summary(task: TaskRecord) -> ReviewPreparationSumma
         rejectedIssueIds=rejected_issue_ids,
         eligibleAttachmentIds=eligible_attachment_ids,
         deferredAttachmentIds=deferred_attachment_ids,
+        rejectedAttachmentIds=rejected_attachment_ids,
         provenance=provenance,
         disclaimer='该对象仅表示 runtime reviewer decision 对 internal-reviewed preparation 的承接状态，不构成 reviewed truth。',
     )
@@ -104,6 +113,7 @@ def build_review_preparation_asset(task: TaskRecord) -> ReviewPreparationAsset:
         issue_records.append(
             ReviewPreparationIssueRecord(
                 issueId=item.issueId,
+                disposition=_issue_review_preparation_disposition(item.state),
                 state=item.state,
                 note=item.note,
                 issueKind=issue.get('issueKind'),
@@ -121,6 +131,7 @@ def build_review_preparation_asset(task: TaskRecord) -> ReviewPreparationAsset:
         attachment_records.append(
             ReviewPreparationAttachmentRecord(
                 attachmentId=item.attachmentId,
+                disposition=_attachment_review_preparation_disposition(item.state),
                 state=item.state,
                 note=item.note,
                 visibility=attachment.get('visibility'),
@@ -202,6 +213,22 @@ def _derive_task_state(
         if all(item.state != 'pending' for item in [*issues, *attachments]):
             return 'accepted'
     return 'pending'
+
+
+def _issue_review_preparation_disposition(state: str) -> str:
+    if state == 'confirmed':
+        return 'eligible'
+    if state == 'dismissed':
+        return 'rejected'
+    return 'deferred'
+
+
+def _attachment_review_preparation_disposition(state: str) -> str:
+    if state == 'dismissed':
+        return 'eligible'
+    if state == 'confirmed':
+        return 'rejected'
+    return 'deferred'
 
 
 def _extract_issue_ids(task: TaskRecord) -> list[str]:

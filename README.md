@@ -194,14 +194,17 @@ python scripts/build_research_pack.py
 - `summary.visibilitySummary` 统一表达附件状态计数、重复章节、parse warnings 与 visibility reason counts，但不再作为第二事实源
 - `artifactIndex` 额外输出 `structured-review-l0-visibility` 与 `structured-review-report-buckets`
 - `structured-review-l0-visibility.json` 是唯一 L0 preflight 工件，会显式输出 `gateDecision / blockingReasons / checklist / parserLimitations / attachmentTaxonomySummary`
+- 若重复的一级/二级关键章节或附件边界标题会破坏 canonical section extraction，L0 会前置触发 `weak_section_structure_signal`；该信号只进入 visibility/manual-review gate，不会伪装成 `missing`
 - `structured-review-rule-hits.json` 与 `rule-hit-matrix.json` 会稳定输出 `applicabilityState / requiredFactKeys / missingFactKeys / clauseIds / blockingReasons`
 - `unresolvedFacts` 会保留 `sourceExtractor / blockingReason / visibilityLimited / blockingRuleIds / blockingIssueIds`
 - visible-scope 的负向事实（例如章节缺失、监测监控缺失）会保留为 `hard_defect + applies`；只有 parser-limited / fact-unresolved 才进入 `evidence_gap + blocked_by_missing_fact`
 - `evidenceMissing` 不能再由空 `docEvidence` 自动推导；若为 `true`，必须能由 `missingFactKeys` 或显式 `blockingReasons` 解释
+- blocked issue 的 `docEvidence / policyEvidence` 会显式携带 `evidenceGapReason`；document-side evidence 也会稳定输出 `sourceProvenance`
 - `disable_visibility_check` 仅保留给 eval / ablation 内部路径，不能作为公开任务入口参数
 - `/api/tasks/support-scope` 会返回 pack 的 `promotionCriteria`，作为 ready/placeholder 之外的补充治理信号；`ready pack ≠ official support`
 - 任务详情现在支持最小 reviewer decision：task-level / issue-level / attachment-level 复核状态与备注；UI 会把稳定的 on-wire enum 映射为 reviewer 语义标签，但不更改持久化字段
 - 任务详情会额外给出 `reviewPreparation` 摘要，用于 internal-reviewed preparation 承接；其中 provenance 至少会表达 `sourceTier / caseId / caseVersion`，但它不是 reviewed truth
+- `reviewPreparation` 继续通过 `eligible* / deferred* / rejected*` 数组表达 promotion disposition；attachment 侧新增 `rejectedAttachmentIds`
 - `GET /api/tasks/{taskId}/review-preparation` 会返回带 provenance 的 preparation asset；未命中版本化样本时统一回退 `runtime_only`
 - 系统不得把“未解析附件 / 当前不可视”直接写成“文档缺失”
 

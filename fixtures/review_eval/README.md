@@ -20,6 +20,7 @@
 
 - `seed` 只能作为研究输入与候选标签来源，不能直接视为 reviewed truth
 - `internal-reviewed preparation` 是 reviewer / artifact / eval 之间的承接层，不等于 `v0.2.0-internal-reviewed`
+- runtime review-preparation 现在必须显式区分 promotion disposition：`eligible / deferred / rejected`
 - promotion 必须至少区分：
   - issue truth
   - visibility truth
@@ -28,6 +29,7 @@
 - visible-scope 内已闭合的负向事实可以进入 issue truth；parser-limited 导致的章节/事实缺口只能保留为 explainable `evidence_gap`
 - 若 case 仍存在 `parser_limited_pdf_requires_manual_review`、`attachment_unparsed`、`referenced_only` 等 blocking 语义，只能进入 reviewed-preparation，不得直接宣称完成 reviewed promotion
 - provenance 必须能回指 seed / reviewer decision / artifacts；不得把最新一次 eval snapshot 当作长期 truth
+- attachment 侧若 reviewer 仍确认 visibility gap 成立，应落入 `rejected` disposition，并在 summary 中进入 `rejectedAttachmentIds`
 - runtime 侧的 `GET /api/tasks/{taskId}/review-preparation` 只负责导出 reviewed-preparation 候选资产；是否写入 `fixtures/review_eval/**` 仍需人工筛选与复核
 - runtime provenance 的 `sourceTier` 当前固定映射：
   - `v0.1.0-gemini-seed -> seed`

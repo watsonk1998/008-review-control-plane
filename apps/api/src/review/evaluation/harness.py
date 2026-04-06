@@ -84,6 +84,7 @@ _AGGREGATE_METRICS = [
     'hazard_identification_accuracy',
     'preflight_gate_consistency',
     'evidence_traceability',
+    'review_preparation_provenance_consistency',
     'suggestion_defect_separation',
     'remediation_bucket_consistency',
 ]
@@ -135,6 +136,7 @@ def _build_layered_metrics(aggregate: dict[str, float]) -> dict[str, Any]:
         'CrossCutting': {
             'metrics': {
                 'pack_selection_accuracy': aggregate.get('pack_selection_accuracy', 0.0),
+                'review_preparation_provenance_consistency': aggregate.get('review_preparation_provenance_consistency', 0.0),
             }
         },
     }

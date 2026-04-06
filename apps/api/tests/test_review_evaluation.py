@@ -5,7 +5,7 @@ from pathlib import Path
 
 from src.review.evaluation.dataset import load_cases
 from src.review.evaluation.harness import run_ablations, run_cross_model, run_cross_pack, run_main, run_replay
-from src.review.evaluation.metrics import _evidence_traceability
+from src.review.evaluation.metrics import _evidence_traceability, _review_preparation_provenance_consistency
 
 
 def _write_json(path: Path, payload) -> None:
@@ -170,6 +170,7 @@ def test_review_eval_harness_reports_stage_metrics_and_versioned_diagnostics(tmp
     assert main_payload['layeredMetrics']['L2']['metrics']['facts_accuracy'] >= 0
     assert main_payload['layeredMetrics']['L2']['metrics']['evidence_traceability'] >= 0
     assert main_payload['layeredMetrics']['L3']['diagnosticOnly'] is True
+    assert main_payload['layeredMetrics']['CrossCutting']['metrics']['review_preparation_provenance_consistency'] >= 0
     assert 'versionedDiagnostics' in main_payload
     assert len(main_payload['versionedDiagnostics']['cases']) == 1
     assert main_payload['versionedStageThresholds']['facts_accuracy'] == 0.9
@@ -298,3 +299,40 @@ def test_evidence_traceability_fails_unexplained_evidence_gap_issue():
     score, checks = _evidence_traceability(result)
     assert checks == 1
     assert score == 0.0
+
+
+def test_review_preparation_provenance_consistency_distinguishes_versioned_vs_runtime():
+    versioned_case = {
+        'caseId': 'cn_hz_attachment_missing_ci',
+        'caseVersion': 'v0.1.0-ci-stage-gate',
+        'fixtureId': 'cn_hz_attachment_missing_ci',
+        'sourcePath': '/tmp/source.md',
+        'query': '对该危大专项方案执行正式结构化审查',
+        'docType': 'hazardous_special_scheme',
+        'disciplineTags': ['lifting_operations'],
+    }
+    runtime_case = {
+        'caseId': 'runtime-only-case',
+        'fixtureId': 'runtime-only-case',
+        'sourcePath': '/tmp/runtime-source.md',
+        'query': '对该施工组织设计执行正式结构化审查',
+        'docType': 'construction_org',
+        'disciplineTags': [],
+    }
+    result = {
+        'visibility': {
+            'manualReviewNeeded': False,
+            'preflight': {'gateDecision': 'ready', 'blockingReasons': []},
+        },
+        'resolvedProfile': {'policyPackIds': ['construction_org.base']},
+        'issues': [],
+        'matrices': {'attachmentVisibility': []},
+        'artifactIndex': [],
+    }
+
+    versioned_score, versioned_checks = _review_preparation_provenance_consistency(versioned_case, result)
+    runtime_score, runtime_checks = _review_preparation_provenance_consistency(runtime_case, result)
+
+    assert versioned_checks == runtime_checks == 4
+    assert versioned_score == 1.0
+    assert runtime_score == 1.0

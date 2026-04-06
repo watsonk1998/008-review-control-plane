@@ -281,6 +281,52 @@ def test_attachment_index_freezes_parser_limited_unknown_and_missing_boundaries(
     assert attachments[0]['reason'] == 'explicit_missing_marker'
 
 
+def test_structured_review_frontloads_weak_key_section_structure_into_l0_gate(tmp_path: Path):
+    sample = tmp_path / 'construction_org_duplicate_key_section.md'
+    sample.write_text(
+        '# 施工组织设计\n\n'
+        '## 第一章 工程概况\n项目名称：重复结构测试\n项目编号：STRUCT-DEMO\n'
+        '## 第二章 工程概况\n项目名称：重复结构测试（重复）\n'
+        '## 第三章 施工部署\n安排如下。\n'
+        '## 第四章 施工进度计划\n工期 30 天。\n'
+        '## 第五章 资源配置计划\n劳动力 20 人。\n'
+        '## 第六章 安全保证措施\n执行标准措施。\n'
+        '## 第七章 应急预案\n火灾应急预案。\n'
+        '## 第八章 施工总平面布置\n见正文。\n',
+        encoding='utf-8',
+    )
+    executor = StructuredReviewExecutor(document_loader=DocumentLoader(), llm_gateway=DummyLLM(), fast_adapter=None)
+    result = executor.run_sync(
+        task_id='structured-review-weak-structure-signal',
+        query='对该施工组织设计执行正式结构化审查',
+        source_document_path=str(sample),
+        fixture_id='structured-review-weak-structure-signal',
+        document_type='construction_org',
+    )
+
+    duplicate_issue = next(issue for issue in result['issues'] if issue['title'] == '章节结构存在重复标题，正式审查定位不稳定')
+    duplicate_rule = next(row for row in result['matrices']['ruleHits'] if row['ruleId'] == 'construction_org_duplicate_sections')
+    unresolved_fact = next(fact for fact in result['unresolvedFacts'] if fact['factKey'] == 'project.duplicateSections')
+
+    assert result['visibility']['manualReviewNeeded'] is True
+    assert result['visibility']['manualReviewReason'] == 'weak_section_structure_signal'
+    assert result['visibility']['preflight']['gateDecision'] == 'manual_review_required'
+    assert 'weak_section_structure_signal' in result['visibility']['preflight']['blockingReasons']
+    assert result['visibility']['preflight']['checklist'][2]['status'] == 'manual_review_required'
+    assert result['visibility']['counts']['missing'] == 0
+    assert result['summary']['visibilitySummary']['manualReviewNeeded'] is True
+    assert duplicate_issue['issueKind'] == 'visibility_gap'
+    assert duplicate_issue['applicabilityState'] == 'blocked_by_visibility'
+    assert duplicate_issue['manualReviewReason'] == 'weak_section_structure_signal'
+    assert 'weak_section_structure_signal' in duplicate_issue['blockingReasons']
+    assert duplicate_rule['applicabilityState'] == 'blocked_by_visibility'
+    assert duplicate_rule['missingFactKeys'] == ['project.duplicateSections']
+    assert 'weak_section_structure_signal' in duplicate_rule['blockingReasons']
+    assert unresolved_fact['visibilityLimited'] is True
+    assert 'construction_org_duplicate_sections' in unresolved_fact['blockingRuleIds']
+    assert duplicate_issue['id'] in unresolved_fact['blockingIssueIds']
+
+
 def test_structured_review_rule_hits_expose_applicability_state_and_keep_visibility_gap_out_of_hard_defect():
     executor = StructuredReviewExecutor(document_loader=DocumentLoader(), llm_gateway=DummyLLM(), fast_adapter=None)
     result = executor.run_sync(
@@ -346,6 +392,26 @@ def test_structured_review_parser_limited_negative_facts_stay_blocked_with_expla
     assert unresolved_fact['visibilityLimited'] is True
     assert 'hazardous_special_scheme_core_sections' in unresolved_fact['blockingRuleIds']
     assert core_issue['id'] in unresolved_fact['blockingIssueIds']
+
+
+def test_structured_review_blocked_evidence_spans_expose_provenance_and_gap_reason():
+    executor = StructuredReviewExecutor(document_loader=DocumentLoader(), llm_gateway=DummyLLM(), fast_adapter=None)
+    result = executor.run_sync(
+        task_id='structured-review-evidence-provenance',
+        query='对该危大专项方案执行正式结构化审查',
+        source_document_path=str(SAMPLE_PDF),
+        fixture_id='cn_hz_pdf_unknown_visibility_ci',
+        document_type='hazardous_special_scheme',
+        discipline_tags=['lifting_operations'],
+    )
+
+    calc_issue = next(issue for issue in result['issues'] if issue['title'] == '专项方案缺少可追溯验算依据')
+    assert calc_issue['applicabilityState'] == 'blocked_by_missing_fact'
+    assert calc_issue['blockingReasons']
+    assert calc_issue['docEvidence'][0]['sourceProvenance'].startswith('document:source.pdf:block:')
+    assert calc_issue['docEvidence'][0]['evidenceGapReason'] == 'parser_limited_source'
+    assert calc_issue['policyEvidence'][0]['sourceProvenance']
+    assert calc_issue['policyEvidence'][0]['evidenceGapReason'] == 'parser_limited_source'
 
 
 def test_structured_review_executor_supports_gas_area_ops_pack(tmp_path: Path):

@@ -321,6 +321,11 @@ class StructuredReviewExecutor:
                         locator=BlockLocator(blockId=block['id'], sectionId=block.get('sectionId')),
                         excerpt=str(block.get('text') or '')[:400],
                         confidence=ConfidenceLevel.high,
+                        sourceProvenance=self._document_source_provenance(
+                            parse_result=parse_result,
+                            locator_kind='block',
+                            locator_id=str(block['id']),
+                        ),
                     )
                 )
             elif ref in table_index:
@@ -332,6 +337,11 @@ class StructuredReviewExecutor:
                         locator=TableLocator(tableId=table['id'], sectionId=table.get('sectionId')),
                         excerpt=str(table.get('preview') or '')[:400],
                         confidence=ConfidenceLevel.high,
+                        sourceProvenance=self._document_source_provenance(
+                            parse_result=parse_result,
+                            locator_kind='table',
+                            locator_id=str(table['id']),
+                        ),
                     )
                 )
             elif ref in attachment_index:
@@ -344,9 +354,25 @@ class StructuredReviewExecutor:
                         excerpt=attachment.title,
                         visibility=attachment.visibility,
                         confidence=ConfidenceLevel.medium,
+                        sourceProvenance=self._document_source_provenance(
+                            parse_result=parse_result,
+                            locator_kind='attachment',
+                            locator_id=str(attachment.id),
+                        ),
+                        evidenceGapReason=attachment.reason if attachment.visibility != AttachmentVisibility.parsed else None,
                     )
                 )
         return spans
+
+    def _document_source_provenance(
+        self,
+        *,
+        parse_result: DocumentParseResult,
+        locator_kind: str,
+        locator_id: str,
+    ) -> str:
+        file_name = Path(parse_result.filePath).name if parse_result.filePath else parse_result.documentId
+        return f'document:{file_name}:{locator_kind}:{locator_id}'
 
     def _build_l0_visibility_artifact(self, parse_result: DocumentParseResult) -> dict[str, Any]:
         return {
@@ -571,6 +597,7 @@ class StructuredReviewExecutor:
             'parser_limited_pdf_requires_manual_review',
             'attachment_unknown',
             'attachment_missing_confirmed',
+            'weak_section_structure_signal',
         }
         if hit.matchType == 'visibility_gap' or blocking_reasons & visibility_reasons:
             return 'blocked_by_visibility'

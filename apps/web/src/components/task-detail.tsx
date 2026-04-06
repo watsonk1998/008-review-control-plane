@@ -78,6 +78,8 @@ function renderEvidenceList(title: string, evidence: EvidenceSpan[]) {
           <li key={`${item.sourceId}-${index}`}>
             <strong>{item.sourceType}</strong>
             <p className="muted small">{item.sourceId}</p>
+            {item.sourceProvenance ? <p className="muted small">provenance={item.sourceProvenance}</p> : null}
+            {item.evidenceGapReason ? <p className="muted small">gap_reason={item.evidenceGapReason}</p> : null}
             <p>{item.excerpt}</p>
           </li>
         ))}
@@ -165,6 +167,8 @@ function manualReviewReasonLabel(value: string | null | undefined) {
       return "仅检测到引用";
     case "visibility_unknown":
       return "当前可视域无法确定";
+    case "weak_section_structure_signal":
+      return "关键章节或附件边界标题重复，canonical section extraction 不稳定";
     case "manual_confirmation_required":
       return "需要人工确认";
     default:
@@ -993,6 +997,9 @@ export function TaskDetail({ taskId }: { taskId: string }) {
                           { label: "labelStatus", value: reviewPreparation.provenance.labelStatus || "—" },
                           { label: "reviewStatus", value: reviewPreparation.provenance.reviewStatus || "—" },
                           { label: "inferred", value: reviewPreparation.provenance.inferred ? "true" : "false" },
+                          { label: "eligibleAttachmentIds", value: reviewPreparation.eligibleAttachmentIds?.join("，") || "—" },
+                          { label: "deferredAttachmentIds", value: reviewPreparation.deferredAttachmentIds?.join("，") || "—" },
+                          { label: "rejectedAttachmentIds", value: reviewPreparation.rejectedAttachmentIds?.join("，") || "—" },
                         ]}
                       />
                     </div>
@@ -1005,6 +1012,7 @@ export function TaskDetail({ taskId }: { taskId: string }) {
                 issues={structuredResult.issues}
                 attachments={structuredResult.matrices.attachmentVisibility}
                 decision={reviewerDecision}
+                reviewPreparation={reviewPreparation}
                 onSaved={(nextTask) =>
                   setTask((current) =>
                     current ? { ...current, reviewerDecision: nextTask.reviewerDecision, reviewPreparation: nextTask.reviewPreparation } : current,

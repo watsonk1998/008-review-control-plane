@@ -256,13 +256,24 @@ class DocumentParseResult(BaseModel):
         self.visibility.parseMode = self.parseMode
         self.parserLimited = self.visibility.parserLimited
         self.visibility.parseWarnings = list(dict.fromkeys(self.parseWarnings or self.visibility.parseWarnings))
+        self.visibility.reasonCounts = dict(self.visibility.reasonCounts or {})
+        weak_section_structure_titles = _derive_weak_section_structure_titles(
+            sections=self.sections,
+            duplicate_titles=self.visibility.duplicateSectionTitles,
+        )
+        if weak_section_structure_titles:
+            self.visibility.reasonCounts['weak_section_structure_signal'] = len(weak_section_structure_titles)
         attachment_requires_manual_review = any(
             (self.visibility.counts or {}).get(state, 0) > 0
             for state in ['attachment_unparsed', 'referenced_only', 'missing', 'unknown']
         )
         parser_requires_manual_review = self.parseMode == 'pdf_text_only' and self.visibility.parserLimited
+        weak_section_structure_requires_manual_review = bool(weak_section_structure_titles)
         self.visibility.manualReviewNeeded = bool(
-            self.visibility.manualReviewNeeded or attachment_requires_manual_review or parser_requires_manual_review
+            self.visibility.manualReviewNeeded
+            or attachment_requires_manual_review
+            or parser_requires_manual_review
+            or weak_section_structure_requires_manual_review
         )
         if not self.visibility.manualReviewReason:
             self.visibility.manualReviewReason = _default_manual_review_reason_from_visibility(
@@ -359,6 +370,7 @@ _VISIBILITY_BLOCKING_REASONS = {
     'referenced_only',
     'visibility_unknown',
     'parser_limited_pdf_requires_manual_review',
+    'weak_section_structure_signal',
 }
 
 _EVIDENCE_GAP_BLOCKING_REASONS = {
@@ -375,6 +387,38 @@ _VISIBILITY_REASON_PRIORITY = [
     'reference_detected_in_limited_parser',
     'reference_detected_without_attachment_body',
 ]
+
+_KEY_STRUCTURE_SECTION_KEYWORDS = (
+    '工程概况',
+    '工程简介',
+    '编制依据',
+    '编制说明',
+    '施工计划',
+    '施工部署',
+    '施工进度计划',
+    '进度计划',
+    '工期安排',
+    '资源配置',
+    '资源配置计划',
+    '劳动力计划',
+    '机械设备计划',
+    '施工总平面布置',
+    '平面布置',
+    '施工工艺',
+    '工艺流程',
+    '施工方法',
+    '安全保证措施',
+    '安全技术措施',
+    '安全管理措施',
+    '应急预案',
+    '应急处置',
+    '应急救援',
+    '计算书',
+    '验算',
+    '受力计算',
+    '监测监控',
+    '监控监测',
+)
 
 
 def _default_manual_review_reason_from_visibility(
@@ -395,6 +439,8 @@ def _default_manual_review_reason_from_visibility(
         return 'visibility_unknown'
     if parser_requires_manual_review:
         return 'parser_limited_pdf_requires_manual_review'
+    if reason_counts.get('weak_section_structure_signal', 0) > 0:
+        return 'weak_section_structure_signal'
     return None
 
 
@@ -416,12 +462,15 @@ def _derive_visibility_preflight(visibility: VisibilityAssessment) -> Visibility
         blocking_reasons.append('attachment_unknown')
     if counts.get('missing', 0) > 0:
         blocking_reasons.append('attachment_missing_confirmed')
+    if (visibility.reasonCounts or {}).get('weak_section_structure_signal', 0) > 0:
+        blocking_reasons.append('weak_section_structure_signal')
     blocking_reasons = list(dict.fromkeys(blocking_reasons))
 
     attachment_gap_count = sum(
         counts.get(state, 0)
         for state in ['attachment_unparsed', 'referenced_only', 'missing', 'unknown']
     )
+    weak_section_structure_signal = bool((visibility.reasonCounts or {}).get('weak_section_structure_signal', 0))
     checklist = [
         VisibilityPreflightChecklistItem(
             key='parse_source_readiness',
@@ -441,11 +490,13 @@ def _derive_visibility_preflight(visibility: VisibilityAssessment) -> Visibility
         ),
         VisibilityPreflightChecklistItem(
             key='section_structure_signal',
-            status='info' if visibility.duplicateSectionTitles else 'pass',
-            summary='检测到重复章节标题，需在正式审查中谨慎解释定位结果。'
+            status='manual_review_required' if weak_section_structure_signal else ('info' if visibility.duplicateSectionTitles else 'pass'),
+            summary='关键章节/附件边界标题重复，canonical section extraction 不稳定，应先进入人工复核。'
+            if weak_section_structure_signal
+            else '检测到重复章节标题，需在正式审查中谨慎解释定位结果。'
             if visibility.duplicateSectionTitles
             else '章节结构未检测到重复标题信号。',
-            blocking=False,
+            blocking=weak_section_structure_signal,
         ),
         VisibilityPreflightChecklistItem(
             key='manual_review_gate',
@@ -509,3 +560,36 @@ def _derive_applicability_state(
     if manual_review_needed:
         return 'partial'
     return 'applies'
+
+
+def _derive_weak_section_structure_titles(
+    *,
+    sections: list[dict[str, Any]],
+    duplicate_titles: list[str],
+) -> list[str]:
+    if not sections or not duplicate_titles:
+        return []
+    duplicate_keys = {str(title) for title in duplicate_titles if title}
+    impacted_titles: list[str] = []
+    seen: set[str] = set()
+    for section in sections:
+        key = str(section.get('key') or '')
+        title = str(section.get('title') or '')
+        if not key or key not in duplicate_keys or not title:
+            continue
+        if int(section.get('level', 99)) > 2:
+            continue
+        if not _is_weak_structure_section_title(title):
+            continue
+        if key in seen:
+            continue
+        seen.add(key)
+        impacted_titles.append(key)
+    return impacted_titles
+
+
+def _is_weak_structure_section_title(title: str) -> bool:
+    value = str(title or '')
+    if value.startswith(('附件', '附录')):
+        return True
+    return value.startswith('第') and any(keyword in value for keyword in _KEY_STRUCTURE_SECTION_KEYWORDS)

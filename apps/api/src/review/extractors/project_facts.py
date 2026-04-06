@@ -55,6 +55,38 @@ _SECTION_PRESENCE_LABELS = {
     'monitoringPlan': '监测监控',
 }
 
+_WEAK_STRUCTURE_SECTION_KEYWORDS = (
+    '工程概况',
+    '工程简介',
+    '编制依据',
+    '编制说明',
+    '施工计划',
+    '施工部署',
+    '施工进度计划',
+    '进度计划',
+    '工期安排',
+    '资源配置',
+    '资源配置计划',
+    '劳动力计划',
+    '机械设备计划',
+    '施工总平面布置',
+    '平面布置',
+    '施工工艺',
+    '工艺流程',
+    '施工方法',
+    '安全保证措施',
+    '安全技术措施',
+    '安全管理措施',
+    '应急预案',
+    '应急处置',
+    '应急救援',
+    '计算书',
+    '验算',
+    '受力计算',
+    '监测监控',
+    '监控监测',
+)
+
 
 def _infer_document_type_hint(text: str) -> str:
     for document_type, keywords in _DOC_TYPE_HINTS.items():
@@ -128,6 +160,36 @@ def _collect_section_presence(parse_result) -> tuple[dict[str, bool], dict[str, 
     return presence, refs
 
 
+def _find_weak_section_structure_duplicates(parse_result) -> tuple[list[str], list[str]]:
+    duplicates = {str(title) for title in parse_result.visibility.duplicateSectionTitles if title}
+    if not duplicates:
+        return [], []
+    impacted_titles: list[str] = []
+    impacted_refs: list[str] = []
+    seen: set[str] = set()
+    for section in parse_result.sections:
+        title = str(section.get('title') or '')
+        key = str(section.get('key') or section_key(title))
+        if not title or not key or key not in duplicates:
+            continue
+        if int(section.get('level', 99)) > 2:
+            continue
+        if title.startswith(('附件', '附录')):
+            if key not in seen:
+                seen.add(key)
+                impacted_titles.append(key)
+            if section.get('blockId'):
+                impacted_refs.append(str(section['blockId']))
+            continue
+        if title.startswith('第') and any(keyword in title for keyword in _WEAK_STRUCTURE_SECTION_KEYWORDS):
+            if key not in seen:
+                seen.add(key)
+                impacted_titles.append(key)
+            if section.get('blockId'):
+                impacted_refs.append(str(section['blockId']))
+    return impacted_titles, list(dict.fromkeys(impacted_refs))
+
+
 def extract_project_facts(parse_result) -> tuple[dict[str, Any], dict[str, list[str]], list[str]]:
     blocks = parse_result.blocks
     project_name, project_name_ref = _extract_value(blocks, '项目名称')
@@ -149,6 +211,7 @@ def extract_project_facts(parse_result) -> tuple[dict[str, Any], dict[str, list[
         if any(marker in str(block.get('text') or '') for marker in _CONTEXT_ONLY_MARKERS)
     ]
     section_presence, section_presence_refs = _collect_section_presence(parse_result)
+    weak_structure_duplicates, weak_structure_refs = _find_weak_section_structure_duplicates(parse_result)
 
     facts = {
         'documentTypeHint': document_type_hint,
@@ -172,6 +235,17 @@ def extract_project_facts(parse_result) -> tuple[dict[str, Any], dict[str, list[
         **section_presence_refs,
     }
     unresolved = []
+    if weak_structure_duplicates:
+        unresolved.append(
+            {
+                'code': 'weak_section_structure_signal',
+                'factKey': 'project.duplicateSections',
+                'summary': '关键章节或附件边界标题重复，canonical section extraction 不稳定，需人工复核章节归属。',
+                'sourceExtractor': 'project_facts',
+                'blockingReason': 'weak_section_structure_signal',
+                'visibilityLimited': True,
+            }
+        )
     if not project_name:
         unresolved.append(
             {
@@ -208,4 +282,8 @@ def extract_project_facts(parse_result) -> tuple[dict[str, Any], dict[str, list[
                     'visibilityLimited': True,
                 }
             )
+    if weak_structure_refs:
+        refs['project.duplicateSections'] = list(
+            dict.fromkeys([*refs.get('project.duplicateSections', []), *weak_structure_refs])
+        )
     return facts, refs, unresolved

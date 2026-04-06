@@ -135,6 +135,7 @@ LLM 不负责：
 其中：
 
 - `structured-review-l0-visibility.json` 是唯一 L0 preflight 工件，显式输出 `gateDecision / blockingReasons / checklist / parserLimitations / attachmentTaxonomySummary`
+- 若重复的一级/二级关键章节或附件边界标题会破坏 canonical section extraction，L0 会前置触发 `weak_section_structure_signal`
 - `structured-review-facts.json` 中的 `unresolvedFacts` 会保留 `sourceExtractor / blockingReason / visibilityLimited / blockingRuleIds / blockingIssueIds`
 - `structured-review-rule-hits.json` 与 `rule-hit-matrix.json` 会保留 `applicabilityState / requiredFactKeys / missingFactKeys / clauseIds / blockingReasons`
 - `structured-review-result.json` 与 API 返回共享同一条 canonical 结果主链，不再容忍 artifact/result 漂移
@@ -150,12 +151,13 @@ LLM 不负责：
 - visible-scope 内已闭合的负向事实（如核心章节缺失、监测监控缺失）保留为 `hard_defect + applies`
 - parser-limited 或 fact-unresolved 的负向结论才进入 `evidence_gap + blocked_by_missing_fact`
 - `evidenceMissing=true` 必须具备显式 explainability：`missingFactKeys` 或 `blockingReasons` 至少其一非空
+- blocked issue 的 `docEvidence / policyEvidence` 会显式携带 `evidenceGapReason`；document-side evidence 会稳定输出 `sourceProvenance`
 - `result.visibility` 是唯一 canonical visibility contract，并直接承载 `parseMode / manualReviewReason / preflight`
 - `summary.visibilitySummary` 会统一输出附件计数、状态计数、reason counts、重复章节与 parse warnings，但不再反向生成 canonical visibility
 - reviewer decision 以单个 task-scoped JSON 保存：`taskState + note + issues[] + attachments[] + updatedAt`
 - reviewer cockpit 的 UI 文案会将稳定的 on-wire enum 映射为 reviewer 语义（如 `dismissed -> rejected`、`needs_attachment -> needs supplement`），但不改变持久化字段
-- task 详情会额外提供 `reviewPreparation` 摘要：`truthTier / readyForPromotion / blockingReasons / eligibleIssueIds / deferredIssueIds / rejectedIssueIds / provenance`，用于 internal-reviewed preparation 承接，但不代表 reviewed truth
-- `GET /api/tasks/{taskId}/review-preparation` 会返回带 provenance 的 preparation asset，细化到 `sourceTier / caseId / caseVersion / labelStatus / truthLevel / reviewStatus / issueDecisions / attachmentDecisions`；未命中版本化样本时回退 `runtime_only`
+- task 详情会额外提供 `reviewPreparation` 摘要：`truthTier / readyForPromotion / blockingReasons / eligibleIssueIds / deferredIssueIds / rejectedIssueIds / eligibleAttachmentIds / deferredAttachmentIds / rejectedAttachmentIds / provenance`，用于 internal-reviewed preparation 承接，但不代表 reviewed truth
+- `GET /api/tasks/{taskId}/review-preparation` 会返回带 provenance 的 preparation asset，细化到 `sourceTier / caseId / caseVersion / labelStatus / truthLevel / reviewStatus / issueDecisions / attachmentDecisions`，并为每条 issue/attachment 决策给出 `disposition=eligible|deferred|rejected`；未命中版本化样本时回退 `runtime_only`
 - `disable_visibility_check` 仅保留给 eval / ablation 内部路径
 
 PDF 仍保持 `pdf_text_only + parserLimited=True` 的受限路径；本轮只新增轻量结构提示，不引入 OCR / 多模态：
@@ -212,11 +214,12 @@ make eval-review-replay
 - `L1`：hard evidence / severity / recall
 - `L2`：facts / rule hits / policy refs / evidence traceability
 - `L3`：remediation bucket consistency / suggestion-defect separation（当前为 diagnostic-only）
-- `CrossCutting`：pack selection
+- `CrossCutting`：pack selection / review-preparation provenance consistency
 
 其中：
 
 - `L0.preflight_gate_consistency` 要求 `visibility.manualReviewNeeded` 与 `visibility.preflight.gateDecision` 同步
 - `L2.evidence_traceability` 要求 rule hit / blocked issue / unresolved facts 三层都能回指 `applicabilityState / missingFactKeys / blockingReasons / sourceExtractor / blockingRuleIds`
+- `CrossCutting.review_preparation_provenance_consistency` 只做 diagnostic：验证 reviewed-preparation provenance tier 的回落/命中规则，不进入 blocking gate
 - `main` 与 `versionedStageGate` 的 `gateRole` 是 `blocking`；`ablations / cross-pack / cross-model / replay` 的 `gateRole` 是 `diagnostic`
 - `replay` 命令默认回放 legacy stable + official versioned stage-gate cases，并把每个 case 的工件落到 `artifacts/eval-replay/`；也可通过 `--case-id / --case-version / --doc-type / --output-dir` 过滤

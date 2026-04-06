@@ -107,6 +107,14 @@ class EvidenceBuilder:
                 blocking_reasons.append('visibility_gap')
             if evidence_missing and hit.missingFactKeys:
                 blocking_reasons.append('missing_fact')
+            gap_reason = self._derive_gap_reason(
+                applicability_state=hit.applicabilityState,
+                blocking_reasons=blocking_reasons,
+                manual_review_needed=manual_review_needed,
+                evidence_missing=evidence_missing,
+            )
+            doc_evidence = self._annotate_evidence_spans(doc_evidence, gap_reason=gap_reason)
+            policy_evidence = self._annotate_evidence_spans(policy_evidence, gap_reason=gap_reason)
             finding_type = FindingType.visibility_gap if hit.applicabilityState == 'blocked_by_visibility' else base_finding_type
             candidates.append(
                 IssueCandidate(
@@ -174,6 +182,8 @@ class EvidenceBuilder:
             return 'attachment_unparsed'
         if 'referenced_only' in visibilities or 'referenced_only' in reasons:
             return 'referenced_only'
+        if 'weak_section_structure_signal' in reasons:
+            return 'weak_section_structure_signal'
         if 'visibility_gap' in reasons:
             return 'visibility_gap'
         return None
@@ -204,3 +214,27 @@ class EvidenceBuilder:
                 seen.add(key)
                 evidence.append(span)
         return evidence
+
+    def _annotate_evidence_spans(self, spans, *, gap_reason: str | None):
+        if not gap_reason:
+            return spans
+        return [span.model_copy(update={'evidenceGapReason': span.evidenceGapReason or gap_reason}) for span in spans]
+
+    def _derive_gap_reason(
+        self,
+        *,
+        applicability_state: str,
+        blocking_reasons: list[str],
+        manual_review_needed: bool,
+        evidence_missing: bool,
+    ) -> str | None:
+        if applicability_state == 'blocked_by_visibility':
+            return self._resolve_visibility_reason(blocking_reasons=blocking_reasons, doc_evidence=[])
+        if applicability_state == 'blocked_by_missing_fact' or evidence_missing:
+            for reason in ['parser_limited_source', 'missing_fact', 'document_evidence_unavailable', 'policy_evidence_unavailable']:
+                if reason in blocking_reasons:
+                    return reason
+            return 'missing_fact'
+        if manual_review_needed:
+            return 'manual_confirmation_required'
+        return None

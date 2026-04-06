@@ -745,6 +745,7 @@ def test_task_routes_update_reviewer_decision(monkeypatch):
     assert 'visibility_manual_review_required' in payload['reviewPreparation']['blockingReasons']
     assert 'pending_attachment_review' in payload['reviewPreparation']['blockingReasons']
     assert payload['reviewPreparation']['provenance']['sourceTier'] == 'runtime_only'
+    assert payload['reviewPreparation']['rejectedAttachmentIds'] == []
 
 
 def test_task_routes_expose_review_preparation_asset(monkeypatch):
@@ -899,8 +900,10 @@ def test_task_routes_expose_review_preparation_asset(monkeypatch):
     assert payload['taskId'] == 'task-route-1'
     assert payload['readyForPromotion'] is True
     assert payload['issueDecisions'][0]['issueId'] == 'ISSUE-001'
+    assert payload['issueDecisions'][0]['disposition'] == 'rejected'
     assert payload['issueDecisions'][0]['issueKind'] == 'visibility_gap'
     assert payload['attachmentDecisions'][0]['attachmentId'] == 'attachment-1'
+    assert payload['attachmentDecisions'][0]['disposition'] == 'eligible'
     assert payload['provenance']['sourceTier'] == 'runtime_only'
     assert payload['provenance']['resultArtifactPrimary'] == 'structured-review-result'
     assert payload['provenance']['usesRuntimeReviewerDecision'] is True

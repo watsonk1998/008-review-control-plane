@@ -12,6 +12,7 @@ TaskStatus = Literal['created', 'planned', 'running', 'waiting_external', 'succe
 EventStatus = Literal['started', 'completed', 'failed', 'info']
 ReviewerTaskState = Literal['pending', 'accepted', 'rejected', 'needs_attachment']
 ReviewerItemState = Literal['pending', 'confirmed', 'dismissed', 'needs_attachment']
+ReviewPreparationDisposition = Literal['eligible', 'deferred', 'rejected']
 IssueKind = Literal['hard_defect', 'visibility_gap', 'evidence_gap', 'enhancement']
 ApplicabilityState = Literal['applies', 'partial', 'blocked_by_visibility', 'blocked_by_missing_fact']
 ReviewPreparationSourceTier = Literal[
@@ -230,12 +231,14 @@ class ReviewPreparationSummary(BaseModel):
     rejectedIssueIds: list[str] = Field(default_factory=list)
     eligibleAttachmentIds: list[str] = Field(default_factory=list)
     deferredAttachmentIds: list[str] = Field(default_factory=list)
+    rejectedAttachmentIds: list[str] = Field(default_factory=list)
     provenance: ReviewPreparationProvenance = Field(default_factory=ReviewPreparationProvenance)
     disclaimer: str | None = None
 
 
 class ReviewPreparationIssueRecord(BaseModel):
     issueId: str
+    disposition: ReviewPreparationDisposition = 'deferred'
     state: ReviewerItemState = 'pending'
     note: str | None = None
     issueKind: IssueKind | None = None
@@ -249,6 +252,7 @@ class ReviewPreparationIssueRecord(BaseModel):
 
 class ReviewPreparationAttachmentRecord(BaseModel):
     attachmentId: str
+    disposition: ReviewPreparationDisposition = 'deferred'
     state: ReviewerItemState = 'pending'
     note: str | None = None
     visibility: AttachmentVisibility | None = None

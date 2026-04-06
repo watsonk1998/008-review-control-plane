@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+from datetime import datetime, timezone
 from typing import Any
 
+from src.domain.models import SourceDocumentRef, TaskRecord
+from src.review.reviewer_decision import build_review_preparation_asset, build_review_preparation_summary
 from src.review.rules.packs import get_policy_pack_registry
 
 
@@ -295,6 +298,7 @@ def _has_visibility_block_reason(reasons: list[str]) -> bool:
         'parser_limited_source',
         'attachment_unknown',
         'attachment_missing_confirmed',
+        'weak_section_structure_signal',
     }
     return bool(visibility_reasons & set(reasons))
 
@@ -366,6 +370,85 @@ def _evidence_traceability(
         if fact.get('sourceExtractor') and fact.get('blockingRuleIds') is not None:
             hits += 1
     return ((hits / checks) if checks else 1.0, checks)
+
+
+def _review_preparation_provenance_consistency(case: dict[str, Any], result: dict[str, Any]) -> tuple[float, int]:
+    task = _build_review_preparation_task(case, result)
+    summary = build_review_preparation_summary(task)
+    asset = build_review_preparation_asset(task)
+    expected_source_tier = _expected_review_preparation_source_tier(case)
+    checks = 0
+    hits = 0
+
+    checks += 1
+    if summary.truthTier == 'internal_reviewed_preparation' and asset.truthTier == 'internal_reviewed_preparation':
+        hits += 1
+
+    checks += 1
+    if summary.provenance.sourceTier == expected_source_tier and asset.provenance.sourceTier == expected_source_tier:
+        hits += 1
+
+    checks += 1
+    if expected_source_tier == 'runtime_only':
+        if not summary.provenance.caseVersion and not asset.provenance.caseVersion:
+            hits += 1
+    elif summary.provenance.caseId == case.get('caseId') and asset.provenance.caseVersion == case.get('caseVersion'):
+        hits += 1
+
+    checks += 1
+    summary_disclaimer = (summary.disclaimer or '').lower()
+    asset_disclaimer = (asset.disclaimer or '').lower()
+    if 'reviewed truth' in summary_disclaimer and 'reviewed truth' in asset_disclaimer:
+        hits += 1
+
+    return ((hits / checks) if checks else 1.0, checks)
+
+
+def _build_review_preparation_task(case: dict[str, Any], result: dict[str, Any]) -> TaskRecord:
+    now = datetime.now(timezone.utc)
+    source_path = str(case.get('sourcePath') or '')
+    source_name = source_path.rsplit('/', 1)[-1] if source_path else f"{case.get('caseId', 'review-eval')}.md"
+    file_type = source_name.rsplit('.', 1)[-1] if '.' in source_name else 'md'
+    return TaskRecord(
+        id=str(case.get('caseId') or 'review-eval-case'),
+        taskType='structured_review',
+        capabilityMode='auto',
+        query=str(case.get('query') or '对该文件执行正式结构化审查'),
+        fixtureId=case.get('fixtureId'),
+        sourceDocumentRef=SourceDocumentRef(
+            refId=str(case.get('fixtureId') or case.get('caseId') or 'review-eval-case'),
+            sourceType='fixture',
+            fileName=source_name,
+            fileType=file_type,
+            storagePath=source_path,
+            displayName=source_name,
+            fixtureId=case.get('fixtureId'),
+        ),
+        sourceUrls=[],
+        documentType=case.get('docType'),
+        disciplineTags=list(case.get('disciplineTags', [])),
+        strictMode=True,
+        policyPackIds=list((result.get('resolvedProfile') or {}).get('policyPackIds', [])),
+        status='succeeded',
+        result=result,
+        createdAt=now,
+        updatedAt=now,
+    )
+
+
+def _expected_review_preparation_source_tier(case: dict[str, Any]) -> str:
+    case_version = case.get('caseVersion')
+    if case_version == 'v0.1.0-gemini-seed':
+        return 'seed'
+    if case_version == 'v0.1.0-bootstrap-seed':
+        return 'bootstrap_seed'
+    if case_version == 'v0.1.0-ci-stage-gate':
+        return 'ci_stage_gate'
+    if case_version == 'v0.2.0-internal-reviewed':
+        return 'internal_reviewed'
+    if case_version == 'v1.0.0-expert-golden':
+        return 'expert_golden'
+    return 'runtime_only'
 
 
 def compute_metrics(
@@ -468,6 +551,7 @@ def compute_metrics(
     remediation_bucket_consistency, remediation_bucket_checks = _remediation_bucket_consistency(result, evaluation_artifacts)
     preflight_gate_consistency, preflight_gate_checks = _preflight_gate_consistency(result)
     evidence_traceability, evidence_traceability_checks = _evidence_traceability(result, evaluation_artifacts)
+    review_preparation_provenance_consistency, review_preparation_provenance_checks = _review_preparation_provenance_consistency(case, result)
 
     issue_recall = len(matched_titles) / len(expected_titles) if expected_titles else 1.0
     l1_hit_rate = l1_matched / len(l1_expected) if l1_expected else 1.0
@@ -493,6 +577,7 @@ def compute_metrics(
         'hazard_identification_accuracy': round(hazard_accuracy, 4),
         'preflight_gate_consistency': round(preflight_gate_consistency, 4),
         'evidence_traceability': round(evidence_traceability, 4),
+        'review_preparation_provenance_consistency': round(review_preparation_provenance_consistency, 4),
         'suggestion_defect_separation': round(suggestion_separation_accuracy, 4),
         'remediation_bucket_consistency': round(remediation_bucket_consistency, 4),
         'facts_checks': facts_checks,
@@ -500,6 +585,7 @@ def compute_metrics(
         'hazard_identification_checks': hazard_checks,
         'preflight_gate_checks': preflight_gate_checks,
         'evidence_traceability_checks': evidence_traceability_checks,
+        'review_preparation_provenance_checks': review_preparation_provenance_checks,
         'suggestion_defect_separation_checks': suggestion_separation_checks,
         'remediation_bucket_checks': remediation_bucket_checks,
         'expected_issue_count': len(expected_titles),

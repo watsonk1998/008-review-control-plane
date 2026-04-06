@@ -10,6 +10,7 @@ export type ArtifactCategory = "parse" | "facts" | "rule_hits" | "candidates" | 
 export type ParseMode = "docx_structured" | "pdf_text_only" | "markdown_text" | "plain_text";
 export type IssueKind = "hard_defect" | "visibility_gap" | "evidence_gap" | "enhancement";
 export type ApplicabilityState = "applies" | "partial" | "blocked_by_visibility" | "blocked_by_missing_fact";
+export type ReviewPreparationDisposition = "eligible" | "deferred" | "rejected";
 
 export interface SourceDocumentRef {
   refId: string;
@@ -273,6 +274,7 @@ export interface ReviewPreparationSummary {
   rejectedIssueIds: string[];
   eligibleAttachmentIds: string[];
   deferredAttachmentIds: string[];
+  rejectedAttachmentIds: string[];
   provenance: ReviewPreparationProvenance;
   disclaimer?: string | null;
 }
