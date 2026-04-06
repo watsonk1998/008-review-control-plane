@@ -275,6 +275,50 @@ export interface ReviewPreparationSummary {
   eligibleAttachmentIds: string[];
   deferredAttachmentIds: string[];
   rejectedAttachmentIds: string[];
+  issueBlockingReasons: Record<string, string[]>;
+  attachmentBlockingReasons: Record<string, string[]>;
+  provenance: ReviewPreparationProvenance;
+  disclaimer?: string | null;
+}
+
+export interface ReviewPreparationIssueRecord {
+  issueId: string;
+  disposition: ReviewPreparationDisposition;
+  state: ReviewerIssueDecision["state"];
+  note?: string | null;
+  issueKind?: IssueKind | null;
+  applicabilityState?: ApplicabilityState | null;
+  manualReviewNeeded: boolean;
+  manualReviewReason?: string | null;
+  evidenceMissing: boolean;
+  missingFactKeys: string[];
+  blockingReasons: string[];
+  promotionBlockingReasons: string[];
+}
+
+export interface ReviewPreparationAttachmentRecord {
+  attachmentId: string;
+  disposition: ReviewPreparationDisposition;
+  state: ReviewerAttachmentDecision["state"];
+  note?: string | null;
+  visibility?: AttachmentVisibility | null;
+  parseState?: string | null;
+  manualReviewNeeded: boolean;
+  reason?: string | null;
+  promotionBlockingReasons: string[];
+}
+
+export interface ReviewPreparationAsset {
+  schemaVersion: "v0.1";
+  truthTier: "internal_reviewed_preparation";
+  taskId: string;
+  documentType?: ReviewDocumentType | null;
+  sourceDocumentRef?: SourceDocumentRef | null;
+  reviewerDecisionUpdatedAt?: string | null;
+  readyForPromotion: boolean;
+  blockingReasons: string[];
+  issueDecisions: ReviewPreparationIssueRecord[];
+  attachmentDecisions: ReviewPreparationAttachmentRecord[];
   provenance: ReviewPreparationProvenance;
   disclaimer?: string | null;
 }

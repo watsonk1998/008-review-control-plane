@@ -8,6 +8,9 @@ from src.review.evaluation.harness import run_ablations, run_cross_model, run_cr
 from src.review.evaluation.metrics import _evidence_traceability, _review_preparation_provenance_consistency
 
 
+REPO_ROOT = Path(__file__).resolve().parents[3]
+
+
 def _write_json(path: Path, payload) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding='utf-8')
@@ -333,6 +336,85 @@ def test_review_preparation_provenance_consistency_distinguishes_versioned_vs_ru
     versioned_score, versioned_checks = _review_preparation_provenance_consistency(versioned_case, result)
     runtime_score, runtime_checks = _review_preparation_provenance_consistency(runtime_case, result)
 
-    assert versioned_checks == runtime_checks == 4
+    assert versioned_checks == runtime_checks == 8
     assert versioned_score == 1.0
     assert runtime_score == 1.0
+
+
+def test_review_preparation_provenance_consistency_rejects_source_path_only_upgrades():
+    source_path = (
+        REPO_ROOT
+        / 'fixtures'
+        / 'review_eval'
+        / 'hazardous_special_scheme'
+        / 'ci'
+        / 'cn_hz_attachment_missing_ci'
+        / 'v0.1.0-ci-stage-gate'
+        / 'source.md'
+    ).resolve()
+    runtime_case = {
+        'caseId': 'runtime-source-path-only',
+        'fixtureId': None,
+        'sourcePath': str(source_path),
+        'query': '对该危大专项方案执行正式结构化审查',
+        'docType': 'hazardous_special_scheme',
+        'disciplineTags': ['lifting_operations'],
+    }
+    result = {
+        'visibility': {
+            'manualReviewNeeded': False,
+            'preflight': {'gateDecision': 'ready', 'blockingReasons': []},
+        },
+        'resolvedProfile': {'policyPackIds': ['hazardous_special_scheme.base', 'lifting_operations.base']},
+        'issues': [],
+        'matrices': {'attachmentVisibility': []},
+        'artifactIndex': [],
+    }
+
+    score, checks = _review_preparation_provenance_consistency(runtime_case, result)
+    assert checks == 8
+    assert score == 1.0
+
+
+def test_review_preparation_provenance_consistency_blocks_confirmed_evidence_gap_promotion():
+    case = {
+        'caseId': 'runtime-evidence-gap',
+        'fixtureId': 'runtime-evidence-gap',
+        'sourcePath': '/tmp/runtime-evidence-gap.md',
+        'query': '对该施工组织设计执行正式结构化审查',
+        'docType': 'construction_org',
+        'disciplineTags': [],
+    }
+    result = {
+        'visibility': {
+            'manualReviewNeeded': False,
+            'preflight': {'gateDecision': 'ready', 'blockingReasons': []},
+        },
+        'resolvedProfile': {'policyPackIds': ['construction_org.base']},
+        'issues': [
+            {
+                'id': 'ISSUE-001',
+                'issueKind': 'evidence_gap',
+                'applicabilityState': 'blocked_by_missing_fact',
+                'manualReviewNeeded': True,
+                'evidenceMissing': True,
+                'blockingReasons': ['missing_fact'],
+                'missingFactKeys': ['emergency.planTitles'],
+            }
+        ],
+        'matrices': {
+            'attachmentVisibility': [
+                {
+                    'id': 'attachment-1',
+                    'visibility': 'parsed',
+                    'parseState': 'parsed',
+                    'manualReviewNeeded': False,
+                }
+            ]
+        },
+        'artifactIndex': [],
+    }
+
+    score, checks = _review_preparation_provenance_consistency(case, result)
+    assert checks == 8
+    assert score == 1.0

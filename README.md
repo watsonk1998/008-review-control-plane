@@ -204,8 +204,10 @@ python scripts/build_research_pack.py
 - `/api/tasks/support-scope` 会返回 pack 的 `promotionCriteria`，作为 ready/placeholder 之外的补充治理信号；`ready pack ≠ official support`
 - 任务详情现在支持最小 reviewer decision：task-level / issue-level / attachment-level 复核状态与备注；UI 会把稳定的 on-wire enum 映射为 reviewer 语义标签，但不更改持久化字段
 - 任务详情会额外给出 `reviewPreparation` 摘要，用于 internal-reviewed preparation 承接；其中 provenance 至少会表达 `sourceTier / caseId / caseVersion`，但它不是 reviewed truth
-- `reviewPreparation` 继续通过 `eligible* / deferred* / rejected*` 数组表达 promotion disposition；attachment 侧新增 `rejectedAttachmentIds`
-- `GET /api/tasks/{taskId}/review-preparation` 会返回带 provenance 的 preparation asset；未命中版本化样本时统一回退 `runtime_only`
+- `reviewPreparation` 继续通过 `eligible* / deferred* / rejected*` 数组表达 promotion disposition，并新增 `issueBlockingReasons / attachmentBlockingReasons` 作为同源 promotion blocker 映射；attachment 侧继续显式暴露 `rejectedAttachmentIds`
+- `GET /api/tasks/{taskId}/review-preparation` 会返回带 provenance 的 preparation asset；每条 issue / attachment 记录都会给出 `promotionBlockingReasons`
+- review-preparation provenance 只允许通过精确 case identity（`fixtureId` / `sourceDocumentRef.fixtureId`）命中版本化 metadata；source-path-only runtime task 一律回退 `runtime_only`
+- `visibility_gap / evidence_gap / blocked_* / manualReviewNeeded / evidenceMissing` issue 不能仅凭 reviewer confirm 自动晋升为 promotable preparation truth
 - 系统不得把“未解析附件 / 当前不可视”直接写成“文档缺失”
 
 ## 配置原则

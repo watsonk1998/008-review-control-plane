@@ -21,6 +21,7 @@
 - `seed` 只能作为研究输入与候选标签来源，不能直接视为 reviewed truth
 - `internal-reviewed preparation` 是 reviewer / artifact / eval 之间的承接层，不等于 `v0.2.0-internal-reviewed`
 - runtime review-preparation 现在必须显式区分 promotion disposition：`eligible / deferred / rejected`
+- summary 层必须同步暴露 `issueBlockingReasons / attachmentBlockingReasons`，asset 层必须为每条记录输出 `promotionBlockingReasons`
 - promotion 必须至少区分：
   - issue truth
   - visibility truth
@@ -31,6 +32,8 @@
 - provenance 必须能回指 seed / reviewer decision / artifacts；不得把最新一次 eval snapshot 当作长期 truth
 - attachment 侧若 reviewer 仍确认 visibility gap 成立，应落入 `rejected` disposition，并在 summary 中进入 `rejectedAttachmentIds`
 - runtime 侧的 `GET /api/tasks/{taskId}/review-preparation` 只负责导出 reviewed-preparation 候选资产；是否写入 `fixtures/review_eval/**` 仍需人工筛选与复核
+- provenance tier 只能通过精确 case identity 命中版本化 metadata；source-path-only runtime task 必须保持 `runtime_only`
+- reviewer confirm 不能把 `visibility_gap / evidence_gap / blocked_* / manualReviewNeeded / evidenceMissing` issue 直接提升为 promotable truth；这些 blocker 必须在 summary/asset 中可回放
 - runtime provenance 的 `sourceTier` 当前固定映射：
   - `v0.1.0-gemini-seed -> seed`
   - `v0.1.0-bootstrap-seed -> bootstrap_seed`

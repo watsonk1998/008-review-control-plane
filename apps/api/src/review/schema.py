@@ -378,6 +378,7 @@ _EVIDENCE_GAP_BLOCKING_REASONS = {
     'parser_limited_source',
     'document_evidence_unavailable',
     'policy_evidence_unavailable',
+    'manual_confirmation_required',
 }
 
 _VISIBILITY_REASON_PRIORITY = [
@@ -553,8 +554,16 @@ def _derive_applicability_state(
     missing_fact_keys: list[str],
     blocking_reasons: list[str],
 ) -> ApplicabilityState:
+    blocking_reason_set = set(blocking_reasons or [])
     if manual_review_reason in _VISIBILITY_BLOCKING_REASONS or issue_kind == 'visibility_gap':
         return 'blocked_by_visibility'
+    if (
+        manual_review_needed
+        and 'manual_confirmation_required' in blocking_reason_set
+        and not missing_fact_keys
+        and not (blocking_reason_set & (_EVIDENCE_GAP_BLOCKING_REASONS - {'manual_confirmation_required'}))
+    ):
+        return 'partial'
     if issue_kind == 'evidence_gap' or (evidence_missing and _has_explicit_evidence_gap(missing_fact_keys, blocking_reasons)):
         return 'blocked_by_missing_fact'
     if manual_review_needed:

@@ -232,6 +232,8 @@ class ReviewPreparationSummary(BaseModel):
     eligibleAttachmentIds: list[str] = Field(default_factory=list)
     deferredAttachmentIds: list[str] = Field(default_factory=list)
     rejectedAttachmentIds: list[str] = Field(default_factory=list)
+    issueBlockingReasons: dict[str, list[str]] = Field(default_factory=dict)
+    attachmentBlockingReasons: dict[str, list[str]] = Field(default_factory=dict)
     provenance: ReviewPreparationProvenance = Field(default_factory=ReviewPreparationProvenance)
     disclaimer: str | None = None
 
@@ -248,6 +250,7 @@ class ReviewPreparationIssueRecord(BaseModel):
     evidenceMissing: bool = False
     missingFactKeys: list[str] = Field(default_factory=list)
     blockingReasons: list[str] = Field(default_factory=list)
+    promotionBlockingReasons: list[str] = Field(default_factory=list)
 
 
 class ReviewPreparationAttachmentRecord(BaseModel):
@@ -259,6 +262,7 @@ class ReviewPreparationAttachmentRecord(BaseModel):
     parseState: str | None = None
     manualReviewNeeded: bool = False
     reason: str | None = None
+    promotionBlockingReasons: list[str] = Field(default_factory=list)
 
 
 class ReviewPreparationAsset(BaseModel):

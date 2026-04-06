@@ -140,7 +140,9 @@ make eval-review-replay
 - reviewer 结果页以结构化方式展示 `attachmentVisibility / ruleHits / conflicts / sectionStructure`；raw JSON 只保留为折叠调试信息
 - reviewer 结果页需同时展示 `reviewPreparation` 摘要，并至少暴露 `provenance.sourceTier / caseVersion`；同时保留“仅用于 internal-reviewed preparation，不是 reviewed truth”的语义边界
 - `GET /api/tasks/{taskId}/review-preparation` 必须返回带 provenance 的 preparation asset；未命中版本化样本时必须显式回退 `sourceTier=runtime_only`
-- review-preparation summary/asset 必须对 issue / attachment 显式表达 `eligible / deferred / rejected` promotion disposition；attachment summary 需额外暴露 `rejectedAttachmentIds`
+- review-preparation summary/asset 必须对 issue / attachment 显式表达 `eligible / deferred / rejected` promotion disposition；summary 还必须暴露 `issueBlockingReasons / attachmentBlockingReasons`，asset 还必须暴露每条记录的 `promotionBlockingReasons`
+- 仅 source path 命中版本化样本时，不得升级 provenance tier；只有精确 case identity 命中才允许输出 `seed / bootstrap_seed / ci_stage_gate / internal_reviewed / expert_golden`
+- confirmed 的 `visibility_gap / evidence_gap / blocked_* / manualReviewNeeded / evidenceMissing` issue 必须继续保持 non-promotable，`readyForPromotion` 不得误报为 `true`
 - `/api/tasks/support-scope` 需同时返回 pack `promotionCriteria`；表单/UI 不得自行发明 official/experimental/promotion 结论
 
 ## P1 主门槛
@@ -163,7 +165,7 @@ make eval-review-replay
 - `layeredMetrics` 必须按 `L0 / L1 / L2 / L3 / CrossCutting` 分组输出，其中 L3 当前允许 `diagnosticOnly=true`
 - `L0` 必须额外输出 `preflight_gate_consistency`
 - `L2` 必须额外输出 `evidence_traceability`
-- `CrossCutting` 必须额外输出 diagnostic-only 的 `review_preparation_provenance_consistency`
+- `CrossCutting` 必须额外输出 diagnostic-only 的 `review_preparation_provenance_consistency`，覆盖 provenance exact-match 规则、blocked issue non-promotion 规则、summary/asset blocker 一致性
 - eval 输出必须显式区分 `gateRole=blocking` 与 `gateRole=diagnostic`
 - `review_assist` 回归失败数 = `0`
 

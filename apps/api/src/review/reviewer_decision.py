@@ -36,51 +36,20 @@ def resolve_reviewer_decision(task: TaskRecord) -> ReviewerDecision:
 
 def build_review_preparation_summary(task: TaskRecord) -> ReviewPreparationSummary:
     decision = resolve_reviewer_decision(task)
-    issue_ids = _extract_issue_ids(task)
-    attachment_ids = _extract_attachment_ids(task)
+    preparation_state = _collect_review_preparation_state(task, decision)
     provenance = _resolve_review_preparation_provenance(task)
-    eligible_issue_ids = [item.issueId for item in decision.issues if _issue_review_preparation_disposition(item.state) == 'eligible']
-    rejected_issue_ids = [item.issueId for item in decision.issues if _issue_review_preparation_disposition(item.state) == 'rejected']
-    deferred_issue_ids = [item.issueId for item in decision.issues if _issue_review_preparation_disposition(item.state) == 'deferred']
-    eligible_attachment_ids = [
-        item.attachmentId for item in decision.attachments if _attachment_review_preparation_disposition(item.state) == 'eligible'
-    ]
-    deferred_attachment_ids = [
-        item.attachmentId for item in decision.attachments if _attachment_review_preparation_disposition(item.state) == 'deferred'
-    ]
-    rejected_attachment_ids = [
-        item.attachmentId for item in decision.attachments if _attachment_review_preparation_disposition(item.state) == 'rejected'
-    ]
-    blocking_reasons: list[str] = []
-    result = task.result or {}
-    visibility = result.get('visibility', {}) if isinstance(result, dict) else {}
-    if visibility.get('manualReviewNeeded'):
-        blocking_reasons.append('visibility_manual_review_required')
-    if deferred_issue_ids:
-        blocking_reasons.append('pending_issue_review')
-    if deferred_attachment_ids:
-        blocking_reasons.append('pending_attachment_review')
-    if rejected_attachment_ids:
-        blocking_reasons.append('rejected_attachment_promotion')
-    if not decision.note:
-        blocking_reasons.append('missing_reviewer_note')
-    ready_for_promotion = (
-        bool(issue_ids or attachment_ids)
-        and not deferred_issue_ids
-        and not deferred_attachment_ids
-        and not rejected_attachment_ids
-        and bool(decision.note)
-    )
     return ReviewPreparationSummary(
         truthTier='internal_reviewed_preparation',
-        readyForPromotion=ready_for_promotion,
-        blockingReasons=list(dict.fromkeys(blocking_reasons)),
-        eligibleIssueIds=eligible_issue_ids,
-        deferredIssueIds=deferred_issue_ids,
-        rejectedIssueIds=rejected_issue_ids,
-        eligibleAttachmentIds=eligible_attachment_ids,
-        deferredAttachmentIds=deferred_attachment_ids,
-        rejectedAttachmentIds=rejected_attachment_ids,
+        readyForPromotion=preparation_state['readyForPromotion'],
+        blockingReasons=preparation_state['blockingReasons'],
+        eligibleIssueIds=preparation_state['eligibleIssueIds'],
+        deferredIssueIds=preparation_state['deferredIssueIds'],
+        rejectedIssueIds=preparation_state['rejectedIssueIds'],
+        eligibleAttachmentIds=preparation_state['eligibleAttachmentIds'],
+        deferredAttachmentIds=preparation_state['deferredAttachmentIds'],
+        rejectedAttachmentIds=preparation_state['rejectedAttachmentIds'],
+        issueBlockingReasons=preparation_state['issueBlockingReasons'],
+        attachmentBlockingReasons=preparation_state['attachmentBlockingReasons'],
         provenance=provenance,
         disclaimer='该对象仅表示 runtime reviewer decision 对 internal-reviewed preparation 的承接状态，不构成 reviewed truth。',
     )
@@ -88,67 +57,24 @@ def build_review_preparation_summary(task: TaskRecord) -> ReviewPreparationSumma
 
 def build_review_preparation_asset(task: TaskRecord) -> ReviewPreparationAsset:
     decision = resolve_reviewer_decision(task)
+    preparation_state = _collect_review_preparation_state(task, decision)
     summary = build_review_preparation_summary(task)
     result = task.result if isinstance(task.result, dict) else {}
-    issue_map = {
-        str(item.get('id')): item
-        for item in result.get('issues', [])
-        if isinstance(item, dict) and item.get('id')
-    }
-    matrices = result.get('matrices', {}) if isinstance(result.get('matrices'), dict) else {}
-    attachment_map = {
-        str(item.get('id')): item
-        for item in matrices.get('attachmentVisibility', [])
-        if isinstance(item, dict) and item.get('id')
-    }
     artifact_index = result.get('artifactIndex', []) if isinstance(result.get('artifactIndex'), list) else []
     artifact_names = [
         str(item.get('name'))
         for item in artifact_index
         if isinstance(item, dict) and item.get('name')
     ]
-    issue_records = []
-    for item in decision.issues:
-        issue = issue_map.get(item.issueId, {})
-        issue_records.append(
-            ReviewPreparationIssueRecord(
-                issueId=item.issueId,
-                disposition=_issue_review_preparation_disposition(item.state),
-                state=item.state,
-                note=item.note,
-                issueKind=issue.get('issueKind'),
-                applicabilityState=issue.get('applicabilityState'),
-                manualReviewNeeded=bool(issue.get('manualReviewNeeded', False)),
-                manualReviewReason=issue.get('manualReviewReason'),
-                evidenceMissing=bool(issue.get('evidenceMissing', False)),
-                missingFactKeys=[str(value) for value in issue.get('missingFactKeys', []) if value],
-                blockingReasons=[str(value) for value in issue.get('blockingReasons', []) if value],
-            )
-        )
-    attachment_records = []
-    for item in decision.attachments:
-        attachment = attachment_map.get(item.attachmentId, {})
-        attachment_records.append(
-            ReviewPreparationAttachmentRecord(
-                attachmentId=item.attachmentId,
-                disposition=_attachment_review_preparation_disposition(item.state),
-                state=item.state,
-                note=item.note,
-                visibility=attachment.get('visibility'),
-                parseState=attachment.get('parseState'),
-                manualReviewNeeded=bool(attachment.get('manualReviewNeeded', False)),
-                reason=attachment.get('reason'),
-            )
-        )
     return ReviewPreparationAsset(
         taskId=task.id,
         documentType=task.documentType,
         sourceDocumentRef=task.sourceDocumentRef,
         reviewerDecisionUpdatedAt=decision.updatedAt,
-        readyForPromotion=summary.readyForPromotion,
-        blockingReasons=summary.blockingReasons,
-        issueDecisions=issue_records,
-        attachmentDecisions=attachment_records,
+        readyForPromotion=preparation_state['readyForPromotion'],
+        blockingReasons=preparation_state['blockingReasons'],
+        issueDecisions=preparation_state['issueRecords'],
+        attachmentDecisions=preparation_state['attachmentRecords'],
         provenance=summary.provenance.model_copy(
             update={
                 'taskId': task.id,
@@ -201,6 +127,101 @@ def _normalize_reviewer_decision(task: TaskRecord, decision_like, *, touch_updat
     )
 
 
+def _collect_review_preparation_state(task: TaskRecord, decision: ReviewerDecision) -> dict[str, object]:
+    result = task.result if isinstance(task.result, dict) else {}
+    issue_map = {
+        str(item.get('id')): item
+        for item in result.get('issues', [])
+        if isinstance(item, dict) and item.get('id')
+    }
+    matrices = result.get('matrices', {}) if isinstance(result.get('matrices'), dict) else {}
+    attachment_map = {
+        str(item.get('id')): item
+        for item in matrices.get('attachmentVisibility', [])
+        if isinstance(item, dict) and item.get('id')
+    }
+
+    issue_records: list[ReviewPreparationIssueRecord] = []
+    for item in decision.issues:
+        issue = issue_map.get(item.issueId, {})
+        disposition, promotion_blocking_reasons = _issue_review_preparation_state(item, issue)
+        issue_records.append(
+            ReviewPreparationIssueRecord(
+                issueId=item.issueId,
+                disposition=disposition,
+                state=item.state,
+                note=item.note,
+                issueKind=issue.get('issueKind'),
+                applicabilityState=issue.get('applicabilityState'),
+                manualReviewNeeded=bool(issue.get('manualReviewNeeded', False)),
+                manualReviewReason=issue.get('manualReviewReason'),
+                evidenceMissing=bool(issue.get('evidenceMissing', False)),
+                missingFactKeys=[str(value) for value in issue.get('missingFactKeys', []) if value],
+                blockingReasons=[str(value) for value in issue.get('blockingReasons', []) if value],
+                promotionBlockingReasons=promotion_blocking_reasons,
+            )
+        )
+
+    attachment_records: list[ReviewPreparationAttachmentRecord] = []
+    for item in decision.attachments:
+        attachment = attachment_map.get(item.attachmentId, {})
+        disposition, promotion_blocking_reasons = _attachment_review_preparation_state(item, attachment)
+        attachment_records.append(
+            ReviewPreparationAttachmentRecord(
+                attachmentId=item.attachmentId,
+                disposition=disposition,
+                state=item.state,
+                note=item.note,
+                visibility=attachment.get('visibility'),
+                parseState=attachment.get('parseState'),
+                manualReviewNeeded=bool(attachment.get('manualReviewNeeded', False)),
+                reason=attachment.get('reason'),
+                promotionBlockingReasons=promotion_blocking_reasons,
+            )
+        )
+
+    blocking_reasons: list[str] = []
+    visibility = result.get('visibility', {}) if isinstance(result, dict) else {}
+    if visibility.get('manualReviewNeeded'):
+        blocking_reasons.append('visibility_manual_review_required')
+    if not decision.note:
+        blocking_reasons.append('missing_reviewer_note')
+    blocking_reasons.extend(
+        reason
+        for record in issue_records
+        for reason in record.promotionBlockingReasons
+    )
+    blocking_reasons.extend(
+        reason
+        for record in attachment_records
+        for reason in record.promotionBlockingReasons
+    )
+
+    issue_blocking_reasons = {
+        record.issueId: list(record.promotionBlockingReasons)
+        for record in issue_records
+    }
+    attachment_blocking_reasons = {
+        record.attachmentId: list(record.promotionBlockingReasons)
+        for record in attachment_records
+    }
+
+    return {
+        'readyForPromotion': bool(issue_records or attachment_records) and not blocking_reasons,
+        'blockingReasons': list(dict.fromkeys(blocking_reasons)),
+        'eligibleIssueIds': [record.issueId for record in issue_records if record.disposition == 'eligible'],
+        'deferredIssueIds': [record.issueId for record in issue_records if record.disposition == 'deferred'],
+        'rejectedIssueIds': [record.issueId for record in issue_records if record.disposition == 'rejected'],
+        'eligibleAttachmentIds': [record.attachmentId for record in attachment_records if record.disposition == 'eligible'],
+        'deferredAttachmentIds': [record.attachmentId for record in attachment_records if record.disposition == 'deferred'],
+        'rejectedAttachmentIds': [record.attachmentId for record in attachment_records if record.disposition == 'rejected'],
+        'issueBlockingReasons': issue_blocking_reasons,
+        'attachmentBlockingReasons': attachment_blocking_reasons,
+        'issueRecords': issue_records,
+        'attachmentRecords': attachment_records,
+    }
+
+
 def _derive_task_state(
     issues: list[ReviewerIssueDecision],
     attachments: list[ReviewerAttachmentDecision],
@@ -215,20 +236,44 @@ def _derive_task_state(
     return 'pending'
 
 
-def _issue_review_preparation_disposition(state: str) -> str:
-    if state == 'confirmed':
-        return 'eligible'
-    if state == 'dismissed':
-        return 'rejected'
-    return 'deferred'
+def _issue_review_preparation_state(decision: ReviewerIssueDecision, issue: dict) -> tuple[str, list[str]]:
+    if decision.state == 'dismissed':
+        return 'rejected', []
+    if decision.state == 'pending':
+        return 'deferred', ['pending_issue_review']
+    if decision.state == 'needs_attachment':
+        return 'deferred', ['pending_issue_review', 'issue_requires_attachment_review']
+
+    blocking_reasons: list[str] = []
+    if not issue:
+        blocking_reasons.append('issue_result_unavailable')
+    if issue.get('issueKind') == 'visibility_gap':
+        blocking_reasons.append('issue_not_promotable_visibility_gap')
+    if issue.get('issueKind') == 'evidence_gap':
+        blocking_reasons.append('issue_not_promotable_evidence_gap')
+    if issue.get('applicabilityState') == 'blocked_by_visibility':
+        blocking_reasons.append('issue_not_promotable_blocked_by_visibility')
+    if issue.get('applicabilityState') == 'blocked_by_missing_fact':
+        blocking_reasons.append('issue_not_promotable_blocked_by_missing_fact')
+    if bool(issue.get('manualReviewNeeded', False)):
+        blocking_reasons.append('issue_not_promotable_manual_review')
+    if bool(issue.get('evidenceMissing', False)):
+        blocking_reasons.append('issue_not_promotable_evidence_missing')
+    if blocking_reasons:
+        return 'deferred', list(dict.fromkeys(blocking_reasons))
+    return 'eligible', []
 
 
-def _attachment_review_preparation_disposition(state: str) -> str:
-    if state == 'dismissed':
-        return 'eligible'
-    if state == 'confirmed':
-        return 'rejected'
-    return 'deferred'
+def _attachment_review_preparation_state(decision: ReviewerAttachmentDecision, attachment: dict) -> tuple[str, list[str]]:
+    if decision.state == 'dismissed':
+        return 'eligible', []
+    if decision.state == 'confirmed':
+        return 'rejected', ['rejected_attachment_promotion']
+    if decision.state == 'needs_attachment':
+        return 'deferred', ['pending_attachment_review', 'attachment_requires_attachment_review']
+    if not attachment:
+        return 'deferred', ['pending_attachment_review', 'attachment_result_unavailable']
+    return 'deferred', ['pending_attachment_review']
 
 
 def _extract_issue_ids(task: TaskRecord) -> list[str]:
@@ -278,8 +323,6 @@ def _find_review_eval_case_metadata(task: TaskRecord) -> dict[str, str | bool] |
         candidates.append(('fixture_id', str(task.fixtureId), False))
     if task.sourceDocumentRef and task.sourceDocumentRef.fixtureId:
         candidates.append(('source_fixture_id', str(task.sourceDocumentRef.fixtureId), False))
-    if task.sourceDocumentRef and task.sourceDocumentRef.storagePath:
-        candidates.append(('source_path', _normalize_path(task.sourceDocumentRef.storagePath), True))
 
     index = _review_eval_case_index()
     for lookup_type, value, inferred in candidates:

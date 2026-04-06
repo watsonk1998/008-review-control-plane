@@ -275,10 +275,94 @@ def test_attachment_index_freezes_parser_limited_unknown_and_missing_boundaries(
     assert attachments[0]['visibility'] == 'attachment_unparsed'
     assert attachments[0]['reason'] == 'title_detected_without_attachment_body'
 
+    non_limited_reference_only = [{'id': 'b3-ref', 'text': '详见附件3。'}]
+    attachments, _ = build_attachment_index(non_limited_reference_only, parser_limited=False, file_type='docx')
+    assert attachments[0]['visibility'] == 'referenced_only'
+    assert attachments[0]['reason'] == 'reference_detected_without_attachment_body'
+
     explicit_missing_blocks = [{'id': 'b4', 'text': '附件4：吊装验算书（后补，暂缺）'}]
     attachments, _ = build_attachment_index(explicit_missing_blocks, parser_limited=False, file_type='docx')
     assert attachments[0]['visibility'] == 'missing'
     assert attachments[0]['reason'] == 'explicit_missing_marker'
+
+
+def test_structured_review_parser_limited_pdf_zero_parsed_attachments_frontloads_l0_gate():
+    executor = StructuredReviewExecutor(document_loader=DocumentLoader(), llm_gateway=DummyLLM(), fast_adapter=None)
+    result = executor.run_sync(
+        task_id='structured-review-pdf-zero-parsed-attachments',
+        query='对该危大专项方案执行正式结构化审查',
+        source_document_path=str(SAMPLE_PDF),
+        fixture_id='cn_hz_pdf_unknown_visibility_ci',
+        document_type='hazardous_special_scheme',
+        discipline_tags=['lifting_operations'],
+    )
+
+    assert result['visibility']['parseMode'] == 'pdf_text_only'
+    assert result['visibility']['manualReviewNeeded'] is True
+    assert result['visibility']['preflight']['gateDecision'] == 'manual_review_required'
+    assert result['visibility']['counts']['parsed'] == 0
+    assert result['visibility']['counts']['unknown'] >= 1
+    assert 'parser_limited_pdf' in result['visibility']['preflight']['blockingReasons']
+    assert result['summary']['visibilitySummary']['manualReviewNeeded'] is True
+
+
+def test_structured_review_artifacts_keep_visibility_parity_for_unknown_and_attachment_unparsed(tmp_path: Path):
+    executor = StructuredReviewExecutor(document_loader=DocumentLoader(), llm_gateway=DummyLLM(), fast_adapter=None)
+
+    def write_json_artifact(name: str, payload):
+        path = tmp_path / f'{name}.json'
+        path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding='utf-8')
+        return str(path)
+
+    def write_text_artifact(name: str, content: str, suffix: str):
+        path = tmp_path / f'{name}{suffix}'
+        path.write_text(content, encoding='utf-8')
+        return str(path)
+
+    pdf_result = asyncio.run(
+        executor.run(
+            task_id='structured-review-l0-parity-pdf',
+            query='对该危大专项方案执行正式结构化审查',
+            source_document_path=str(SAMPLE_PDF),
+            fixture_id='cn_hz_pdf_unknown_visibility_ci',
+            document_type='hazardous_special_scheme',
+            discipline_tags=['lifting_operations'],
+            write_json_artifact=write_json_artifact,
+            write_text_artifact=write_text_artifact,
+        )
+    )
+    pdf_l0_payload = json.loads((tmp_path / 'structured-review-l0-visibility.json').read_text(encoding='utf-8'))
+    assert pdf_l0_payload['visibility'] == pdf_result['visibility']
+    assert pdf_l0_payload['visibility']['counts']['unknown'] >= 1
+    assert pdf_l0_payload['visibility']['counts']['missing'] == 0
+
+    docx_tmp = tmp_path / 'docx-run'
+    docx_tmp.mkdir()
+
+    def write_docx_json_artifact(name: str, payload):
+        path = docx_tmp / f'{name}.json'
+        path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding='utf-8')
+        return str(path)
+
+    def write_docx_text_artifact(name: str, content: str, suffix: str):
+        path = docx_tmp / f'{name}{suffix}'
+        path.write_text(content, encoding='utf-8')
+        return str(path)
+
+    docx_result = asyncio.run(
+        executor.run(
+            task_id='structured-review-l0-parity-docx',
+            query='对该施工组织设计执行正式结构化审查',
+            source_document_path=str(SAMPLE_DOC),
+            fixture_id='supervision-cold-rolling-construction-plan',
+            write_json_artifact=write_docx_json_artifact,
+            write_text_artifact=write_docx_text_artifact,
+        )
+    )
+    docx_l0_payload = json.loads((docx_tmp / 'structured-review-l0-visibility.json').read_text(encoding='utf-8'))
+    assert docx_l0_payload['visibility'] == docx_result['visibility']
+    assert docx_l0_payload['visibility']['counts']['attachment_unparsed'] >= 1
+    assert docx_l0_payload['visibility']['counts']['missing'] == 0
 
 
 def test_structured_review_frontloads_weak_key_section_structure_into_l0_gate(tmp_path: Path):
@@ -325,6 +409,43 @@ def test_structured_review_frontloads_weak_key_section_structure_into_l0_gate(tm
     assert unresolved_fact['visibilityLimited'] is True
     assert 'construction_org_duplicate_sections' in unresolved_fact['blockingRuleIds']
     assert duplicate_issue['id'] in unresolved_fact['blockingIssueIds']
+
+
+def test_structured_review_generic_special_scheme_mention_stays_partial_not_hard_defect(tmp_path: Path):
+    sample = tmp_path / 'construction_org_generic_special_scheme.md'
+    sample.write_text(
+        '# 施工组织设计\n\n'
+        '## 工程概况\n项目名称：专项方案挂接待确认\n项目编号：SPECIAL-DEMO\n'
+        '存在起重吊装作业。\n'
+        '## 施工部署\n按计划实施。\n'
+        '## 施工进度计划\n工期 20 天。\n'
+        '## 资源配置计划\n劳动力 20 人。\n'
+        '## 安全保证措施\n执行标准安全措施。\n'
+        '## 应急预案\n起重吊装应急处置预案。\n'
+        '## 施工总平面布置\n正文可见。\n'
+        '本工程另有专项施工方案，详见既有资料目录。\n',
+        encoding='utf-8',
+    )
+    executor = StructuredReviewExecutor(document_loader=DocumentLoader(), llm_gateway=DummyLLM(), fast_adapter=None)
+    result = executor.run_sync(
+        task_id='structured-review-generic-special-scheme',
+        query='对该施工组织设计执行正式结构化审查',
+        source_document_path=str(sample),
+        fixture_id='structured-review-generic-special-scheme',
+        document_type='construction_org',
+        discipline_tags=['lifting_operations'],
+    )
+
+    special_rule = next(row for row in result['matrices']['ruleHits'] if row['ruleId'] == 'construction_org_special_scheme_gap')
+    special_issue = next(issue for issue in result['issues'] if issue['title'] == '高风险作业已识别，但专项方案挂接不清')
+
+    assert special_rule['status'] == 'manual_review_needed'
+    assert special_rule['applicabilityState'] == 'partial'
+    assert 'manual_confirmation_required' in special_rule['blockingReasons']
+    assert special_issue['manualReviewNeeded'] is True
+    assert special_issue['applicabilityState'] == 'partial'
+    assert special_issue['issueKind'] != 'hard_defect'
+    assert 'manual_confirmation_required' in special_issue['blockingReasons']
 
 
 def test_structured_review_rule_hits_expose_applicability_state_and_keep_visibility_gap_out_of_hard_defect():
@@ -392,6 +513,58 @@ def test_structured_review_parser_limited_negative_facts_stay_blocked_with_expla
     assert unresolved_fact['visibilityLimited'] is True
     assert 'hazardous_special_scheme_core_sections' in unresolved_fact['blockingRuleIds']
     assert core_issue['id'] in unresolved_fact['blockingIssueIds']
+
+
+def test_structured_review_parser_limited_emergency_gap_stays_evidence_gap_with_traceability():
+    executor = StructuredReviewExecutor(document_loader=DocumentLoader(), llm_gateway=DummyLLM(), fast_adapter=None)
+    result = executor.run_sync(
+        task_id='structured-review-parser-limited-emergency-gap',
+        query='对该施工组织设计执行正式结构化审查',
+        source_document_path=str(SAMPLE_PUHUA_PDF),
+        fixture_id='puhua-review-fixture',
+        document_type='construction_org',
+        discipline_tags=['lifting_operations', 'temporary_power', 'hot_work'],
+    )
+
+    emergency_rule = next(row for row in result['matrices']['ruleHits'] if row['ruleId'] == 'construction_org_emergency_plan_targeted')
+    emergency_issue = next(issue for issue in result['issues'] if issue['title'] == '应急预案针对性不足')
+    emergency_fact = next(fact for fact in result['unresolvedFacts'] if fact['factKey'] == 'emergency.planTitles')
+
+    assert emergency_rule['applicabilityState'] == 'blocked_by_missing_fact'
+    assert emergency_rule['missingFactKeys'] == ['emergency.planTitles']
+    assert 'missing_fact' in emergency_rule['blockingReasons']
+    assert 'parser_limited_source' in emergency_rule['blockingReasons']
+    assert emergency_issue['issueKind'] == 'evidence_gap'
+    assert emergency_issue['applicabilityState'] == 'blocked_by_missing_fact'
+    assert emergency_issue['evidenceMissing'] is True
+    assert emergency_issue['missingFactKeys'] == ['emergency.planTitles']
+    assert 'missing_fact' in emergency_issue['blockingReasons']
+    assert 'parser_limited_source' in emergency_issue['blockingReasons']
+    assert 'construction_org_emergency_plan_targeted' in emergency_fact['blockingRuleIds']
+    assert emergency_issue['id'] in emergency_fact['blockingIssueIds']
+
+
+def test_structured_review_parser_limited_empty_attachment_matrix_keeps_blocked_issue_traceability():
+    executor = StructuredReviewExecutor(document_loader=DocumentLoader(), llm_gateway=DummyLLM(), fast_adapter=None)
+    result = executor.run_sync(
+        task_id='structured-review-parser-limited-empty-attachment-matrix',
+        query='对该施工组织设计执行正式结构化审查',
+        source_document_path=str(SAMPLE_PUHUA_PDF),
+        fixture_id='puhua-review-fixture',
+        document_type='construction_org',
+        discipline_tags=['lifting_operations', 'temporary_power', 'hot_work'],
+    )
+
+    assert result['visibility']['attachmentCount'] == 0
+    assert result['matrices']['attachmentVisibility'] == []
+    assert result['visibility']['manualReviewNeeded'] is True
+    blocked_issue = next(issue for issue in result['issues'] if issue['applicabilityState'] == 'blocked_by_missing_fact')
+    traced_fact = next(fact for fact in result['unresolvedFacts'] if blocked_issue['id'] in fact['blockingIssueIds'])
+
+    assert blocked_issue['missingFactKeys']
+    assert blocked_issue['blockingReasons']
+    assert traced_fact['blockingRuleIds']
+    assert traced_fact['blockingIssueIds']
 
 
 def test_structured_review_blocked_evidence_spans_expose_provenance_and_gap_reason():

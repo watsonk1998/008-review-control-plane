@@ -130,6 +130,15 @@ function humanizeToken(value: string) {
   return withSpaces ? withSpaces.charAt(0).toUpperCase() + withSpaces.slice(1) : value;
 }
 
+function renderBlockingReasonMap(map: Record<string, string[]> | null | undefined) {
+  if (!map) return "—";
+  const entries = Object.entries(map).filter(([, reasons]) => Array.isArray(reasons) && reasons.length);
+  if (!entries.length) return "—";
+  return entries
+    .map(([key, reasons]) => `${key}: ${reasons.map((reason) => humanizeToken(reason)).join("，")}`)
+    .join("\n");
+}
+
 function parseModeLabel(value: string | null | undefined) {
   switch (value) {
     case "docx_structured":
@@ -997,9 +1006,14 @@ export function TaskDetail({ taskId }: { taskId: string }) {
                           { label: "labelStatus", value: reviewPreparation.provenance.labelStatus || "—" },
                           { label: "reviewStatus", value: reviewPreparation.provenance.reviewStatus || "—" },
                           { label: "inferred", value: reviewPreparation.provenance.inferred ? "true" : "false" },
+                          { label: "eligibleIssueIds", value: reviewPreparation.eligibleIssueIds?.join("，") || "—" },
+                          { label: "deferredIssueIds", value: reviewPreparation.deferredIssueIds?.join("，") || "—" },
+                          { label: "rejectedIssueIds", value: reviewPreparation.rejectedIssueIds?.join("，") || "—" },
                           { label: "eligibleAttachmentIds", value: reviewPreparation.eligibleAttachmentIds?.join("，") || "—" },
                           { label: "deferredAttachmentIds", value: reviewPreparation.deferredAttachmentIds?.join("，") || "—" },
                           { label: "rejectedAttachmentIds", value: reviewPreparation.rejectedAttachmentIds?.join("，") || "—" },
+                          { label: "issueBlockingReasons", value: renderBlockingReasonMap(reviewPreparation.issueBlockingReasons) },
+                          { label: "attachmentBlockingReasons", value: renderBlockingReasonMap(reviewPreparation.attachmentBlockingReasons) },
                         ]}
                       />
                     </div>

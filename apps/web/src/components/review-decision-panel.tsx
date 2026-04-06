@@ -80,6 +80,11 @@ function reviewPreparationDispositionLabel(value: string | null | undefined) {
   }
 }
 
+function renderPromotionBlockingReasons(reasons: string[] | null | undefined) {
+  if (!reasons?.length) return "none";
+  return reasons.join("，");
+}
+
 export function ReviewDecisionPanel({
   taskId,
   issues,
@@ -195,6 +200,7 @@ export function ReviewDecisionPanel({
               : reviewPreparation?.rejectedIssueIds?.includes(issue.id)
                 ? "rejected"
                 : "deferred";
+            const issueBlockingReasons = reviewPreparation?.issueBlockingReasons?.[issue.id] || [];
             return (
               <article className="boundary-item" key={issue.id}>
                 <div className="section-heading compact">
@@ -206,6 +212,7 @@ export function ReviewDecisionPanel({
                       {issue.layer} / {issue.severity} / {issue.findingType}
                     </p>
                     <p className="muted small">promotion disposition={reviewPreparationDispositionLabel(issueDisposition)}</p>
+                    <p className="muted small">promotion blocking reasons={renderPromotionBlockingReasons(issueBlockingReasons)}</p>
                   </div>
                 </div>
                 <div className="form-grid two-columns">
@@ -275,6 +282,7 @@ export function ReviewDecisionPanel({
               : reviewPreparation?.rejectedAttachmentIds?.includes(item.id)
                 ? "rejected"
                 : "deferred";
+            const attachmentBlockingReasons = reviewPreparation?.attachmentBlockingReasons?.[item.id] || [];
             return (
               <article className="boundary-item" key={item.id}>
                 <div className="section-heading compact">
@@ -286,6 +294,7 @@ export function ReviewDecisionPanel({
                       visibility={item.visibility} / parseState={item.parseState}
                     </p>
                     <p className="muted small">promotion disposition={reviewPreparationDispositionLabel(attachmentDisposition)}</p>
+                    <p className="muted small">promotion blocking reasons={renderPromotionBlockingReasons(attachmentBlockingReasons)}</p>
                   </div>
                 </div>
                 <div className="form-grid two-columns">

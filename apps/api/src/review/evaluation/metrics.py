@@ -309,6 +309,7 @@ def _has_evidence_gap_block_reason(reasons: list[str]) -> bool:
         'parser_limited_source',
         'document_evidence_unavailable',
         'policy_evidence_unavailable',
+        'manual_confirmation_required',
     }
     return bool(evidence_gap_reasons & set(reasons))
 
@@ -376,6 +377,9 @@ def _review_preparation_provenance_consistency(case: dict[str, Any], result: dic
     task = _build_review_preparation_task(case, result)
     summary = build_review_preparation_summary(task)
     asset = build_review_preparation_asset(task)
+    promotion_attempt_task = _build_review_preparation_task(case, result, confirm_all=True)
+    promotion_attempt_summary = build_review_preparation_summary(promotion_attempt_task)
+    promotion_attempt_asset = build_review_preparation_asset(promotion_attempt_task)
     expected_source_tier = _expected_review_preparation_source_tier(case)
     checks = 0
     hits = 0
@@ -401,14 +405,79 @@ def _review_preparation_provenance_consistency(case: dict[str, Any], result: dic
     if 'reviewed truth' in summary_disclaimer and 'reviewed truth' in asset_disclaimer:
         hits += 1
 
+    non_promotable_issue_ids = {
+        str(issue.get('id'))
+        for issue in result.get('issues', [])
+        if isinstance(issue, dict)
+        and issue.get('id')
+        and (
+            issue.get('issueKind') in {'visibility_gap', 'evidence_gap'}
+            or issue.get('applicabilityState') in {'blocked_by_visibility', 'blocked_by_missing_fact'}
+            or bool(issue.get('manualReviewNeeded', False))
+            or bool(issue.get('evidenceMissing', False))
+        )
+    }
+
+    checks += 1
+    if not non_promotable_issue_ids or (
+        promotion_attempt_summary.readyForPromotion is False and promotion_attempt_asset.readyForPromotion is False
+    ):
+        hits += 1
+
+    summary_issue_reason_map = promotion_attempt_summary.issueBlockingReasons
+    asset_issue_reason_map = {
+        record.issueId: list(record.promotionBlockingReasons)
+        for record in promotion_attempt_asset.issueDecisions
+    }
+    checks += 1
+    if summary_issue_reason_map == asset_issue_reason_map:
+        hits += 1
+
+    summary_attachment_reason_map = promotion_attempt_summary.attachmentBlockingReasons
+    asset_attachment_reason_map = {
+        record.attachmentId: list(record.promotionBlockingReasons)
+        for record in promotion_attempt_asset.attachmentDecisions
+    }
+    checks += 1
+    if summary_attachment_reason_map == asset_attachment_reason_map:
+        hits += 1
+
+    checks += 1
+    if all(
+        reason in promotion_attempt_summary.blockingReasons
+        for reasons in summary_issue_reason_map.values()
+        for reason in reasons
+    ) and all(
+        reason in promotion_attempt_summary.blockingReasons
+        for reasons in summary_attachment_reason_map.values()
+        for reason in reasons
+    ):
+        hits += 1
+
     return ((hits / checks) if checks else 1.0, checks)
 
 
-def _build_review_preparation_task(case: dict[str, Any], result: dict[str, Any]) -> TaskRecord:
+def _build_review_preparation_task(case: dict[str, Any], result: dict[str, Any], *, confirm_all: bool = False) -> TaskRecord:
     now = datetime.now(timezone.utc)
     source_path = str(case.get('sourcePath') or '')
     source_name = source_path.rsplit('/', 1)[-1] if source_path else f"{case.get('caseId', 'review-eval')}.md"
     file_type = source_name.rsplit('.', 1)[-1] if '.' in source_name else 'md'
+    reviewer_decision = None
+    if confirm_all:
+        reviewer_decision = {
+            'taskState': 'accepted',
+            'note': 'evaluation-promotion-attempt',
+            'issues': [
+                {'issueId': str(issue.get('id')), 'state': 'confirmed', 'note': 'evaluation-confirmed'}
+                for issue in result.get('issues', [])
+                if isinstance(issue, dict) and issue.get('id')
+            ],
+            'attachments': [
+                {'attachmentId': str(item.get('id')), 'state': 'dismissed', 'note': 'evaluation-reviewed'}
+                for item in result.get('matrices', {}).get('attachmentVisibility', [])
+                if isinstance(item, dict) and item.get('id')
+            ],
+        }
     return TaskRecord(
         id=str(case.get('caseId') or 'review-eval-case'),
         taskType='structured_review',
@@ -431,6 +500,7 @@ def _build_review_preparation_task(case: dict[str, Any], result: dict[str, Any])
         policyPackIds=list((result.get('resolvedProfile') or {}).get('policyPackIds', [])),
         status='succeeded',
         result=result,
+        reviewerDecision=reviewer_decision,
         createdAt=now,
         updatedAt=now,
     )
