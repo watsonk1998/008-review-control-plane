@@ -23,6 +23,15 @@ const DISCIPLINE_OPTIONS = [
   { value: "working_at_height", label: "高处作业" },
 ];
 
+function getChinesePackName(packId: string) {
+  const pureId = packId.replace('.base', '');
+  const docTypeMatch = DOCUMENT_TYPE_OPTIONS.find(o => o.value === pureId);
+  if (docTypeMatch) return docTypeMatch.label + " (基础模块)";
+  const disciplineMatch = DISCIPLINE_OPTIONS.find(o => o.value === pureId);
+  if (disciplineMatch) return disciplineMatch.label + " (基础模块)";
+  return packId;
+}
+
 function renderPromotionCriteria(criteria: Record<string, boolean>) {
   const order = [
     ["testsReady", "测试用例"],
@@ -83,15 +92,15 @@ export function StructuredReviewForm({
 
       {documentReadiness === "experimental" ? (
         <div className="callout warning-callout">
-          当前所选 documentType 属于 experimental。系统会如实展示已 ready 的 pack，但不会把该 documentType 伪装成 official support。
+          当前所选文档类型处于“实验性方案”阶段。系统会如实展示已就绪的执行模块，但这并不代表该系统已具备在此文档上的稳定自动化审查能力。
         </div>
       ) : null}
       {documentReadiness === "skeleton" ? (
         <div className="callout warning-callout">
-          当前所选 documentType 仍处于 skeleton。可以查看范围定义，但不应把 ready packs 理解为该类型已进入 official 支持。
+          当前所选文档类型仍处于“骨架开发”期。可查看初步覆盖范围，但这绝不代表目前拥有的系统已达到正式基线支持标准。
         </div>
       ) : null}
-      {!documentReadiness ? <div className="callout">support-scope 加载中；未返回前不展示本地 fallback 结论。</div> : null}
+      {!documentReadiness ? <div className="callout">网络域加载中：环境未同步之前，系统将默认阻断所有推理操作。</div> : null}
 
       <div className="form-grid review-profile-grid">
         <label className="field">
@@ -126,9 +135,9 @@ export function StructuredReviewForm({
               }
               type="checkbox"
             />
-            <span>strictMode（保留字段）</span>
+            <span>严格匹配规则（保留特性）</span>
           </label>
-          <small>当前仅作为兼容字段透传，尚未启用新的裁决语义。</small>
+          <small>当前仅作为兼容字段透传给后端，后续将介入正式降级拦截。</small>
         </label>
       </div>
 
@@ -159,23 +168,23 @@ export function StructuredReviewForm({
             </label>
           ))}
         </div>
-        <small>可留空，后端仍会根据 query、fixture 与 parse hints 自动补齐。</small>
+        <small>可留空，后端仍会根据查询词、上传样本及解析摘要自动补全所需策略包。</small>
       </div>
 
       {documentReadiness ? (
         <div className="callout">
-          <strong>当前链路支持度 (support-scope)</strong>
+          <strong>当前链路支持度</strong>
           <p>主文档可用性：{READINESS_MAP[(documentReadiness || "").trim().toLowerCase()] || documentReadiness}</p>
-          <p>已就绪模块 (ready packs)：{readyPacks.map((pack) => pack.packId).join("，") || "无"}</p>
-          <p>排期模块 (placeholder packs)：{placeholderPacks.map((pack) => pack.packId).join("，") || "无"}</p>
+          <p>已就绪模块：{readyPacks.map((pack) => getChinesePackName(pack.packId)).join("，") || "无"}</p>
+          <p>排期中模块：{placeholderPacks.map((pack) => getChinesePackName(pack.packId)).join("，") || "无"}</p>
           {relevantPacks.length ? (
             <div className="stack-sm">
-              <strong>策略包晋升准入条件 (pack promotion criteria)</strong>
+              <strong>策略包晋升准入条件</strong>
               <ul className="source-list">
                 {relevantPacks.map((pack) => (
                   <li key={pack.packId}>
                     <strong>
-                      {pack.packId} · {READINESS_MAP[(pack.readiness || "").trim().toLowerCase()] || pack.readiness}
+                      {getChinesePackName(pack.packId)} · {READINESS_MAP[(pack.readiness || "").trim().toLowerCase()] || pack.readiness}
                     </strong>
                     <p className="muted small">{renderPromotionCriteria(pack.promotionCriteria || {})}</p>
                   </li>
@@ -183,7 +192,7 @@ export function StructuredReviewForm({
               </ul>
             </div>
           ) : null}
-          <p className="muted small">说明：ready pack 仅表示 pack 已可执行，不等于 documentType 已进入 official support。</p>
+          <p className="muted small">说明：单项模块就绪仅代表该逻辑节点可独立流转，绝不意味着全局链路已达到官方安全验收基线标准。</p>
         </div>
       ) : null}
     </section>

@@ -843,7 +843,7 @@ export function TaskDetail({ taskId }: { taskId: string }) {
     <main className="shell stack-xl">
       <section className="section-heading">
         <div>
-          <p className="eyebrow">任务全局视图 (Task Detail)</p>
+          <p className="eyebrow">任务全局视图</p>
           <h1>{taskId}</h1>
         </div>
         <Link className="ghost-button" href="/">
@@ -881,7 +881,7 @@ export function TaskDetail({ taskId }: { taskId: string }) {
             <article className="card stack-md">
               <div className="section-heading compact">
                 <div>
-                  <p className="eyebrow">基础元数据概览 (Overview)</p>
+                  <p className="eyebrow">基础元数据概览</p>
                   <h2>任务概览</h2>
                 </div>
                 <span
@@ -930,7 +930,7 @@ export function TaskDetail({ taskId }: { taskId: string }) {
 
             <article className="card stack-md">
               <div>
-                <p className="eyebrow">Agent 执行路径规划 (Plan)</p>
+                <p className="eyebrow">Agent 执行路径规划</p>
                 <h2>DeepResearchAgent 计划</h2>
               </div>
               {task.plan ? <pre className="code-block">{renderJson(task.plan)}</pre> : <p className="muted">计划尚未生成。</p>}
@@ -939,7 +939,7 @@ export function TaskDetail({ taskId }: { taskId: string }) {
 
           <section className="card stack-lg">
             <div>
-              <p className="eyebrow">执行链路时间轴 (Execution Timeline)</p>
+              <p className="eyebrow">执行链路时间轴</p>
               <h2>调用链路 / 中间步骤</h2>
             </div>
             <div className="timeline">
@@ -983,7 +983,7 @@ export function TaskDetail({ taskId }: { taskId: string }) {
               {reviewerSummary ? (
                 <section className="card stack-md">
                   <div>
-                    <p className="eyebrow">人工兜底复核台 (Reviewer Cockpit)</p>
+                    <p className="eyebrow">人工兜底复核台</p>
                     <h2>人工复核状态</h2>
                   </div>
                   <ReviewKeyValueList
@@ -1056,7 +1056,7 @@ export function TaskDetail({ taskId }: { taskId: string }) {
               <section className="grid two-up">
                 <article className="card stack-lg">
                   <div>
-                    <p className="eyebrow">核心裁决约束条约 (Canonical Contract)</p>
+                    <p className="eyebrow">核心裁决约束条约</p>
                     <h2>审查主 contract</h2>
                   </div>
                   <div className="callout">
@@ -1113,7 +1113,7 @@ export function TaskDetail({ taskId }: { taskId: string }) {
 
                 <article className="card stack-lg">
                   <div>
-                    <p className="eyebrow">流转工件清单 (Artifacts)</p>
+                    <p className="eyebrow">流转工件清单</p>
                     <h2>审查工件</h2>
                   </div>
                   <ArtifactList artifacts={structuredArtifacts} />
@@ -1134,7 +1134,7 @@ export function TaskDetail({ taskId }: { taskId: string }) {
               {REVIEW_LAYERS.map((layer) => (
                 <section className="card stack-lg" key={layer}>
                   <div>
-                    <p className="eyebrow">缺陷召回集 (Issues) · {layer}</p>
+                    <p className="eyebrow">缺陷召回集 · {layer}</p>
                     <h2>{layer} 问题</h2>
                   </div>
                   {issuesByLayer[layer].length ? (
@@ -1187,7 +1187,7 @@ export function TaskDetail({ taskId }: { taskId: string }) {
               <section className="grid two-up">
                 <article className="card stack-lg">
                   <div>
-                    <p className="eyebrow">L0 层原生可视域覆盖 (L0 Visibility)</p>
+                    <p className="eyebrow">L0 层原生可视域覆盖</p>
                     <h2>可视域与解析降级</h2>
                   </div>
                   <div className="callout">
@@ -1203,7 +1203,7 @@ export function TaskDetail({ taskId }: { taskId: string }) {
 
                 <article className="card stack-lg">
                   <div>
-                    <p className="eyebrow">底层推理依据矩阵 (Matrices)</p>
+                    <p className="eyebrow">底层推理依据矩阵</p>
                     <h2>审查矩阵</h2>
                   </div>
                   <div className="stack-md">
@@ -1225,7 +1225,7 @@ export function TaskDetail({ taskId }: { taskId: string }) {
 
                 <article className="card stack-lg">
                   <div>
-                    <p className="eyebrow">文档拓扑嵌套树 (Structure)</p>
+                    <p className="eyebrow">文档拓扑嵌套树</p>
                     <h2>章节结构</h2>
                   </div>
                   <SectionStructureList sections={structuredResult.matrices.sectionStructure} />
@@ -1238,7 +1238,7 @@ export function TaskDetail({ taskId }: { taskId: string }) {
 
               <section className="card stack-lg">
                 <div>
-                  <p className="eyebrow">形式审查报告底稿 (Structured Review Report)</p>
+                  <p className="eyebrow">形式审查报告底稿</p>
                   <h2>报告与原始结果</h2>
                 </div>
                 <pre className="result-block">{structuredResult.reportMarkdown}</pre>
@@ -1252,7 +1252,7 @@ export function TaskDetail({ taskId }: { taskId: string }) {
             <section className="grid two-up">
               <article className="card stack-lg">
                 <div>
-                  <p className="eyebrow">系统最终结论 (Result)</p>
+                  <p className="eyebrow">系统最终结论</p>
                   <h2>最终结果</h2>
                 </div>
                 {summary ? (
@@ -1273,7 +1273,7 @@ export function TaskDetail({ taskId }: { taskId: string }) {
 
               <article className="card stack-lg">
                 <div>
-                  <p className="eyebrow">知识来源与调试日志 (Sources & Debug)</p>
+                  <p className="eyebrow">知识来源与调试日志</p>
                   <h2>来源 / chunks / artifacts</h2>
                 </div>
                 {summary?.sources?.length ? (

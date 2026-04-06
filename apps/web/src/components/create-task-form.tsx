@@ -21,11 +21,11 @@ const TASK_OPTIONS: Array<{ value: TaskType; label: string; hint: string }> = [
 ];
 
 const CAPABILITY_OPTIONS: Array<{ value: CapabilityMode; label: string; hint: string }> = [
-  { value: "auto", label: "Auto", hint: "总控决定链路" },
-  { value: "deeptutor", label: "DeepTutor", hint: "问答与解释" },
-  { value: "gpt_researcher", label: "GPT Researcher", hint: "报告与来源" },
-  { value: "fast", label: "FastGPT Chunks", hint: "知识片段化" },
-  { value: "llm_only", label: "LLM Only", hint: "跳过检索" },
+  { value: "auto", label: "智能路由", hint: "总控决定链路" },
+  { value: "deeptutor", label: "专业问答引擎", hint: "问答与解释" },
+  { value: "gpt_researcher", label: "深度研究引擎", hint: "报告与来源" },
+  { value: "fast", label: "检索增强生成", hint: "知识片段化" },
+  { value: "llm_only", label: "纯净推理模型", hint: "跳过检索" },
 ];
 
 export function CreateTaskForm({
@@ -176,7 +176,7 @@ export function CreateTaskForm({
         </label>
 
         <label className="field">
-          <span>选择基准样本 (Fixture)</span>
+          <span>选择基准样本</span>
           <select
             value={form.fixtureId || ""}
             onChange={(e) => setForm((curr) => ({ ...curr, fixtureId: e.target.value, sourceDocumentRef: e.target.value ? undefined : curr.sourceDocumentRef }))}
@@ -255,16 +255,16 @@ export function CreateTaskForm({
         {showAdvanced && (
           <div className="advanced-panel stack-lg">
              <label className="field">
-               <span>覆盖策略集 (Policy Packs)</span>
+               <span>覆盖策略集</span>
                <textarea rows={2} value={policyPackInput} onChange={(e) => setPolicyPackInput(e.target.value)} placeholder="留空为自动匹配" />
              </label>
              <label className="checkbox-row inline-check">
                <input type="checkbox" checked={form.useWeb} onChange={(e) => setForm((c) => ({ ...c, useWeb: e.target.checked }))} />
-               <span>启用 GPT Researcher 联网功能</span>
+               <span>允许智能体调用外网检索器</span>
              </label>
              <label className="checkbox-row inline-check">
                <input type="checkbox" checked={form.debug} onChange={(e) => setForm((c) => ({ ...c, debug: e.target.checked }))} />
-               <span>开启诊断模式 (Debug Logs)</span>
+               <span>开启底层诊断模式提取排错日志</span>
              </label>
           </div>
         )}
