@@ -7,6 +7,8 @@ from pathlib import Path
 from src.services.document_loader import DocumentLoader
 from src.review.parser.attachment_indexer import build_attachment_index
 from src.review.pipeline import StructuredReviewExecutor
+from src.review.report.report_builder import StructuredReviewReportBuilder
+from src.review.schema import ConflictMatrix, HazardIdentificationMatrix, StructuredReviewMatrices, VisibilityAssessment
 
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
@@ -80,8 +82,21 @@ def test_structured_review_executor_returns_expected_issue_titles():
     assert result['visibility']['manualReviewNeeded'] is True
     assert result['visibility']['parseMode'] == 'docx_structured'
     assert result['visibility']['manualReviewReason'] == 'title_detected_without_attachment_body'
-    assert '- parse mode：docx_structured' in result['reportMarkdown']
-    assert '- manual review reason：title_detected_without_attachment_body' in result['reportMarkdown']
+    assert '# 施工组织设计形式审查报告' in result['reportMarkdown']
+    assert '## 第一部分：审查结论与可视域门禁' in result['reportMarkdown']
+    assert '### 2. 审查依据文件' in result['reportMarkdown']
+    assert '### 3. 可视域与预检状态' in result['reportMarkdown']
+    assert '### 4. 附件可视域断链' in result['reportMarkdown']
+    assert '### 5. 待人工确认事项' in result['reportMarkdown']
+    assert '## 第二部分：L1 审查发现——合法合规与结构完整性' in result['reportMarkdown']
+    assert '## 第五部分：核心数据提取矩阵' in result['reportMarkdown']
+    assert '条文规定' in result['reportMarkdown']
+    assert '《建筑施工组织设计规范》GB/T 50502-2009' in result['reportMarkdown']
+    assert '```json' not in result['reportMarkdown']
+    assert '- parse mode：docx_structured' not in result['reportMarkdown']
+    assert 'ruleId' not in result['reportMarkdown']
+    assert 'policy pack id' not in result['reportMarkdown']
+    assert 'issue id' not in result['reportMarkdown']
     assert result['visibility']['parseWarnings'] == result['summary']['visibilitySummary']['parseWarnings']
     assert result['summary']['visibilitySummary']['attachmentCount'] >= 1
     assert result['summary']['visibilitySummary']['counts']['attachment_unparsed'] >= 1
@@ -671,3 +686,56 @@ def test_structured_review_executor_builds_full_artifact_catalog(tmp_path: Path)
     report_buckets = json.loads((tmp_path / 'structured-review-report-buckets.json').read_text(encoding='utf-8'))
     assert 'visibility_gap' in report_buckets
     assert any(item['title'] == '附件处于可视域缺口，需人工复核原件' for item in report_buckets['visibility_gap'])
+
+
+def test_report_builder_summary_conclusion_mapping():
+    builder = StructuredReviewReportBuilder()
+    matrices = StructuredReviewMatrices(
+        hazardIdentification=HazardIdentificationMatrix(values={}),
+        ruleHits=[],
+        conflicts=ConflictMatrix(values={}),
+        attachmentVisibility=[],
+        sectionStructure=[],
+        issueLayerCounts={},
+    )
+
+    hard_issue = type('Issue', (), {
+        'layer': type('Layer', (), {'value': 'L1'})(),
+        'severity': 'medium',
+        'issueKind': 'hard_defect',
+        'manualReviewNeeded': False,
+        'applicabilityState': 'applies',
+    })()
+    hard_summary = builder.build_summary(
+        document_type='construction_org',
+        selected_packs=['construction_org.base'],
+        issues=[hard_issue],
+        matrices=matrices,
+        visibility=VisibilityAssessment(),
+        parse_warnings=[],
+        unresolved_facts=[],
+    )
+    assert hard_summary.overallConclusion == '修改后重新报审'
+
+    manual_visibility = VisibilityAssessment(manualReviewNeeded=True)
+    manual_summary = builder.build_summary(
+        document_type='construction_org',
+        selected_packs=['construction_org.base'],
+        issues=[],
+        matrices=matrices,
+        visibility=manual_visibility,
+        parse_warnings=[],
+        unresolved_facts=[],
+    )
+    assert manual_summary.overallConclusion == '需人工复核'
+
+    pass_summary = builder.build_summary(
+        document_type='construction_org',
+        selected_packs=['construction_org.base'],
+        issues=[],
+        matrices=matrices,
+        visibility=VisibilityAssessment(),
+        parse_warnings=[],
+        unresolved_facts=[],
+    )
+    assert pass_summary.overallConclusion == '合格通过'

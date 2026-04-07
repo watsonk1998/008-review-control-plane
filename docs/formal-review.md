@@ -37,6 +37,7 @@ P0 的稳定结果字段：
 - parse 结果内部使用 typed `visibility`、`parseMode`、`parserLimited`
 - `result.visibility` 是 top-level canonical visibility 对象，并直接携带 `parseMode / parseWarnings / manualReviewReason / preflight`
 - `summary.visibilitySummary` 仅负责总览；`matrices.attachmentVisibility` 负责结构化明细
+- `reportMarkdown` 为面向审查专家的中文正式报告，不展示 JSON、技术 ID（如 pack id / ruleId / issue id），而改为展示审查依据文件、条文规定、风险限制与审查建议
 - issue 会显式给出 `issueKind`（`hard_defect / visibility_gap / evidence_gap / enhancement`）与 `applicabilityState`
 - issue 会稳定输出 `missingFactKeys / blockingReasons`，用于解释 blocked-by-visibility 与 blocked-by-missing-fact
 - task-detail 结果页优先以结构化 reviewer 视图呈现 `attachmentVisibility / ruleHits / conflicts / sectionStructure`，raw JSON 仅作为折叠调试信息
