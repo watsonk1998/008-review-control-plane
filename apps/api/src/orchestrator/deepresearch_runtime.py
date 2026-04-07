@@ -228,6 +228,7 @@ class DeepResearchRuntime:
             emit=lambda stage, capability, status, message, **kwargs: self._emit(task.id, stage, capability, status, message, **kwargs),
             write_json_artifact=lambda name, payload: self._write_task_artifact(task.id, name, payload),
             write_text_artifact=lambda name, content, suffix='.md': self._write_text_artifact(task.id, name, content, suffix=suffix),
+            write_binary_artifact=lambda name, content, suffix='.bin': self._write_binary_artifact(task.id, name, content, suffix=suffix),
         )
         if resolved_fixture is not None:
             result['fixture'] = resolved_fixture.model_dump()
@@ -274,6 +275,14 @@ class DeepResearchRuntime:
         safe_suffix = suffix if suffix.startswith('.') else f'.{suffix}'
         path = task_dir / f'{name}{safe_suffix}'
         path.write_text(content, encoding='utf-8')
+        return str(path)
+
+    def _write_binary_artifact(self, task_id: str, name: str, content: bytes, *, suffix: str = '.bin') -> str:
+        task_dir = self.tasks_dir / task_id
+        task_dir.mkdir(parents=True, exist_ok=True)
+        safe_suffix = suffix if suffix.startswith('.') else f'.{suffix}'
+        path = task_dir / f'{name}{safe_suffix}'
+        path.write_bytes(content)
         return str(path)
 
     def _chunks_to_sources(self, chunks: list[dict]) -> list[dict]:

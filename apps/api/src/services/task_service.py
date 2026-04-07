@@ -150,7 +150,7 @@ class TaskService:
             return 'candidates'
         if 'matrix' in file_name:
             return 'matrices'
-        if file_name.endswith('.md'):
+        if file_name.endswith('.md') or file_name.endswith('.pdf'):
             return 'report'
         if 'result' in file_name:
             return 'result'

@@ -670,6 +670,11 @@ def test_structured_review_executor_builds_full_artifact_catalog(tmp_path: Path)
         path.write_text(content, encoding='utf-8')
         return str(path)
 
+    def write_binary_artifact(name: str, content: bytes, suffix: str):
+        path = tmp_path / f'{name}{suffix}'
+        path.write_bytes(content)
+        return str(path)
+
     result = asyncio.run(
         executor.run(
             task_id='structured-review-artifacts',
@@ -678,6 +683,7 @@ def test_structured_review_executor_builds_full_artifact_catalog(tmp_path: Path)
             fixture_id='supervision-cold-rolling-construction-plan',
             write_json_artifact=write_json_artifact,
             write_text_artifact=write_text_artifact,
+            write_binary_artifact=write_binary_artifact,
         )
     )
 
@@ -687,6 +693,7 @@ def test_structured_review_executor_builds_full_artifact_catalog(tmp_path: Path)
     assert 'structured-review-l0-visibility' in artifact_names
     assert 'structure-completeness-matrix' in artifact_names
     assert 'structured-review-report-buckets' in artifact_names
+    assert 'structured-review-report' in artifact_names
     l0_payload = json.loads((tmp_path / 'structured-review-l0-visibility.json').read_text(encoding='utf-8'))
     assert l0_payload['parseMode'] == 'docx_structured'
     assert l0_payload['parserLimited'] is False
@@ -703,6 +710,11 @@ def test_structured_review_executor_builds_full_artifact_catalog(tmp_path: Path)
     report_buckets = json.loads((tmp_path / 'structured-review-report-buckets.json').read_text(encoding='utf-8'))
     assert 'visibility_gap' in report_buckets
     assert any(item['title'] == '附件处于可视域缺口，需人工复核原件' for item in report_buckets['visibility_gap'])
+    pdf_artifact = next(artifact for artifact in result['artifactIndex'] if artifact['fileName'].endswith('.pdf'))
+    assert pdf_artifact['category'] == 'report'
+    assert pdf_artifact['mediaType'] == 'application/pdf'
+    assert pdf_artifact['primary'] is True
+    assert (tmp_path / 'structured-review-report.pdf').stat().st_size > 0
 
 
 def test_report_builder_summary_conclusion_mapping():

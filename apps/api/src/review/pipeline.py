@@ -25,6 +25,7 @@ from src.review.extractors.schedule_resource_facts import extract_schedule_resou
 from src.review.profile_resolver import resolve_review_profile
 from src.review.report.issue_builder import finalize_issues
 from src.review.report.matrices import build_review_matrices
+from src.review.report.pdf_exporter import render_structured_review_pdf
 from src.review.report.report_builder import StructuredReviewReportBuilder
 from src.review.rules.engine import ReviewRuleEngine
 from src.review.schema import (
@@ -63,6 +64,7 @@ class StructuredReviewExecutor:
         emit: Callable[..., Any] | None = None,
         write_json_artifact: Callable[[str, Any], str] | None = None,
         write_text_artifact: Callable[[str, str, str], str] | None = None,
+        write_binary_artifact: Callable[[str, bytes, str], str] | None = None,
         execution_options: dict[str, Any] | None = None,
         allow_visibility_ablation: bool = False,
     ) -> dict[str, Any]:
@@ -160,6 +162,7 @@ class StructuredReviewExecutor:
             emit('report', 'structured_review', 'completed', 'Structured review report assembled')
 
         report_artifacts: list[str] = []
+        report_files: list[str] = []
         if write_json_artifact:
             report_artifacts.append(write_json_artifact('hazard-identification-matrix', matrices.hazardIdentification.model_dump(mode='json')))
             report_artifacts.append(write_json_artifact('rule-hit-matrix', [item.model_dump(mode='json') for item in matrices.ruleHits]))
@@ -169,11 +172,17 @@ class StructuredReviewExecutor:
             report_artifacts.append(write_json_artifact('structure-completeness-matrix', [item.model_dump(mode='json') for item in matrices.structureCompleteness]))
             report_artifacts.append(write_json_artifact('structured-review-report-buckets', self.report_builder.build_issue_buckets(final_issues)))
         if write_text_artifact:
-            report_artifacts.append(write_text_artifact('structured-review-report', report_markdown, '.md'))
-        for path in report_artifacts[:-1] if write_text_artifact and report_artifacts else report_artifacts:
+            report_files.append(write_text_artifact('structured-review-report', report_markdown, '.md'))
+        if write_binary_artifact:
+            pdf_path = Path(write_binary_artifact('structured-review-report', b'', '.pdf'))
+            render_structured_review_pdf(report_markdown, pdf_path)
+            report_files.append(str(pdf_path))
+        for path in report_artifacts:
             self._record_artifact(artifact_records, path, category='matrices', stage='report')
-        if write_text_artifact and report_artifacts:
-            self._record_artifact(artifact_records, report_artifacts[-1], category='report', stage='report', primary=True)
+        if report_files:
+            for path in report_files[:-1]:
+                self._record_artifact(artifact_records, path, category='report', stage='report', primary=False)
+            self._record_artifact(artifact_records, report_files[-1], category='report', stage='report', primary=True)
         artifact_index = self._build_artifact_index(task_id, artifact_records)
 
         capabilities_used = ['structured_review_executor']
@@ -226,6 +235,7 @@ class StructuredReviewExecutor:
         allow_visibility_ablation: bool = False,
         write_json_artifact: Callable[[str, Any], str] | None = None,
         write_text_artifact: Callable[[str, str, str], str] | None = None,
+        write_binary_artifact: Callable[[str, bytes, str], str] | None = None,
     ) -> dict[str, Any]:
         return asyncio.run(
             self.run(
@@ -243,6 +253,7 @@ class StructuredReviewExecutor:
                 allow_visibility_ablation=allow_visibility_ablation,
                 write_json_artifact=write_json_artifact,
                 write_text_artifact=write_text_artifact,
+                write_binary_artifact=write_binary_artifact,
             )
         )
 
