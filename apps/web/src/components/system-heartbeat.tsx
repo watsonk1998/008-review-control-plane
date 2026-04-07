@@ -29,7 +29,7 @@ function formatDistanceFromNow(value?: string | null) {
 }
 
 export function SystemHeartbeat() {
-  const [heartbeat, setHeartbeat] = useState<{ runningTaskCount: number; latestTaskUpdatedAt: string | null } | null>(null);
+  const [heartbeat, setHeartbeat] = useState<{ runningTaskCount: number; latestTaskUpdatedAt?: string | null } | null>(null);
   const [lastSuccess, setLastSuccess] = useState<number | null>(null);
   const [tick, setTick] = useState(Date.now());
 
