@@ -12,7 +12,10 @@ import type {
   TaskRecord,
 } from "@/types/control-plane";
 
-const DEFAULT_API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8018";
+const isServer = typeof window === "undefined";
+const DEFAULT_API_BASE_URL = isServer
+  ? (process.env.BACKEND_API_BASE || "http://127.0.0.1:8018")
+  : "";
 
 export function getApiBaseUrl() {
   return DEFAULT_API_BASE_URL.replace(/\/$/, "");

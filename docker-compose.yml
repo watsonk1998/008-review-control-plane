@@ -1,0 +1,51 @@
+services:
+  web:
+    image: node:20.18-alpine
+    container_name: 008-review-web
+    restart: unless-stopped
+    ports:
+      - "81:3000"
+    volumes:
+      - .:/app
+    working_dir: /app/apps/web
+    environment:
+      - PORT=3000
+      - HOSTNAME=0.0.0.0
+      - BACKEND_API_BASE=http://api:8018
+    command: >
+      sh -c "npm config set registry https://registry.npmmirror.com &&
+             npm install -g pnpm &&
+             pnpm config set registry https://registry.npmmirror.com &&
+             pnpm install &&
+             pnpm build &&
+             pnpm start"
+    depends_on:
+      - api
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: 008-review-api
+    restart: unless-stopped
+    volumes:
+      - .:/app
+      - /root/tools/from-obsidian/AI/config:/root/tools/from-obsidian/AI/config
+    environment:
+      - PYTHONUNBUFFERED=1
+      - DEEPTUTOR_BASE_URL=http://deeptutor-bridge:8121
+    depends_on:
+      - deeptutor-bridge
+
+  deeptutor-bridge:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: 008-deeptutor-bridge
+    restart: unless-stopped
+    volumes:
+      - .:/app
+      - /root/tools/from-obsidian/AI/config:/root/tools/from-obsidian/AI/config
+    environment:
+      - PYTHONUNBUFFERED=1
+    command: python /app/scripts/run_deeptutor_bridge.py --host 0.0.0.0 --port 8121

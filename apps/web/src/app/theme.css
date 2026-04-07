@@ -683,6 +683,104 @@ main.shell {
   max-width: 100%;
 }
 
+.expert-report-card {
+  background: linear-gradient(180deg, #FFFFFF 0%, #FCFCFD 100%);
+}
+
+.report-document {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 20px;
+  border: 1px solid var(--card-border);
+  border-radius: 12px;
+  background: #FFFFFF;
+}
+
+.report-title {
+  font-size: 1.5rem;
+  line-height: 1.4;
+  margin: 0;
+}
+
+.report-section-title {
+  margin: 18px 0 0;
+  padding-top: 18px;
+  border-top: 1px solid var(--card-border);
+  font-size: 1.12rem;
+}
+
+.report-subsection-title {
+  margin: 10px 0 0;
+  font-size: 1rem;
+  color: var(--foreground);
+}
+
+.report-item,
+.report-item-nested,
+.report-paragraph {
+  margin: 0;
+  line-height: 1.8;
+  color: var(--foreground);
+}
+
+.report-item {
+  padding-left: 1.2rem;
+  position: relative;
+}
+
+.report-item::before {
+  content: "•";
+  position: absolute;
+  left: 0;
+  color: var(--healthy);
+  font-weight: 700;
+}
+
+.report-item-nested {
+  padding-left: 2.2rem;
+  color: var(--muted);
+}
+
+.report-item-nested::before {
+  left: 1rem;
+  color: var(--warning);
+}
+
+.report-spacer {
+  height: 4px;
+}
+
+.technical-details {
+  padding: 0;
+}
+
+.technical-details > summary {
+  cursor: pointer;
+  list-style: none;
+  padding: 20px 24px;
+  font-weight: 700;
+}
+
+.technical-details > summary::-webkit-details-marker {
+  display: none;
+}
+
+.technical-details > summary::after {
+  content: "展开";
+  float: right;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.technical-details[open] > summary::after {
+  content: "收起";
+}
+
+.details-body {
+  padding: 0 24px 24px;
+}
+
 .source-list {
   list-style: none;
   display: flex;

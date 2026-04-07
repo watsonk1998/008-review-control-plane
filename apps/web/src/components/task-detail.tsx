@@ -107,18 +107,6 @@ function renderEvidenceList(title: string, evidence: EvidenceSpan[]) {
   );
 }
 
-function findingTone(findingType: string) {
-  if (findingType === "hard_evidence") return "is-unhealthy";
-  if (findingType === "visibility_gap") return "is-warning";
-  return "is-neutral";
-}
-
-function issueKindTone(issueKind: string) {
-  if (issueKind === "hard_defect") return "is-unhealthy";
-  if (issueKind === "visibility_gap" || issueKind === "evidence_gap") return "is-warning";
-  return "is-neutral";
-}
-
 function ArtifactList({ artifacts }: { artifacts: TaskArtifact[] }) {
   if (!artifacts.length) {
     return <p className="muted">暂无工件。</p>;
@@ -161,15 +149,15 @@ function renderBlockingReasonMap(map: Record<string, string[]> | null | undefine
 function parseModeLabel(value: string | null | undefined) {
   switch (value) {
     case "docx_structured":
-      return "DOCX structured";
+      return "结构化文档解析";
     case "pdf_text_only":
-      return "PDF text only";
+      return "PDF 文本受限解析";
     case "markdown_text":
-      return "Markdown text";
+      return "Markdown 文本解析";
     case "plain_text":
-      return "Plain text";
+      return "纯文本解析";
     default:
-      return "unknown";
+      return "未知";
   }
 }
 
@@ -207,12 +195,116 @@ function manualReviewReasonLabel(value: string | null | undefined) {
 function preflightGateLabel(value: string | null | undefined) {
   switch (value) {
     case "manual_review_required":
-      return "manual_review_required（需先进入人工复核）";
+      return "需先进入人工复核";
     case "ready":
-      return "ready（未触发前置阻断）";
+      return "可进入正式审查";
     default:
       return value || "—";
   }
+}
+
+function issueKindLabel(value: string) {
+  switch (value) {
+    case "hard_defect":
+      return "硬缺陷";
+    case "visibility_gap":
+      return "可视域缺口";
+    case "evidence_gap":
+      return "证据缺口";
+    case "enhancement":
+      return "优化建议";
+    default:
+      return value;
+  }
+}
+
+function findingTypeLabel(value: string) {
+  switch (value) {
+    case "hard_evidence":
+      return "硬性证据";
+    case "engineering_inference":
+      return "工程推断";
+    case "visibility_gap":
+      return "可视域提示";
+    case "suggestion_enhancement":
+      return "优化建议";
+    default:
+      return value;
+  }
+}
+
+function applicabilityStateLabel(value: string) {
+  switch (value) {
+    case "applies":
+      return "已适用";
+    case "partial":
+      return "部分适用";
+    case "blocked_by_visibility":
+      return "受可视域限制";
+    case "blocked_by_missing_fact":
+      return "受关键事实缺失限制";
+    default:
+      return value;
+  }
+}
+
+function attachmentVisibilityLabel(value: string) {
+  switch (value) {
+    case "parsed":
+      return "已进入可视域";
+    case "attachment_unparsed":
+      return "附件未完成解析";
+    case "referenced_only":
+      return "仅正文提及";
+    case "missing":
+      return "明确缺失";
+    case "unknown":
+      return "状态未知";
+    default:
+      return value;
+  }
+}
+
+function splitLabelValue(text: string) {
+  const index = text.indexOf("：");
+  if (index <= 0 || index > 18) return null;
+  return {
+    label: text.slice(0, index + 1),
+    value: text.slice(index + 1),
+  };
+}
+
+function renderReportText(text: string) {
+  const parts = splitLabelValue(text.trim());
+  if (!parts) return text.trim();
+  return (
+    <>
+      <strong>{parts.label}</strong>
+      {parts.value}
+    </>
+  );
+}
+
+function StructuredReportMarkdown({ markdown }: { markdown: string }) {
+  const lines = markdown.split(/\r?\n/);
+  return (
+    <div className="report-document">
+      {lines.map((line, index) => {
+        const key = `${index}-${line}`;
+        if (!line.trim()) return <div className="report-spacer" key={key} />;
+        if (line.startsWith("# ")) return <h3 className="report-title" key={key}>{line.slice(2).trim()}</h3>;
+        if (line.startsWith("## ")) return <h4 className="report-section-title" key={key}>{line.slice(3).trim()}</h4>;
+        if (line.startsWith("### ")) return <h5 className="report-subsection-title" key={key}>{line.slice(4).trim()}</h5>;
+        if (line.startsWith("  - ")) {
+          return <div className="report-item report-item-nested" key={key}>{renderReportText(line.slice(4))}</div>;
+        }
+        if (line.startsWith("- ")) {
+          return <div className="report-item" key={key}>{renderReportText(line.slice(2))}</div>;
+        }
+        return <p className="report-paragraph" key={key}>{renderReportText(line)}</p>;
+      })}
+    </div>
+  );
 }
 
 function reviewerTaskStateLabel(value: string) {
@@ -384,21 +476,21 @@ function AttachmentVisibilityList({ items }: { items: AttachmentVisibilityMatrix
                 {item.attachmentNumber ? `附件${item.attachmentNumber}` : item.id} · {item.title}
               </strong>
               <p className="muted small">
-                parseState={item.parseState} · titleBlock={item.titleBlockId || "none"}
+                解析状态：{item.parseState} · 标题定位：{item.titleBlockId || "无"}
               </p>
             </div>
             <div className="pill-row">
-              <span className={`status-pill ${item.manualReviewNeeded ? "is-warning" : "is-healthy"}`}>{item.visibility}</span>
+              <span className={`status-pill ${item.manualReviewNeeded ? "is-warning" : "is-healthy"}`}>{attachmentVisibilityLabel(item.visibility)}</span>
               <span className={`status-pill ${item.manualReviewNeeded ? "is-warning" : "is-neutral"}`}>
-              {item.manualReviewNeeded ? "manual review" : "visible"}
+              {item.manualReviewNeeded ? "需人工复核" : "已可见"}
               </span>
             </div>
           </div>
           <ReviewKeyValueList
             items={[
-              { label: "reason", value: item.reason || "—" },
+              { label: "原因", value: manualReviewReasonLabel(item.reason) || "—" },
               {
-                label: "referenceBlockIds",
+                label: "引用定位",
                 value: item.referenceBlockIds.length ? item.referenceBlockIds.join("，") : "—",
               },
             ]}
@@ -420,37 +512,37 @@ function RuleHitList({ items }: { items: RuleHitMatrixRow[] }) {
           <div className="section-heading compact">
             <div>
               <strong>{row.ruleId}</strong>
-              <p className="muted small">pack={row.packId}</p>
+              <p className="muted small">策略包：{row.packId}</p>
             </div>
             <div className="pill-row">
               <span className={`status-pill ${row.packReadiness === "ready" ? "is-healthy" : "is-warning"}`}>
-                {row.packReadiness}
+                {row.packReadiness === "ready" ? "已就绪" : "占位中"}
               </span>
               <span className={`status-pill ${row.status === "pass" ? "is-healthy" : row.status === "not_applicable" ? "is-neutral" : "is-warning"}`}>
-                {row.status}
+                {row.status === "pass" ? "通过" : row.status === "not_applicable" ? "不适用" : row.status === "manual_review_needed" ? "需人工复核" : "命中"}
               </span>
             </div>
           </div>
           <ReviewKeyValueList
             items={[
-              { label: "layer", value: row.layerHint },
-              { label: "severity", value: row.severityHint },
-              { label: "matchType", value: row.matchType },
-              { label: "applicabilityState", value: row.applicabilityState },
+              { label: "问题层级", value: row.layerHint },
+              { label: "严重程度", value: row.severityHint },
+              { label: "命中方式", value: row.matchType },
+              { label: "适用状态", value: applicabilityStateLabel(row.applicabilityState) },
               {
-                label: "requiredFactKeys",
+                label: "所需事实",
                 value: row.requiredFactKeys?.length ? row.requiredFactKeys.join("，") : "—",
               },
               {
-                label: "missingFactKeys",
+                label: "缺失事实",
                 value: row.missingFactKeys?.length ? row.missingFactKeys.join("，") : "—",
               },
               {
-                label: "clauseIds",
+                label: "条文 ID",
                 value: row.clauseIds?.length ? row.clauseIds.join("，") : "—",
               },
               {
-                label: "blockingReasons",
+                label: "阻断原因",
                 value: row.blockingReasons?.length ? row.blockingReasons.join("，") : "—",
               },
             ]}
@@ -818,6 +910,10 @@ export function TaskDetail({ taskId }: { taskId: string }) {
     () => structuredArtifacts.find((artifact) => artifact.name === "structured-review-l0-visibility"),
     [structuredArtifacts],
   );
+  const reportArtifact = useMemo(
+    () => structuredArtifacts.find((artifact) => artifact.name === "structured-review-report"),
+    [structuredArtifacts],
+  );
 
   const reviewerSummary = useMemo(() => {
     if (!reviewerDecision) return null;
@@ -928,58 +1024,153 @@ export function TaskDetail({ taskId }: { taskId: string }) {
               ) : null}
             </article>
 
-            <article className="card stack-md">
-              <div>
-                <p className="eyebrow">Agent 执行路径规划</p>
-                <h2>DeepResearchAgent 计划</h2>
-              </div>
-              {task.plan ? <pre className="code-block">{renderJson(task.plan)}</pre> : <p className="muted">计划尚未生成。</p>}
-            </article>
-          </section>
-
-          <section className="card stack-lg">
-            <div>
-              <p className="eyebrow">执行链路时间轴</p>
-              <h2>调用链路 / 中间步骤</h2>
-            </div>
-            <div className="timeline">
-              {events.map((event, index) => {
-                const key = eventKey(event);
-                return (
-                  <article
-                    className={`timeline-item ${highlightedEventKeys.includes(key) ? "is-new-event" : ""}`}
-                    key={`${key}-${index}`}
-                  >
-                    <div className="timeline-dot" />
-                    <div className="timeline-content">
-                      <div className="timeline-header">
-                        <strong>{event.stage}</strong>
-                        <span className="muted small">{event.capability}</span>
-                        <span
-                          className={`status-pill ${
-                            event.status === "completed"
-                              ? "is-healthy"
-                              : event.status === "failed"
-                                ? "is-unhealthy"
-                                : "is-neutral"
-                          }`}
-                        >
-                          {TASK_STATUS_MAP[event.status] || event.status}
-                        </span>
-                      </div>
-                      <p>{event.message}</p>
-                      <p className="muted small">{new Date(event.timestamp).toLocaleString()}</p>
-                      {event.artifactPath ? <p className="muted small">artifact: {event.artifactPath}</p> : null}
-                      {event.debug ? <pre className="code-block compact">{renderJson(event.debug)}</pre> : null}
-                    </div>
-                  </article>
-                );
-              })}
-            </div>
+            {structuredResult ? (
+              <article className="card stack-md">
+                <div>
+                  <p className="eyebrow">专家阅读入口</p>
+                  <h2>人工复核速览</h2>
+                </div>
+                <div className={`callout ${structuredResult.summary.manualReviewNeeded ? "warning-callout" : ""}`}>
+                  <strong>{structuredResult.summary.overallConclusion}</strong>
+                  <p>
+                    {structuredResult.summary.manualReviewNeeded
+                      ? "当前结果包含需人工结合附件原件、可视域缺口或待确认事实继续复核的内容。"
+                      : "当前结果未触发额外人工复核门槛，可直接按下方正式报告阅读。"}
+                  </p>
+                </div>
+                <ReviewKeyValueList
+                  items={[
+                    { label: "问题总数", value: String(structuredResult.summary.issueCount) },
+                    { label: "L1 合规类问题", value: String(issuesByLayer.L1.length) },
+                    { label: "L2 参数类问题", value: String(issuesByLayer.L2.length) },
+                    { label: "L3 逻辑类问题", value: String(issuesByLayer.L3.length) },
+                    { label: "硬缺陷", value: String(issuesByKind.hard_defect.length) },
+                    { label: "可视域缺口", value: String(issuesByKind.visibility_gap.length) },
+                    { label: "证据缺口", value: String(issuesByKind.evidence_gap.length) },
+                    { label: "优化建议", value: String(issuesByKind.enhancement.length) },
+                  ]}
+                />
+                {reportArtifact ? (
+                  <a className="ghost-button" href={resolveApiUrl(reportArtifact.downloadUrl)} rel="noreferrer" target="_blank">
+                    下载正式审查报告
+                  </a>
+                ) : null}
+              </article>
+            ) : (
+              <article className="card stack-md">
+                <div>
+                  <p className="eyebrow">Agent 执行路径规划</p>
+                  <h2>DeepResearchAgent 计划</h2>
+                </div>
+                {task.plan ? <pre className="code-block">{renderJson(task.plan)}</pre> : <p className="muted">计划尚未生成。</p>}
+              </article>
+            )}
           </section>
 
           {structuredResult ? (
+            <details className="card technical-details">
+              <summary>查看执行链路与调试信息（平台侧）</summary>
+              <div className="stack-lg details-body">
+                {task.plan ? (
+                  <div className="stack-sm">
+                    <strong>任务执行计划</strong>
+                    <pre className="code-block">{renderJson(task.plan)}</pre>
+                  </div>
+                ) : null}
+                <div className="timeline">
+                  {events.map((event, index) => {
+                    const key = eventKey(event);
+                    return (
+                      <article
+                        className={`timeline-item ${highlightedEventKeys.includes(key) ? "is-new-event" : ""}`}
+                        key={`${key}-${index}`}
+                      >
+                        <div className="timeline-dot" />
+                        <div className="timeline-content">
+                          <div className="timeline-header">
+                            <strong>{event.stage}</strong>
+                            <span className="muted small">{event.capability}</span>
+                            <span
+                              className={`status-pill ${
+                                event.status === "completed"
+                                  ? "is-healthy"
+                                  : event.status === "failed"
+                                    ? "is-unhealthy"
+                                    : "is-neutral"
+                              }`}
+                            >
+                              {TASK_STATUS_MAP[event.status] || event.status}
+                            </span>
+                          </div>
+                          <p>{event.message}</p>
+                          <p className="muted small">{new Date(event.timestamp).toLocaleString()}</p>
+                          {event.artifactPath ? <p className="muted small">artifact: {event.artifactPath}</p> : null}
+                          {event.debug ? <pre className="code-block compact">{renderJson(event.debug)}</pre> : null}
+                        </div>
+                      </article>
+                    );
+                  })}
+                </div>
+              </div>
+            </details>
+          ) : (
+            <section className="card stack-lg">
+              <div>
+                <p className="eyebrow">执行链路时间轴</p>
+                <h2>调用链路 / 中间步骤</h2>
+              </div>
+              <div className="timeline">
+                {events.map((event, index) => {
+                  const key = eventKey(event);
+                  return (
+                    <article
+                      className={`timeline-item ${highlightedEventKeys.includes(key) ? "is-new-event" : ""}`}
+                      key={`${key}-${index}`}
+                    >
+                      <div className="timeline-dot" />
+                      <div className="timeline-content">
+                        <div className="timeline-header">
+                          <strong>{event.stage}</strong>
+                          <span className="muted small">{event.capability}</span>
+                          <span
+                            className={`status-pill ${
+                              event.status === "completed"
+                                ? "is-healthy"
+                                : event.status === "failed"
+                                  ? "is-unhealthy"
+                                  : "is-neutral"
+                            }`}
+                          >
+                            {TASK_STATUS_MAP[event.status] || event.status}
+                          </span>
+                        </div>
+                        <p>{event.message}</p>
+                        <p className="muted small">{new Date(event.timestamp).toLocaleString()}</p>
+                        {event.artifactPath ? <p className="muted small">artifact: {event.artifactPath}</p> : null}
+                        {event.debug ? <pre className="code-block compact">{renderJson(event.debug)}</pre> : null}
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+            </section>
+          )}
+
+          {structuredResult ? (
             <>
+              <section className="card stack-lg expert-report-card">
+                <div className="section-heading compact">
+                  <div>
+                    <p className="eyebrow">专家阅读版</p>
+                    <h2>正式审查报告</h2>
+                  </div>
+                  <span className={`status-pill ${structuredResult.summary.manualReviewNeeded ? "is-warning" : "is-healthy"}`}>
+                    {structuredResult.summary.overallConclusion}
+                  </span>
+                </div>
+                <StructuredReportMarkdown markdown={structuredResult.reportMarkdown} />
+              </section>
+
               {reviewerSummary ? (
                 <section className="card stack-md">
                   <div>
@@ -1053,200 +1244,179 @@ export function TaskDetail({ taskId }: { taskId: string }) {
                 }
               />
 
-              <section className="grid two-up">
-                <article className="card stack-lg">
-                  <div>
-                    <p className="eyebrow">核心裁决约束条约</p>
-                    <h2>审查主 contract</h2>
-                  </div>
-                  <div className="callout">
-                    <strong>Resolved Profile</strong>
-                    <p>documentType：{structuredResult.resolvedProfile.documentType}</p>
-                    <p>disciplineTags：{structuredResult.resolvedProfile.disciplineTags.join("，") || "auto"}</p>
-                    <p>policyPackIds：{structuredResult.resolvedProfile.policyPackIds.join(" → ") || "auto"}</p>
-                    <p>strictMode：{structuredResult.resolvedProfile.strictMode ? "true" : "false"}（reserved）</p>
-                  </div>
-                  <div className="callout">
-                    <strong>Canonical Visibility</strong>
-                    <VisibilitySummaryPanel visibility={structuredResult.visibility} />
-                    {l0Artifact ? (
-                      <p className="muted small">
-                        L0 artifact：
-                        <a href={resolveApiUrl(l0Artifact.downloadUrl)} rel="noreferrer" target="_blank">
-                          {l0Artifact.fileName}
-                        </a>
-                      </p>
-                    ) : null}
-                  </div>
-                  <div className="callout">
-                    <strong>Unresolved Facts</strong>
-                    {structuredResult.unresolvedFacts.length ? (
-                      <ul className="source-list">
-                        {structuredResult.unresolvedFacts.map((item) => (
-                          <li key={`${item.code}-${item.factKey}`}>
-                            <strong>{item.code}</strong>
-                            <p className="muted small">{item.factKey}</p>
-                            <p>{item.summary}</p>
-                            {"sourceExtractor" in item || "blockingRuleIds" in item ? (
-                              <p className="muted small">
-                                source={String((item as Record<string, unknown>).sourceExtractor || "—")} · blockingRules=
-                                {Array.isArray((item as Record<string, unknown>).blockingRuleIds) &&
-                                ((item as Record<string, unknown>).blockingRuleIds as string[]).length
-                                  ? ((item as Record<string, unknown>).blockingRuleIds as string[]).join("，")
-                                  : "—"}
-                              </p>
-                            ) : null}
-                          </li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <p>无</p>
-                    )}
-                  </div>
-                  <div className="callout">
-                    <strong>总体结论</strong>
-                    <p>{structuredResult.summary.overallConclusion}</p>
-                    <p>{structuredResult.summary.manualReviewNeeded ? "需要结合附件原件或可视域缺口做人工复核" : "当前无需额外人工复核"}</p>
-                  </div>
-                  {structuredResult.notice ? <div className="callout warning-callout">{structuredResult.notice}</div> : null}
-                </article>
+              <details className="card technical-details">
+                <summary>查看结构化技术明细（平台维护 / 复盘）</summary>
+                <div className="stack-xl details-body">
+                  <section className="grid two-up">
+                    <article className="card stack-lg">
+                      <div>
+                        <p className="eyebrow">平台侧 contract</p>
+                        <h2>结构化主链</h2>
+                      </div>
+                      <div className="callout">
+                        <strong>Resolved Profile</strong>
+                        <p>文档类型：{structuredResult.resolvedProfile.documentType}</p>
+                        <p>专业标签：{structuredResult.resolvedProfile.disciplineTags.join("，") || "自动推断"}</p>
+                        <p>策略包：{structuredResult.resolvedProfile.policyPackIds.join(" → ") || "自动推断"}</p>
+                        <p>严格模式：{structuredResult.resolvedProfile.strictMode ? "开启" : "关闭"}（当前仅保留字段）</p>
+                      </div>
+                      <div className="callout">
+                        <strong>可视域总览</strong>
+                        <VisibilitySummaryPanel visibility={structuredResult.visibility} />
+                        {l0Artifact ? (
+                          <p className="muted small">
+                            L0 工件：
+                            <a href={resolveApiUrl(l0Artifact.downloadUrl)} rel="noreferrer" target="_blank">
+                              {l0Artifact.fileName}
+                            </a>
+                          </p>
+                        ) : null}
+                      </div>
+                      <div className="callout">
+                        <strong>待确认事实</strong>
+                        {structuredResult.unresolvedFacts.length ? (
+                          <ul className="source-list">
+                            {structuredResult.unresolvedFacts.map((item) => (
+                              <li key={`${item.code}-${item.factKey}`}>
+                                <strong>{item.code}</strong>
+                                <p className="muted small">{item.factKey}</p>
+                                <p>{item.summary}</p>
+                              </li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <p>无</p>
+                        )}
+                      </div>
+                      {structuredResult.notice ? <div className="callout warning-callout">{structuredResult.notice}</div> : null}
+                    </article>
 
-                <article className="card stack-lg">
-                  <div>
-                    <p className="eyebrow">流转工件清单</p>
-                    <h2>审查工件</h2>
-                  </div>
-                  <ArtifactList artifacts={structuredArtifacts} />
-                  <div className="stack-sm">
-                    <strong>Issue Buckets</strong>
-                    <ReviewKeyValueList
-                      items={[
-                        { label: "hard defect", value: String(issuesByKind.hard_defect.length) },
-                        { label: "visibility gap", value: String(issuesByKind.visibility_gap.length) },
-                        { label: "evidence gap", value: String(issuesByKind.evidence_gap.length) },
-                        { label: "enhancement", value: String(issuesByKind.enhancement.length) },
-                      ]}
-                    />
-                  </div>
-                </article>
-              </section>
+                    <article className="card stack-lg">
+                      <div>
+                        <p className="eyebrow">平台侧工件</p>
+                        <h2>审查工件与分类计数</h2>
+                      </div>
+                      <ArtifactList artifacts={structuredArtifacts} />
+                      <div className="stack-sm">
+                        <strong>问题分类计数</strong>
+                        <ReviewKeyValueList
+                          items={[
+                            { label: "硬缺陷", value: String(issuesByKind.hard_defect.length) },
+                            { label: "可视域缺口", value: String(issuesByKind.visibility_gap.length) },
+                            { label: "证据缺口", value: String(issuesByKind.evidence_gap.length) },
+                            { label: "优化建议", value: String(issuesByKind.enhancement.length) },
+                          ]}
+                        />
+                      </div>
+                    </article>
+                  </section>
 
-              {REVIEW_LAYERS.map((layer) => (
-                <section className="card stack-lg" key={layer}>
-                  <div>
-                    <p className="eyebrow">缺陷召回集 · {layer}</p>
-                    <h2>{layer} 问题</h2>
-                  </div>
-                  {issuesByLayer[layer].length ? (
-                    <div className="stack-md">
-                      {issuesByLayer[layer].map((issue: ReviewIssue) => (
-                        <article className="boundary-item" key={issue.id}>
-                          <div className="section-heading compact">
-                            <div>
-                              <h3>
-                                {issue.id} · {issue.title}
-                              </h3>
-                              <p className="muted small">
-                                {issue.layer} / {issue.findingType}
-                              </p>
-                            </div>
-                            <span className={`status-pill ${severityTone(issue.severity)}`}>{issue.severity}</span>
-                          </div>
-                          <p>{issue.summary}</p>
-                          {issue.manualReviewNeeded ? (
-                            <p className="error-text">
-                              需要人工复核该问题：{manualReviewReasonLabel(issue.manualReviewReason || "manual_confirmation_required")}。
-                            </p>
-                          ) : null}
-                          {issue.evidenceMissing ? <p className="muted small">证据状态：当前存在 evidence gap，需补齐文档或条文证据。</p> : null}
-                          <div className="stack-sm">
-                            <div className="artifact-list">
-                              <span className={`status-pill ${findingTone(issue.findingType)}`}>{issue.findingType}</span>
-                              <span className={`status-pill ${issueKindTone(issue.issueKind)}`}>{issue.issueKind}</span>
-                              <span className={`status-pill ${severityTone(issue.severity)}`}>{issue.severity}</span>
-                              <span className="status-pill is-neutral">{issue.applicabilityState}</span>
-                            </div>
-                            <strong>整改建议</strong>
-                            <ul>
-                              {issue.recommendation.map((item) => (
-                                <li key={item}>{item}</li>
-                              ))}
-                            </ul>
-                          </div>
-                          {renderEvidenceList("文档证据", issue.docEvidence)}
-                          {renderEvidenceList("规范证据", issue.policyEvidence)}
-                        </article>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="muted">该层暂无问题。</p>
-                  )}
-                </section>
-              ))}
+                  {REVIEW_LAYERS.map((layer) => (
+                    <section className="card stack-lg" key={layer}>
+                      <div>
+                        <p className="eyebrow">结构化问题清单 · {layer}</p>
+                        <h2>{layer} 层问题明细</h2>
+                      </div>
+                      {issuesByLayer[layer].length ? (
+                        <div className="stack-md">
+                          {issuesByLayer[layer].map((issue: ReviewIssue) => (
+                            <article className="boundary-item" key={issue.id}>
+                              <div className="section-heading compact">
+                                <div>
+                                  <h3>{issue.title}</h3>
+                                  <p className="muted small">
+                                    {findingTypeLabel(issue.findingType)} · {issueKindLabel(issue.issueKind)} · {applicabilityStateLabel(issue.applicabilityState)}
+                                  </p>
+                                </div>
+                                <span className={`status-pill ${severityTone(issue.severity)}`}>{issue.severity === "high" ? "高" : issue.severity === "medium" ? "中" : issue.severity === "low" ? "低" : "提示"}</span>
+                              </div>
+                              <p>{issue.summary}</p>
+                              {issue.manualReviewNeeded ? (
+                                <p className="error-text">
+                                  需要人工复核：{manualReviewReasonLabel(issue.manualReviewReason || "manual_confirmation_required")}。
+                                </p>
+                              ) : null}
+                              {issue.evidenceMissing ? <p className="muted small">证据状态：当前证据链未完全闭合。</p> : null}
+                              <div className="stack-sm">
+                                <strong>整改建议</strong>
+                                <ul>
+                                  {issue.recommendation.map((item) => (
+                                    <li key={item}>{item}</li>
+                                  ))}
+                                </ul>
+                              </div>
+                              {renderEvidenceList("文档证据", issue.docEvidence)}
+                              {renderEvidenceList("规范证据", issue.policyEvidence)}
+                              <p className="muted small">技术追踪 ID：{issue.id}</p>
+                            </article>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="muted">该层暂无问题。</p>
+                      )}
+                    </section>
+                  ))}
 
-              <section className="grid two-up">
-                <article className="card stack-lg">
-                  <div>
-                    <p className="eyebrow">L0 层原生可视域覆盖</p>
-                    <h2>可视域与解析降级</h2>
-                  </div>
-                  <div className="callout">
-                    <strong>Attachment Visibility Matrix</strong>
-                    <p>top-level visibility 已在上方 canonical contract 卡片中展示；这里保留结构化明细。</p>
-                  </div>
-                  <AttachmentVisibilityList items={structuredResult.matrices.attachmentVisibility} />
-                  <CompactJsonDetails
-                    summary="查看 attachment visibility JSON"
-                    data={structuredResult.matrices.attachmentVisibility}
-                  />
-                </article>
+                  <section className="grid two-up">
+                    <article className="card stack-lg">
+                      <div>
+                        <p className="eyebrow">L0 可视域明细</p>
+                        <h2>附件可视域</h2>
+                      </div>
+                      <AttachmentVisibilityList items={structuredResult.matrices.attachmentVisibility} />
+                      <CompactJsonDetails
+                        summary="查看 attachment visibility JSON"
+                        data={structuredResult.matrices.attachmentVisibility}
+                      />
+                    </article>
 
-                <article className="card stack-lg">
-                  <div>
-                    <p className="eyebrow">底层推理依据矩阵</p>
-                    <h2>审查矩阵</h2>
-                  </div>
-                  <div className="stack-md">
+                    <article className="card stack-lg">
+                      <div>
+                        <p className="eyebrow">规则与冲突矩阵</p>
+                        <h2>结构化矩阵</h2>
+                      </div>
+                      <div className="stack-md">
+                        <div>
+                          <strong>Hazard Identification</strong>
+                          <HazardIdentificationList values={structuredResult.matrices.hazardIdentification.values} />
+                        </div>
+                        <div>
+                          <strong>Rule Hits</strong>
+                          <RuleHitList items={structuredResult.matrices.ruleHits} />
+                        </div>
+                        <div>
+                          <strong>Conflicts</strong>
+                          <ConflictList conflicts={structuredResult.matrices.conflicts} />
+                        </div>
+                      </div>
+                      <CompactJsonDetails summary="查看 matrices JSON" data={structuredResult.matrices} />
+                    </article>
+
+                    <article className="card stack-lg">
+                      <div>
+                        <p className="eyebrow">章节结构</p>
+                        <h2>文档拓扑树</h2>
+                      </div>
+                      <SectionStructureList sections={structuredResult.matrices.sectionStructure} />
+                      <CompactJsonDetails
+                        summary="查看 section structure JSON"
+                        data={structuredResult.matrices.sectionStructure}
+                      />
+                    </article>
+                  </section>
+
+                  <section className="card stack-lg">
                     <div>
-                      <strong>Hazard Identification</strong>
-                      <HazardIdentificationList values={structuredResult.matrices.hazardIdentification.values} />
+                      <p className="eyebrow">原始结果</p>
+                      <h2>完整结构化 JSON</h2>
                     </div>
-                    <div>
-                      <strong>Rule Hits</strong>
-                      <RuleHitList items={structuredResult.matrices.ruleHits} />
-                    </div>
-                    <div>
-                      <strong>Conflicts</strong>
-                      <ConflictList conflicts={structuredResult.matrices.conflicts} />
-                    </div>
-                  </div>
-                  <CompactJsonDetails summary="查看 matrices JSON" data={structuredResult.matrices} />
-                </article>
-
-                <article className="card stack-lg">
-                  <div>
-                    <p className="eyebrow">文档拓扑嵌套树</p>
-                    <h2>章节结构</h2>
-                  </div>
-                  <SectionStructureList sections={structuredResult.matrices.sectionStructure} />
-                  <CompactJsonDetails
-                    summary="查看 section structure JSON"
-                    data={structuredResult.matrices.sectionStructure}
-                  />
-                </article>
-              </section>
-
-              <section className="card stack-lg">
-                <div>
-                  <p className="eyebrow">形式审查报告底稿</p>
-                  <h2>报告与原始结果</h2>
+                    <details>
+                      <summary>查看原始 JSON</summary>
+                      <pre className="code-block">{renderJson(structuredResult)}</pre>
+                    </details>
+                  </section>
                 </div>
-                <pre className="result-block">{structuredResult.reportMarkdown}</pre>
-                <details>
-                  <summary>查看原始 JSON</summary>
-                  <pre className="code-block">{renderJson(structuredResult)}</pre>
-                </details>
-              </section>
+              </details>
             </>
           ) : (
             <section className="grid two-up">

@@ -102,8 +102,24 @@ def prepare_deeptutor_runtime(repo_path: Path) -> None:
 
 
 def create_app(repo_path: Path, session_dir: Path) -> FastAPI:
-    prepare_deeptutor_runtime(repo_path)
-    from src.agents.chat import ChatAgent, SessionManager
+    if repo_path.exists():
+        prepare_deeptutor_runtime(repo_path)
+        from src.agents.chat import ChatAgent, SessionManager
+    else:
+        class SessionManager:
+            def __init__(self, base_dir): pass
+            def get_session(self, sid): return None
+            def create_session(self, title, settings): return {"session_id": "mock-session"}
+            def add_message(self, *args, **kwargs): pass
+        
+        class ChatAgent:
+            def __init__(self, *args, **kwargs): pass
+            async def process(self, *args, **kwargs):
+                yield {"type": "stream", "content": "DeepTutor 引擎当前工作在 Mock 模式下，因为未检测到本地私有仓库源码。"}
+                yield {"type": "complete", "content": "DeepTutor 引擎当前工作在 Mock 模式下，因为未检测到本地私有仓库源码。", "sources": {"rag": [], "web": []}}
+        
+        SessionManager = SessionManager
+        ChatAgent = ChatAgent
 
     app = FastAPI(title="DeepTutor Bridge", version="0.1.0")
     app.add_middleware(

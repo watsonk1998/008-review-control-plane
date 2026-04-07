@@ -15,6 +15,7 @@ dependencies = [
   "colorama>=0.4.6",
   "duckduckgo-search>=8.1.1",
   "fastapi>=0.115.0",
+  "gpt-researcher>=0.11.1",
   "htmldocx>=0.0.6",
   "httpx>=0.27.0",
   "json-repair>=0.29.8",
