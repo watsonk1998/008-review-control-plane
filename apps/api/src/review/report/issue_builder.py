@@ -4,9 +4,43 @@ from src.domain.models import ConfidenceLevel
 from src.review.schema import FinalIssue, IssueCandidate
 
 
+_STRUCTURE_ITEM_LABELS = {
+    'preparationBasis': '编制依据',
+    'engineeringOverview': '工程概况',
+    'constructionDeployment': '施工部署',
+    'schedulePlan': '施工进度计划',
+    'resourcePlan': '施工准备与资源配置计划',
+    'processMethod': '主要施工方案',
+    'layoutPlan': '施工现场平面布置',
+    'progressManagementPlan': '进度管理计划',
+    'qualityManagementPlan': '质量管理计划',
+    'safetyManagementPlan': '安全管理计划',
+    'environmentManagementPlan': '环境管理计划',
+    'costManagementPlan': '成本管理计划',
+}
+
+
+def _structure_item_labels(candidate: IssueCandidate) -> list[str]:
+    labels: list[str] = []
+    for hit in candidate.ruleHits:
+        for fact_ref in hit.factRefs:
+            if not fact_ref.startswith('project.structureCompleteness.'):
+                continue
+            item_key = fact_ref.rsplit('.', 1)[-1]
+            label = _STRUCTURE_ITEM_LABELS.get(item_key, item_key)
+            if label not in labels:
+                labels.append(label)
+    return labels
+
+
 def _fallback_recommendations(candidate: IssueCandidate) -> list[str]:
+    structure_labels = _structure_item_labels(candidate)
     mapping = {
-        'construction_org_structure_completeness': ['补齐工程概况、部署、进度、资源、安全、应急和平面布置等核心章节。'],
+        'construction_org_structure_completeness': [
+            f'按《建筑施工组织设计规范》GB/T 50502-2009 补齐以下结构项：{"、".join(structure_labels)}。'
+            if structure_labels
+            else '按《建筑施工组织设计规范》GB/T 50502-2009 补齐结构完整性矩阵中未闭合的章节。'
+        ],
         'construction_org_duplicate_sections': ['统一章节编号与标题命名，消除重复“防火安全”等结构冲突。'],
         'construction_org_attachment_visibility': ['补充上传附件原件或补录附件正文内容，并在正式报告中标记人工复核结果。'],
         'construction_org_special_scheme_gap': ['针对识别出的起重吊装/动火/施工用电等高风险作业，明确专项方案或专项技术措施的正文挂接位置。'],
@@ -99,6 +133,9 @@ def _hydrate_issue_payloads(candidates: list[IssueCandidate], payloads: list[dic
 
 def _build_summary(candidate: IssueCandidate) -> str:
     if candidate.candidateId == 'construction_org_structure_completeness':
+        structure_labels = _structure_item_labels(candidate)
+        if structure_labels:
+            return f'结构完整性矩阵显示以下项目存在缺项或仅部分识别：{"、".join(structure_labels)}。'
         return '施工组织设计缺少核心章节，会削弱部署、资源、安全与应急链路的完整性。'
     if candidate.candidateId == 'construction_org_duplicate_sections':
         return '解析结果中出现重复章节标题，会降低问题定位、矩阵对齐和人工复核稳定性。'

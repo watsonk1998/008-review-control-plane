@@ -319,12 +319,32 @@ class SectionStructureMatrixItem(BaseModel):
     duplicate: bool = False
 
 
+class StructureCompletenessMatchedSection(BaseModel):
+    sectionId: str | None = None
+    blockId: str | None = None
+    title: str
+    position: int | None = None
+    level: int | None = None
+
+
+class StructureCompletenessMatrixItem(BaseModel):
+    itemKey: str
+    requirementLabel: str
+    basisClause: str
+    basisRequirement: str
+    status: Literal['matched', 'partial', 'missing', 'blocked_by_visibility']
+    matchedSections: list[StructureCompletenessMatchedSection] = Field(default_factory=list)
+    analysis: str
+    reportExcerpt: str
+
+
 class StructuredReviewMatrices(BaseModel):
     hazardIdentification: HazardIdentificationMatrix
     ruleHits: list[RuleHitMatrixRow] = Field(default_factory=list)
     conflicts: ConflictMatrix
     attachmentVisibility: list[AttachmentVisibilityMatrixItem] = Field(default_factory=list)
     sectionStructure: list[SectionStructureMatrixItem] = Field(default_factory=list)
+    structureCompleteness: list[StructureCompletenessMatrixItem] = Field(default_factory=list)
     issueLayerCounts: dict[str, int] = Field(default_factory=dict)
 
 

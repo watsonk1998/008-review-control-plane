@@ -89,9 +89,13 @@ def test_structured_review_executor_returns_expected_issue_titles():
     assert '### 4. 附件可视域断链' in result['reportMarkdown']
     assert '### 5. 待人工确认事项' in result['reportMarkdown']
     assert '## 第二部分：L1 审查发现——合法合规与结构完整性' in result['reportMarkdown']
+    assert '### 2.1 结构完整性与形式合规性' in result['reportMarkdown']
+    assert '### 2.2 合法合规与法定挂接问题' in result['reportMarkdown']
     assert '## 第五部分：核心数据提取矩阵' in result['reportMarkdown']
     assert '条文规定' in result['reportMarkdown']
     assert '《建筑施工组织设计规范》GB/T 50502-2009' in result['reportMarkdown']
+    assert '| 序号 | 规范要求 | 规范依据 | 文档对应章节 | 结构判定 | 定位说明 |' in result['reportMarkdown']
+    assert '| 12 | 成本管理计划 | 7.1.1、7.6.1~7.6.2 | 未识别到稳定对应章节 | 缺失 | 当前未识别到可稳定对应“成本管理计划”的章节。 |' in result['reportMarkdown']
     assert '```json' not in result['reportMarkdown']
     assert '- parse mode：docx_structured' not in result['reportMarkdown']
     assert 'ruleId' not in result['reportMarkdown']
@@ -109,6 +113,15 @@ def test_structured_review_executor_returns_expected_issue_titles():
     assert 'whetherManualReviewNeeded' not in attachment_issue
     assert 'evidenceMissing' in attachment_issue
     assert all('packReadiness' in row for row in result['matrices']['ruleHits'])
+    assert len(result['matrices']['structureCompleteness']) == 12
+    assert result['matrices']['structureCompleteness'][0]['itemKey'] == 'preparationBasis'
+    assert result['matrices']['structureCompleteness'][-1]['itemKey'] == 'costManagementPlan'
+    assert all(row['status'] in {'matched', 'partial', 'missing', 'blocked_by_visibility'} for row in result['matrices']['structureCompleteness'])
+    cost_row = next(row for row in result['matrices']['structureCompleteness'] if row['itemKey'] == 'costManagementPlan')
+    assert cost_row['status'] == 'missing'
+    assert cost_row['matchedSections'] == []
+    structure_issue = next(issue for issue in result['issues'] if issue['title'] == '施工组织设计核心章节不完整')
+    assert all(span['sourceId'] == 'construction-《建筑施工组织设计规范》GB/T 50502-2009' for span in structure_issue['policyEvidence'])
 
 
 def test_structured_review_executor_supports_construction_scheme_base_and_ready_scenario_pack(tmp_path: Path):
@@ -259,6 +272,9 @@ def test_structured_review_executor_frontloads_manual_review_for_parser_limited_
         issue['applicabilityState'] == 'blocked_by_missing_fact' and issue['missingFactKeys']
         for issue in result['issues']
     )
+    blocked_structure_rows = [row for row in result['matrices']['structureCompleteness'] if row['status'] == 'blocked_by_visibility']
+    assert blocked_structure_rows
+    assert any(row['itemKey'] == 'costManagementPlan' for row in blocked_structure_rows)
     assert any(
         row['ruleId'] == 'construction_org_emergency_plan_targeted'
         and row['clauseIds']
@@ -669,6 +685,7 @@ def test_structured_review_executor_builds_full_artifact_catalog(tmp_path: Path)
     assert {'parse', 'facts', 'rule_hits', 'candidates', 'result', 'matrices', 'report'}.issubset(artifact_categories)
     artifact_names = {artifact['name'] for artifact in result['artifactIndex']}
     assert 'structured-review-l0-visibility' in artifact_names
+    assert 'structure-completeness-matrix' in artifact_names
     assert 'structured-review-report-buckets' in artifact_names
     l0_payload = json.loads((tmp_path / 'structured-review-l0-visibility.json').read_text(encoding='utf-8'))
     assert l0_payload['parseMode'] == 'docx_structured'

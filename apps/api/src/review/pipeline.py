@@ -13,7 +13,6 @@ from src.domain.models import (
     BlockLocator,
     ConfidenceLevel,
     EvidenceSpan,
-    SectionLocator,
     SourceDocumentRef,
     TableLocator,
     TaskArtifact,
@@ -167,6 +166,7 @@ class StructuredReviewExecutor:
             report_artifacts.append(write_json_artifact('conflict-matrix', matrices.conflicts.model_dump(mode='json')))
             report_artifacts.append(write_json_artifact('attachment-visibility-matrix', [item.model_dump(mode='json') for item in matrices.attachmentVisibility]))
             report_artifacts.append(write_json_artifact('section-structure-matrix', [item.model_dump(mode='json') for item in matrices.sectionStructure]))
+            report_artifacts.append(write_json_artifact('structure-completeness-matrix', [item.model_dump(mode='json') for item in matrices.structureCompleteness]))
             report_artifacts.append(write_json_artifact('structured-review-report-buckets', self.report_builder.build_issue_buckets(final_issues)))
         if write_text_artifact:
             report_artifacts.append(write_text_artifact('structured-review-report', report_markdown, '.md'))

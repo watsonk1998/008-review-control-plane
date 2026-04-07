@@ -208,12 +208,32 @@ export interface SectionStructureMatrixItem {
   duplicate: boolean;
 }
 
+export interface StructureCompletenessMatchedSection {
+  sectionId?: string | null;
+  blockId?: string | null;
+  title: string;
+  position?: number | null;
+  level?: number | null;
+}
+
+export interface StructureCompletenessMatrixItem {
+  itemKey: string;
+  requirementLabel: string;
+  basisClause: string;
+  basisRequirement: string;
+  status: "matched" | "partial" | "missing" | "blocked_by_visibility";
+  matchedSections: StructureCompletenessMatchedSection[];
+  analysis: string;
+  reportExcerpt: string;
+}
+
 export interface StructuredReviewMatrices {
   hazardIdentification: HazardIdentificationMatrix;
   ruleHits: RuleHitMatrixRow[];
   conflicts: ConflictMatrix;
   attachmentVisibility: AttachmentVisibilityMatrixItem[];
   sectionStructure: SectionStructureMatrixItem[];
+  structureCompleteness: StructureCompletenessMatrixItem[];
   issueLayerCounts?: Record<string, number>;
 }
 

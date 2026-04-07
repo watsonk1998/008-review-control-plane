@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from src.review.parser.normalizer import section_key
+from src.review.structure_completeness import build_construction_org_structure_matrix
 
 
 def _find_block(blocks: list[dict[str, Any]], pattern: str) -> dict[str, Any] | None:
@@ -53,6 +54,15 @@ _SECTION_PRESENCE_LABELS = {
     'emergencyPlan': '应急预案',
     'calculationBook': '计算书/验算',
     'monitoringPlan': '监测监控',
+}
+
+_STRUCTURE_COMPLETENESS_TO_SECTION_PRESENCE = {
+    'engineeringOverview': 'engineeringOverview',
+    'preparationBasis': 'preparationBasis',
+    'schedulePlan': 'schedulePlan',
+    'resourcePlan': 'resourcePlan',
+    'processMethod': 'processMethod',
+    'layoutPlan': 'layoutPlan',
 }
 
 _WEAK_STRUCTURE_SECTION_KEYWORDS = (
@@ -121,27 +131,27 @@ def _collect_section_presence(parse_result) -> tuple[dict[str, bool], dict[str, 
             presence['preparationBasis'] = True
             if block_id:
                 refs['project.sectionPresence.preparationBasis'].append(block_id)
-        if any(keyword in title for keyword in ['施工计划', '施工部署']):
+        if any(keyword in title for keyword in ['施工计划', '施工部署', '施工总部署', '施工安排']):
             presence['constructionPlan'] = True
             if block_id:
                 refs['project.sectionPresence.constructionPlan'].append(block_id)
-        if any(keyword in title for keyword in ['施工进度计划', '进度计划', '工期安排']):
+        if any(keyword in title for keyword in ['施工进度计划', '进度计划', '工期安排', '进度管理计划', '施工网络进度表', '网络进度表']):
             presence['schedulePlan'] = True
             if block_id:
                 refs['project.sectionPresence.schedulePlan'].append(block_id)
-        if any(keyword in title for keyword in ['资源配置', '资源配置计划', '劳动力计划', '机械设备计划']):
+        if any(keyword in title for keyword in ['资源配置', '资源配置计划', '劳动力计划', '机械设备计划', '资源管理计划', '施工劳动力安排', '施工准备']):
             presence['resourcePlan'] = True
             if block_id:
                 refs['project.sectionPresence.resourcePlan'].append(block_id)
-        if any(keyword in title for keyword in ['施工总平面布置', '平面布置']):
+        if any(keyword in title for keyword in ['施工总平面布置', '施工现场平面布置', '施工平面布置', '施工平面管理计划', '平面布置']):
             presence['layoutPlan'] = True
             if block_id:
                 refs['project.sectionPresence.layoutPlan'].append(block_id)
-        if any(keyword in title for keyword in ['施工工艺', '工艺流程', '施工方法']):
+        if any(keyword in title for keyword in ['施工工艺', '工艺流程', '施工方法', '施工方案']):
             presence['processMethod'] = True
             if block_id:
                 refs['project.sectionPresence.processMethod'].append(block_id)
-        if any(keyword in title for keyword in ['安全保证措施', '安全技术措施', '安全管理措施']):
+        if any(keyword in title for keyword in ['安全保证措施', '安全技术措施', '安全管理措施', '安全管理计划', '专项安全措施', '施工用电安全']):
             presence['safetyMeasures'] = True
             if block_id:
                 refs['project.sectionPresence.safetyMeasures'].append(block_id)
@@ -190,7 +200,7 @@ def _find_weak_section_structure_duplicates(parse_result) -> tuple[list[str], li
     return impacted_titles, list(dict.fromkeys(impacted_refs))
 
 
-def extract_project_facts(parse_result) -> tuple[dict[str, Any], dict[str, list[str]], list[str]]:
+def extract_project_facts(parse_result) -> tuple[dict[str, Any], dict[str, list[str]], list[dict[str, Any]]]:
     blocks = parse_result.blocks
     project_name, project_name_ref = _extract_value(blocks, '项目名称')
     project_code, project_code_ref = _extract_value(blocks, '项目编号')
@@ -213,6 +223,16 @@ def extract_project_facts(parse_result) -> tuple[dict[str, Any], dict[str, list[
     section_presence, section_presence_refs = _collect_section_presence(parse_result)
     weak_structure_duplicates, weak_structure_refs = _find_weak_section_structure_duplicates(parse_result)
 
+    structure_completeness: list[dict[str, Any]] = []
+    structure_refs: dict[str, list[str]] = {}
+    structure_unresolved: list[dict[str, Any]] = []
+    if document_type_hint == 'construction_org':
+        structure_completeness, structure_refs, structure_unresolved = build_construction_org_structure_matrix(parse_result)
+        for row in structure_completeness:
+            mapped_presence_key = _STRUCTURE_COMPLETENESS_TO_SECTION_PRESENCE.get(row['itemKey'])
+            if mapped_presence_key and row['status'] in {'matched', 'partial'}:
+                section_presence[mapped_presence_key] = True
+
     facts = {
         'documentTypeHint': document_type_hint,
         'projectName': project_name,
@@ -224,6 +244,7 @@ def extract_project_facts(parse_result) -> tuple[dict[str, Any], dict[str, list[
         'sectionCount': len(parse_result.sections),
         'tableCount': len(parse_result.tables),
         'sectionPresence': section_presence,
+        'structureCompleteness': structure_completeness,
     }
     refs = {
         'project.projectName': [project_name_ref] if project_name_ref else [],
@@ -233,6 +254,7 @@ def extract_project_facts(parse_result) -> tuple[dict[str, Any], dict[str, list[
         'project.specialEquipmentMentioned': special_equipment_blocks,
         'project.contextOnly': context_only_blocks,
         **section_presence_refs,
+        **structure_refs,
     }
     unresolved = []
     if weak_structure_duplicates:
@@ -286,4 +308,4 @@ def extract_project_facts(parse_result) -> tuple[dict[str, Any], dict[str, list[
         refs['project.duplicateSections'] = list(
             dict.fromkeys([*refs.get('project.duplicateSections', []), *weak_structure_refs])
         )
-    return facts, refs, unresolved
+    return facts, refs, unresolved + structure_unresolved

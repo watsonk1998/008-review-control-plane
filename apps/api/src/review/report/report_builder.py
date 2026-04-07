@@ -40,6 +40,12 @@ class StructuredReviewReportBuilder:
         'plain_text': '纯文本解析',
     }
     _FILE_TYPE_LABELS = {'docx': 'Word 文档', 'pdf': 'PDF 文档', 'md': 'Markdown 文档', 'txt': '文本文件'}
+    _STRUCTURE_STATUS_LABELS = {
+        'matched': '符合',
+        'partial': '部分符合',
+        'missing': '缺失',
+        'blocked_by_visibility': '受可视域限制',
+    }
     _MANUAL_REVIEW_REASON_LABELS = {
         'title_detected_without_attachment_body': '已识别到附件标题，但附件正文未进入当前可视域。',
         'title_detected_but_body_not_reliably_parsed': '已识别到附件标题，但正文解析可靠性不足。',
@@ -83,6 +89,13 @@ class StructuredReviewReportBuilder:
         'calculationEvidencePresent': '已提取验算依据',
         'measureSectionPresent': '已识别风险控制措施章节',
         'monitoringSectionPresent': '已识别监测监控章节',
+    }
+    _L1_STRUCTURE_TITLES = {
+        '施工组织设计核心章节不完整',
+        '章节结构存在重复标题，正式审查定位不稳定',
+    }
+    _L1_PREFLIGHT_TITLES = {
+        '附件处于可视域缺口，需人工复核原件',
     }
 
     def build_summary(
@@ -204,7 +217,35 @@ class StructuredReviewReportBuilder:
             ]
         )
 
-        for layer in ['L1', 'L2', 'L3']:
+        lines.extend(['## ' + layer_sections['L1'], ''])
+        if summary.documentType == 'construction_org' and matrices.structureCompleteness:
+            l1_structure_issues = [
+                issue
+                for issue in issues
+                if issue.layer.value == 'L1' and issue.title in self._L1_STRUCTURE_TITLES
+            ]
+            l1_compliance_issues = [
+                issue
+                for issue in issues
+                if issue.layer.value == 'L1' and issue.title not in self._L1_STRUCTURE_TITLES | self._L1_PREFLIGHT_TITLES
+            ]
+            lines.extend(self._render_construction_org_l1_section(matrices, l1_structure_issues, l1_compliance_issues))
+        else:
+            l1_issues = sorted(
+                [issue for issue in issues if issue.layer.value == 'L1'],
+                key=lambda issue: (self._SEVERITY_ORDER.get(issue.severity, 99), issue.title),
+            )
+            if l1_issues:
+                basis_lines = self._render_layer_basis(l1_issues)
+                if basis_lines:
+                    lines.extend(['### 主要审查依据', *basis_lines, ''])
+            if not l1_issues:
+                lines.extend(['- 本层未发现需要单独提示的问题。', ''])
+            else:
+                for index, issue in enumerate(l1_issues, start=1):
+                    lines.extend(self._render_issue(index, issue))
+
+        for layer in ['L2', 'L3']:
             lines.extend(['## ' + layer_sections[layer], ''])
             layer_issues = sorted(
                 [issue for issue in issues if issue.layer.value == layer],
@@ -230,13 +271,16 @@ class StructuredReviewReportBuilder:
                 '### 2. 附件可视域情况',
                 *self._render_attachment_matrix_summary(matrices.attachmentVisibility, parse_result.visibility),
                 '',
-                '### 3. 章节结构情况',
+                '### 3. 施组结构完整性情况',
+                *self._render_structure_completeness_summary(matrices.structureCompleteness),
+                '',
+                '### 4. 章节结构情况',
                 *self._render_section_structure_summary(matrices.sectionStructure, parse_result.visibility),
                 '',
-                '### 4. 规则命中总体情况',
+                '### 5. 规则命中总体情况',
                 *self._render_rule_hit_summary(matrices.ruleHits),
                 '',
-                '### 5. 主要冲突与联动提示',
+                '### 6. 主要冲突与联动提示',
                 *self._render_conflict_summary(matrices.conflicts.values),
                 '',
                 '说明：完整结构化结果、矩阵明细及可追溯工件已保留在系统结果与附件中，供复核和留档使用。',
@@ -353,6 +397,99 @@ class StructuredReviewReportBuilder:
         if not unresolved_facts:
             return ['- 当前未形成单独列示的待人工确认事实。']
         return [f'- {item.summary}' for item in unresolved_facts]
+
+    def _render_construction_org_l1_section(self, matrices: StructuredReviewMatrices, structure_issues, compliance_issues) -> list[str]:
+        lines = [
+            '### 2.1 结构完整性与形式合规性',
+            '- 审查依据：本节仅依据《建筑施工组织设计规范》GB/T 50502-2009 进行结构完整性与形式合规性审查。',
+            f'- 总体结论：{self._structure_completeness_conclusion(matrices.structureCompleteness)}',
+            '',
+            '| 序号 | 规范要求 | 规范依据 | 文档对应章节 | 结构判定 | 定位说明 |',
+            '| --- | --- | --- | --- | --- | --- |',
+        ]
+        for index, row in enumerate(matrices.structureCompleteness, start=1):
+            lines.append(
+                '| {index} | {label} | {basis} | {sections} | {status} | {excerpt} |'.format(
+                    index=index,
+                    label=row.requirementLabel,
+                    basis=row.basisClause,
+                    sections=self._matched_sections_text(row.matchedSections),
+                    status=self._STRUCTURE_STATUS_LABELS.get(row.status, row.status),
+                    excerpt=row.reportExcerpt,
+                )
+            )
+        lines.extend(['', '#### 缺项分析与补齐意见'])
+        lines.extend(self._render_structure_followups(matrices.structureCompleteness))
+        duplicate_issue = next((issue for issue in structure_issues if issue.title == '章节结构存在重复标题，正式审查定位不稳定'), None)
+        if duplicate_issue is not None:
+            lines.extend(
+                [
+                    '',
+                    '#### 结构稳定性提示',
+                    f'- {duplicate_issue.summary}',
+                    f'- 当前风险/限制：{self._duplicate_issue_detail(duplicate_issue)}',
+                    '- 审查建议：',
+                    *[f'  - {item}' for item in (duplicate_issue.recommendation or ['统一重复标题和章节编号，避免正式审查定位混乱。'])],
+                ]
+            )
+        lines.append('')
+        lines.extend(['### 2.2 合法合规与法定挂接问题'])
+        if compliance_issues:
+            basis_lines = self._render_layer_basis(compliance_issues)
+            if basis_lines:
+                lines.extend(['- 主要审查依据：', *[f'  - {item[2:]}' if item.startswith('- ') else f'  - {item}' for item in basis_lines], ''])
+            for index, issue in enumerate(
+                sorted(compliance_issues, key=lambda issue: (self._SEVERITY_ORDER.get(issue.severity, 99), issue.title)),
+                start=1,
+            ):
+                lines.extend(self._render_issue(index, issue))
+        else:
+            lines.extend(['- 当前未发现需要单列提示的法定挂接问题。', ''])
+        return lines
+
+    def _structure_completeness_conclusion(self, rows) -> str:
+        if not rows:
+            return '当前未生成结构完整性矩阵。'
+        missing_count = sum(1 for row in rows if row.status == 'missing')
+        partial_count = sum(1 for row in rows if row.status == 'partial')
+        blocked_count = sum(1 for row in rows if row.status == 'blocked_by_visibility')
+        if missing_count == partial_count == blocked_count == 0:
+            return '对照 GB/T 50502-2009，本文件结构主干已形成闭合。'
+        parts: list[str] = []
+        if missing_count:
+            parts.append(f'存在 {missing_count} 项明确缺项')
+        if partial_count:
+            parts.append(f'存在 {partial_count} 项仅部分识别')
+        if blocked_count:
+            parts.append(f'存在 {blocked_count} 项受可视域限制')
+        return f'对照 GB/T 50502-2009，本文件结构主干未完全闭合，{"，".join(parts)}。'
+
+    def _matched_sections_text(self, matched_sections) -> str:
+        if not matched_sections:
+            return '未识别到稳定对应章节'
+        return '；'.join(
+            f'{item.title}{f"（位置 {item.position}）" if item.position is not None else ""}'
+            for item in matched_sections[:3]
+        )
+
+    def _render_structure_followups(self, rows) -> list[str]:
+        focus_rows = [row for row in rows if row.status in {'missing', 'partial', 'blocked_by_visibility'}]
+        if not focus_rows:
+            return ['- 结构完整性矩阵各项均已闭合，当前未形成额外补齐意见。']
+        lines: list[str] = []
+        for row in focus_rows:
+            prefix = self._STRUCTURE_STATUS_LABELS.get(row.status, row.status)
+            lines.append(f'- {row.requirementLabel}：{prefix}。{row.analysis}')
+        if any(row.status == 'blocked_by_visibility' for row in focus_rows):
+            lines.append('- 对受可视域限制的项目，应结合原件目录、附图附表和正式报审文本进行人工复核，不直接按缺失处理。')
+        return lines
+
+    def _duplicate_issue_detail(self, issue) -> str:
+        details = []
+        if issue.manualReviewNeeded and issue.manualReviewReason:
+            details.append(self._manual_review_reason_text(issue.manualReviewReason))
+        details.extend(self._blocking_reason_text(reason) for reason in issue.blockingReasons or [])
+        return '；'.join(details) if details else '重复标题会降低章节映射与复核稳定性。'
 
     def _render_layer_basis(self, issues) -> list[str]:
         seen: set[str] = set()
@@ -474,6 +611,22 @@ class StructuredReviewReportBuilder:
             lines.append(f'- 重点重复标题包括：{"、".join(visibility.duplicateSectionTitles[:5])}。')
         if duplicate_count == 0:
             lines.append('- 当前未检测到明显的重复章节结构问题。')
+        return lines
+
+    def _render_structure_completeness_summary(self, rows) -> list[str]:
+        if not rows:
+            return ['- 当前未生成施组结构完整性矩阵。']
+        counts = Counter(row.status for row in rows)
+        lines = [f'- 共核对 {len(rows)} 项结构要求，其中符合 {counts.get("matched", 0)} 项。']
+        if counts.get('partial', 0):
+            lines.append(f'- 仅部分符合 {counts["partial"]} 项。')
+        if counts.get('missing', 0):
+            lines.append(f'- 明确缺失 {counts["missing"]} 项。')
+        if counts.get('blocked_by_visibility', 0):
+            lines.append(f'- 受可视域限制 {counts["blocked_by_visibility"]} 项。')
+        focus_rows = [row.requirementLabel for row in rows if row.status in {'partial', 'missing', 'blocked_by_visibility'}]
+        if focus_rows:
+            lines.append(f'- 重点关注项：{"、".join(focus_rows[:6])}。')
         return lines
 
     def _render_rule_hit_summary(self, rule_hits) -> list[str]:

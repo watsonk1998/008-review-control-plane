@@ -67,7 +67,7 @@ class EvidenceBuilder:
             'construction_org_special_scheme_gap': 'special_scheme_reference_requires_manual_confirmation',
             'lifting_operations_special_scheme_linkage': 'special_scheme_reference_requires_manual_confirmation',
         }
-        self._closed_negative_fact_prefixes = ('project.sectionPresence.',)
+        self._closed_negative_fact_prefixes = ('project.sectionPresence.', 'project.structureCompleteness.')
         self._closed_negative_fact_keys = {
             'hazard.measureSectionPresent',
             'hazard.monitoringSectionPresent',

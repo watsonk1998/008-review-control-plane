@@ -28,20 +28,11 @@ class ReviewRuleEngine:
         if 'construction_org_structure_completeness' not in pack_by_rule and not any(pack_id == 'construction_org.base' for pack_id, _ in pack_by_rule.values()):
             return []
         hits: list[RuleHit] = []
-        section_presence = facts.projectFacts.get('sectionPresence') or {}
-        missing_core_sections = [
-            key
-            for key in [
-                'engineeringOverview',
-                'constructionPlan',
-                'schedulePlan',
-                'resourcePlan',
-                'safetyMeasures',
-                'emergencyPlan',
-                'layoutPlan',
-            ]
-            if not section_presence.get(key)
-        ]
+        structure_rows = facts.projectFacts.get('structureCompleteness') or []
+        deficient_rows = [row for row in structure_rows if row.get('status') in {'missing', 'partial'}]
+        blocked_rows = [row for row in structure_rows if row.get('status') == 'blocked_by_visibility']
+        deficient_fact_keys = [f'project.structureCompleteness.{row["itemKey"]}' for row in [*deficient_rows, *blocked_rows]]
+        missing_hard_rows = [row for row in deficient_rows if row.get('status') == 'missing']
         base_pack_id, base_pack_readiness = pack_by_rule.get('construction_org_structure_completeness', ('construction_org.base', 'ready'))
         hits.append(
             RuleHit(
@@ -49,12 +40,12 @@ class ReviewRuleEngine:
                 packId=base_pack_id,
                 packReadiness=base_pack_readiness,
                 matchType='direct_hit',
-                status='hit' if missing_core_sections else 'pass',
+                status='hit' if deficient_rows or blocked_rows else 'pass',
                 layerHint=ReviewLayer.L1,
-                severityHint='high' if len(missing_core_sections) >= 3 else 'medium',
-                factRefs=[f'project.sectionPresence.{key}' for key in missing_core_sections] or ['project.sectionPresence.engineeringOverview'],
+                severityHint='high' if len(missing_hard_rows) >= 2 else 'medium',
+                factRefs=deficient_fact_keys or ['project.structureCompleteness.engineeringOverview'],
                 evidenceRefs=['policy:construction_org_structure'],
-                rationale='施工组织设计应覆盖工程概况、部署、进度、资源、安全、应急和平面布置等核心章节。',
+                rationale='施工组织设计的结构完整性应按 GB/T 50502-2009 的 12 项主干要求逐项核对。',
             )
         )
 

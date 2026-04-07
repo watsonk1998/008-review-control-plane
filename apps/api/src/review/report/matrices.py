@@ -8,6 +8,7 @@ from src.review.schema import (
     HazardIdentificationMatrix,
     RuleHitMatrixRow,
     SectionStructureMatrixItem,
+    StructureCompletenessMatrixItem,
     StructuredReviewMatrices,
 )
 
@@ -79,6 +80,10 @@ def build_review_matrices(parse_result, facts, rule_hits, final_issues) -> Struc
         AttachmentVisibilityMatrixItem.model_validate(item)
         for item in parse_result.attachments
     ]
+    structure_completeness = [
+        StructureCompletenessMatrixItem.model_validate(item)
+        for item in facts.projectFacts.get('structureCompleteness') or []
+    ]
     issue_layers = Counter(issue.layer.value for issue in final_issues)
     return StructuredReviewMatrices(
         hazardIdentification=hazard_identification,
@@ -86,5 +91,6 @@ def build_review_matrices(parse_result, facts, rule_hits, final_issues) -> Struc
         conflicts=conflicts,
         attachmentVisibility=attachment_visibility,
         sectionStructure=section_structure,
+        structureCompleteness=structure_completeness,
         issueLayerCounts=dict(issue_layers),
     )
