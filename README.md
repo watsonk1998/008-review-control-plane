@@ -216,14 +216,7 @@ python scripts/build_research_pack.py
 - 真实密钥只允许服务端读取
 - 不把 API key、dataset key、collection key 硬编码进仓库
 
-## 关键文档
+## 文档入口
 
-- PRD 索引：`docs/PRD-INDEX.md`
-- 产品总纲：`docs/product-strategy.md`
-- 资产勘查：`docs/discovery.md`
-- 架构说明：`docs/architecture.md`
-- 正式审查说明：`docs/formal-review.md`
-- 已知限制：`docs/known-limitations.md`
-- 运行说明：`docs/runbook.md`
-- 测试记录：`docs/testing.md`
-- 最终交付：`DELIVERY_REPORT.md`
+- Docs 主入口：`docs/README.md`
+- 阶段性交付记录：`DELIVERY_REPORT.md`

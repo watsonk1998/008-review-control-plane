@@ -176,6 +176,29 @@ _STRUCTURED_REPORT_PRINT_CSS = """
   background: #fffdfa;
 }
 
+.structured-report__followup-group + .structured-report__followup-group {
+  margin-top: 18px;
+}
+
+.structured-report__followup-compact {
+  padding: 10px 0 12px;
+  border-bottom: 1px solid #2f2f2f;
+}
+
+.structured-report__followup-compact:first-child {
+  border-top: 1px solid #2f2f2f;
+}
+
+.structured-report__followup-compact-title {
+  font-size: 15px;
+  font-weight: 700;
+  margin: 0 0 6px;
+}
+
+.structured-report__followup-compact-line {
+  margin: 2px 0;
+}
+
 .structured-report__gap-item-title {
   font-size: 16px;
   font-weight: 700;
@@ -312,6 +335,8 @@ class StructuredReviewReportBuilder:
         'enhancement': '优化建议',
     }
     _SEVERITY_LABELS = {'high': '高', 'medium': '中', 'low': '低', 'info': '提示'}
+    _GROUPED_SPECIAL_SCHEME_DOCUMENT_TYPES = {'hazardous_special_scheme', 'distribution_network_special_scheme'}
+    _SPECIAL_SCHEME_STRUCTURE_POLICY_LABEL = 'review-control-plane-special-scheme-structure-policy'
     _APPLICABILITY_LABELS = {
         'applies': '已满足当前判定条件',
         'partial': '仅形成部分判定',
@@ -913,6 +938,36 @@ class StructuredReviewReportBuilder:
             ])
         return parts
 
+    def _render_structure_followups_grouped_html(self, rows) -> list[str]:
+        groups = self._group_structure_rows(rows)
+        parts: list[str] = []
+        for group in groups:
+            group_rows = [row for row in group['rows'] if row.status in {'missing', 'partial', 'blocked_by_visibility'}]
+            if not group_rows:
+                continue
+            parts.extend(
+                [
+                    '<div class="structured-report__followup-group">',
+                    f'<h4 class="structured-report__subsection-title">{html.escape(self._structure_group_followup_heading(str(group["scope"])))}</h4>',
+                ]
+            )
+            for index, row in enumerate(group_rows, start=1):
+                section_lines = self._matched_sections_display_list(row.matchedSections, limit=3)
+                sections_text = '；'.join(section_lines) if section_lines else '未识别到稳定对应章节'
+                recommendation = self._structure_followup_recommendation(row)
+                parts.extend(
+                    [
+                        '<div class="structured-report__followup-compact">',
+                        f'<p class="structured-report__followup-compact-title">【{index}. {html.escape(row.requirementLabel)}】</p>',
+                        f'<p class="structured-report__followup-compact-line">判定：{html.escape(self._STRUCTURE_STATUS_LABELS.get(row.status, row.status))}</p>',
+                        f'<p class="structured-report__followup-compact-line">识别章节：{html.escape(sections_text)}</p>',
+                        f'<p class="structured-report__followup-compact-line">补齐建议：{html.escape(recommendation)}</p>',
+                        '</div>',
+                    ]
+                )
+            parts.append('</div>')
+        return parts or ['<p class="structured-report__muted">当前未形成需要单列说明的缺项分析。</p>']
+
     def _render_issue_cards_html(self, issues) -> list[str]:
         parts: list[str] = []
         for index, issue in enumerate(issues, start=1):
@@ -1161,6 +1216,42 @@ class StructuredReviewReportBuilder:
             compact=False,
         )
         supplemental_issues = [issue for issue in compliance_issues if issue.id not in mapped_issue_ids]
+        if any(row.scope == 'special' for row in matrices.structureCompleteness):
+            groups = self._group_structure_rows(matrices.structureCompleteness)
+            lines = [
+                '### 2.1 结构完整性与形式合规性',
+                f'- 总体结论：{self._structure_completeness_conclusion(matrices.structureCompleteness)}',
+            ]
+            basis_lines = self._render_layer_basis(structure_issues or supplemental_issues)
+            if basis_lines:
+                lines.extend(['- 主要审查依据：', *[f'  - {item[2:]}' if item.startswith('- ') else f'  - {item}' for item in basis_lines]])
+            for index, group in enumerate(groups, start=1):
+                group_scope = str(group['scope'])
+                group_label = str(group['groupLabel'])
+                group_rows = list(group['rows'])
+                lines.extend(
+                    [
+                        '',
+                        f'#### {self._structure_group_heading(group_scope, index)}',
+                        f'- 主要审查依据：{self._SPECIAL_SCHEME_STRUCTURE_POLICY_LABEL}',
+                        '',
+                        self._render_structure_completeness_table_html(
+                            group_rows,
+                            related_issue_map,
+                            basis_label_override=self._structure_group_basis_label(group_scope, group_label),
+                        ),
+                    ]
+                )
+            lines.extend(['', *self._render_structure_followups_grouped(matrices.structureCompleteness), '', '### 2.2 补充审查意见'])
+            if supplemental_issues:
+                for index, issue in enumerate(
+                    sorted(supplemental_issues, key=lambda issue: (self._SEVERITY_ORDER.get(issue.severity, 99), issue.title)),
+                    start=1,
+                ):
+                    lines.extend(self._render_issue(index, issue))
+            else:
+                lines.extend(['- 当前未发现需要在表外单列提示的补充意见。', ''])
+            return lines
         lines = [
             '### 2.1 结构完整性与形式合规性',
             f'- 总体结论：{self._structure_completeness_conclusion(matrices.structureCompleteness)}',
@@ -1202,6 +1293,58 @@ class StructuredReviewReportBuilder:
             compact=False,
         )
         supplemental_issues = [issue for issue in compliance_issues if issue.id not in mapped_issue_ids]
+        if any(row.scope == 'special' for row in matrices.structureCompleteness):
+            groups = self._group_structure_rows(matrices.structureCompleteness)
+            parts = [
+                '<section class="structured-report__section">',
+                '<h2 class="structured-report__section-title">第二部分：L1 审查发现——合法合规与结构完整性</h2>',
+                '<div class="structured-report__subsection">',
+                '<h3 class="structured-report__subsection-title">2.1 结构完整性与形式合规性</h3>',
+                '<ul class="structured-report__bullet-list">',
+                f'<li>总体结论：{html.escape(self._structure_completeness_conclusion(matrices.structureCompleteness))}</li>',
+                '</ul>',
+            ]
+            basis_lines = self._render_layer_basis(structure_issues or supplemental_issues)
+            if basis_lines:
+                parts.extend(['<ul class="structured-report__basis-list">'])
+                parts.extend(f'<li>{html.escape(item.removeprefix("- ").strip())}</li>' for item in basis_lines)
+                parts.append('</ul>')
+            for index, group in enumerate(groups, start=1):
+                group_scope = str(group['scope'])
+                group_label = str(group['groupLabel'])
+                group_rows = list(group['rows'])
+                parts.extend(
+                    [
+                        f'<h4 class="structured-report__subsection-title">{html.escape(self._structure_group_heading(group_scope, index))}</h4>',
+                        f'<p class="structured-report__subsection-intro">主要审查依据：{html.escape(self._SPECIAL_SCHEME_STRUCTURE_POLICY_LABEL)}</p>',
+                        '<div class="structured-report__table-wrap">',
+                        self._render_structure_completeness_table_html(
+                            group_rows,
+                            related_issue_map,
+                            basis_label_override=self._structure_group_basis_label(group_scope, group_label),
+                        ),
+                        '</div>',
+                    ]
+                )
+            parts.extend(
+                [
+                    '<div class="structured-report__subsection">',
+                    '<h4 class="structured-report__subsection-title">缺项分析与补齐意见</h4>',
+                    *self._render_structure_followups_grouped_html(matrices.structureCompleteness),
+                    '</div>',
+                ]
+            )
+            parts.extend(['<div class="structured-report__subsection">', '<h3 class="structured-report__subsection-title">2.2 补充审查意见</h3>'])
+            if supplemental_issues:
+                parts.extend(
+                    self._render_issue_cards_html(
+                        sorted(supplemental_issues, key=lambda issue: (self._SEVERITY_ORDER.get(issue.severity, 99), issue.title))
+                    )
+                )
+            else:
+                parts.append('<p class="structured-report__section-intro">当前未发现需要在表外单列提示的补充意见。</p>')
+            parts.extend(['</div>', '</div>', '</section>'])
+            return parts
         parts = [
             '<section class="structured-report__section">',
             '<h2 class="structured-report__section-title">第二部分：L1 审查发现——合法合规与结构完整性</h2>',
@@ -1309,6 +1452,64 @@ class StructuredReviewReportBuilder:
             )
         return lines
 
+    def _group_structure_rows(self, rows) -> list[dict[str, object]]:
+        groups: list[dict[str, object]] = []
+        current_key: tuple[str, str] | None = None
+        current_rows: list = []
+        for row in rows:
+            scope = str(getattr(row, 'scope', None) or 'common')
+            group_label = self._clean_report_text(
+                getattr(row, 'groupLabel', None)
+                or ('专项补充要求' if scope == 'special' else '专项施工方案通用要求')
+            )
+            key = (scope, group_label)
+            if current_key is None:
+                current_key = key
+            if key != current_key:
+                groups.append(
+                    {
+                        'scope': current_key[0],
+                        'groupLabel': current_key[1],
+                        'rows': current_rows,
+                    }
+                )
+                current_rows = []
+                current_key = key
+            current_rows.append(row)
+        if current_key is not None:
+            groups.append(
+                {
+                    'scope': current_key[0],
+                    'groupLabel': current_key[1],
+                    'rows': current_rows,
+                }
+            )
+        return groups
+
+    def _structure_group_heading(self, scope: str, index: int) -> str:
+        label = '专项补充结构要求' if scope == 'special' else '专项施工方案通用要求'
+        return f'2.1.{index} {label}'
+
+    def _structure_group_basis_label(self, scope: str, group_label: str) -> str:
+        if scope == 'special':
+            return group_label
+        return '专项施工方案通用要求'
+
+    def _structure_group_followup_heading(self, scope: str) -> str:
+        return '专项补充要求：缺项分析与补齐意见' if scope == 'special' else '通用要求：缺项分析与补齐意见'
+
+    def _render_structure_followups_grouped(self, rows) -> list[str]:
+        lines: list[str] = []
+        groups = self._group_structure_rows(rows)
+        for group in groups:
+            group_rows = [row for row in group['rows'] if row.status in {'missing', 'partial', 'blocked_by_visibility'}]
+            if not group_rows:
+                continue
+            lines.extend([f'#### {self._structure_group_followup_heading(str(group["scope"]))}'])
+            lines.extend(self._render_structure_followups(group_rows))
+            lines.append('')
+        return lines or ['- 当前未形成需要单列说明的缺项分析。']
+
     def _duplicate_issue_detail(self, issue) -> str:
         details = []
         if issue.manualReviewNeeded and issue.manualReviewReason:
@@ -1316,7 +1517,13 @@ class StructuredReviewReportBuilder:
         details.extend(self._blocking_reason_text(reason) for reason in issue.blockingReasons or [])
         return '；'.join(details) if details else '重复标题会降低章节映射与复核稳定性。'
 
-    def _render_structure_completeness_table_html(self, rows, related_issue_map: dict[str, dict[str, list[str]]]) -> str:
+    def _render_structure_completeness_table_html(
+        self,
+        rows,
+        related_issue_map: dict[str, dict[str, list[str]]],
+        *,
+        basis_label_override: str | None = None,
+    ) -> str:
         header = ''.join(f'<th>{label}</th>' for label in ['序号', '规范要求', '规范依据', '文档对应章节', '结构判定', '相关审查意见'])
         body_rows: list[str] = []
         for index, row in enumerate(rows, start=1):
@@ -1324,7 +1531,7 @@ class StructuredReviewReportBuilder:
             cells = [
                 str(index),
                 self._clean_report_text(row.requirementLabel),
-                self._clean_report_text(row.basisClause),
+                self._clean_report_text(basis_label_override or row.basisClause),
                 self._matched_sections_text(row.matchedSections),
                 self._STRUCTURE_STATUS_LABELS.get(row.status, row.status),
                 self._related_issue_cell_text(related_values),

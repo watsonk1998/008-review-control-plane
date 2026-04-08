@@ -1,6 +1,6 @@
 # DELIVERY REPORT — 008 Review Control Plane
 
-> 注：本文件保留为阶段性交付记录。当前仓库的真实现状以 `README.md`、`docs/architecture.md`、`docs/formal-review.md`、`docs/testing.md` 为准；后续提交已补齐 structured_review schema/report/artifact API、SSE 实时流与 P0 收敛改造。
+> 注：本文件保留为阶段性交付记录。当前仓库的真实现状以 `README.md`、`docs/README.md`、`docs/20-design/architecture.md`、`docs/10-governance/formal-review.md`、`docs/30-quality/testing.md` 为准；后续提交已补齐 structured_review schema/report/artifact API、SSE 实时流与 P0 收敛改造。
 
 ## 1. 架构说明
 

@@ -1,3 +1,19 @@
+> [!NOTE]
+> **本文档职责**
+> - 负责：
+>   - 提供一次性集中阅读的编译版 PRD 产物
+> - 不负责：
+>   - 不作为日常协作主入口
+>   - 不作为当前真相源优先级最高的文档
+> - 主适用读者：
+>   - 需要一次性通读历史材料的读者
+> - 冲突处理：
+>   - 若与当前分层主文档冲突，以对应层级主真相源为准
+> - 文档状态：
+>   - Archive / Compiled Artifact / 非主真相源
+
+---
+
 # 008 审查控制面（Review Control Plane）— 完整 PRD
 
 > 📋 文档状态：V0.3 产品需求文档（完整版）
@@ -565,6 +581,6 @@ make verify-connectivity           # 连通性验证
 
 ---
 
-> 📝 **文档来源**：本 PRD 整合了 `docs/product-strategy.md`、`docs/formal-review.md`、`docs/architecture.md`、`docs/testing.md`、`docs/known-limitations.md` 的完整内容。
+> 📝 **文档来源**：本 PRD 整合了 `docs/00-product/product-strategy.md`、`docs/10-governance/formal-review.md`、`docs/20-design/architecture.md`、`docs/30-quality/testing.md`、`docs/30-quality/known-limitations.md` 的完整内容。
 > 
 > 📌 **维护原则**：主真相源为上述独立文档，本飞书文档为面向团队沟通的完整合并版。

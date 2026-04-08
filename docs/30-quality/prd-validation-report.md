@@ -12,6 +12,22 @@ severity_major_count: 2
 severity_minor_count: 1
 ---
 
+> [!NOTE]
+> **本文档职责**
+> - 负责：
+>   - 记录 PRD 相关验证过程、结论与验证发现
+> - 不负责：
+>   - 不作为产品主定义
+>   - 不作为当前 V1 能力边界或验收标准的主真相源
+> - 主适用读者：
+>   - 产品负责人、评审人员、协作者
+> - 冲突处理：
+>   - 涉及当前正式定义时，以 product / governance 层主文档为准
+> - 文档状态：
+>   - 派生产物 / 验证纪要
+
+---
+
 # PRD Validation Report for 008 审查控制面完整 PRD (V0.3)
 
 ## 1. Executive Summary
@@ -63,4 +79,4 @@ severity_minor_count: 1
 - `[severity_blocker_count:: 1]`
 - `[severity_major_count:: 2]`
 - `[severity_minor_count:: 1]`
-- `[source_path:: /Users/lucas/repos/review/008-review-control-plane/docs/PRD-INDEX.md]`
+- `[source_path:: /Users/lucas/repos/review/008-review-control-plane/docs/90-archive/prd-index.md]`

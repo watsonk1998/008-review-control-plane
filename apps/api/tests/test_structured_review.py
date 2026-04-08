@@ -624,6 +624,13 @@ def test_structured_review_executor_assigns_power_outage_structure_rule_and_repo
     assert last_special_index < first_common_index
     report = result['reportMarkdown']
     assert '### 3. 审查总览表' in report
+    assert '#### 2.1.1 专项补充结构要求' in report
+    assert '#### 2.1.2 专项施工方案通用要求' in report
+    assert '#### 专项补充要求：缺项分析与补齐意见' in report
+    assert '#### 通用要求：缺项分析与补齐意见' in report
+    assert report.count('<table class="structured-completeness-table">') >= 2
+    assert '停电施工作业专项要求' in report
+    assert '专项施工方案通用要求' in report
     assert report.index('停电范围') < report.index('工程概况')
 
 
