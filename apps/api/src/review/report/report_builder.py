@@ -118,7 +118,6 @@ html, body {
 .structured-report__table-wrap {
   margin: 20px 0;
   border-radius: 8px;
-  overflow: hidden;
   border: 1px solid #cbd5e1;
 }
 
@@ -153,6 +152,28 @@ html, body {
 .structured-report tbody tr:nth-child(even) {
   background-color: #f8fafc !important;
 }
+
+.structured-overview-table th:nth-child(1),
+.structured-overview-table td:nth-child(1) { width: 8%; }
+.structured-overview-table th:nth-child(2),
+.structured-overview-table td:nth-child(2) { width: 20%; }
+.structured-overview-table th:nth-child(3),
+.structured-overview-table td:nth-child(3) { width: 36%; }
+.structured-overview-table th:nth-child(4),
+.structured-overview-table td:nth-child(4) { width: 36%; }
+
+.structured-completeness-table th:nth-child(1),
+.structured-completeness-table td:nth-child(1) { width: 6%; }
+.structured-completeness-table th:nth-child(2),
+.structured-completeness-table td:nth-child(2) { width: 14%; }
+.structured-completeness-table th:nth-child(3),
+.structured-completeness-table td:nth-child(3) { width: 15%; }
+.structured-completeness-table th:nth-child(4),
+.structured-completeness-table td:nth-child(4) { width: 30%; }
+.structured-completeness-table th:nth-child(5),
+.structured-completeness-table td:nth-child(5) { width: 10%; }
+.structured-completeness-table th:nth-child(6),
+.structured-completeness-table td:nth-child(6) { width: 25%; }
 
 /* Issue Cards - High Visibility */
 .structured-report__issue-card {
@@ -1551,7 +1572,7 @@ class StructuredReviewReportBuilder:
     def _render_structure_overview_table_html(self, rows, related_issue_map: dict[str, dict[str, list[str]]]) -> str:
         header = ''.join(
             f'<th>{label}</th>'
-            for label in ['序号', '结构项', 'L1 问题摘要', 'L2 问题摘要', 'L3 问题摘要']
+            for label in ['序号', '结构项', 'L2 问题摘要', 'L3 问题摘要']
         )
         body_rows: list[str] = []
         for index, row in enumerate(rows, start=1):
@@ -1559,7 +1580,6 @@ class StructuredReviewReportBuilder:
             cells = [
                 str(index),
                 self._clean_report_text(row.requirementLabel),
-                self._overview_issue_cell_text(layer_items.get('L1') or []),
                 self._overview_issue_cell_text(layer_items.get('L2') or []),
                 self._overview_issue_cell_text(layer_items.get('L3') or []),
             ]
