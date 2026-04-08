@@ -4,6 +4,28 @@
 
 > 说明：本次按 2026-03 至 2026-04 的时间窗进行了核查。当前仓库可确认的主线变更集中在 `2026-04-02` 至 `2026-04-08`；若无对应 repo 事实，不为 3 月单独虚构条目。
 
+## 2026-04-09
+
+### Added
+
+- 新增危大专项方案 9 类工程类型的 internal-ready type packs：`foundation_pit / formwork_support / lifting_installation_removal / scaffold / demolition / underground_excavation / curtain_wall_installation / manual_bored_pile / steel_structure_installation`。
+- 新增对应的 type-specific rule hits、evidence clauses、issue/report 文案与 targeted regression tests，使 9 类危大工程不再只停留在 pack registry 层。
+
+### Changed
+
+- 将 `hazardous_special_scheme` 路径下的起重吊装能力从旧 `lifting_operations.base` 收口到新的 `lifting_installation_removal.base`，并在 profile resolver 中同时归一 `disciplineTags` 与 `requestedPolicyPackIds`。
+- 保持 `construction_org` 与 `construction_scheme` 继续使用旧 `lifting_operations.base`，明确危大路径与非危大路径的兼容边界。
+- 将脚手架、拆除、暗挖、建筑幕墙安装、人工挖孔桩等新增类型 pack 统一纳入 visibility-first 语义：图纸、禁用条件和复杂验算主题优先进入人工复核，而不是直接下硬结论。
+- 补做 `docs/` 分层迁移的 GitHub 可见面对齐核验：确认本地工作树、`origin/main` 树和 GitHub raw 内容一致，`docs/` 根目录当前只保留 `README.md`、4 个 legacy stub 与分层目录，不再把旧页面观察误判为“迁移只完成一半”。
+- 将根 `README.md` 收口为 English-first 仓库入口页，并重建 `CHANGELOG.md` 对 2026-04-02 至 2026-04-08 主线演进的连续记录，使 docs 入口、仓库首页与变更记录三者口径重新对齐。
+
+### Notes
+
+- 这一轮的重点不是再扩大“支持列表”，而是把危大专项方案从通用结构核推进到按工程类型审查的正式内部能力。
+- 当前 9 类 pack 的第一阶段仍以章节完整性、参数痕迹、验收链和图纸可视域为主，复杂工程正确性判断仍保留给后续更深层能力演进。
+- docs 收口层面，本轮新增的结论不是继续重写正文，而是明确区分“GitHub 页面视图 / Git refs / raw 内容 / 本地文件系统”四种证据层，避免因缓存或旧视图造成错误评审。
+- 补充收尾验证事实：special-scheme 总览表已收口为 4 列，`test_structured_review.py` 全量通过（38 passed），且 Weiyanda 样本正式 PDF 已确认走 Chromium / Skia 原生导出链路；weknora 发布目前仍停留在方案准备层，尚未写成“已上线”事实。
+
 ## 2026-04-08
 
 ### Added
@@ -29,6 +51,7 @@
 - 这一轮的重点不是扩范围，而是同时收口文档入口、支持边界、结构完整性 ownership 与正式报告阅读路径。
 - 根 `README.md` 与 `docs/README.md` 的角色被显式拆开：前者负责仓库首页，后者负责文档导航与 source-of-truth routing。
 - 结构完整性能力仍在继续从“单文种特化”向“按文种/场景归属”演进，后续仍可继续扩展到更多 doc type。
+- 补记当前产品边界事实：`hazardous_special_scheme` 仍是专项方案 official 主类型，`construction_scheme` 仍为 experimental；“非危大专项施工方案”当前没有独立 documentType / base pack，且路由层对“专项施工方案”默认偏向危大专项方案路径。
 
 ## 2026-04-07
 

@@ -129,3 +129,49 @@ make verify-connectivity
 - 任务状态库：`artifacts/tasks/runtime.sqlite`
 - 单任务工件：`artifacts/tasks/<task-id>/`
 - 联通验证：`artifacts/verification/`
+
+## 8. weknora 部署与紧急排障
+
+### 部署模型（非 Git 仓库源）
+weknora 服务器部署目录：`/root/008-review-control-plane`
+
+> [!WARNING]
+> 该目录**不是一个 git checkout**，请绝对不要在远端服务器上执行 `git pull`！
+
+标准服务器更新流程：
+1. 确保在**本地开发机**完成 commit 与 push
+2. 通过 `rsync` 仅同步源码体到服务端目录 `/root/008-review-control-plane`
+3. 视变更范围决定重建的镜像层级：
+   - 对于纯 Web （前端）变更：若源码树已同步，仅需重建并拉起 `web`。
+   - 对后端 API / Python 依赖库产生变更：**必须坚决重建** `api`，以及由于共享基础镜像需要同步连带重建的 `deeptutor-bridge`。
+   ```bash
+   # 重启命令范例
+   docker compose up -d --build api web deeptutor-bridge
+   ```
+
+### 排障画像：WeasyPrint 底层依赖事故
+
+当遭遇前端“专项方案不显示”，且由于 `support-scope` 响应 `500 Internal Server Error` 导致页面发生降级时，切勿盲目认定前端 selector 发生损坏。
+
+**根因还原：**
+由于 API 渲染服务基于 `python:3.11-slim`，该基础 Debian Docker 映像将部分图形计算库（Pango, libcairo）精简掉了。当 Uvicorn 进行 `import md2pdf -> weasyprint` 生命周期时，`weasyprint` 中的 `cffi` 寻找底层 `libpangoft2-1.0-0.so` 系统库失败并抛出 OSErrors，当场引发核心进程死机。
+  
+**紧急验证命令集：**
+当发生此情况或系统启动期间，实施以下连环求证动作：
+```bash
+# 1. 探底容器存活长效性
+docker compose ps
+# (期望：Up 并长时间保持，不能处于Restarting死循环状态)
+
+# 2. 从内部剖析 API 的死前遗言
+docker compose logs api --tail=50
+
+# 3. 本机环回测血
+curl http://localhost:81/api/tasks/support-scope
+# (期望：吐出满载 capabilityTree 树结构的 200 OK 载荷)
+
+# 4. 前端联机验证
+curl -I http://localhost:81
+# (无视渲染直接查首部，期望：200 OK，而非 500 Server Error)
+```
+排查中必须保证这四组证据链连通闭环，再移交业务侧继续验收。

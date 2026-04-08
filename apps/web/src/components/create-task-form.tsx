@@ -21,11 +21,11 @@ const TASK_OPTIONS: Array<{ value: TaskType; label: string; hint: string }> = [
 ];
 
 const CAPABILITY_OPTIONS: Array<{ value: CapabilityMode; label: string; hint: string }> = [
-  { value: "auto", label: "智能路由", hint: "总控决定链路" },
-  { value: "deeptutor", label: "专业问答引擎", hint: "问答与解释" },
-  { value: "gpt_researcher", label: "深度研究引擎", hint: "报告与来源" },
-  { value: "fast", label: "检索增强生成", hint: "知识片段化" },
-  { value: "llm_only", label: "纯净推理模型", hint: "跳过检索" },
+  { value: "auto", label: "自动编排", hint: "由系统智能决策执行链路。" },
+  { value: "deeptutor", label: "专业问答引擎", hint: "基于行业规范体系提供精准解释。" },
+  { value: "gpt_researcher", label: "深度研究引擎", hint: "自动归纳证据链并产出分析报告。" },
+  { value: "fast", label: "检索增强框架", hint: "切片检索与轻量化匹配。" },
+  { value: "llm_only", label: "纯净推理模型", hint: "不依赖外部网关，仅用于内部验证。" },
 ];
 
 export function CreateTaskForm({

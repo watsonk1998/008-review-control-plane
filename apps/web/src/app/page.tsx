@@ -17,7 +17,7 @@ export default async function Home() {
       <section className="hero-header hero">
         <div className="hero-copy">
           <p className="eyebrow">008 · AI 智能审查控制总线</p>
-          <h1>正式规范审查引擎</h1>
+          <h1>建果AI审查</h1>
           <p className="subtitle">
             发起结构化智能审查，实时感知总控调度心跳。全息追踪复杂任务的执行轨迹与形式审查证据链。
           </p>
