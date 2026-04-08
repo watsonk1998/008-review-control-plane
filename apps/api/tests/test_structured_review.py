@@ -120,11 +120,12 @@ def test_structured_review_executor_returns_expected_issue_titles():
     assert '复核提示：正文提到了附件，但本次未识别到附件正文内容，需结合原件核对。' in result['reportMarkdown']
     assert '### 3. 审查总览表' in result['reportMarkdown']
     assert '<table class="structured-overview-table">' in result['reportMarkdown']
-    assert '<thead><tr><th>序号</th><th>结构项</th><th>L2 问题摘要</th><th>L3 问题摘要</th></tr></thead>' in result['reportMarkdown']
+    assert '<thead><tr><th>序号</th><th>结构项</th><th>结构判定</th><th>异常摘要</th><th>补齐建议（简）</th></tr></thead>' in result['reportMarkdown']
     overview_section = result['reportMarkdown'].split('## 第二部分：', 1)[0]
     assert '规范依据</th>' not in overview_section
     assert '文档对应章节</th>' not in overview_section
-    assert '结构判定</th>' not in overview_section
+    assert '部分符合' in overview_section or '缺失' in overview_section or '符合' in overview_section
+    assert '未识别到稳定对应章节' in overview_section or '建议补齐' in overview_section or '—' in overview_section
     assert '第六章：' in result['reportMarkdown'] or '4.2节：' in result['reportMarkdown'] or '—' in result['reportMarkdown']
     assert '## 第二部分：L1 审查发现——合法合规与结构完整性' in result['reportMarkdown']
     assert '### 2.1 结构完整性与形式合规性' in result['reportMarkdown']
@@ -884,8 +885,8 @@ def test_pdf_exporter_renders_html_with_print_css(tmp_path: Path):
             '<h2 class="structured-report__section-title">第一部分</h2>'
             '<section class="structured-report__overview-section">'
             '<h3 class="structured-report__subsection-title">3. 审查总览表</h3>'
-            '<table class="structured-overview-table"><thead><tr><th>序号</th><th>结构项</th><th>L2 问题摘要</th><th>L3 问题摘要</th></tr></thead>'
-            '<tbody><tr><td>1</td><td>编制依据</td><td>—</td><td>—</td></tr></tbody></table>'
+            '<table class="structured-overview-table"><thead><tr><th>序号</th><th>结构项</th><th>结构判定</th><th>异常摘要</th><th>补齐建议（简）</th></tr></thead>'
+            '<tbody><tr><td>1</td><td>编制依据</td><td>符合</td><td>—</td><td>—</td></tr></tbody></table>'
             '</section>'
             '</section>'
             '</article>'

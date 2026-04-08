@@ -154,13 +154,15 @@ html, body {
 }
 
 .structured-overview-table th:nth-child(1),
-.structured-overview-table td:nth-child(1) { width: 8%; }
+.structured-overview-table td:nth-child(1) { width: 6%; }
 .structured-overview-table th:nth-child(2),
 .structured-overview-table td:nth-child(2) { width: 20%; }
 .structured-overview-table th:nth-child(3),
-.structured-overview-table td:nth-child(3) { width: 36%; }
+.structured-overview-table td:nth-child(3) { width: 10%; }
 .structured-overview-table th:nth-child(4),
-.structured-overview-table td:nth-child(4) { width: 36%; }
+.structured-overview-table td:nth-child(4) { width: 34%; }
+.structured-overview-table th:nth-child(5),
+.structured-overview-table td:nth-child(5) { width: 30%; }
 
 .structured-completeness-table th:nth-child(1),
 .structured-completeness-table td:nth-child(1) { width: 6%; }
@@ -1572,7 +1574,7 @@ class StructuredReviewReportBuilder:
     def _render_structure_overview_table_html(self, rows, related_issue_map: dict[str, dict[str, list[str]]]) -> str:
         header = ''.join(
             f'<th>{label}</th>'
-            for label in ['序号', '结构项', 'L2 问题摘要', 'L3 问题摘要']
+            for label in ['序号', '结构项', '结构判定', '异常摘要', '补齐建议（简）']
         )
         body_rows: list[str] = []
         for index, row in enumerate(rows, start=1):
@@ -1580,12 +1582,13 @@ class StructuredReviewReportBuilder:
             cells = [
                 str(index),
                 self._clean_report_text(row.requirementLabel),
-                self._overview_issue_cell_text(layer_items.get('L2') or []),
-                self._overview_issue_cell_text(layer_items.get('L3') or []),
+                self._STRUCTURE_STATUS_LABELS.get(row.status, '—'),
+                self._overview_anomaly_summary(row, layer_items),
+                self._overview_followup_compact(row),
             ]
             body_rows.append(
                 '<tr>'
-                + ''.join(f'<td>{html.escape(value).replace("；", "；<br/>")}</td>' for value in cells)
+                + ''.join(f'<td>{html.escape(value).replace(chr(10), "<br/>")}</td>' for value in cells)
                 + '</tr>'
             )
         return (
@@ -1660,6 +1663,35 @@ class StructuredReviewReportBuilder:
         if not values:
             return '—'
         return '；'.join(values[:2])
+
+    def _overview_anomaly_summary(self, row, layer_items: dict[str, list[str]]) -> str:
+        parts = []
+        if row.status == 'missing':
+            parts.append('未识别到稳定对应章节')
+        elif row.status == 'partial':
+            parts.append('已识别到相关内容，但内容分散，未形成稳定章节闭合')
+        elif row.status == 'blocked_by_visibility':
+            parts.append('受附件或可视域限制，需人工复核')
+            
+        mapped_issues = []
+        for layer in ['L2', 'L3']:
+            mapped_issues.extend(layer_items.get(layer) or [])
+            
+        if mapped_issues:
+            parts.append('已识别相关问题：\n' + '\n'.join(mapped_issues))
+            
+        return '\n\n'.join(parts) if parts else '—'
+
+    def _overview_followup_compact(self, row) -> str:
+        if row.status == 'matched':
+            return '—'
+        if row.status == 'missing':
+            return f'建议补齐“{row.requirementLabel}”专章或稳定标题'
+        if row.status == 'partial':
+            return f'建议补齐“{row.requirementLabel}”并形成稳定章节闭合'
+        if row.status == 'blocked_by_visibility':
+            return '建议结合原件复核附件内容'
+        return '—'
 
     def _issue_position_text(self, issue, matched_sections) -> str:
         candidates: list[str] = []
