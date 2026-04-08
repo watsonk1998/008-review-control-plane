@@ -13,307 +13,202 @@ from src.review.schema import (
 )
 
 _STRUCTURED_REPORT_PRINT_CSS = """
+/* ========================================================
+   Enterprise-Grade Print CSS for Structured Review Reports
+   ======================================================== */
+
 html, body {
-  background-color: #ffffff !important;
+  background-color: #f8fafc !important;
   margin: 0;
   padding: 0;
   -webkit-print-color-adjust: exact;
   print-color-adjust: exact;
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", "WenQuanYi Micro Hei", sans-serif;
+  color: #1e293b;
+  line-height: 1.6;
 }
 
 .structured-report {
   max-width: 100%;
   margin: 0 auto;
-  padding: 0;
-  color: #1f2937;
-  background: #ffffff !important;
-  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", "WenQuanYi Micro Hei", sans-serif;
-  line-height: 1.6;
+  padding: 24px;
+  background-color: #ffffff !important;
 }
 
-.structured-report,
 .structured-report * {
   box-sizing: border-box;
-  background-color: transparent;
-}
-
-.structured-report h1,
-.structured-report h2,
-.structured-report h3,
-.structured-report h4,
-.structured-report p,
-.structured-report li,
-.structured-report td,
-.structured-report th,
-.structured-report div,
-.structured-report span {
   white-space: normal;
   word-break: break-word;
   overflow-wrap: anywhere;
-  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", "WenQuanYi Micro Hei", sans-serif;
-}
-
-.structured-report p,
-.structured-report li,
-.structured-report div,
-.structured-report span {
-  color: #374151;
-  font-size: 14px;
 }
 
 .structured-report h1,
 .structured-report h2,
 .structured-report h3,
 .structured-report h4 {
-  color: #111827;
-  font-weight: 600;
-}
-
-.structured-report__title {
-  font-size: 26px;
+  color: #0f172a;
   font-weight: 700;
-  margin: 0 0 20px;
-  padding-bottom: 12px;
-  border-bottom: 2px solid #111827;
+  margin-top: 0;
+  page-break-after: avoid;
+  break-after: avoid;
+}
+
+/* Document Title */
+.structured-report__title {
+  font-size: 32px;
   text-align: center;
+  color: #0f172a;
+  padding-bottom: 24px;
+  margin-bottom: 32px;
+  border-bottom: 3px solid #cbd5e1;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
 }
 
+/* Sections */
 .structured-report__section {
-  margin: 0 0 24px;
-  padding: 0 0 12px;
-  border-bottom: 1px solid #e5e7eb;
-}
-
-.structured-report__section:last-child {
-  border-bottom: 0;
+  margin-bottom: 32px;
+  padding-bottom: 24px;
 }
 
 .structured-report__section-title {
-  font-size: 18px;
-  font-weight: 700;
-  margin: 0 0 12px;
-  color: #0f172a;
-  border-left: 4px solid #2563eb;
-  background: #f8fafc;
-  padding: 6px 0 6px 10px;
+  font-size: 22px;
+  color: #1e40af;
+  margin-bottom: 20px;
+  padding: 8px 16px;
+  background-color: #eff6ff;
+  border-left: 5px solid #2563eb;
+  border-radius: 0 4px 4px 0;
 }
 
 .structured-report__subsection {
-  margin: 16px 0 0;
+  margin-bottom: 24px;
 }
 
 .structured-report__subsection-title {
-  font-size: 15px;
-  font-weight: 600;
-  margin: 0 0 10px;
-  color: #1e293b;
+  font-size: 18px;
+  color: #334155;
+  margin-bottom: 12px;
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 6px;
 }
 
-.structured-report__section-intro,
-.structured-report__subsection-intro {
-  margin: 0 0 12px;
+/* Lists & Text */
+.structured-report p,
+.structured-report li {
+  font-size: 14px;
+  color: #475569;
+  letter-spacing: 0.2px;
 }
 
 .structured-report__bullet-list,
 .structured-report__basis-list,
-.structured-report__fact-list,
-.structured-report__requirement-list {
-  margin: 8px 0 8px 24px;
-  padding: 0;
+.structured-report__fact-list {
+  padding-left: 20px;
+  margin: 12px 0;
 }
 
 .structured-report__bullet-list li,
 .structured-report__basis-list li,
-.structured-report__fact-list li,
-.structured-report__requirement-list li {
-  margin-bottom: 6px;
+.structured-report__fact-list li {
+  margin-bottom: 8px;
 }
 
-.structured-report__overview-section {
-  break-before: page;
-  page-break-before: always;
-}
-
-.structured-report__overview-section > .structured-report__subsection-title,
-.structured-report__issue-card,
-.structured-report__gap-item {
-  page-break-inside: avoid;
-  break-inside: avoid;
-}
-
+/* Tables - Premium Data Layout */
 .structured-report__table-wrap {
-  margin-top: 12px;
-  margin-bottom: 20px;
+  margin: 20px 0;
+  border-radius: 8px;
   overflow: hidden;
+  border: 1px solid #cbd5e1;
 }
 
 .structured-report table {
   width: 100%;
   border-collapse: collapse;
-  table-layout: auto;
-  margin: 0;
-  font-size: 12px;
-}
-
-.structured-report thead {
-  display: table-header-group;
+  background-color: #ffffff;
 }
 
 .structured-report th {
-  border-top: 1px solid #94a3b8;
-  border-bottom: 1px solid #94a3b8;
-  background: #f1f5f9 !important;
+  background-color: #f1f5f9 !important;
   color: #0f172a;
-  font-weight: 600;
-  padding: 10px 8px;
+  font-size: 13px;
+  font-weight: 700;
   text-align: left;
-  vertical-align: top;
-  line-height: 1.6;
+  padding: 12px 16px;
+  border-bottom: 2px solid #cbd5e1;
 }
 
 .structured-report td {
-  border-bottom: 1px solid #e2e8f0;
+  padding: 12px 16px;
+  font-size: 13px;
   color: #334155;
-  padding: 10px 8px;
-  text-align: left;
+  border-bottom: 1px solid #e2e8f0;
   vertical-align: top;
-  line-height: 1.62;
 }
 
-.structured-overview-table th:nth-child(1),
-.structured-overview-table td:nth-child(1) { width: 6%; }
-.structured-overview-table th:nth-child(2),
-.structured-overview-table td:nth-child(2) { width: 14%; }
-.structured-overview-table th:nth-child(3),
-.structured-overview-table td:nth-child(3) { width: 26%; }
-.structured-overview-table th:nth-child(4),
-.structured-overview-table td:nth-child(4) { width: 26%; }
-.structured-overview-table th:nth-child(5),
-.structured-overview-table td:nth-child(5) { width: 28%; }
-
-.structured-completeness-table th:nth-child(1),
-.structured-completeness-table td:nth-child(1) { width: 6%; }
-.structured-completeness-table th:nth-child(2),
-.structured-completeness-table td:nth-child(2) { width: 14%; }
-.structured-completeness-table th:nth-child(3),
-.structured-completeness-table td:nth-child(3) { width: 12%; }
-.structured-completeness-table th:nth-child(4),
-.structured-completeness-table td:nth-child(4) { width: 28%; }
-.structured-completeness-table th:nth-child(5),
-.structured-completeness-table td:nth-child(5) { width: 12%; }
-.structured-completeness-table th:nth-child(6),
-.structured-completeness-table td:nth-child(6) { width: 28%; }
-
-.structured-report__followups {
-  margin-top: 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+.structured-report tr:last-child td {
+  border-bottom: none;
 }
 
-.structured-report__gap-item {
-  margin: 12px 0;
-  padding: 16px 20px;
-  border: 1px solid #bfdbfe;
-  border-left: 4px solid #3b82f6;
-  border-radius: 6px;
-  background: #eff6ff !important;
+.structured-report tbody tr:nth-child(even) {
+  background-color: #f8fafc !important;
 }
 
-.structured-report__followup-group + .structured-report__followup-group {
-  margin-top: 14px;
-}
-
-.structured-report__followup-compact {
-  padding: 8px 0 10px;
-  border-bottom: 1px solid #cbd5e1;
-}
-
-.structured-report__followup-compact:first-child {
-  border-top: 1px solid #cbd5e1;
-}
-
-.structured-report__followup-compact-title {
-  font-size: 14px;
-  font-weight: 600;
-  color: #0f172a;
-  margin: 12px 0 6px;
-}
-
-.structured-report__followup-compact-line {
-  margin: 4px 0;
-}
-
-.structured-report__gap-item-title {
-  font-size: 16px;
-  font-weight: 600;
-  color: #1d4ed8;
-  margin: 0 0 10px;
-}
-
-.structured-report__gap-item-block + .structured-report__gap-item-block {
-  margin-top: 14px;
-}
-
-.structured-report__gap-item-label {
-  font-weight: 700;
-  margin-bottom: 6px;
-  color: #374151;
-}
-
-.structured-report__gap-item-value {
-  margin: 0;
-}
-
-.structured-report__gap-item-list {
-  margin: 0 0 0 18px;
-  padding: 0;
-}
-
-.structured-report__gap-item-list li + li {
-  margin-top: 6px;
-}
-
+/* Issue Cards - High Visibility */
 .structured-report__issue-card {
-  margin: 12px 0;
-  padding: 16px 20px;
-  border: 1px solid #bfdbfe;
-  border-left: 4px solid #3b82f6;
-  border-radius: 6px;
-  background: #eff6ff !important;
+  background-color: #fff1f2 !important;
+  border: 1px solid #fecdd3;
+  border-left: 5px solid #e11d48;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 20px;
+  page-break-inside: avoid;
+  break-inside: avoid;
 }
 
 .structured-report__issue-card-title {
-  font-size: 16px;
-  font-weight: 600;
-  color: #1d4ed8;
-  margin: 0 0 10px;
+  color: #be123c;
+  font-size: 18px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
 }
 
-.structured-report__issue-card-section + .structured-report__issue-card-section {
-  margin-top: 16px;
+.structured-report__issue-card-section {
+  margin-bottom: 16px;
+}
+
+.structured-report__issue-card-section:last-child {
+  margin-bottom: 0;
 }
 
 .structured-report__issue-card-section-title {
-  font-weight: 700;
+  font-size: 13px;
+  text-transform: uppercase;
+  color: #9f1239;
+  font-weight: 800;
   margin-bottom: 6px;
+  letter-spacing: 0.5px;
 }
 
 .structured-report__issue-card-text {
-  margin: 0;
+  color: #4c0519;
+  font-size: 14px;
 }
 
 .structured-report__issue-card-law-list {
-  margin: 0 0 0 18px;
-  padding: 0;
+  padding-left: 18px;
+  margin: 0;
 }
 
-.structured-report__issue-card-law-item + .structured-report__issue-card-law-item {
-  margin-top: 12px;
+.structured-report__issue-card-law-item {
+  color: #881337;
+  font-size: 14px;
+  margin-bottom: 8px;
 }
 
 .structured-report__issue-card-law-title {
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .structured-report__issue-card-law-requirements {
@@ -321,54 +216,59 @@ html, body {
   padding: 0;
 }
 
-.structured-report__issue-card-law-requirement + .structured-report__issue-card-law-requirement {
-  margin-top: 4px;
+/* Gap Items / Followups */
+.structured-report__gap-item,
+.structured-report__followup-compact {
+  background-color: #fdf4ff !important;
+  border: 1px solid #f5d0fe;
+  border-left: 4px solid #c026d3;
+  border-radius: 6px;
+  padding: 16px;
+  margin-bottom: 16px;
+  page-break-inside: avoid;
+  break-inside: avoid;
 }
 
-.structured-report__muted {
-  color: #64748b;
-  font-size: 12px;
+.structured-report__gap-item-title,
+.structured-report__followup-compact-title {
+  color: #86198f;
+  font-size: 16px;
+  margin-bottom: 10px;
 }
 
+/* Print Specific Optimizations */
 @media print {
   @page {
     size: A4 landscape;
-    margin: 15mm 15mm;
+    margin: 15mm;
   }
 
-  html,
-  body,
+  html, 
+  body, 
   .structured-report {
     background-color: #ffffff !important;
-    -webkit-print-color-adjust: exact;
   }
 
-  .structured-report {
-    max-width: none;
-    padding: 0;
+  /* Force page breaks for clean segmentation */
+  .structured-report__section {
+    page-break-inside: auto;
   }
 
   .structured-report__overview-section {
-    break-before: auto;
-    page-break-before: auto;
+    break-before: page;
+    page-break-before: always;
   }
 
-  .structured-report__section-title,
-  .structured-report__subsection-title {
-    break-after: avoid;
-    page-break-after: avoid;
-  }
-
-  .structured-report table {
-    page-break-inside: auto;
-    break-inside: auto;
-  }
-
-  .structured-report tr,
-  .structured-report td,
-  .structured-report th {
+  /* Prevent awkward splits */
+  .structured-report table,
+  .structured-report__issue-card,
+  .structured-report__gap-item {
     page-break-inside: avoid;
     break-inside: avoid;
+  }
+
+  thead {
+    display: table-header-group;
   }
 }
 """
@@ -392,7 +292,7 @@ class StructuredReviewReportBuilder:
     }
     _SEVERITY_LABELS = {'high': '高', 'medium': '中', 'low': '低', 'info': '提示'}
     _GROUPED_SPECIAL_SCHEME_DOCUMENT_TYPES = {'hazardous_special_scheme', 'distribution_network_special_scheme'}
-    _SPECIAL_SCHEME_STRUCTURE_POLICY_LABEL = 'review-control-plane-special-scheme-structure-policy'
+    _SPECIAL_SCHEME_STRUCTURE_POLICY_LABEL = '专项施工方案结构审查规则'
     _APPLICABILITY_LABELS = {
         'applies': '已满足当前判定条件',
         'partial': '仅形成部分判定',
@@ -487,6 +387,7 @@ class StructuredReviewReportBuilder:
     _INTERNAL_POLICY_SOURCES = {
         'review-control-plane-support-scope-policy': '系统审查支持材料边界规则',
         'review-control-plane-visibility-policy': '系统附件识别与复核规则',
+        'review-control-plane-special-scheme-structure-policy': '系统结构审查规则',
     }
     _HAZARD_VALUE_LABELS = {
         'liftingOperation': '涉及起重吊装作业',
@@ -691,13 +592,7 @@ class StructuredReviewReportBuilder:
                 issues,
                 compact=True,
             )
-            lines.extend(
-                [
-                    '### 3. 审查总览表',
-                    self._render_structure_overview_table_html(matrices.structureCompleteness, overview_issue_map),
-                    '',
-                ]
-            )
+            lines.extend(self._render_first_section_overview_markdown(summary.documentType, matrices.structureCompleteness, overview_issue_map))
 
         lines.extend(['## ' + layer_sections['L1'], ''])
         if summary.documentType == 'construction_org' and matrices.structureCompleteness:
@@ -843,14 +738,7 @@ class StructuredReviewReportBuilder:
         parts.append('</div>')
         if matrices.structureCompleteness:
             overview_issue_map, _ = self._build_structure_related_issue_map(matrices.structureCompleteness, issues, compact=True)
-            parts.extend([
-                '<section class="structured-report__subsection structured-report__overview-section">',
-                '<h3 class="structured-report__subsection-title">3. 审查总览表</h3>',
-                '<div class="structured-report__table-wrap">',
-                self._render_structure_overview_table_html(matrices.structureCompleteness, overview_issue_map),
-                '</div>',
-                '</section>',
-            ])
+            parts.extend(self._render_first_section_overview_html(summary.documentType, matrices.structureCompleteness, overview_issue_map))
         parts.append('</section>')
         return parts
 
@@ -1289,7 +1177,7 @@ class StructuredReviewReportBuilder:
                     [
                         '',
                         f'#### {self._structure_group_heading(group_scope, index)}',
-                        f'- 主要审查依据：{self._SPECIAL_SCHEME_STRUCTURE_POLICY_LABEL}',
+                        f'- 主要审查依据：{self._structure_group_basis_summary(group_scope, group_label)}',
                         '',
                         self._render_structure_completeness_table_html(
                             group_rows,
@@ -1372,7 +1260,7 @@ class StructuredReviewReportBuilder:
                 parts.extend(
                     [
                         f'<h4 class="structured-report__subsection-title">{html.escape(self._structure_group_heading(group_scope, index))}</h4>',
-                        f'<p class="structured-report__subsection-intro">主要审查依据：{html.escape(self._SPECIAL_SCHEME_STRUCTURE_POLICY_LABEL)}</p>',
+                        f'<p class="structured-report__subsection-intro">主要审查依据：{html.escape(self._structure_group_basis_summary(group_scope, group_label))}</p>',
                         '<div class="structured-report__table-wrap">',
                         self._render_structure_completeness_table_html(
                             group_rows,
@@ -1546,13 +1434,73 @@ class StructuredReviewReportBuilder:
         label = '专项补充结构要求' if scope == 'special' else '专项施工方案通用要求'
         return f'2.1.{index} {label}'
 
+    def _overview_group_heading(self, scope: str, index: int) -> str:
+        label = '专项补充结构总览' if scope == 'special' else '专项施工方案通用结构总览'
+        return f'3.{index} {label}'
+
     def _structure_group_basis_label(self, scope: str, group_label: str) -> str:
         if scope == 'special':
             return group_label
         return '专项施工方案通用要求'
 
+    def _structure_group_basis_summary(self, scope: str, group_label: str) -> str:
+        if scope == 'special':
+            return f'{group_label}结构审查要求'
+        return '专项施工方案通用结构审查要求'
+
     def _structure_group_followup_heading(self, scope: str) -> str:
         return '专项补充要求：缺项分析与补齐意见' if scope == 'special' else '通用要求：缺项分析与补齐意见'
+
+    def _render_first_section_overview_markdown(self, document_type: str, rows, overview_issue_map) -> list[str]:
+        if document_type in {'hazardous_special_scheme', 'distribution_network_special_scheme'} and any(
+            getattr(row, 'scope', None) == 'special' for row in rows
+        ):
+            groups = self._group_structure_rows(rows)
+            lines = ['### 3. 审查总览表']
+            for index, group in enumerate(groups, start=1):
+                group_scope = str(group['scope'])
+                group_rows = list(group['rows'])
+                lines.extend(
+                    [
+                        '',
+                        f'#### {self._overview_group_heading(group_scope, index)}',
+                        self._render_structure_overview_table_html(group_rows, overview_issue_map),
+                    ]
+                )
+            lines.append('')
+            return lines
+        return ['### 3. 审查总览表', self._render_structure_overview_table_html(rows, overview_issue_map), '']
+
+    def _render_first_section_overview_html(self, document_type: str, rows, overview_issue_map) -> list[str]:
+        if document_type in {'hazardous_special_scheme', 'distribution_network_special_scheme'} and any(
+            getattr(row, 'scope', None) == 'special' for row in rows
+        ):
+            groups = self._group_structure_rows(rows)
+            parts = [
+                '<section class="structured-report__subsection structured-report__overview-section">',
+                '<h3 class="structured-report__subsection-title">3. 审查总览表</h3>',
+            ]
+            for index, group in enumerate(groups, start=1):
+                group_scope = str(group['scope'])
+                group_rows = list(group['rows'])
+                parts.extend(
+                    [
+                        f'<h4 class="structured-report__subsection-title">{html.escape(self._overview_group_heading(group_scope, index))}</h4>',
+                        '<div class="structured-report__table-wrap">',
+                        self._render_structure_overview_table_html(group_rows, overview_issue_map),
+                        '</div>',
+                    ]
+                )
+            parts.append('</section>')
+            return parts
+        return [
+            '<section class="structured-report__subsection structured-report__overview-section">',
+            '<h3 class="structured-report__subsection-title">3. 审查总览表</h3>',
+            '<div class="structured-report__table-wrap">',
+            self._render_structure_overview_table_html(rows, overview_issue_map),
+            '</div>',
+            '</section>',
+        ]
 
     def _render_structure_followups_grouped(self, rows) -> list[str]:
         lines: list[str] = []

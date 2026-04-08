@@ -42,8 +42,19 @@ async def _render_html_pdf_via_playwright(
         title=title,
     )
     try:
+        launch_kwargs = {
+            'args': [
+                '--no-sandbox', 
+                '--disable-setuid-sandbox', 
+                '--disable-dev-shm-usage',
+                '--disable-gpu',
+                '--no-zygote',
+                '--single-process',
+            ]
+        }
+
         async with async_playwright() as playwright:
-            browser = await playwright.chromium.launch()
+            browser = await playwright.chromium.launch(**launch_kwargs)
             page = await browser.new_page()
             await page.set_content(html_document, wait_until='load')
             await page.emulate_media(media='print')

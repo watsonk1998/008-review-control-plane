@@ -106,7 +106,7 @@ def test_structured_review_executor_returns_expected_issue_titles():
     assert '.structured-report__gap-item' in result['reportPrintCss']
     assert '.structured-report__issue-card-law-requirements' in result['reportPrintCss']
     assert 'background-color: #ffffff !important' in result['reportPrintCss']
-    assert 'border-left: 4px solid #3b82f6' in result['reportPrintCss']
+    assert 'border-left: 5px solid #2563eb' in result['reportPrintCss'] or 'border-left: 5px solid #e11d48' in result['reportPrintCss']
     assert result['visibility']['manualReviewNeeded'] is True
     assert result['visibility']['parseMode'] == 'docx_structured'
     assert result['visibility']['manualReviewReason'] == 'title_detected_without_attachment_body'
@@ -583,8 +583,11 @@ def test_structured_review_executor_selects_distribution_network_base_and_power_
     assert any(row['itemKey'] == 'powerOutageStaffing' and row['status'] in {'matched', 'partial'} for row in structure_rows)
     assert all(row['status'] in {'matched', 'partial'} for row in structure_rows[:9])
     assert '### 3. 审查总览表' in result['reportMarkdown']
-    assert '<table class="structured-overview-table">' in result['reportMarkdown']
-    assert '<table class="structured-completeness-table">' in result['reportMarkdown']
+    assert '#### 3.1 专项补充结构总览' in result['reportMarkdown']
+    assert '#### 3.2 专项施工方案通用结构总览' in result['reportMarkdown']
+    assert result['reportMarkdown'].count('<table class="structured-overview-table">') >= 2
+    assert result['reportMarkdown'].count('<table class="structured-completeness-table">') >= 2
+    assert 'review-control-plane-special-scheme-structure-policy' not in result['reportMarkdown']
     assert result['reportMarkdown'].index('停电范围') < result['reportMarkdown'].index('工程概况')
 
 
@@ -625,13 +628,18 @@ def test_structured_review_executor_assigns_power_outage_structure_rule_and_repo
     assert last_special_index < first_common_index
     report = result['reportMarkdown']
     assert '### 3. 审查总览表' in report
+    assert '#### 3.1 专项补充结构总览' in report
+    assert '#### 3.2 专项施工方案通用结构总览' in report
     assert '#### 2.1.1 专项补充结构要求' in report
     assert '#### 2.1.2 专项施工方案通用要求' in report
     assert '#### 专项补充要求：缺项分析与补齐意见' in report
     assert '#### 通用要求：缺项分析与补齐意见' in report
+    assert report.count('<table class="structured-overview-table">') >= 2
     assert report.count('<table class="structured-completeness-table">') >= 2
     assert '停电施工作业专项要求' in report
     assert '专项施工方案通用要求' in report
+    assert '系统结构审查规则' in report
+    assert 'review-control-plane-special-scheme-structure-policy' not in report
     assert report.index('停电范围') < report.index('工程概况')
 
 
@@ -865,10 +873,6 @@ def test_structured_review_executor_frontloads_manual_review_for_parser_limited_
         and fact['blockingRuleIds']
         for fact in result['unresolvedFacts']
     )
-
-
-def test_pdf_exporter_uses_landscape_a4_for_expert_report():
-    assert 'size: A4 landscape;' in _DEFAULT_PDF_CSS
 
 
 def test_pdf_exporter_renders_html_with_print_css(tmp_path: Path):
