@@ -394,14 +394,16 @@ def test_structured_review_executor_selects_formwork_support_pack(tmp_path: Path
     assert '模板支撑体系缺少可追溯计算依据' in issue_titles
 
 
-def test_structured_review_executor_selects_steel_structure_pack_and_coexists_with_lifting(tmp_path: Path):
+def test_structured_review_executor_selects_steel_structure_pack_and_replaces_old_lifting_pack(tmp_path: Path):
     sample = tmp_path / 'steel_structure_installation_hazardous.md'
     sample.write_text(
         '# 钢结构安装工程专项施工方案\n\n'
         '## 工程概况\n钢结构安装工程概况。\n'
         '## 编制依据\n依据规范编制。\n'
         '## 施工计划\n施工安排。\n'
-        '## 施工工艺技术\n钢构件安装；采用50T汽车吊；Q计=12.5t。\n'
+        '## 施工工艺技术\n钢构件安装；采用50T汽车吊；Q计=12.5t；吊装站位处地基承载力满足要求；设置平衡梁。\n'
+        '## 技术参数\n构件重量、吊点和起升高度。\n'
+        '## 工艺流程\n钢柱吊装、校正、临时固定。\n'
         '## 风险辨识与分级\n开展风险辨识。\n'
         '## 施工管理及作业人员配备和分工\n明确岗位职责。\n'
         '## 应急处置措施\n应急安排。\n'
@@ -419,10 +421,217 @@ def test_structured_review_executor_selects_steel_structure_pack_and_coexists_wi
 
     selected_packs = set(result['resolvedProfile']['policyPackIds'])
     assert 'steel_structure_installation.base' in selected_packs
-    assert 'lifting_operations.base' in selected_packs
+    assert 'lifting_installation_removal.base' in selected_packs
+    assert 'lifting_operations.base' not in selected_packs
     issue_titles = {issue['title'] for issue in result['issues']}
     assert '钢结构安装缺少临时支撑或卸载条件' in issue_titles
     assert '钢结构安装图纸或验收章节需人工复核' in issue_titles
+
+
+def test_structured_review_executor_selects_lifting_installation_removal_pack_for_hazardous_scheme(tmp_path: Path):
+    sample = tmp_path / 'lifting_installation_removal_hazardous.md'
+    sample.write_text(
+        '# 起重吊装及安装拆卸工程专项施工方案\n\n'
+        '## 工程概况\n起重吊装及安装拆卸工程概况。\n'
+        '## 编制依据\n依据规范编制。\n'
+        '## 施工计划\n施工安排。\n'
+        '## 施工工艺技术\n采用汽车吊进行构件安装拆卸。\n'
+        '## 风险辨识与分级\n开展风险辨识。\n'
+        '## 施工管理及作业人员配备和分工\n明确岗位职责。\n'
+        '## 验收要求\n明确验收程序。\n'
+        '## 应急处置措施\n应急安排。\n',
+        encoding='utf-8',
+    )
+    executor = StructuredReviewExecutor(document_loader=DocumentLoader(), llm_gateway=DummyLLM(), fast_adapter=None)
+    result = executor.run_sync(
+        task_id='lifting-installation-removal-pack-test',
+        query='对该危大专项方案执行正式结构化审查',
+        source_document_path=str(sample),
+        fixture_id='lifting-installation-removal-pack-fixture',
+        document_type='hazardous_special_scheme',
+    )
+
+    selected_packs = set(result['resolvedProfile']['policyPackIds'])
+    assert 'lifting_installation_removal.base' in selected_packs
+    assert 'lifting_operations.base' not in selected_packs
+    issue_titles = {issue['title'] for issue in result['issues']}
+    assert '起重吊装及安装拆卸方案骨架不完整' in issue_titles
+    assert '起重吊装及安装拆卸缺少站位承载依据' in issue_titles
+    drawing_issue = next(issue for issue in result['issues'] if issue['title'] == '起重吊装及安装拆卸图纸需人工复核')
+    assert drawing_issue['manualReviewNeeded'] is True
+    assert drawing_issue['manualReviewReason'] == 'drawing_visibility_gap'
+
+
+def test_structured_review_executor_keeps_old_lifting_pack_for_construction_org(tmp_path: Path):
+    sample = tmp_path / 'construction_org_lifting.md'
+    sample.write_text(
+        '# 施工组织设计\n\n'
+        '## 工程概况\n起重吊装工程概况。\n'
+        '## 编制依据\n依据规范编制。\n'
+        '## 施工部署\n施工安排。\n'
+        '## 施工工艺\n采用汽车吊吊装。\n',
+        encoding='utf-8',
+    )
+    executor = StructuredReviewExecutor(document_loader=DocumentLoader(), llm_gateway=DummyLLM(), fast_adapter=None)
+    result = executor.run_sync(
+        task_id='construction-org-lifting-pack-test',
+        query='对该施工组织设计执行正式结构化审查',
+        source_document_path=str(sample),
+        fixture_id='construction-org-lifting-pack-fixture',
+        document_type='construction_org',
+        discipline_tags=['lifting_operations'],
+    )
+
+    selected_packs = set(result['resolvedProfile']['policyPackIds'])
+    assert 'lifting_operations.base' in selected_packs
+    assert 'lifting_installation_removal.base' not in selected_packs
+
+
+def test_structured_review_executor_selects_scaffold_pack(tmp_path: Path):
+    sample = tmp_path / 'scaffold_hazardous.md'
+    sample.write_text(
+        '# 脚手架工程专项施工方案\n\n'
+        '## 工程概况\n脚手架工程概况。\n'
+        '## 编制依据\n依据规范编制。\n'
+        '## 施工计划\n施工安排。\n'
+        '## 技术参数\n架体高度及基础参数。\n'
+        '## 施工工艺技术\n脚手架搭设方案。\n'
+        '## 风险辨识与分级\n开展风险辨识。\n'
+        '## 验收要求\n明确验收程序。\n'
+        '## 应急处置措施\n应急安排。\n',
+        encoding='utf-8',
+    )
+    executor = StructuredReviewExecutor(document_loader=DocumentLoader(), llm_gateway=DummyLLM(), fast_adapter=None)
+    result = executor.run_sync(
+        task_id='scaffold-pack-test',
+        query='对该危大专项方案执行正式结构化审查',
+        source_document_path=str(sample),
+        fixture_id='scaffold-pack-fixture',
+        document_type='hazardous_special_scheme',
+    )
+
+    assert 'scaffold.base' in result['resolvedProfile']['policyPackIds']
+    issue_titles = {issue['title'] for issue in result['issues']}
+    assert '脚手架工程缺少连墙件或防坠落装置说明' in issue_titles
+    assert '脚手架工程监测或验收要求不完整' in issue_titles
+
+
+def test_structured_review_executor_selects_demolition_pack(tmp_path: Path):
+    sample = tmp_path / 'demolition_hazardous.md'
+    sample.write_text(
+        '# 拆除工程专项施工方案\n\n'
+        '## 工程概况\n拆除工程概况。\n'
+        '## 编制依据\n依据规范编制。\n'
+        '## 施工计划\n施工安排。\n'
+        '## 工艺流程\n拆除顺序为先围护后主体。\n'
+        '## 施工工艺技术\n拆除施工方法。\n'
+        '## 风险辨识与分级\n开展风险辨识。\n'
+        '## 应急处置措施\n应急安排。\n',
+        encoding='utf-8',
+    )
+    executor = StructuredReviewExecutor(document_loader=DocumentLoader(), llm_gateway=DummyLLM(), fast_adapter=None)
+    result = executor.run_sync(
+        task_id='demolition-pack-test',
+        query='对该危大专项方案执行正式结构化审查',
+        source_document_path=str(sample),
+        fixture_id='demolition-pack-fixture',
+        document_type='hazardous_special_scheme',
+    )
+
+    assert 'demolition.base' in result['resolvedProfile']['policyPackIds']
+    issue_titles = {issue['title'] for issue in result['issues']}
+    assert '拆除工程缺少保留结构或平台控制要求' in issue_titles
+    assert '拆除工程缺少临时支撑或吊运计算依据' in issue_titles
+
+
+def test_structured_review_executor_selects_underground_excavation_pack(tmp_path: Path):
+    sample = tmp_path / 'underground_excavation_hazardous.md'
+    sample.write_text(
+        '# 暗挖工程专项施工方案\n\n'
+        '## 工程概况\n暗挖工程概况。\n'
+        '## 编制依据\n依据规范编制。\n'
+        '## 施工计划\n施工安排。\n'
+        '## 技术参数\n开挖断面尺寸。\n'
+        '## 施工工艺技术\n盾构推进。\n'
+        '## 风险辨识与分级\n开展风险辨识。\n'
+        '## 应急处置措施\n应急安排。\n',
+        encoding='utf-8',
+    )
+    executor = StructuredReviewExecutor(document_loader=DocumentLoader(), llm_gateway=DummyLLM(), fast_adapter=None)
+    result = executor.run_sync(
+        task_id='underground-pack-test',
+        query='对该危大专项方案执行正式结构化审查',
+        source_document_path=str(sample),
+        fixture_id='underground-pack-fixture',
+        document_type='hazardous_special_scheme',
+    )
+
+    assert 'underground_excavation.base' in result['resolvedProfile']['policyPackIds']
+    issue_titles = {issue['title'] for issue in result['issues']}
+    assert '暗挖工程缺少地下水控制措施' in issue_titles
+    drawing_issue = next(issue for issue in result['issues'] if issue['title'] == '暗挖工程监测图纸需人工复核')
+    assert drawing_issue['manualReviewNeeded'] is True
+    assert drawing_issue['manualReviewReason'] == 'drawing_visibility_gap'
+
+
+def test_structured_review_executor_selects_curtain_wall_installation_pack(tmp_path: Path):
+    sample = tmp_path / 'curtain_wall_hazardous.md'
+    sample.write_text(
+        '# 建筑幕墙安装工程专项施工方案\n\n'
+        '## 工程概况\n建筑幕墙安装工程概况。\n'
+        '## 编制依据\n依据规范编制。\n'
+        '## 施工计划\n施工安排。\n'
+        '## 施工平面布置\n场地平面布置。\n'
+        '## 风险辨识与分级\n开展风险辨识。\n'
+        '## 验收要求\n明确验收程序。\n'
+        '## 应急处置措施\n应急安排。\n',
+        encoding='utf-8',
+    )
+    executor = StructuredReviewExecutor(document_loader=DocumentLoader(), llm_gateway=DummyLLM(), fast_adapter=None)
+    result = executor.run_sync(
+        task_id='curtain-wall-pack-test',
+        query='对该危大专项方案执行正式结构化审查',
+        source_document_path=str(sample),
+        fixture_id='curtain-wall-pack-fixture',
+        document_type='hazardous_special_scheme',
+    )
+
+    assert 'curtain_wall_installation.base' in result['resolvedProfile']['policyPackIds']
+    issue_titles = {issue['title'] for issue in result['issues']}
+    assert '建筑幕墙安装设施或防护措施不完整' in issue_titles
+    drawing_issue = next(issue for issue in result['issues'] if issue['title'] == '建筑幕墙安装图纸或验收章节需人工复核')
+    assert drawing_issue['manualReviewNeeded'] is True
+    assert drawing_issue['manualReviewReason'] == 'drawing_visibility_gap'
+
+
+def test_structured_review_executor_selects_manual_bored_pile_pack(tmp_path: Path):
+    sample = tmp_path / 'manual_bored_pile_hazardous.md'
+    sample.write_text(
+        '# 人工挖孔桩工程专项施工方案\n\n'
+        '## 工程概况\n人工挖孔桩工程概况。\n'
+        '## 编制依据\n依据规范编制。\n'
+        '## 施工计划\n施工安排。\n'
+        '## 施工工艺技术\n厚度超过 2m 的砂层，需重点核验。\n'
+        '## 风险辨识与分级\n开展风险辨识。\n'
+        '## 应急处置措施\n应急安排。\n',
+        encoding='utf-8',
+    )
+    executor = StructuredReviewExecutor(document_loader=DocumentLoader(), llm_gateway=DummyLLM(), fast_adapter=None)
+    result = executor.run_sync(
+        task_id='manual-bored-pile-pack-test',
+        query='对该危大专项方案执行正式结构化审查',
+        source_document_path=str(sample),
+        fixture_id='manual-bored-pile-pack-fixture',
+        document_type='hazardous_special_scheme',
+    )
+
+    assert 'manual_bored_pile.base' in result['resolvedProfile']['policyPackIds']
+    issue_titles = {issue['title'] for issue in result['issues']}
+    assert '人工挖孔桩缺少跳挖或分序要求' in issue_titles
+    assert '人工挖孔桩缺少防中毒窒息或防触电措施' in issue_titles
+    forbidden_issue = next(issue for issue in result['issues'] if issue['title'] == '人工挖孔桩禁用条件需人工复核')
+    assert forbidden_issue['manualReviewNeeded'] is True
+    assert forbidden_issue['manualReviewReason'] == 'forbidden_condition_requires_manual_confirmation'
 
 
 def test_document_loader_parse_pdf_document_uses_explicit_pdf_parser():

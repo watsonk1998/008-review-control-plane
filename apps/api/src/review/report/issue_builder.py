@@ -64,6 +64,25 @@ def _fallback_recommendations(candidate: IssueCandidate) -> list[str]:
         'formwork_support_process_parameters': ['补齐模板支撑体系技术参数、工艺流程、预压方案及混凝土浇筑方式/顺序。'],
         'formwork_support_calculation_traceability': ['补齐模板支撑体系强度、刚度、稳定性和基础承载力等计算依据。'],
         'formwork_support_acceptance_completeness': ['补齐模板支撑体系的验收标准、程序和阶段验收内容。'],
+        'lifting_installation_removal_scheme_integrity': ['补齐起重吊装及安装拆卸工程的设备参数、吊装流程和安装拆卸顺序。'],
+        'lifting_installation_removal_site_bearing_traceability': ['补齐站位处地基或支承面的承载能力说明及相关验算依据。'],
+        'lifting_installation_removal_temporary_fixation_completeness': ['明确临时固定、缆风绳、地锚、平衡梁和吊索具等稳定措施。'],
+        'lifting_installation_removal_drawing_visibility': ['补齐站位图、平立面关系图或剖面图原件，并将人工复核结果写回正式报告。'],
+        'scaffold_structure_parameters_completeness': ['补齐脚手架类型、高度、基础和主要构造参数。'],
+        'scaffold_safety_device_and_wall_tie_completeness': ['补齐连墙件、附着支撑和防倾覆/防坠落装置说明。'],
+        'scaffold_monitoring_and_acceptance_completeness': ['补齐监测项目、控制值及脚手架关键验收要求。'],
+        'demolition_sequence_integrity': ['补齐拆除顺序、解体清运流程及关键步序控制。'],
+        'demolition_retained_structure_control_completeness': ['明确保留结构、作业平台承载和稳定状态控制要求。'],
+        'demolition_support_calculation_traceability': ['补齐临时支撑、吊运或爆破等计算依据。'],
+        'underground_excavation_water_control_completeness': ['补齐地下水控制、注浆、冻结或相关水处理措施。'],
+        'underground_excavation_support_parameters_completeness': ['补齐开挖进尺、断面尺寸、支护参数和关键工装参数。'],
+        'underground_excavation_monitoring_and_drawings': ['补齐监测点布置图、周边环境平剖面图等材料，并保留人工复核记录。'],
+        'curtain_wall_installation_facility_integrity': ['补齐安装操作设施、附着支座、动力设备和安全防护设置。'],
+        'curtain_wall_installation_route_and_layout_completeness': ['补齐运输路线、吊装运行路线和堆放平面布置。'],
+        'curtain_wall_installation_drawing_and_acceptance': ['补齐幕墙安装图纸及验收章节，并将人工复核结论写回正式报告。'],
+        'manual_bored_pile_jump_excavation_integrity': ['补齐跳挖、分区分序等作业组织要求。'],
+        'manual_bored_pile_gas_and_electric_safety_completeness': ['补齐有害气体检测、防中毒窒息和防触电措施。'],
+        'manual_bored_pile_forbidden_conditions_manual_review': ['结合地质、水文和现场条件人工核验禁用条件，并在正式报告中记录复核结论。'],
         'steel_structure_installation_lifting_scheme_integrity': ['补齐钢结构构件参数、吊装设备选型、站位路线和安装流程等关键方案信息。'],
         'steel_structure_installation_support_and_unloading': ['明确拼装胎架、临时支撑、卸载条件及相关工装措施。'],
         'steel_structure_installation_drawing_and_acceptance': ['补齐钢结构安装措施图纸及验收章节，并将人工复核结果写回正式报告。'],
@@ -197,6 +216,44 @@ def _build_summary(candidate: IssueCandidate) -> str:
         return '模板支撑体系未看到强度、刚度、稳定性或基础承载力等计算依据。'
     if candidate.candidateId == 'formwork_support_acceptance_completeness':
         return '模板支撑体系缺少明确的验收标准、程序或阶段验收内容。'
+    if candidate.candidateId == 'lifting_installation_removal_scheme_integrity':
+        return '起重吊装及安装拆卸工程缺少设备参数、吊装流程或安装拆卸顺序等关键方案信息。'
+    if candidate.candidateId == 'lifting_installation_removal_site_bearing_traceability':
+        return '起重吊装及安装拆卸工程未明确站位处地基或支承面的承载能力依据。'
+    if candidate.candidateId == 'lifting_installation_removal_temporary_fixation_completeness':
+        return '起重吊装及安装拆卸工程缺少临时固定或辅助吊装装置说明。'
+    if candidate.candidateId == 'lifting_installation_removal_drawing_visibility':
+        return '起重吊装及安装拆卸工程相关图纸未稳定进入当前可视域，需人工复核。'
+    if candidate.candidateId == 'scaffold_structure_parameters_completeness':
+        return '脚手架工程缺少架体类型、高度、基础或主要构造参数。'
+    if candidate.candidateId == 'scaffold_safety_device_and_wall_tie_completeness':
+        return '脚手架工程缺少连墙件、附着支撑或防倾覆/防坠落装置说明。'
+    if candidate.candidateId == 'scaffold_monitoring_and_acceptance_completeness':
+        return '脚手架工程缺少明确的监测项目、控制值或关键验收内容。'
+    if candidate.candidateId == 'demolition_sequence_integrity':
+        return '拆除工程未明确拆除顺序、解体清运流程或关键步序控制。'
+    if candidate.candidateId == 'demolition_retained_structure_control_completeness':
+        return '拆除工程缺少保留结构、作业平台承载或稳定状态控制要求。'
+    if candidate.candidateId == 'demolition_support_calculation_traceability':
+        return '拆除工程未看到临时支撑、吊运或爆破等计算依据。'
+    if candidate.candidateId == 'underground_excavation_water_control_completeness':
+        return '暗挖工程缺少地下水控制、注浆或冻结等关键水控制措施。'
+    if candidate.candidateId == 'underground_excavation_support_parameters_completeness':
+        return '暗挖工程缺少开挖进尺、断面尺寸、支护参数或关键工装参数。'
+    if candidate.candidateId == 'underground_excavation_monitoring_and_drawings':
+        return '暗挖工程监测图纸或相关平剖面图未稳定进入当前可视域，需人工复核。'
+    if candidate.candidateId == 'curtain_wall_installation_facility_integrity':
+        return '建筑幕墙安装工程缺少安装操作设施、附着支座或安全防护装置说明。'
+    if candidate.candidateId == 'curtain_wall_installation_route_and_layout_completeness':
+        return '建筑幕墙安装工程缺少运输路线、吊装运行路线或堆放平面布置。'
+    if candidate.candidateId == 'curtain_wall_installation_drawing_and_acceptance':
+        return '建筑幕墙安装工程相关图纸或验收章节未稳定进入当前可视域，需人工复核。'
+    if candidate.candidateId == 'manual_bored_pile_jump_excavation_integrity':
+        return '人工挖孔桩工程缺少跳挖、分区分序等作业组织要求。'
+    if candidate.candidateId == 'manual_bored_pile_gas_and_electric_safety_completeness':
+        return '人工挖孔桩工程缺少有害气体检测、防中毒窒息或防触电措施。'
+    if candidate.candidateId == 'manual_bored_pile_forbidden_conditions_manual_review':
+        return '人工挖孔桩已出现禁用条件信号，需结合地质、水文和现场条件人工复核。'
     if candidate.candidateId == 'steel_structure_installation_lifting_scheme_integrity':
         return '钢结构安装缺少构件参数、吊装设备选型或安装流程等关键方案信息。'
     if candidate.candidateId == 'steel_structure_installation_support_and_unloading':

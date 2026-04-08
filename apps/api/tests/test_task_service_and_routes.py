@@ -1457,6 +1457,12 @@ def test_support_scope_route_returns_official_and_placeholder_scope():
     assert packs['gas_area_ops.base']['readiness'] == 'ready'
     assert packs['foundation_pit.base']['readiness'] == 'ready'
     assert packs['formwork_support.base']['readiness'] == 'ready'
+    assert packs['lifting_installation_removal.base']['readiness'] == 'ready'
+    assert packs['scaffold.base']['readiness'] == 'ready'
+    assert packs['demolition.base']['readiness'] == 'ready'
+    assert packs['underground_excavation.base']['readiness'] == 'ready'
+    assert packs['curtain_wall_installation.base']['readiness'] == 'ready'
+    assert packs['manual_bored_pile.base']['readiness'] == 'ready'
     assert packs['steel_structure_installation.base']['readiness'] == 'ready'
     assert any(item['readiness'] == 'placeholder' for item in packs.values())
 

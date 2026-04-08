@@ -15,6 +15,7 @@ def resolve_review_profile(
     requested_discipline_tags = list(structured_task.disciplineTags or [])
     requested_policy_pack_ids = list(structured_task.policyPackIds or [])
     document_type = _resolve_document_type(structured_task, facts, plan_profile)
+    requested_policy_pack_ids = _normalize_requested_pack_ids(document_type, requested_policy_pack_ids)
     discipline_tags = list(
         dict.fromkeys(
             [
@@ -80,6 +81,20 @@ def _normalize_hazardous_type_tags(document_type: str, discipline_tags: list[str
     tags = list(discipline_tags)
     if document_type != 'hazardous_special_scheme':
         return tags
-    if 'lifting_installation_removal' in tags and 'lifting_operations' in tags:
-        tags = [tag for tag in tags if tag != 'lifting_operations']
-    return tags
+    normalized: list[str] = []
+    for tag in tags:
+        mapped = 'lifting_installation_removal' if tag == 'lifting_operations' else tag
+        if mapped not in normalized:
+            normalized.append(mapped)
+    return normalized
+
+
+def _normalize_requested_pack_ids(document_type: str, requested_pack_ids: list[str]) -> list[str]:
+    if document_type != 'hazardous_special_scheme':
+        return list(requested_pack_ids)
+    normalized: list[str] = []
+    for pack_id in requested_pack_ids:
+        mapped = 'lifting_installation_removal.base' if pack_id == 'lifting_operations.base' else pack_id
+        if mapped not in normalized:
+            normalized.append(mapped)
+    return normalized
