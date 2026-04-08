@@ -105,7 +105,8 @@ def test_structured_review_executor_returns_expected_issue_titles():
     assert 'overflow-wrap: anywhere' in result['reportPrintCss']
     assert '.structured-report__gap-item' in result['reportPrintCss']
     assert '.structured-report__issue-card-law-requirements' in result['reportPrintCss']
-    assert 'border: 1px solid #e3ded2' in result['reportPrintCss']
+    assert 'background-color: #ffffff !important' in result['reportPrintCss']
+    assert 'border-left: 4px solid #3b82f6' in result['reportPrintCss']
     assert result['visibility']['manualReviewNeeded'] is True
     assert result['visibility']['parseMode'] == 'docx_structured'
     assert result['visibility']['manualReviewReason'] == 'title_detected_without_attachment_body'

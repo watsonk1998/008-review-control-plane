@@ -13,18 +13,28 @@ from src.review.schema import (
 )
 
 _STRUCTURED_REPORT_PRINT_CSS = """
-.structured-report {
-  max-width: 1180px;
-  margin: 0 auto;
-  padding: 28px 32px 40px;
-  color: #1f2937;
-  background: #fffdf8;
-  font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
-  line-height: 1.72;
+html, body {
+  background-color: #ffffff !important;
+  margin: 0;
+  padding: 0;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
 }
 
-.structured-report, .structured-report * {
+.structured-report {
+  max-width: 100%;
+  margin: 0 auto;
+  padding: 0;
+  color: #1f2937;
+  background: #ffffff !important;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", "WenQuanYi Micro Hei", sans-serif;
+  line-height: 1.6;
+}
+
+.structured-report,
+.structured-report * {
   box-sizing: border-box;
+  background-color: transparent;
 }
 
 .structured-report h1,
@@ -40,18 +50,38 @@ _STRUCTURED_REPORT_PRINT_CSS = """
   white-space: normal;
   word-break: break-word;
   overflow-wrap: anywhere;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", "WenQuanYi Micro Hei", sans-serif;
+}
+
+.structured-report p,
+.structured-report li,
+.structured-report div,
+.structured-report span {
+  color: #374151;
+  font-size: 14px;
+}
+
+.structured-report h1,
+.structured-report h2,
+.structured-report h3,
+.structured-report h4 {
+  color: #111827;
+  font-weight: 600;
 }
 
 .structured-report__title {
   font-size: 26px;
-  font-weight: 800;
-  margin: 0 0 18px;
+  font-weight: 700;
+  margin: 0 0 20px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #111827;
+  text-align: center;
 }
 
 .structured-report__section {
-  margin: 0 0 28px;
-  padding: 0 0 18px;
-  border-bottom: 1px solid #ddd7ca;
+  margin: 0 0 24px;
+  padding: 0 0 12px;
+  border-bottom: 1px solid #e5e7eb;
 }
 
 .structured-report__section:last-child {
@@ -59,19 +89,24 @@ _STRUCTURED_REPORT_PRINT_CSS = """
 }
 
 .structured-report__section-title {
-  font-size: 22px;
-  font-weight: 800;
-  margin: 0 0 14px;
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0 0 12px;
+  color: #0f172a;
+  border-left: 4px solid #2563eb;
+  background: #f8fafc;
+  padding: 6px 0 6px 10px;
 }
 
 .structured-report__subsection {
-  margin: 18px 0 0;
+  margin: 16px 0 0;
 }
 
 .structured-report__subsection-title {
-  font-size: 18px;
-  font-weight: 700;
+  font-size: 15px;
+  font-weight: 600;
   margin: 0 0 10px;
+  color: #1e293b;
 }
 
 .structured-report__section-intro,
@@ -83,7 +118,7 @@ _STRUCTURED_REPORT_PRINT_CSS = """
 .structured-report__basis-list,
 .structured-report__fact-list,
 .structured-report__requirement-list {
-  margin: 8px 0 0 18px;
+  margin: 8px 0 8px 24px;
   padding: 0;
 }
 
@@ -91,7 +126,7 @@ _STRUCTURED_REPORT_PRINT_CSS = """
 .structured-report__basis-list li,
 .structured-report__fact-list li,
 .structured-report__requirement-list li {
-  margin: 6px 0;
+  margin-bottom: 6px;
 }
 
 .structured-report__overview-section {
@@ -100,7 +135,6 @@ _STRUCTURED_REPORT_PRINT_CSS = """
 }
 
 .structured-report__overview-section > .structured-report__subsection-title,
-.structured-report__table-wrap,
 .structured-report__issue-card,
 .structured-report__gap-item {
   page-break-inside: avoid;
@@ -108,34 +142,42 @@ _STRUCTURED_REPORT_PRINT_CSS = """
 }
 
 .structured-report__table-wrap {
-  margin-top: 10px;
+  margin-top: 12px;
+  margin-bottom: 20px;
   overflow: hidden;
 }
 
 .structured-report table {
   width: 100%;
   border-collapse: collapse;
-  table-layout: fixed;
+  table-layout: auto;
   margin: 0;
-  font-size: 14px;
+  font-size: 12px;
 }
 
 .structured-report thead {
   display: table-header-group;
 }
 
-.structured-report th,
-.structured-report td {
-  border: 1px solid #d9d4c7;
-  vertical-align: top;
+.structured-report th {
+  border-top: 1px solid #94a3b8;
+  border-bottom: 1px solid #94a3b8;
+  background: #f1f5f9 !important;
+  color: #0f172a;
+  font-weight: 600;
+  padding: 10px 8px;
   text-align: left;
-  padding: 10px 12px;
-  line-height: 1.68;
+  vertical-align: top;
+  line-height: 1.6;
 }
 
-.structured-report th {
-  background: #f4efe2;
-  font-weight: 700;
+.structured-report td {
+  border-bottom: 1px solid #e2e8f0;
+  color: #334155;
+  padding: 10px 8px;
+  text-align: left;
+  vertical-align: top;
+  line-height: 1.62;
 }
 
 .structured-overview-table th:nth-child(1),
@@ -166,43 +208,47 @@ _STRUCTURED_REPORT_PRINT_CSS = """
   margin-top: 14px;
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 12px;
 }
 
 .structured-report__gap-item {
-  border: 1px solid #e3ded2;
-  border-radius: 12px;
-  padding: 18px 20px;
-  background: #fffdfa;
+  margin: 12px 0;
+  padding: 16px 20px;
+  border: 1px solid #bfdbfe;
+  border-left: 4px solid #3b82f6;
+  border-radius: 6px;
+  background: #eff6ff !important;
 }
 
 .structured-report__followup-group + .structured-report__followup-group {
-  margin-top: 18px;
+  margin-top: 14px;
 }
 
 .structured-report__followup-compact {
-  padding: 10px 0 12px;
-  border-bottom: 1px solid #2f2f2f;
+  padding: 8px 0 10px;
+  border-bottom: 1px solid #cbd5e1;
 }
 
 .structured-report__followup-compact:first-child {
-  border-top: 1px solid #2f2f2f;
+  border-top: 1px solid #cbd5e1;
 }
 
 .structured-report__followup-compact-title {
-  font-size: 15px;
-  font-weight: 700;
-  margin: 0 0 6px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #0f172a;
+  margin: 12px 0 6px;
 }
 
 .structured-report__followup-compact-line {
-  margin: 2px 0;
+  margin: 4px 0;
 }
 
 .structured-report__gap-item-title {
   font-size: 16px;
-  font-weight: 700;
-  margin: 0 0 14px;
+  font-weight: 600;
+  color: #1d4ed8;
+  margin: 0 0 10px;
 }
 
 .structured-report__gap-item-block + .structured-report__gap-item-block {
@@ -229,17 +275,19 @@ _STRUCTURED_REPORT_PRINT_CSS = """
 }
 
 .structured-report__issue-card {
-  margin: 18px 0 0;
-  padding: 18px 20px;
-  border: 1px solid #e3ded2;
-  border-radius: 12px;
-  background: #fffdfa;
+  margin: 12px 0;
+  padding: 16px 20px;
+  border: 1px solid #bfdbfe;
+  border-left: 4px solid #3b82f6;
+  border-radius: 6px;
+  background: #eff6ff !important;
 }
 
 .structured-report__issue-card-title {
-  font-size: 20px;
-  font-weight: 800;
-  margin: 0 0 12px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #1d4ed8;
+  margin: 0 0 10px;
 }
 
 .structured-report__issue-card-section + .structured-report__issue-card-section {
@@ -278,36 +326,44 @@ _STRUCTURED_REPORT_PRINT_CSS = """
 }
 
 .structured-report__muted {
-  color: #6b7280;
+  color: #64748b;
+  font-size: 12px;
 }
 
 @media print {
   @page {
     size: A4 landscape;
-    margin: 12mm;
+    margin: 15mm 15mm;
   }
 
-  body {
-    background: #fff !important;
+  html,
+  body,
+  .structured-report {
+    background-color: #ffffff !important;
+    -webkit-print-color-adjust: exact;
   }
 
   .structured-report {
     max-width: none;
     padding: 0;
-    background: #fff;
   }
 
   .structured-report__overview-section {
-    break-before: page;
-    page-break-before: always;
+    break-before: auto;
+    page-break-before: auto;
   }
 
   .structured-report__section-title,
   .structured-report__subsection-title {
+    break-after: avoid;
     page-break-after: avoid;
   }
 
-  .structured-report table,
+  .structured-report table {
+    page-break-inside: auto;
+    break-inside: auto;
+  }
+
   .structured-report tr,
   .structured-report td,
   .structured-report th {
