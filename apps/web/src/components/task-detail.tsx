@@ -307,6 +307,15 @@ function StructuredReportMarkdown({ markdown }: { markdown: string }) {
   );
 }
 
+function StructuredReportHtml({ htmlContent, printCss }: { htmlContent: string; printCss?: string }) {
+  return (
+    <div className="structured-report-host">
+      {printCss ? <style>{printCss}</style> : null}
+      <div dangerouslySetInnerHTML={{ __html: htmlContent }} />
+    </div>
+  );
+}
+
 function reviewerTaskStateLabel(value: string) {
   switch (value) {
     case "accepted":
@@ -1168,7 +1177,14 @@ export function TaskDetail({ taskId }: { taskId: string }) {
                     {structuredResult.summary.overallConclusion}
                   </span>
                 </div>
-                <StructuredReportMarkdown markdown={structuredResult.reportMarkdown} />
+                {structuredResult.reportHtml ? (
+                  <StructuredReportHtml
+                    htmlContent={structuredResult.reportHtml}
+                    printCss={structuredResult.reportPrintCss}
+                  />
+                ) : (
+                  <StructuredReportMarkdown markdown={structuredResult.reportMarkdown} />
+                )}
               </section>
 
               {reviewerSummary ? (

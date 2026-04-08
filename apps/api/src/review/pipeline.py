@@ -158,6 +158,15 @@ class StructuredReviewExecutor:
             parse_result=parse_result,
             unresolved_facts=facts.unresolvedFacts,
         )
+        report_html = self.report_builder.render_html(
+            summary=summary,
+            resolved_profile=resolved_profile,
+            issues=final_issues,
+            matrices=matrices,
+            parse_result=parse_result,
+            unresolved_facts=facts.unresolvedFacts,
+        )
+        report_print_css = self.report_builder.render_print_css()
         if emit:
             emit('report', 'structured_review', 'completed', 'Structured review report assembled')
 
@@ -173,9 +182,17 @@ class StructuredReviewExecutor:
             report_artifacts.append(write_json_artifact('structured-review-report-buckets', self.report_builder.build_issue_buckets(final_issues)))
         if write_text_artifact:
             report_files.append(write_text_artifact('structured-review-report', report_markdown, '.md'))
+            report_files.append(write_text_artifact('structured-review-report', report_html, '.html'))
+            report_files.append(write_text_artifact('structured-review-report.print', report_print_css, '.css'))
         if write_binary_artifact:
             pdf_path = Path(write_binary_artifact('structured-review-report', b'', '.pdf'))
-            render_structured_review_pdf(report_markdown, pdf_path)
+            await render_structured_review_pdf(
+                report_html=report_html,
+                report_print_css=report_print_css,
+                output_path=pdf_path,
+                title=f'{self.report_builder._document_type_label(summary.documentType)}形式审查报告',
+                markdown_fallback=report_markdown,
+            )
             report_files.append(str(pdf_path))
         for path in report_artifacts:
             self._record_artifact(artifact_records, path, category='matrices', stage='report')
@@ -196,6 +213,8 @@ class StructuredReviewExecutor:
             matrices=matrices,
             artifactIndex=artifact_index,
             reportMarkdown=report_markdown,
+            reportHtml=report_html,
+            reportPrintCss=report_print_css,
             artifacts=[artifact.downloadUrl for artifact in artifact_index],
             unresolvedFacts=facts.unresolvedFacts,
             plan=plan,

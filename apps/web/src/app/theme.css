@@ -687,6 +687,30 @@ main.shell {
   background: linear-gradient(180deg, #FFFFFF 0%, #FCFCFD 100%);
 }
 
+.structured-report-host {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  background: transparent;
+}
+
+.structured-report-host .structured-report {
+  max-width: min(1280px, 100%);
+}
+
+.structured-report-host p,
+.structured-report-host li,
+.structured-report-host td,
+.structured-report-host th,
+.structured-report-host div,
+.structured-report-host section,
+.structured-report-host article {
+  min-width: 0;
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
 .report-document {
   display: flex;
   flex-direction: column;

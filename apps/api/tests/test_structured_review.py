@@ -3,10 +3,14 @@ from __future__ import annotations
 import asyncio
 import json
 from pathlib import Path
+import re
 
 from src.services.document_loader import DocumentLoader
 from src.review.parser.attachment_indexer import build_attachment_index
+from src.review import pipeline as review_pipeline
 from src.review.pipeline import StructuredReviewExecutor
+from src.review.report.pdf_exporter import _DEFAULT_PDF_CSS
+from src.review.report.pdf_exporter import render_structured_review_pdf_sync
 from src.review.report.report_builder import StructuredReviewReportBuilder
 from src.review.schema import ConflictMatrix, HazardIdentificationMatrix, StructuredReviewMatrices, VisibilityAssessment
 
@@ -79,28 +83,96 @@ def test_structured_review_executor_returns_expected_issue_titles():
     assert '高风险作业已识别，但专项方案挂接不清' in issue_titles
     assert '停机窗口、投入人力与高风险工序并行存在组织压力' in issue_titles
     assert result['summary']['manualReviewNeeded'] is True
+    assert result['reportHtml'].startswith('<article class="structured-report">')
+    assert 'structured-report__overview-section' in result['reportHtml']
+    assert 'class="structured-report__gap-item"' in result['reportHtml']
+    assert 'class="structured-report__gap-item-title"' in result['reportHtml']
+    assert 'class="structured-report__gap-item-list"' in result['reportHtml']
+    assert 'class="structured-report__issue-card"' in result['reportHtml']
+    assert 'class="structured-report__issue-card-section-title">问题描述<' in result['reportHtml']
+    assert 'class="structured-report__issue-card-section-title">条文依据<' in result['reportHtml']
+    assert 'class="structured-report__issue-card-law-list"' in result['reportHtml']
+    assert 'class="structured-report__issue-card-law-requirements"' in result['reportHtml']
+    assert '【1. 主要施工方案】 判定：' not in result['reportHtml']
+    assert '识别章节： -' not in result['reportHtml']
+    assert '补齐建议：建议' not in result['reportHtml']
+    assert '问题描述 - ' not in result['reportHtml']
+    assert '条文依据 - ' not in result['reportHtml']
+    assert result['reportPrintCss']
+    assert 'break-before: page' in result['reportPrintCss']
+    assert 'page-break-before: always' in result['reportPrintCss']
+    assert 'display: table-header-group' in result['reportPrintCss']
+    assert 'overflow-wrap: anywhere' in result['reportPrintCss']
+    assert '.structured-report__gap-item' in result['reportPrintCss']
+    assert '.structured-report__issue-card-law-requirements' in result['reportPrintCss']
+    assert 'border: 1px solid #e3ded2' in result['reportPrintCss']
     assert result['visibility']['manualReviewNeeded'] is True
     assert result['visibility']['parseMode'] == 'docx_structured'
     assert result['visibility']['manualReviewReason'] == 'title_detected_without_attachment_body'
     assert '# 施工组织设计形式审查报告' in result['reportMarkdown']
-    assert '## 第一部分：审查结论与可视域门禁' in result['reportMarkdown']
+    assert '## 第一部分：审查结论与审查依据' in result['reportMarkdown']
     assert '### 2. 审查依据文件' in result['reportMarkdown']
-    assert '### 3. 可视域与预检状态' in result['reportMarkdown']
-    assert '### 4. 附件可视域断链' in result['reportMarkdown']
-    assert '### 5. 待人工确认事项' in result['reportMarkdown']
+    assert '#### 主要审查依据文件' in result['reportMarkdown']
+    assert '#### 补充说明依据' in result['reportMarkdown']
+    assert '系统附件识别与复核规则' in result['reportMarkdown']
+    assert '系统附件可视域处理规则' not in result['reportMarkdown']
+    assert '复核提示：正文提到了附件，但本次未识别到附件正文内容，需结合原件核对。' in result['reportMarkdown']
+    assert '### 3. 审查总览表' in result['reportMarkdown']
+    assert '<table class="structured-overview-table">' in result['reportMarkdown']
+    assert '<thead><tr><th>序号</th><th>结构项</th><th>L1 问题摘要</th><th>L2 问题摘要</th><th>L3 问题摘要</th></tr></thead>' in result['reportMarkdown']
+    overview_section = result['reportMarkdown'].split('## 第二部分：', 1)[0]
+    assert '规范依据</th>' not in overview_section
+    assert '文档对应章节</th>' not in overview_section
+    assert '结构判定</th>' not in overview_section
+    assert '第六章：' in result['reportMarkdown'] or '4.2节：' in result['reportMarkdown'] or '—' in result['reportMarkdown']
     assert '## 第二部分：L1 审查发现——合法合规与结构完整性' in result['reportMarkdown']
     assert '### 2.1 结构完整性与形式合规性' in result['reportMarkdown']
-    assert '### 2.2 合法合规与法定挂接问题' in result['reportMarkdown']
-    assert '## 第五部分：核心数据提取矩阵' in result['reportMarkdown']
-    assert '条文规定' in result['reportMarkdown']
+    assert '### 2.2 补充审查意见' in result['reportMarkdown']
+    assert '## 第五部分：关键数据识别汇总' in result['reportMarkdown']
+    assert '### 2. 附件可视域情况' not in result['reportMarkdown']
+    assert '### 3. 施组结构完整性情况' not in result['reportMarkdown']
+    assert '### 4. 章节结构情况' not in result['reportMarkdown']
+    assert '### 5. 规则命中总体情况' not in result['reportMarkdown']
+    assert '### 6. 主要冲突与联动提示' not in result['reportMarkdown']
+    assert '## 第六部分：解析说明与复核提示' in result['reportMarkdown']
+    assert '### 6.1 文档解析状态与预检结果' in result['reportMarkdown']
+    assert '### 6.2 附件解析与关联情况' in result['reportMarkdown']
+    assert '### 6.1 可视域与预检状态' not in result['reportMarkdown']
+    assert '### 6.2 附件可视域断链' not in result['reportMarkdown']
+    assert '### 6.3 待人工确认事项' in result['reportMarkdown']
+    assert '条文依据' in result['reportMarkdown']
     assert '《建筑施工组织设计规范》GB/T 50502-2009' in result['reportMarkdown']
-    assert '| 序号 | 规范要求 | 规范依据 | 文档对应章节 | 结构判定 | 定位说明 |' in result['reportMarkdown']
-    assert '| 12 | 成本管理计划 | 7.1.1、7.6.1~7.6.2 | 未识别到稳定对应章节 | 缺失 | 当前未识别到可稳定对应“成本管理计划”的章节。 |' in result['reportMarkdown']
+    assert '<table class="structured-completeness-table">' in result['reportMarkdown']
+    assert '<thead><tr><th>序号</th><th>规范要求</th><th>规范依据</th><th>文档对应章节</th><th>结构判定</th><th>相关审查意见</th></tr></thead>' in result['reportMarkdown']
+    assert '相关审查意见' in result['reportMarkdown']
+    assert '定位说明' not in result['reportMarkdown']
+    assert '| 序号 | 规范要求 | 规范依据 | 文档对应章节 | 结构判定 | 定位说明 |' not in result['reportMarkdown']
+    assert '已识别到“第一章' not in result['reportMarkdown']
+    assert '（位置 ' not in result['reportMarkdown']
+    assert not re.search(r'位置\\s*\\d+', result['reportMarkdown'])
+    assert '#### 缺项分析与补齐意见' in result['reportMarkdown']
+    assert '【1. ' in result['reportMarkdown']
+    assert '判定：' in result['reportMarkdown']
+    assert '识别章节：' in result['reportMarkdown']
+    assert '补齐建议：建议补齐“成本管理计划”专章或形成稳定章节标题。' in result['reportMarkdown']
+    assert '---' in result['reportMarkdown']
     assert '```json' not in result['reportMarkdown']
     assert '- parse mode：docx_structured' not in result['reportMarkdown']
     assert 'ruleId' not in result['reportMarkdown']
     assert 'policy pack id' not in result['reportMarkdown']
     assert 'issue id' not in result['reportMarkdown']
+    assert 'special_scheme_reference_requires_manual_confirmation' not in result['reportMarkdown']
+    assert 'attachment_unparsed' not in result['reportMarkdown']
+    assert 'referenced_only' not in result['reportMarkdown']
+    assert 'blocked_by_visibility' not in result['reportMarkdown']
+    assert 'hazard.monitoringSectionPresent' not in result['reportMarkdown']
+    assert 'emergency.planTitles' not in result['reportMarkdown']
+    assert 'demo' not in result['reportMarkdown']
+    assert 'Demo' not in result['reportMarkdown']
+    assert '当前风险/限制' not in result['reportMarkdown']
+    assert '审查建议' not in result['reportMarkdown']
+    assert '----------' not in result['reportMarkdown']
+    assert '审核文件为 PDF，当前解析能力受限' not in result['reportMarkdown']
     assert result['visibility']['parseWarnings'] == result['summary']['visibilitySummary']['parseWarnings']
     assert result['summary']['visibilitySummary']['attachmentCount'] >= 1
     assert result['summary']['visibilitySummary']['counts']['attachment_unparsed'] >= 1
@@ -268,6 +340,27 @@ def test_structured_review_executor_frontloads_manual_review_for_parser_limited_
     assert result['visibility']['preflight']['gateDecision'] == 'manual_review_required'
     assert 'parser_limited_pdf' in result['visibility']['preflight']['blockingReasons']
     assert result['summary']['manualReviewNeeded'] is True
+    assert '审核文件为 PDF，当前解析能力受限，可能存在审查不完整或判定偏差，建议结合原件人工复核。' in result['reportMarkdown']
+    assert result['reportMarkdown'].count('审核文件为 PDF，当前解析能力受限') == 1
+    assert '## 第六部分：解析说明与复核提示' in result['reportMarkdown']
+    assert '### 6.3 待人工确认事项' in result['reportMarkdown']
+    assert '当前解析路径受限' not in result['reportMarkdown']
+    assert '受限解析路径' not in result['reportMarkdown']
+    assert 'parser-limited' not in result['reportMarkdown']
+    assert 'working_at_height' not in result['reportMarkdown']
+    assert 'gas_area_ops' not in result['reportMarkdown']
+    assert 'hot_work' not in result['reportMarkdown']
+    assert 'temporary_power' not in result['reportMarkdown']
+    assert 'calculationBook' not in result['reportMarkdown']
+    assert '高处作业' in result['reportMarkdown'] or '煤气区域作业' in result['reportMarkdown']
+    assert '施工部署/施工计划' in result['reportMarkdown'] or '监测监控' in result['reportMarkdown']
+    assert result['reportMarkdown'].count('尚无法稳定确认“') <= 2
+    assert '以下结构性章节尚无法稳定确认是否真实缺失' in result['reportMarkdown']
+    assert '当前尚未稳定提取以下关键参数或支撑信息' in result['reportMarkdown']
+    assert '另命中若干相关章节，详见结构化结果' in result['reportMarkdown']
+    assert '（位置 ' not in result['reportMarkdown']
+    assert '系统附件可视域处理规则' not in result['reportMarkdown']
+    assert 'demo' not in result['reportMarkdown']
     assert any(
         issue['applicabilityState'] == 'blocked_by_missing_fact' and issue['missingFactKeys']
         for issue in result['issues']
@@ -288,6 +381,83 @@ def test_structured_review_executor_frontloads_manual_review_for_parser_limited_
         and fact['blockingRuleIds']
         for fact in result['unresolvedFacts']
     )
+
+
+def test_pdf_exporter_uses_landscape_a4_for_expert_report():
+    assert 'size: A4 landscape;' in _DEFAULT_PDF_CSS
+
+
+def test_pdf_exporter_renders_html_with_print_css(tmp_path: Path):
+    output = tmp_path / 'report.pdf'
+    result = render_structured_review_pdf_sync(
+        report_html=(
+            '<article class="structured-report">'
+            '<section class="structured-report__section">'
+            '<h2 class="structured-report__section-title">第一部分</h2>'
+            '<section class="structured-report__overview-section">'
+            '<h3 class="structured-report__subsection-title">3. 审查总览表</h3>'
+            '<table class="structured-overview-table"><thead><tr><th>序号</th><th>结构项</th><th>L1 问题摘要</th><th>L2 问题摘要</th><th>L3 问题摘要</th></tr></thead>'
+            '<tbody><tr><td>1</td><td>编制依据</td><td>—</td><td>—</td><td>—</td></tr></tbody></table>'
+            '</section>'
+            '</section>'
+            '</article>'
+        ),
+        report_print_css=(
+            '.structured-report{padding:20px;}'
+            '.structured-report__overview-section{break-before:page;page-break-before:always;}'
+            'thead{display:table-header-group;}'
+            'td,th{white-space:normal;word-break:break-word;overflow-wrap:anywhere;}'
+        ),
+        output_path=output,
+        title='测试报告',
+    )
+    assert result == output
+    assert output.exists()
+    assert output.stat().st_size > 0
+
+
+def test_pipeline_passes_html_and_css_to_pdf_exporter(monkeypatch, tmp_path: Path):
+    captured: dict[str, str] = {}
+
+    async def fake_render_structured_review_pdf(*, report_html, report_print_css, output_path, title=None, markdown_fallback=None):
+        captured['report_html'] = report_html
+        captured['report_print_css'] = report_print_css
+        captured['markdown_fallback'] = markdown_fallback or ''
+        output_path.write_bytes(b'%PDF-1.4 fake')
+        return output_path
+
+    monkeypatch.setattr(review_pipeline, 'render_structured_review_pdf', fake_render_structured_review_pdf)
+    executor = StructuredReviewExecutor(document_loader=DocumentLoader(), llm_gateway=DummyLLM(), fast_adapter=None)
+
+    def write_text_artifact(name: str, content: str, suffix: str) -> str:
+        path = tmp_path / f'{name}{suffix}'
+        path.write_text(content, encoding='utf-8')
+        return str(path)
+
+    def write_json_artifact(name: str, data) -> str:
+        path = tmp_path / f'{name}.json'
+        path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding='utf-8')
+        return str(path)
+
+    def write_binary_artifact(name: str, data: bytes, suffix: str) -> str:
+        path = tmp_path / f'{name}{suffix}'
+        path.write_bytes(data)
+        return str(path)
+
+    result = executor.run_sync(
+        task_id='structured-review-pdf-path-test',
+        query='对该施工组织设计执行正式结构化审查',
+        source_document_path=str(SAMPLE_DOC),
+        fixture_id='supervision-cold-rolling-construction-plan',
+        write_text_artifact=write_text_artifact,
+        write_json_artifact=write_json_artifact,
+        write_binary_artifact=write_binary_artifact,
+    )
+    assert captured['report_html'].startswith('<article class="structured-report">')
+    assert 'structured-report__gap-item' in captured['report_html']
+    assert 'break-before: page' in captured['report_print_css']
+    assert '# 施工组织设计形式审查报告' in captured['markdown_fallback']
+    assert result['artifactIndex']
 
 
 def test_attachment_index_freezes_parser_limited_unknown_and_missing_boundaries():
@@ -694,6 +864,8 @@ def test_structured_review_executor_builds_full_artifact_catalog(tmp_path: Path)
     assert 'structure-completeness-matrix' in artifact_names
     assert 'structured-review-report-buckets' in artifact_names
     assert 'structured-review-report' in artifact_names
+    assert any(artifact['fileName'].endswith('.html') for artifact in result['artifactIndex'])
+    assert any(artifact['fileName'].endswith('.css') for artifact in result['artifactIndex'])
     l0_payload = json.loads((tmp_path / 'structured-review-l0-visibility.json').read_text(encoding='utf-8'))
     assert l0_payload['parseMode'] == 'docx_structured'
     assert l0_payload['parserLimited'] is False
@@ -705,6 +877,8 @@ def test_structured_review_executor_builds_full_artifact_catalog(tmp_path: Path)
     result_payload = json.loads((tmp_path / 'structured-review-result.json').read_text(encoding='utf-8'))
     assert result_payload['artifactIndex']
     assert result_payload['reportMarkdown']
+    assert result_payload['reportHtml']
+    assert result_payload['reportPrintCss']
     assert result_payload['visibility'] == l0_payload['visibility']
     assert result_payload['visibility']['preflight']['gateDecision'] == 'manual_review_required'
     report_buckets = json.loads((tmp_path / 'structured-review-report-buckets.json').read_text(encoding='utf-8'))
@@ -714,6 +888,8 @@ def test_structured_review_executor_builds_full_artifact_catalog(tmp_path: Path)
     assert pdf_artifact['category'] == 'report'
     assert pdf_artifact['mediaType'] == 'application/pdf'
     assert pdf_artifact['primary'] is True
+    assert (tmp_path / 'structured-review-report.html').stat().st_size > 0
+    assert (tmp_path / 'structured-review-report.print.css').stat().st_size > 0
     assert (tmp_path / 'structured-review-report.pdf').stat().st_size > 0
 
 

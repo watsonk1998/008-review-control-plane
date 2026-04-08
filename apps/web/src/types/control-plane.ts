@@ -245,6 +245,8 @@ export interface StructuredReviewResult {
   matrices: StructuredReviewMatrices;
   artifactIndex: TaskArtifact[];
   reportMarkdown: string;
+  reportHtml?: string;
+  reportPrintCss?: string;
   artifacts: string[];
   unresolvedFacts: Array<{
     code: string;

@@ -7,21 +7,15 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 from src.domain.models import (
     ApplicabilityState,
     AttachmentVisibility,
-    AttachmentLocator,
-    BlockLocator,
-    ClauseLocator,
     ConfidenceLevel,
     EvidenceSpan,
-    EvidenceLocator,
     FindingType,
     IssueKind,
     ReviewDocumentType,
     ReviewIssue,
     ReviewLayer,
-    SectionLocator,
     SourceDocumentRef,
     TaskArtifact,
-    TableLocator,
 )
 
 
@@ -376,6 +370,8 @@ class StructuredReviewResult(BaseModel):
     matrices: StructuredReviewMatrices
     artifactIndex: list[TaskArtifact] = Field(default_factory=list)
     reportMarkdown: str = ''
+    reportHtml: str = ''
+    reportPrintCss: str = ''
     artifacts: list[str] = Field(default_factory=list)
     unresolvedFacts: list[UnresolvedFact] = Field(default_factory=list)
     plan: dict[str, Any] | None = None
