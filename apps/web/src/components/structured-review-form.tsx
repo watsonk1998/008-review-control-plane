@@ -9,11 +9,33 @@ import type {
 const FALLBACK_DOCUMENT_OPTIONS: Array<{ value: ReviewDocumentType; label: string }> = [
   { value: "construction_org", label: "施工组织设计" },
   { value: "hazardous_special_scheme", label: "危大工程专项施工方案" },
-  { value: "distribution_network_special_scheme", label: "配网工程专项施工方案（experimental）" },
-  { value: "construction_scheme", label: "一般施工方案（experimental）" },
-  { value: "supervision_plan", label: "监理规划（experimental）" },
-  { value: "review_support_material", label: "审查辅助材料（experimental）" },
+  { value: "distribution_network_special_scheme", label: "配网工程专项施工方案" },
+  { value: "construction_scheme", label: "一般施工方案" },
+  { value: "supervision_plan", label: "监理规划" },
+  { value: "review_support_material", label: "审查辅助材料" },
 ];
+
+type ReviewCategoryKey = 
+  | "construction_org" 
+  | "construction_scheme" 
+  | "special_scheme_review" 
+  | "supervision_plan" 
+  | "review_support_material";
+
+const CATEGORY_OPTIONS: Array<{ value: ReviewCategoryKey; label: string }> = [
+  { value: "construction_org", label: "施工组织设计审查" },
+  { value: "construction_scheme", label: "一般施工方案审查" },
+  { value: "special_scheme_review", label: "专项方案审查" },
+  { value: "supervision_plan", label: "监理规划审查" },
+  { value: "review_support_material", label: "审查辅助材料" },
+];
+
+function getCategoryForDocumentType(docType: ReviewDocumentType): ReviewCategoryKey {
+  if (docType === "hazardous_special_scheme" || docType === "distribution_network_special_scheme") {
+    return "special_scheme_review";
+  }
+  return docType as ReviewCategoryKey;
+}
 
 const LEGACY_DISCIPLINE_OPTIONS = [
   { value: "lifting_operations", label: "起重吊装（横向风险）" },
@@ -68,17 +90,34 @@ function getCapabilityEntry(supportScope?: SupportScopeResponse | null) {
   return supportScope?.capabilityTree?.find((entry) => entry.entryKey === "special_scheme_review") || null;
 }
 
+function getDefaultSpecialFamily(
+  capabilityEntry: ReturnType<typeof getCapabilityEntry>
+): ReviewDocumentType {
+  return capabilityEntry?.families[0]?.documentType || "hazardous_special_scheme";
+}
+
+function getSelectedFamily(
+  documentType: ReviewDocumentType,
+  capabilityEntry: ReturnType<typeof getCapabilityEntry>
+) {
+  return capabilityEntry?.families.find((family) => family.documentType === documentType) || null;
+}
+
+function getCrossCuttingModules(
+  documentType: ReviewDocumentType,
+  capabilityEntry: ReturnType<typeof getCapabilityEntry>
+) {
+  return capabilityEntry?.crossCuttingModules.filter((module) => module.docTypes.includes(documentType)) || [];
+}
+
 function getAllowedTags(
   documentType: ReviewDocumentType,
   supportScope?: SupportScopeResponse | null,
 ) {
   const capabilityEntry = getCapabilityEntry(supportScope);
-  const family = capabilityEntry?.families.find((item) => item.documentType === documentType);
+  const family = getSelectedFamily(documentType, capabilityEntry);
   const familyTags = family?.children.map((item) => item.tag) || [];
-  const crossCuttingTags =
-    capabilityEntry?.crossCuttingModules
-      .filter((item) => item.docTypes.includes(documentType))
-      .map((item) => item.tag) || [];
+  const crossCuttingTags = getCrossCuttingModules(documentType, capabilityEntry).map((item) => item.tag) || [];
   return new Set([...familyTags, ...crossCuttingTags]);
 }
 
@@ -92,6 +131,17 @@ function sanitizeDisciplineTags(
   return (disciplineTags || []).filter((tag) => allowedTags.has(tag));
 }
 
+function getRelevantPacks(
+  documentType: ReviewDocumentType,
+  selectedTags: Set<string>,
+  supportScope?: SupportScopeResponse | null,
+) {
+  return (supportScope?.packs || []).filter((pack) => {
+    if (pack.docTypes.includes(documentType)) return true;
+    return pack.disciplineTags.some((tag) => selectedTags.has(tag));
+  });
+}
+
 export function StructuredReviewForm({
   form,
   setForm,
@@ -103,30 +153,61 @@ export function StructuredReviewForm({
 
   const selectedDocumentType = form.documentType || "construction_org";
   const selectedTags = new Set(form.disciplineTags || []);
+  const currentCategory = getCategoryForDocumentType(selectedDocumentType);
   const capabilityEntry = getCapabilityEntry(supportScope);
+  
   const documentSupportMap = new Map(
     (supportScope?.documentTypes || []).map((item) => [item.documentType, item.readiness]),
   );
   const documentLabelMap = new Map(
     (supportScope?.documentTypes || []).map((item) => [item.documentType, item.label]),
   );
+  
   const documentReadiness = documentSupportMap.get(selectedDocumentType);
-  const selectedFamily =
-    capabilityEntry?.families.find((family) => family.documentType === selectedDocumentType) || null;
-  const crossCuttingModules =
-    capabilityEntry?.crossCuttingModules.filter((module) => module.docTypes.includes(selectedDocumentType)) || [];
-  const relevantPacks = (supportScope?.packs || []).filter((pack) => {
-    if (pack.docTypes.includes(selectedDocumentType)) return true;
-    return pack.disciplineTags.some((tag) => selectedTags.has(tag));
-  });
+  const selectedFamily = getSelectedFamily(selectedDocumentType, capabilityEntry);
+  const crossCuttingModules = getCrossCuttingModules(selectedDocumentType, capabilityEntry);
+    
+  const relevantPacks = getRelevantPacks(selectedDocumentType, selectedTags, supportScope);
   const readyPacks = relevantPacks.filter((pack) => pack.readiness === "ready");
   const placeholderPacks = relevantPacks.filter((pack) => pack.readiness === "placeholder");
-  const documentOptions = supportScope?.documentTypes?.length
-    ? supportScope.documentTypes.map((item) => ({
-        value: item.documentType,
-        label: item.label,
-      }))
-    : FALLBACK_DOCUMENT_OPTIONS;
+
+  const handleCategoryChange = (category: ReviewCategoryKey) => {
+    let nextDocType: ReviewDocumentType;
+    if (category === "special_scheme_review") {
+      nextDocType = getDefaultSpecialFamily(capabilityEntry);
+    } else {
+      nextDocType = category as ReviewDocumentType;
+    }
+    
+    setForm((current) => ({
+      ...current,
+      documentType: nextDocType,
+      disciplineTags: sanitizeDisciplineTags(nextDocType, current.disciplineTags, supportScope),
+    }));
+  };
+
+  const handleFamilyChange = (nextDocType: ReviewDocumentType) => {
+    setForm((current) => ({
+      ...current,
+      documentType: nextDocType,
+      disciplineTags: sanitizeDisciplineTags(nextDocType, current.disciplineTags, supportScope),
+    }));
+  };
+
+  const toggleDisciplineTag = (tag: string, checked: boolean) => {
+    setForm((current) => {
+      const next = new Set(sanitizeDisciplineTags(selectedDocumentType, current.disciplineTags, supportScope));
+      if (checked) {
+        next.add(tag);
+      } else {
+        next.delete(tag);
+      }
+      return {
+        ...current,
+        disciplineTags: Array.from(next),
+      };
+    });
+  };
 
   return (
     <section className="stack-lg">
@@ -136,7 +217,7 @@ export function StructuredReviewForm({
           <h3>正式审查参数</h3>
         </div>
         <p className="muted small">
-          支持范围只以 `/api/tasks/support-scope` 为准；产品展示按“一级入口 → 二级方案大类 → 三级专项”组织。
+          支持范围只以 `/api/tasks/support-scope` 为准；产品展示按“一级审查类别 → 二级方案大类 → 三级专项”选择审查范围。
         </p>
       </div>
 
@@ -156,22 +237,12 @@ export function StructuredReviewForm({
 
       <div className="form-grid review-profile-grid">
         <label className="field">
-          <span>文档类型</span>
+          <span>一级审查类别</span>
           <select
-            value={selectedDocumentType}
-            onChange={(event) =>
-              setForm((current) => ({
-                ...current,
-                documentType: event.target.value as ReviewDocumentType,
-                disciplineTags: sanitizeDisciplineTags(
-                  event.target.value as ReviewDocumentType,
-                  current.disciplineTags,
-                  supportScope,
-                ),
-              }))
-            }
+            value={currentCategory}
+            onChange={(event) => handleCategoryChange(event.target.value as ReviewCategoryKey)}
           >
-            {documentOptions.map((option) => (
+            {CATEGORY_OPTIONS.map((option) => (
               <option key={option.value} value={option.value}>
                 {option.label}
               </option>
@@ -199,59 +270,61 @@ export function StructuredReviewForm({
       </div>
 
       <div className="field">
-        <span>专项方案能力树</span>
         {capabilityEntry ? (
           <div className="stack-md">
-            <div className="callout">
-              <strong>{capabilityEntry.label}</strong>
-              <p className="muted small">
-                一级是产品入口；二级是方案大类；三级是具体专项审查单元。横向风险模块不进入主树三级，但仍可按文档风险叠加执行。
-              </p>
-            </div>
-
-            {selectedFamily ? (
-              <div className="stack-sm">
-                <strong>
-                  二级方案大类：{selectedFamily.label} ·{" "}
-                  {READINESS_MAP[selectedFamily.readiness] || selectedFamily.readiness}
-                </strong>
-                <div className="review-discipline-grid">
-                  {selectedFamily.children.map((item) => (
-                    <label className="checkbox-row inline-check" key={item.tag}>
-                      <input
-                        checked={selectedTags.has(item.tag)}
-                        onChange={(event) =>
-                          setForm((current) => {
-                            const next = new Set(
-                              sanitizeDisciplineTags(selectedDocumentType, current.disciplineTags, supportScope),
-                            );
-                            if (event.target.checked) {
-                              next.add(item.tag);
-                            } else {
-                              next.delete(item.tag);
-                            }
-                            return {
-                              ...current,
-                              disciplineTags: Array.from(next),
-                            };
-                          })
-                        }
-                        type="checkbox"
-                      />
-                      <span>
-                        {item.label}（三级，{READINESS_MAP[item.readiness] || item.readiness}）
-                      </span>
-                    </label>
-                  ))}
+            {currentCategory === "special_scheme_review" ? (
+              <>
+                <div className="stack-sm">
+                  <strong>二级方案大类</strong>
+                  {capabilityEntry.families.length > 0 ? (
+                    <div className="review-discipline-grid">
+                      {capabilityEntry.families.map((family) => (
+                        <label className="checkbox-row inline-check" key={family.familyKey}>
+                          <input
+                            type="radio"
+                            name="secondary_family"
+                            value={family.documentType}
+                            checked={selectedDocumentType === family.documentType}
+                            onChange={() => handleFamilyChange(family.documentType)}
+                          />
+                          <span>
+                            {family.label}（{READINESS_MAP[family.readiness] || family.readiness}）
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="callout">能力树加载中或不可用。</div>
+                  )}
                 </div>
-              </div>
+
+                {selectedFamily ? (
+                  <div className="stack-sm">
+                    <strong>三级专项（按所选专项叠加审查）</strong>
+                    <div className="review-discipline-grid">
+                      {selectedFamily.children.map((item) => (
+                        <label className="checkbox-row inline-check" key={item.tag}>
+                          <input
+                            checked={selectedTags.has(item.tag)}
+                            onChange={(e) => toggleDisciplineTag(item.tag, e.target.checked)}
+                            type="checkbox"
+                          />
+                          <span>
+                            {item.label}（{READINESS_MAP[item.readiness] || item.readiness}）
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+              </>
             ) : (
               <div className="callout">
-                当前文档类型不进入“专项方案审查”的二级/三级能力树。该类文档按“主审查对象基础模块 + 横向附属风险模块”执行。
+                该类文档按主审查对象基础模块与附加风险模块执行。
               </div>
             )}
 
-            {crossCuttingModules.length ? (
+            {crossCuttingModules.length > 0 ? (
               <div className="stack-sm">
                 <strong>附加风险模块</strong>
                 <div className="review-discipline-grid">
@@ -259,26 +332,11 @@ export function StructuredReviewForm({
                     <label className="checkbox-row inline-check" key={item.tag}>
                       <input
                         checked={selectedTags.has(item.tag)}
-                        onChange={(event) =>
-                          setForm((current) => {
-                            const next = new Set(
-                              sanitizeDisciplineTags(selectedDocumentType, current.disciplineTags, supportScope),
-                            );
-                            if (event.target.checked) {
-                              next.add(item.tag);
-                            } else {
-                              next.delete(item.tag);
-                            }
-                            return {
-                              ...current,
-                              disciplineTags: Array.from(next),
-                            };
-                          })
-                        }
+                        onChange={(e) => toggleDisciplineTag(item.tag, e.target.checked)}
                         type="checkbox"
                       />
                       <span>
-                        {item.label}（附属能力，{READINESS_MAP[item.readiness] || item.readiness}）
+                        {item.label}（{READINESS_MAP[item.readiness] || item.readiness}）
                       </span>
                     </label>
                   ))}
@@ -287,35 +345,10 @@ export function StructuredReviewForm({
             ) : null}
           </div>
         ) : (
-          <div className="review-discipline-grid">
-            {LEGACY_DISCIPLINE_OPTIONS.map((option) => (
-              <label className="checkbox-row inline-check" key={option.value}>
-                <input
-                  checked={selectedTags.has(option.value)}
-                  onChange={(event) =>
-                    setForm((current) => {
-                      const next = new Set(current.disciplineTags || []);
-                      if (event.target.checked) {
-                        next.add(option.value);
-                      } else {
-                        next.delete(option.value);
-                      }
-                      return {
-                        ...current,
-                        disciplineTags: Array.from(next),
-                      };
-                    })
-                  }
-                  type="checkbox"
-                />
-                <span>{option.label}</span>
-              </label>
-            ))}
+          <div className="stack-md">
+            <span className="muted small">专项能力树暂不可用，请稍后重试</span>
           </div>
         )}
-        <small>
-          对外展示以“二级方案大类 + 三级专项”为主；内部仍允许叠加横向风险模块，并继续支持自动补全所需策略包。
-        </small>
       </div>
 
       {documentReadiness ? (
@@ -326,7 +359,9 @@ export function StructuredReviewForm({
             {documentLabelMap.get(selectedDocumentType) || selectedDocumentType} ·{" "}
             {READINESS_MAP[(documentReadiness || "").trim().toLowerCase()] || documentReadiness}
           </p>
-          {selectedFamily ? <p>主专项族：{selectedFamily.label}（二级基础 pack）</p> : null}
+          {selectedFamily && currentCategory === "special_scheme_review" ? (
+            <p>主专项族：{selectedFamily.label}（二级基础 pack）</p>
+          ) : null}
           <p>
             已就绪模块：
             {readyPacks.map((pack) => getChinesePackName(pack.packId, supportScope)).join("，") || "无"}
@@ -359,3 +394,4 @@ export function StructuredReviewForm({
     </section>
   );
 }
+
