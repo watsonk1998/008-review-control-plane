@@ -14,10 +14,10 @@ def get_power_outage_work_pack() -> PolicyPack:
         tier='3',
         disciplineTags=['power_outage_work'],
         extractorIds=['hazard_facts', 'schedule_resource_facts'],
-        ruleIds=['temporary_power_control_linkage'],
-        evidencePackIds=['hazardous_special_scheme.base', 'review.emergency'],
+        ruleIds=['power_outage_work_structure_completeness', 'temporary_power_control_linkage'],
+        evidencePackIds=['power_outage_work.base', 'review.emergency'],
         defaultEnabled=False,
-        description='停电施工作业三级专项 pack，复用停送电控制链路检查并归属配网工程专项施工方案体系。',
+        description='停电施工作业三级专项 pack，承载停电施工作业专项结构要求，并复用停送电控制链路检查。',
         readiness='ready',
         promotionCriteria={
             'ruleCoverage': True,

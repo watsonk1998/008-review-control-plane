@@ -17,6 +17,40 @@ _STRUCTURE_ITEM_LABELS = {
     'safetyManagementPlan': '安全管理计划',
     'environmentManagementPlan': '环境管理计划',
     'costManagementPlan': '成本管理计划',
+    'specialEngineeringOverview': '工程概况',
+    'specialPreparationBasis': '编制依据',
+    'specialConstructionPlan': '施工计划',
+    'specialProcessTechnology': '施工工艺技术',
+    'specialAssuranceMeasures': '施工保证措施',
+    'specialStaffingAndRoles': '施工管理及作业人员配备和分工',
+    'specialAcceptanceRequirements': '验收要求',
+    'specialEmergencyMeasures': '应急处置措施',
+    'specialDrawings': '相关施工图纸 / 节点详图 / 布置图',
+    'specialRiskIdentification': '风险辨识与分级',
+    'specialLayoutEnvironment': '施工平面布置或周边环境条件',
+    'specialCalculationEvidence': '计算书及相关验算依据',
+    'powerOutageScope': '停电范围',
+    'powerOutageWorkContent': '作业内容',
+    'powerOutageMajorRisk': '主要风险',
+    'powerOutageStaffing': '施工人员',
+    'powerOutageEquipment': '机具',
+    'powerOutageMaterials': '材料',
+    'powerOutageSafetyControl': '安全管控',
+    'powerOutageQualityControl': '质量管控',
+    'powerOutageEmergencyMeasures': '应急措施',
+    'foundationPitSupportSequence': '支护、降水、开挖及加撑关系',
+    'foundationPitMonitoring': '监测监控措施',
+    'foundationPitEnvironmentDrawings': '周边环境与监测点相关图纸',
+    'foundationPitAcceptance': '验收要求',
+    'formworkSupportParameters': '技术参数',
+    'formworkSupportProcessFlow': '工艺流程 / 浇筑顺序',
+    'formworkSupportCalculation': '计算依据',
+    'formworkSupportAcceptance': '验收要求',
+    'steelStructureComponentParameters': '构件参数',
+    'steelStructureLiftingEquipment': '吊装设备选型',
+    'steelStructureInstallationProcess': '安装流程',
+    'steelStructureSupportUnloading': '拼装胎架 / 临时支撑 / 卸载条件',
+    'steelStructureDrawingsAcceptance': '措施图纸及验收章节',
 }
 
 
@@ -58,9 +92,19 @@ def _fallback_recommendations(candidate: IssueCandidate) -> list[str]:
         'hazardous_special_scheme_calculation_evidence': ['补充与起重/稳定性相关的验算书、设备选型依据和关键参数来源。'],
         'hazardous_special_scheme_emergency_targeted': ['围绕主要危险源补齐专项方案的应急处置流程、联络链路和现场动作。'],
         'hazardous_special_scheme_measure_linkage': ['将危险源、控制措施、监测监控和停工条件形成可执行闭环。'],
+        'foundation_pit_structure_completeness': [
+            f'补齐基坑工程专项要求中的以下内容：{"、".join(structure_labels)}。'
+            if structure_labels
+            else '补齐基坑工程专项要求中的缺项内容。'
+        ],
         'foundation_pit_monitoring_and_drawings': ['补齐基坑监测监控章节及监测点、周边环境、施工顺序等相关图纸，并保留人工复核记录。'],
         'foundation_pit_support_sequence_integrity': ['明确支护、降水、土方开挖与加撑的关系和施工顺序。'],
         'foundation_pit_acceptance_completeness': ['补齐基坑位移、沉降、轴力、排水和侧壁完整性等验收要求。'],
+        'formwork_support_structure_completeness': [
+            f'补齐模板支撑体系专项要求中的以下内容：{"、".join(structure_labels)}。'
+            if structure_labels
+            else '补齐模板支撑体系专项要求中的缺项内容。'
+        ],
         'formwork_support_process_parameters': ['补齐模板支撑体系技术参数、工艺流程、预压方案及混凝土浇筑方式/顺序。'],
         'formwork_support_calculation_traceability': ['补齐模板支撑体系强度、刚度、稳定性和基础承载力等计算依据。'],
         'formwork_support_acceptance_completeness': ['补齐模板支撑体系的验收标准、程序和阶段验收内容。'],
@@ -83,6 +127,11 @@ def _fallback_recommendations(candidate: IssueCandidate) -> list[str]:
         'manual_bored_pile_jump_excavation_integrity': ['补齐跳挖、分区分序等作业组织要求。'],
         'manual_bored_pile_gas_and_electric_safety_completeness': ['补齐有害气体检测、防中毒窒息和防触电措施。'],
         'manual_bored_pile_forbidden_conditions_manual_review': ['结合地质、水文和现场条件人工核验禁用条件，并在正式报告中记录复核结论。'],
+        'steel_structure_installation_structure_completeness': [
+            f'补齐钢结构安装专项要求中的以下内容：{"、".join(structure_labels)}。'
+            if structure_labels
+            else '补齐钢结构安装专项要求中的缺项内容。'
+        ],
         'steel_structure_installation_lifting_scheme_integrity': ['补齐钢结构构件参数、吊装设备选型、站位路线和安装流程等关键方案信息。'],
         'steel_structure_installation_support_and_unloading': ['明确拼装胎架、临时支撑、卸载条件及相关工装措施。'],
         'steel_structure_installation_drawing_and_acceptance': ['补齐钢结构安装措施图纸及验收章节，并将人工复核结果写回正式报告。'],
@@ -91,6 +140,16 @@ def _fallback_recommendations(candidate: IssueCandidate) -> list[str]:
         'supervision_plan_attachment_visibility': ['补充监理规划附件原件或补录附件正文内容，并保留人工复核结论。'],
         'review_support_material_context_only': ['将该材料定位为背景/佐证材料，并补充对应的正式方案正文或审批文件。'],
         'review_support_material_attachment_visibility': ['补充支持材料附件原件或正文，避免把可视域缺口误读为材料缺失。'],
+        'distribution_network_special_scheme_structure_completeness': [
+            f'补齐配网工程专项施工方案通用要求中的以下内容：{"、".join(structure_labels)}。'
+            if structure_labels
+            else '补齐配网工程专项施工方案通用目录要求中的缺项内容。'
+        ],
+        'power_outage_work_structure_completeness': [
+            f'补齐停电施工作业专项要求中的以下内容：{"、".join(structure_labels)}。'
+            if structure_labels
+            else '补齐停电施工作业专项要求中的缺项内容。'
+        ],
         'lifting_operations_special_scheme_linkage': ['在起重吊装相关章节明确专项方案、专项技术措施或附录挂接位置，并标注适用作业面。'],
         'lifting_operations_calculation_traceability': ['补齐吊装设备参数、计算起重量或验算书来源，并在正文中建立可追溯引用。'],
         'temporary_power_control_linkage': ['将临时用电/停送电作业的控制措施、监测要求和触电类应急处置串成同一条执行链。'],
@@ -204,12 +263,22 @@ def _build_summary(candidate: IssueCandidate) -> str:
         return '专项方案的应急处置安排与主要危险源匹配不足。'
     if candidate.candidateId == 'hazardous_special_scheme_measure_linkage':
         return '危险源、控制措施与监测监控未形成完整闭环，现场执行风险较高。'
+    if candidate.candidateId == 'foundation_pit_structure_completeness':
+        structure_labels = _structure_item_labels(candidate)
+        if structure_labels:
+            return f'基坑工程专项要求中，以下内容存在缺项或仅部分识别：{"、".join(structure_labels)}。'
+        return '基坑工程专项结构要求未完全闭合。'
     if candidate.candidateId == 'foundation_pit_monitoring_and_drawings':
         return '基坑工程监测章节或相关图纸未稳定进入可视域，当前需人工复核。'
     if candidate.candidateId == 'foundation_pit_support_sequence_integrity':
         return '基坑工程未明确支护、降水、土方开挖与加撑之间的关系链。'
     if candidate.candidateId == 'foundation_pit_acceptance_completeness':
         return '基坑工程关键验收内容不完整，后续验收边界不清。'
+    if candidate.candidateId == 'formwork_support_structure_completeness':
+        structure_labels = _structure_item_labels(candidate)
+        if structure_labels:
+            return f'模板支撑体系专项要求中，以下内容存在缺项或仅部分识别：{"、".join(structure_labels)}。'
+        return '模板支撑体系专项结构要求未完全闭合。'
     if candidate.candidateId == 'formwork_support_process_parameters':
         return '模板支撑体系缺少技术参数、工艺流程或浇筑顺序等关键过程信息。'
     if candidate.candidateId == 'formwork_support_calculation_traceability':
@@ -254,6 +323,11 @@ def _build_summary(candidate: IssueCandidate) -> str:
         return '人工挖孔桩工程缺少有害气体检测、防中毒窒息或防触电措施。'
     if candidate.candidateId == 'manual_bored_pile_forbidden_conditions_manual_review':
         return '人工挖孔桩已出现禁用条件信号，需结合地质、水文和现场条件人工复核。'
+    if candidate.candidateId == 'steel_structure_installation_structure_completeness':
+        structure_labels = _structure_item_labels(candidate)
+        if structure_labels:
+            return f'钢结构安装专项要求中，以下内容存在缺项或仅部分识别：{"、".join(structure_labels)}。'
+        return '钢结构安装专项结构要求未完全闭合。'
     if candidate.candidateId == 'steel_structure_installation_lifting_scheme_integrity':
         return '钢结构安装缺少构件参数、吊装设备选型或安装流程等关键方案信息。'
     if candidate.candidateId == 'steel_structure_installation_support_and_unloading':
@@ -270,6 +344,16 @@ def _build_summary(candidate: IssueCandidate) -> str:
         return '当前材料更适合作为背景/佐证，不应直接替代正式方案正文进入 formal review 判断。'
     if candidate.candidateId == 'review_support_material_attachment_visibility':
         return '审查支持材料附件存在可视域缺口，需结合原件人工确认。'
+    if candidate.candidateId == 'distribution_network_special_scheme_structure_completeness':
+        structure_labels = _structure_item_labels(candidate)
+        if structure_labels:
+            return f'配网工程专项施工方案通用目录要求中，以下内容存在缺项或仅部分识别：{"、".join(structure_labels)}。'
+        return '配网工程专项施工方案通用目录要求未完全闭合。'
+    if candidate.candidateId == 'power_outage_work_structure_completeness':
+        structure_labels = _structure_item_labels(candidate)
+        if structure_labels:
+            return f'停电施工作业专项要求中，以下内容存在缺项或仅部分识别：{"、".join(structure_labels)}。'
+        return '停电施工作业专项结构要求未完全闭合。'
     if candidate.candidateId == 'lifting_operations_special_scheme_linkage':
         return '已识别起重吊装场景，但当前专项方案/专项技术措施挂接位置仍不稳定或需人工确认。'
     if candidate.candidateId == 'lifting_operations_calculation_traceability':

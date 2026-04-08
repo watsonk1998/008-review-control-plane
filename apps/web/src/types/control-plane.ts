@@ -231,6 +231,9 @@ export interface StructureCompletenessMatrixItem {
   matchedSections: StructureCompletenessMatchedSection[];
   analysis: string;
   reportExcerpt: string;
+  scope?: "special" | "common";
+  displayOrder?: number;
+  groupLabel?: string | null;
 }
 
 export interface StructuredReviewMatrices {

@@ -36,6 +36,7 @@ from src.review.schema import (
     UnresolvedFact,
     VisibilityAssessment,
 )
+from src.review.structure_completeness import build_structure_completeness_matrix
 
 
 class StructuredReviewExecutor:
@@ -104,6 +105,12 @@ class StructuredReviewExecutor:
             structured_task,
             facts,
             plan,
+        )
+        facts = self._apply_structure_completeness_profile(
+            facts,
+            parse_result=parse_result,
+            document_type=resolved_profile.documentType,
+            selected_pack_ids={pack.id for pack in executable_packs},
         )
         if options.get('disable_rule_engine'):
             rule_hits = []
@@ -333,6 +340,32 @@ class StructuredReviewExecutor:
             factEvidence=fact_evidence,
             unresolvedFacts=self._dedupe_unresolved_facts(project_unresolved + hazard_unresolved + schedule_unresolved),
         )
+
+    def _apply_structure_completeness_profile(
+        self,
+        facts: ExtractedFacts,
+        *,
+        parse_result: DocumentParseResult,
+        document_type: str,
+        selected_pack_ids: set[str],
+    ) -> ExtractedFacts:
+        structure_rows, structure_refs, structure_unresolved = build_structure_completeness_matrix(
+            parse_result,
+            document_type=document_type,
+            selected_pack_ids=selected_pack_ids,
+        )
+        facts.projectFacts['structureCompleteness'] = structure_rows
+        for fact_key, refs in structure_refs.items():
+            facts.factEvidence[fact_key] = self._build_spans(parse_result, refs)
+        non_structure_unresolved = [
+            item
+            for item in facts.unresolvedFacts
+            if not str(item.factKey).startswith('project.structureCompleteness.')
+        ]
+        facts.unresolvedFacts = self._dedupe_unresolved_facts(
+            [item.model_dump(mode='json') for item in non_structure_unresolved] + structure_unresolved
+        )
+        return facts
 
     def _build_spans(self, parse_result: DocumentParseResult, refs: list[str]) -> list[EvidenceSpan]:
         spans: list[EvidenceSpan] = []

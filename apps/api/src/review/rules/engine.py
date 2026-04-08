@@ -16,6 +16,7 @@ class ReviewRuleEngine:
         hits.extend(self._construction_org_hits(facts, pack_by_rule))
         hits.extend(self._construction_scheme_hits(facts, pack_by_rule))
         hits.extend(self._hazardous_special_scheme_hits(facts, pack_by_rule))
+        hits.extend(self._distribution_network_special_scheme_hits(facts, pack_by_rule))
         hits.extend(self._supervision_plan_hits(facts, pack_by_rule))
         hits.extend(self._review_support_material_hits(facts, pack_by_rule))
         hits.extend(self._lifting_operations_hits(facts, pack_by_rule, selected_pack_ids))
@@ -28,6 +29,7 @@ class ReviewRuleEngine:
         hits.extend(self._curtain_wall_installation_hits(facts, pack_by_rule, selected_pack_ids))
         hits.extend(self._manual_bored_pile_hits(facts, pack_by_rule, selected_pack_ids))
         hits.extend(self._steel_structure_installation_hits(facts, pack_by_rule, selected_pack_ids))
+        hits.extend(self._power_outage_work_hits(facts, pack_by_rule, selected_pack_ids))
         hits.extend(self._temporary_power_hits(facts, pack_by_rule, selected_pack_ids))
         hits.extend(self._hot_work_hits(facts, pack_by_rule, selected_pack_ids))
         hits.extend(self._gas_area_ops_hits(facts, pack_by_rule, selected_pack_ids))
@@ -208,25 +210,37 @@ class ReviewRuleEngine:
             return []
         hits: list[RuleHit] = []
         section_presence = facts.projectFacts.get('sectionPresence') or {}
-        missing_core_sections = [
-            key
-            for key in [
-                'engineeringOverview',
-                'preparationBasis',
-                'constructionPlan',
-                'processMethod',
-                'safetyMeasures',
-                'emergencyPlan',
-                'calculationBook',
-                'staffingAndRoles',
-                'acceptanceRequirements',
-                'riskIdentification',
-                'siteLayout',
-                'surroundingConditions',
-                'participantResponsibilities',
+        structure_rows = facts.projectFacts.get('structureCompleteness') or []
+        common_rows = [row for row in structure_rows if row.get('scope') == 'common']
+        deficient_rows = [row for row in common_rows if row.get('status') in {'missing', 'partial'}]
+        blocked_rows = [row for row in common_rows if row.get('status') == 'blocked_by_visibility']
+        fact_refs = [f'project.structureCompleteness.{row["itemKey"]}' for row in [*deficient_rows, *blocked_rows]]
+        if not common_rows:
+            missing_core_sections = [
+                key
+                for key in [
+                    'engineeringOverview',
+                    'preparationBasis',
+                    'constructionPlan',
+                    'processMethod',
+                    'safetyMeasures',
+                    'emergencyPlan',
+                    'calculationBook',
+                    'staffingAndRoles',
+                    'acceptanceRequirements',
+                    'riskIdentification',
+                    'siteLayout',
+                    'surroundingConditions',
+                    'participantResponsibilities',
+                ]
+                if not section_presence.get(key)
             ]
-            if not section_presence.get(key)
-        ]
+            fact_refs = [f'project.sectionPresence.{key}' for key in missing_core_sections] or ['project.sectionPresence.engineeringOverview']
+            has_core_gap = bool(missing_core_sections)
+            severity = 'high'
+        else:
+            has_core_gap = bool(deficient_rows or blocked_rows)
+            severity = 'high' if any(row.get('status') == 'missing' for row in deficient_rows) else 'medium'
         core_pack_id, core_pack_readiness = pack_by_rule.get('hazardous_special_scheme_core_sections', ('hazardous_special_scheme.base', 'ready'))
         hits.append(
             RuleHit(
@@ -234,12 +248,12 @@ class ReviewRuleEngine:
                 packId=core_pack_id,
                 packReadiness=core_pack_readiness,
                 matchType='direct_hit',
-                status='hit' if missing_core_sections else 'pass',
+                status='hit' if has_core_gap else 'pass',
                 layerHint=ReviewLayer.L1,
-                severityHint='high',
-                factRefs=[f'project.sectionPresence.{key}' for key in missing_core_sections] or ['project.sectionPresence.engineeringOverview'],
+                severityHint=severity,
+                factRefs=fact_refs,
                 evidenceRefs=['policy:hazardous_scheme_structure'],
-                rationale='危大专项方案应包含核心章节，以支撑正式审查和现场执行。',
+                rationale='危大专项方案在具体三级专项之外，仍应满足专项施工方案通用目录要求。',
             )
         )
 
@@ -401,6 +415,35 @@ class ReviewRuleEngine:
         )
         return hits
 
+    def _distribution_network_special_scheme_hits(self, facts: ExtractedFacts, pack_by_rule: dict[str, tuple[str, str]]) -> list[RuleHit]:
+        if not any(pack_id == 'distribution_network_special_scheme.base' for pack_id, _ in pack_by_rule.values()):
+            return []
+        structure_rows = facts.projectFacts.get('structureCompleteness') or []
+        common_rows = [row for row in structure_rows if row.get('scope') == 'common']
+        deficient_rows = [row for row in common_rows if row.get('status') in {'missing', 'partial'}]
+        blocked_rows = [row for row in common_rows if row.get('status') == 'blocked_by_visibility']
+        fact_refs = [f'project.structureCompleteness.{row["itemKey"]}' for row in [*deficient_rows, *blocked_rows]]
+        if not common_rows:
+            fact_refs = ['project.structureCompleteness.specialEngineeringOverview']
+        pack_id, pack_readiness = pack_by_rule.get(
+            'distribution_network_special_scheme_structure_completeness',
+            ('distribution_network_special_scheme.base', 'ready'),
+        )
+        return [
+            RuleHit(
+                ruleId='distribution_network_special_scheme_structure_completeness',
+                packId=pack_id,
+                packReadiness=pack_readiness,
+                matchType='direct_hit',
+                status='hit' if deficient_rows or blocked_rows else 'pass',
+                layerHint=ReviewLayer.L1,
+                severityHint='high' if any(row.get('status') == 'missing' for row in deficient_rows) else 'medium',
+                factRefs=fact_refs,
+                evidenceRefs=['policy:distribution_network_special_scheme_structure'],
+                rationale='配网工程专项施工方案在具体三级专项之外，仍应满足专项施工方案通用目录要求。',
+            )
+        ]
+
     def _foundation_pit_hits(
         self,
         facts: ExtractedFacts,
@@ -411,6 +454,28 @@ class ReviewRuleEngine:
             return []
         hits: list[RuleHit] = []
         section_presence = facts.projectFacts.get('sectionPresence') or {}
+        structure_rows = facts.projectFacts.get('structureCompleteness') or []
+        special_rows = [row for row in structure_rows if row.get('scope') == 'special']
+        deficient_rows = [row for row in special_rows if row.get('status') in {'missing', 'partial'}]
+        blocked_rows = [row for row in special_rows if row.get('status') == 'blocked_by_visibility']
+        fact_refs = [f'project.structureCompleteness.{row["itemKey"]}' for row in [*deficient_rows, *blocked_rows]]
+        if not special_rows:
+            fact_refs = ['project.structureCompleteness.foundationPitSupportSequence']
+        structure_pack_id, structure_pack_readiness = pack_by_rule.get('foundation_pit_structure_completeness', ('foundation_pit.base', 'ready'))
+        hits.append(
+            RuleHit(
+                ruleId='foundation_pit_structure_completeness',
+                packId=structure_pack_id,
+                packReadiness=structure_pack_readiness,
+                matchType='direct_hit',
+                status='hit' if deficient_rows or blocked_rows else 'pass',
+                layerHint=ReviewLayer.L1,
+                severityHint='high' if any(row.get('status') == 'missing' for row in deficient_rows) else 'medium',
+                factRefs=fact_refs,
+                evidenceRefs=['policy:foundation_pit_structure'],
+                rationale='基坑工程专项方案除通用要求外，还应覆盖支护/降水/开挖及加撑关系、监测监控、周边环境与监测点相关图纸及验收要求。',
+            )
+        )
 
         monitor_pack_id, monitor_pack_readiness = pack_by_rule.get('foundation_pit_monitoring_and_drawings', ('foundation_pit.base', 'ready'))
         needs_manual = not (section_presence.get('monitoringPlan') and section_presence.get('drawingSet'))
@@ -472,6 +537,28 @@ class ReviewRuleEngine:
             return []
         hits: list[RuleHit] = []
         section_presence = facts.projectFacts.get('sectionPresence') or {}
+        structure_rows = facts.projectFacts.get('structureCompleteness') or []
+        special_rows = [row for row in structure_rows if row.get('scope') == 'special']
+        deficient_rows = [row for row in special_rows if row.get('status') in {'missing', 'partial'}]
+        blocked_rows = [row for row in special_rows if row.get('status') == 'blocked_by_visibility']
+        fact_refs = [f'project.structureCompleteness.{row["itemKey"]}' for row in [*deficient_rows, *blocked_rows]]
+        if not special_rows:
+            fact_refs = ['project.structureCompleteness.formworkSupportParameters']
+        structure_pack_id, structure_pack_readiness = pack_by_rule.get('formwork_support_structure_completeness', ('formwork_support.base', 'ready'))
+        hits.append(
+            RuleHit(
+                ruleId='formwork_support_structure_completeness',
+                packId=structure_pack_id,
+                packReadiness=structure_pack_readiness,
+                matchType='direct_hit',
+                status='hit' if deficient_rows or blocked_rows else 'pass',
+                layerHint=ReviewLayer.L1,
+                severityHint='high' if any(row.get('status') == 'missing' for row in deficient_rows) else 'medium',
+                factRefs=fact_refs,
+                evidenceRefs=['policy:formwork_support_structure'],
+                rationale='模板支撑体系专项方案除通用要求外，还应覆盖技术参数、工艺流程/浇筑顺序、计算依据和验收要求。',
+            )
+        )
 
         process_pack_id, process_pack_readiness = pack_by_rule.get('formwork_support_process_parameters', ('formwork_support.base', 'ready'))
         process_missing = not (section_presence.get('technicalParameters') and section_presence.get('processFlow') and facts.projectFacts.get('formworkPourSequencePresent'))
@@ -934,6 +1021,28 @@ class ReviewRuleEngine:
             return []
         hits: list[RuleHit] = []
         section_presence = facts.projectFacts.get('sectionPresence') or {}
+        structure_rows = facts.projectFacts.get('structureCompleteness') or []
+        special_rows = [row for row in structure_rows if row.get('scope') == 'special']
+        deficient_rows = [row for row in special_rows if row.get('status') in {'missing', 'partial'}]
+        blocked_rows = [row for row in special_rows if row.get('status') == 'blocked_by_visibility']
+        fact_refs = [f'project.structureCompleteness.{row["itemKey"]}' for row in [*deficient_rows, *blocked_rows]]
+        if not special_rows:
+            fact_refs = ['project.structureCompleteness.steelStructureComponentParameters']
+        structure_pack_id, structure_pack_readiness = pack_by_rule.get('steel_structure_installation_structure_completeness', ('steel_structure_installation.base', 'ready'))
+        hits.append(
+            RuleHit(
+                ruleId='steel_structure_installation_structure_completeness',
+                packId=structure_pack_id,
+                packReadiness=structure_pack_readiness,
+                matchType='direct_hit',
+                status='hit' if deficient_rows or blocked_rows else 'pass',
+                layerHint=ReviewLayer.L1,
+                severityHint='high' if any(row.get('status') == 'missing' for row in deficient_rows) else 'medium',
+                factRefs=fact_refs,
+                evidenceRefs=['policy:steel_structure_installation_structure'],
+                rationale='钢结构安装专项方案除通用要求外，还应覆盖构件参数、吊装设备选型、安装流程、支撑/卸载条件及措施图纸和验收章节。',
+            )
+        )
 
         lifting_pack_id, lifting_pack_readiness = pack_by_rule.get('steel_structure_installation_lifting_scheme_integrity', ('steel_structure_installation.base', 'ready'))
         lifting_missing = not (section_presence.get('technicalParameters') and section_presence.get('processFlow') and section_presence.get('processMethod'))
@@ -985,6 +1094,40 @@ class ReviewRuleEngine:
             )
         )
         return hits
+
+    def _power_outage_work_hits(
+        self,
+        facts: ExtractedFacts,
+        pack_by_rule: dict[str, tuple[str, str]],
+        selected_pack_ids: set[str],
+    ) -> list[RuleHit]:
+        if 'power_outage_work.base' not in selected_pack_ids:
+            return []
+        structure_rows = facts.projectFacts.get('structureCompleteness') or []
+        special_rows = [row for row in structure_rows if row.get('scope') == 'special']
+        deficient_rows = [row for row in special_rows if row.get('status') in {'missing', 'partial'}]
+        blocked_rows = [row for row in special_rows if row.get('status') == 'blocked_by_visibility']
+        fact_refs = [f'project.structureCompleteness.{row["itemKey"]}' for row in [*deficient_rows, *blocked_rows]]
+        if not special_rows:
+            fact_refs = ['project.structureCompleteness.powerOutageScope']
+        pack_id, pack_readiness = pack_by_rule.get(
+            'power_outage_work_structure_completeness',
+            ('power_outage_work.base', 'ready'),
+        )
+        return [
+            RuleHit(
+                ruleId='power_outage_work_structure_completeness',
+                packId=pack_id,
+                packReadiness=pack_readiness,
+                matchType='direct_hit',
+                status='hit' if deficient_rows or blocked_rows else 'pass',
+                layerHint=ReviewLayer.L1,
+                severityHint='high' if any(row.get('status') == 'missing' for row in deficient_rows) else 'medium',
+                factRefs=fact_refs,
+                evidenceRefs=['policy:power_outage_work_structure'],
+                rationale='停电施工作业专项施工方案除通用要求外，还应覆盖停电范围、作业内容、主要风险、人员、机具、材料、安全/质量管控与应急措施。',
+            )
+        ]
 
     def _supervision_plan_hits(self, facts: ExtractedFacts, pack_by_rule: dict[str, tuple[str, str]]) -> list[RuleHit]:
         if not any(pack_id == 'supervision_plan.base' for pack_id, _ in pack_by_rule.values()):

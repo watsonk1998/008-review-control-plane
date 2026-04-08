@@ -15,6 +15,7 @@ def get_formwork_support_pack() -> PolicyPack:
         disciplineTags=['formwork_support'],
         extractorIds=['project_facts', 'hazard_facts'],
         ruleIds=[
+            'formwork_support_structure_completeness',
             'formwork_support_process_parameters',
             'formwork_support_calculation_traceability',
             'formwork_support_acceptance_completeness',

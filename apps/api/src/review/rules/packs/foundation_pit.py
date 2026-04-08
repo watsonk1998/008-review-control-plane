@@ -15,6 +15,7 @@ def get_foundation_pit_pack() -> PolicyPack:
         disciplineTags=['foundation_pit'],
         extractorIds=['project_facts', 'hazard_facts'],
         ruleIds=[
+            'foundation_pit_structure_completeness',
             'foundation_pit_monitoring_and_drawings',
             'foundation_pit_support_sequence_integrity',
             'foundation_pit_acceptance_completeness',

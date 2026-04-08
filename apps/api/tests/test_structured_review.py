@@ -359,11 +359,25 @@ def test_structured_review_executor_selects_foundation_pit_pack_and_keeps_drawin
 
     assert 'foundation_pit.base' in result['resolvedProfile']['policyPackIds']
     issue_titles = {issue['title'] for issue in result['issues']}
+    assert '基坑工程专项章节不完整' in issue_titles
     assert '基坑工程监测图纸或监测章节需人工复核' in issue_titles
     issue = next(issue for issue in result['issues'] if issue['title'] == '基坑工程监测图纸或监测章节需人工复核')
     assert issue['manualReviewNeeded'] is True
     assert issue['manualReviewReason'] == 'drawing_visibility_gap'
     assert issue['issueKind'] == 'visibility_gap'
+    structure_rows = result['matrices']['structureCompleteness']
+    assert structure_rows[0]['scope'] == 'special'
+    assert structure_rows[0]['itemKey'] == 'foundationPitSupportSequence'
+    assert any(row['itemKey'] == 'foundationPitMonitoring' and row['status'] in {'matched', 'partial'} for row in structure_rows)
+    assert any(row['itemKey'] == 'specialEngineeringOverview' and row['scope'] == 'common' for row in structure_rows)
+    first_common_index = next(index for index, row in enumerate(structure_rows) if row['scope'] == 'common')
+    last_special_index = max(index for index, row in enumerate(structure_rows) if row['scope'] == 'special')
+    assert last_special_index < first_common_index
+    rule_hits = {row['ruleId']: row for row in result['matrices']['ruleHits']}
+    assert rule_hits['foundation_pit_structure_completeness']['packId'] == 'foundation_pit.base'
+    assert rule_hits['hazardous_special_scheme_core_sections']['packId'] == 'hazardous_special_scheme.base'
+    assert '### 3. 审查总览表' in result['reportMarkdown']
+    assert result['reportMarkdown'].index('支护、降水、开挖及加撑关系') < result['reportMarkdown'].index('工程概况')
 
 
 def test_structured_review_executor_selects_formwork_support_pack(tmp_path: Path):
@@ -390,8 +404,22 @@ def test_structured_review_executor_selects_formwork_support_pack(tmp_path: Path
 
     assert 'formwork_support.base' in result['resolvedProfile']['policyPackIds']
     issue_titles = {issue['title'] for issue in result['issues']}
+    assert '模板支撑体系专项章节不完整' in issue_titles
     assert '模板支撑体系关键工艺参数或浇筑顺序不完整' in issue_titles
     assert '模板支撑体系缺少可追溯计算依据' in issue_titles
+    structure_rows = result['matrices']['structureCompleteness']
+    assert structure_rows[0]['scope'] == 'special'
+    assert structure_rows[0]['itemKey'] == 'formworkSupportParameters'
+    assert any(row['itemKey'] == 'formworkSupportCalculation' and row['status'] == 'missing' for row in structure_rows)
+    assert any(row['itemKey'] == 'specialEngineeringOverview' and row['scope'] == 'common' for row in structure_rows)
+    first_common_index = next(index for index, row in enumerate(structure_rows) if row['scope'] == 'common')
+    last_special_index = max(index for index, row in enumerate(structure_rows) if row['scope'] == 'special')
+    assert last_special_index < first_common_index
+    rule_hits = {row['ruleId']: row for row in result['matrices']['ruleHits']}
+    assert rule_hits['formwork_support_structure_completeness']['packId'] == 'formwork_support.base'
+    assert rule_hits['hazardous_special_scheme_core_sections']['packId'] == 'hazardous_special_scheme.base'
+    assert '### 3. 审查总览表' in result['reportMarkdown']
+    assert result['reportMarkdown'].index('技术参数') < result['reportMarkdown'].index('工程概况')
 
 
 def test_structured_review_executor_selects_steel_structure_pack_and_replaces_old_lifting_pack(tmp_path: Path):
@@ -424,8 +452,22 @@ def test_structured_review_executor_selects_steel_structure_pack_and_replaces_ol
     assert 'lifting_installation_removal.base' in selected_packs
     assert 'lifting_operations.base' not in selected_packs
     issue_titles = {issue['title'] for issue in result['issues']}
+    assert '钢结构安装专项章节不完整' in issue_titles
     assert '钢结构安装缺少临时支撑或卸载条件' in issue_titles
     assert '钢结构安装图纸或验收章节需人工复核' in issue_titles
+    structure_rows = result['matrices']['structureCompleteness']
+    assert structure_rows[0]['scope'] == 'special'
+    assert structure_rows[0]['itemKey'] == 'steelStructureComponentParameters'
+    assert any(row['itemKey'] == 'steelStructureLiftingEquipment' and row['status'] in {'matched', 'partial'} for row in structure_rows)
+    assert any(row['itemKey'] == 'specialEngineeringOverview' and row['scope'] == 'common' for row in structure_rows)
+    first_common_index = next(index for index, row in enumerate(structure_rows) if row['scope'] == 'common')
+    last_special_index = max(index for index, row in enumerate(structure_rows) if row['scope'] == 'special')
+    assert last_special_index < first_common_index
+    rule_hits = {row['ruleId']: row for row in result['matrices']['ruleHits']}
+    assert rule_hits['steel_structure_installation_structure_completeness']['packId'] == 'steel_structure_installation.base'
+    assert rule_hits['hazardous_special_scheme_core_sections']['packId'] == 'hazardous_special_scheme.base'
+    assert '### 3. 审查总览表' in result['reportMarkdown']
+    assert result['reportMarkdown'].index('构件参数') < result['reportMarkdown'].index('工程概况')
 
 
 def test_structured_review_executor_selects_lifting_installation_removal_pack_for_hazardous_scheme(tmp_path: Path):
@@ -495,7 +537,21 @@ def test_structured_review_executor_selects_distribution_network_base_and_power_
         '## 编制依据\n依据配网停电作业要求编制。\n'
         '## 施工计划\n停电窗口内实施。\n'
         '## 施工工艺技术\n执行停送电作业流程。\n'
-        '## 安全保证措施\n仅提供概括性措施。\n',
+        '## 施工保证措施\n仅提供概括性措施。\n'
+        '## 组织与岗位分工\n工作负责人、作业人员和监护人到岗。\n'
+        '## 验收安排\n作业完成后组织验收。\n'
+        '## 触电应急与处置\n设置触电应急处置流程。\n'
+        '## 施工图及布置\n附停电作业平面布置图。\n'
+        '## 风险分析\n主要风险包括触电和误送电。\n'
+        '## 作业边界与现场条件\n明确周边环境与作业边界。\n'
+        '## 计算及校核依据\n提供相关校核依据。\n'
+        '## 停电线路及设备范围\n明确本次停电线路、设备与作业范围。\n'
+        '## 作业任务与停送电流程\n说明本次作业内容与停送电流程。\n'
+        '## 班组与工作负责人\n明确施工人员安排。\n'
+        '## 工器具配置\n列出主要工器具。\n'
+        '## 主要材料准备\n列出主要材料。\n'
+        '## 安全控制措施\n设置安全管控措施。\n'
+        '## 质量控制要求\n明确质量管控要求。\n',
         encoding='utf-8',
     )
     executor = StructuredReviewExecutor(document_loader=DocumentLoader(), llm_gateway=DummyLLM(), fast_adapter=None)
@@ -516,6 +572,59 @@ def test_structured_review_executor_selects_distribution_network_base_and_power_
     assert 'temporary_power' not in result['resolvedProfile']['disciplineTags']
     issue_titles = {issue['title'] for issue in result['issues']}
     assert '临时用电/停送电控制链路不完整' in issue_titles
+    structure_rows = result['matrices']['structureCompleteness']
+    assert structure_rows
+    assert all(row['scope'] in {'special', 'common'} for row in structure_rows)
+    assert structure_rows[0]['scope'] == 'special'
+    assert structure_rows[0]['itemKey'] == 'powerOutageScope'
+    assert any(row['itemKey'] == 'specialEngineeringOverview' and row['scope'] == 'common' for row in structure_rows)
+    assert any(row['itemKey'] == 'powerOutageWorkContent' and row['status'] in {'matched', 'partial'} for row in structure_rows)
+    assert any(row['itemKey'] == 'powerOutageStaffing' and row['status'] in {'matched', 'partial'} for row in structure_rows)
+    assert all(row['status'] in {'matched', 'partial'} for row in structure_rows[:9])
+    assert '### 3. 审查总览表' in result['reportMarkdown']
+    assert '<table class="structured-overview-table">' in result['reportMarkdown']
+    assert '<table class="structured-completeness-table">' in result['reportMarkdown']
+    assert result['reportMarkdown'].index('停电范围') < result['reportMarkdown'].index('工程概况')
+
+
+def test_structured_review_executor_assigns_power_outage_structure_rule_and_report_order(tmp_path: Path):
+    sample = tmp_path / 'distribution_network_power_outage_sparse.md'
+    sample.write_text(
+        '# 配网工程停电施工作业专项施工方案\n\n'
+        '## 工程概况\n项目概况。\n'
+        '## 编制依据\n依据相关要求编制。\n'
+        '## 施工计划\n停电窗口安排。\n'
+        '## 施工工艺技术\n停送电作业流程。\n'
+        '## 停电线路及设备范围\n明确停电范围。\n'
+        '## 作业任务与停送电流程\n说明作业内容。\n'
+        '## 风险分析\n主要风险为触电。\n',
+        encoding='utf-8',
+    )
+    executor = StructuredReviewExecutor(document_loader=DocumentLoader(), llm_gateway=DummyLLM(), fast_adapter=None)
+    result = executor.run_sync(
+        task_id='distribution-network-power-outage-structure-test',
+        query='对该配网工程专项施工方案执行正式结构化审查',
+        source_document_path=str(sample),
+        fixture_id='distribution-network-power-outage-structure-fixture',
+        document_type='distribution_network_special_scheme',
+        discipline_tags=['temporary_power'],
+    )
+
+    issue_titles = {issue['title'] for issue in result['issues']}
+    assert '配网工程专项施工方案通用章节不完整' in issue_titles
+    assert '停电施工作业专项章节不完整' in issue_titles
+    rule_hits = {row['ruleId']: row for row in result['matrices']['ruleHits']}
+    assert rule_hits['distribution_network_special_scheme_structure_completeness']['packId'] == 'distribution_network_special_scheme.base'
+    assert rule_hits['power_outage_work_structure_completeness']['packId'] == 'power_outage_work.base'
+    assert rule_hits['temporary_power_control_linkage']['packId'] == 'power_outage_work.base'
+    structure_rows = result['matrices']['structureCompleteness']
+    assert structure_rows[0]['scope'] == 'special'
+    first_common_index = next(index for index, row in enumerate(structure_rows) if row['scope'] == 'common')
+    last_special_index = max(index for index, row in enumerate(structure_rows) if row['scope'] == 'special')
+    assert last_special_index < first_common_index
+    report = result['reportMarkdown']
+    assert '### 3. 审查总览表' in report
+    assert report.index('停电范围') < report.index('工程概况')
 
 
 def test_structured_review_executor_selects_scaffold_pack(tmp_path: Path):

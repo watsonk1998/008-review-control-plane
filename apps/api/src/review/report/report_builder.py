@@ -461,6 +461,8 @@ class StructuredReviewReportBuilder:
     _L1_STRUCTURE_TITLES = {
         '施工组织设计核心章节不完整',
         '章节结构存在重复标题，正式审查定位不稳定',
+        '配网工程专项施工方案通用章节不完整',
+        '停电施工作业专项章节不完整',
     }
     _L1_PREFLIGHT_TITLES = {
         '附件处于可视域缺口，需人工复核原件',
@@ -478,6 +480,27 @@ class StructuredReviewReportBuilder:
         'safetyManagementPlan': ('安全', '应急预案', '动火', '临时用电', '高风险作业', '监测监控'),
         'environmentManagementPlan': ('环境', '煤气'),
         'costManagementPlan': ('成本',),
+        'specialEngineeringOverview': ('工程概况',),
+        'specialPreparationBasis': ('编制依据',),
+        'specialConstructionPlan': ('施工计划', '施工安排', '停电窗口'),
+        'specialProcessTechnology': ('施工工艺', '施工方法', '作业流程'),
+        'specialAssuranceMeasures': ('保证措施', '控制措施'),
+        'specialStaffingAndRoles': ('人员', '分工', '工作负责人'),
+        'specialAcceptanceRequirements': ('验收',),
+        'specialEmergencyMeasures': ('应急',),
+        'specialDrawings': ('图纸', '附图', '布置图'),
+        'specialRiskIdentification': ('风险',),
+        'specialLayoutEnvironment': ('平面布置', '周边环境', '作业边界'),
+        'specialCalculationEvidence': ('计算', '验算'),
+        'powerOutageScope': ('停电范围', '停电线路', '停电区域'),
+        'powerOutageWorkContent': ('作业内容', '施工内容', '工作内容'),
+        'powerOutageMajorRisk': ('主要风险', '风险辨识', '触电'),
+        'powerOutageStaffing': ('施工人员', '作业人员', '工作负责人'),
+        'powerOutageEquipment': ('机具', '工器具'),
+        'powerOutageMaterials': ('材料',),
+        'powerOutageSafetyControl': ('安全管控', '安全措施'),
+        'powerOutageQualityControl': ('质量管控', '质量控制'),
+        'powerOutageEmergencyMeasures': ('应急措施', '应急处置'),
     }
 
     def build_summary(
@@ -581,7 +604,7 @@ class StructuredReviewReportBuilder:
             lines.extend(['', '#### 补充说明依据', *[f'- {item}' for item in basis_files['supplemental']]])
         lines.append('')
         lines.extend(self._render_first_section_notes(parse_result.visibility))
-        if summary.documentType == 'construction_org' and matrices.structureCompleteness:
+        if matrices.structureCompleteness:
             overview_issue_map, _ = self._build_structure_related_issue_map(
                 matrices.structureCompleteness,
                 issues,
@@ -608,6 +631,14 @@ class StructuredReviewReportBuilder:
                 if issue.layer.value == 'L1' and issue.title not in self._L1_STRUCTURE_TITLES | self._L1_PREFLIGHT_TITLES
             ]
             lines.extend(self._render_construction_org_l1_section(matrices, l1_structure_issues, l1_compliance_issues, issues))
+        elif matrices.structureCompleteness:
+            l1_structure_issues = [
+                issue for issue in issues if issue.layer.value == 'L1' and issue.title in self._L1_STRUCTURE_TITLES
+            ]
+            l1_compliance_issues = [
+                issue for issue in issues if issue.layer.value == 'L1' and issue.title not in self._L1_STRUCTURE_TITLES | self._L1_PREFLIGHT_TITLES
+            ]
+            lines.extend(self._render_generic_structure_l1_section_markdown(matrices, l1_structure_issues, l1_compliance_issues, issues))
         else:
             l1_issues = sorted(
                 [issue for issue in issues if issue.layer.value == 'L1'],
@@ -729,7 +760,7 @@ class StructuredReviewReportBuilder:
             parts.extend(f'<li>{html.escape(line.removeprefix("- ").strip())}</li>' for line in note_lines if line.strip())
             parts.append('</ul>')
         parts.append('</div>')
-        if summary.documentType == 'construction_org' and matrices.structureCompleteness:
+        if matrices.structureCompleteness:
             overview_issue_map, _ = self._build_structure_related_issue_map(matrices.structureCompleteness, issues, compact=True)
             parts.extend([
                 '<section class="structured-report__subsection structured-report__overview-section">',
@@ -743,7 +774,7 @@ class StructuredReviewReportBuilder:
         return parts
 
     def _render_html_l1_section(self, summary, matrices, issues) -> list[str]:
-        if summary.documentType != 'construction_org' or not matrices.structureCompleteness:
+        if not matrices.structureCompleteness:
             return []
         l1_structure_issues = [
             issue for issue in issues if issue.layer.value == 'L1' and issue.title in self._L1_STRUCTURE_TITLES
@@ -751,6 +782,8 @@ class StructuredReviewReportBuilder:
         l1_compliance_issues = [
             issue for issue in issues if issue.layer.value == 'L1' and issue.title not in self._L1_STRUCTURE_TITLES | self._L1_PREFLIGHT_TITLES
         ]
+        if summary.documentType != 'construction_org':
+            return self._render_generic_structure_l1_section_html(matrices, l1_structure_issues, l1_compliance_issues, issues)
         related_issue_map, mapped_issue_ids = self._build_structure_related_issue_map(matrices.structureCompleteness, issues, compact=False)
         supplemental_issues = [issue for issue in l1_compliance_issues if issue.id not in mapped_issue_ids]
         parts = [
@@ -1115,14 +1148,111 @@ class StructuredReviewReportBuilder:
             lines.extend(['- 当前未发现需要在表外单列提示的补充意见。', ''])
         return lines
 
+    def _render_generic_structure_l1_section_markdown(
+        self,
+        matrices: StructuredReviewMatrices,
+        structure_issues,
+        compliance_issues,
+        all_issues,
+    ) -> list[str]:
+        related_issue_map, mapped_issue_ids = self._build_structure_related_issue_map(
+            matrices.structureCompleteness,
+            all_issues,
+            compact=False,
+        )
+        supplemental_issues = [issue for issue in compliance_issues if issue.id not in mapped_issue_ids]
+        lines = [
+            '### 2.1 结构完整性与形式合规性',
+            f'- 总体结论：{self._structure_completeness_conclusion(matrices.structureCompleteness)}',
+        ]
+        basis_lines = self._render_layer_basis(structure_issues or supplemental_issues)
+        if basis_lines:
+            lines.extend(['- 主要审查依据：', *[f'  - {item[2:]}' if item.startswith('- ') else f'  - {item}' for item in basis_lines]])
+        lines.extend(
+            [
+                '',
+                self._render_structure_completeness_table_html(matrices.structureCompleteness, related_issue_map),
+                '',
+                '#### 缺项分析与补齐意见',
+            ]
+        )
+        lines.extend(self._render_structure_followups(matrices.structureCompleteness))
+        lines.append('')
+        lines.extend(['### 2.2 补充审查意见'])
+        if supplemental_issues:
+            for index, issue in enumerate(
+                sorted(supplemental_issues, key=lambda issue: (self._SEVERITY_ORDER.get(issue.severity, 99), issue.title)),
+                start=1,
+            ):
+                lines.extend(self._render_issue(index, issue))
+        else:
+            lines.extend(['- 当前未发现需要在表外单列提示的补充意见。', ''])
+        return lines
+
+    def _render_generic_structure_l1_section_html(
+        self,
+        matrices: StructuredReviewMatrices,
+        structure_issues,
+        compliance_issues,
+        all_issues,
+    ) -> list[str]:
+        related_issue_map, mapped_issue_ids = self._build_structure_related_issue_map(
+            matrices.structureCompleteness,
+            all_issues,
+            compact=False,
+        )
+        supplemental_issues = [issue for issue in compliance_issues if issue.id not in mapped_issue_ids]
+        parts = [
+            '<section class="structured-report__section">',
+            '<h2 class="structured-report__section-title">第二部分：L1 审查发现——合法合规与结构完整性</h2>',
+            '<div class="structured-report__subsection">',
+            '<h3 class="structured-report__subsection-title">2.1 结构完整性与形式合规性</h3>',
+            '<ul class="structured-report__bullet-list">',
+            f'<li>总体结论：{html.escape(self._structure_completeness_conclusion(matrices.structureCompleteness))}</li>',
+            '</ul>',
+        ]
+        basis_lines = self._render_layer_basis(structure_issues or supplemental_issues)
+        if basis_lines:
+            parts.extend(['<ul class="structured-report__basis-list">'])
+            parts.extend(f'<li>{html.escape(item.removeprefix("- ").strip())}</li>' for item in basis_lines)
+            parts.append('</ul>')
+        parts.extend(
+            [
+                '<div class="structured-report__table-wrap">',
+                self._render_structure_completeness_table_html(matrices.structureCompleteness, related_issue_map),
+                '</div>',
+                '<div class="structured-report__subsection">',
+                '<h4 class="structured-report__subsection-title">缺项分析与补齐意见</h4>',
+                '<div class="structured-report__followups">',
+                *self._render_structure_followups_html(matrices.structureCompleteness),
+                '</div>',
+                '</div>',
+            ]
+        )
+        parts.extend(['<div class="structured-report__subsection">', '<h3 class="structured-report__subsection-title">2.2 补充审查意见</h3>'])
+        if supplemental_issues:
+            parts.extend(
+                self._render_issue_cards_html(
+                    sorted(supplemental_issues, key=lambda issue: (self._SEVERITY_ORDER.get(issue.severity, 99), issue.title))
+                )
+            )
+        else:
+            parts.append('<p class="structured-report__section-intro">当前未发现需要在表外单列提示的补充意见。</p>')
+        parts.extend(['</div>', '</div>', '</section>'])
+        return parts
+
     def _structure_completeness_conclusion(self, rows) -> str:
         if not rows:
             return '当前未生成结构完整性矩阵。'
         missing_count = sum(1 for row in rows if row.status == 'missing')
         partial_count = sum(1 for row in rows if row.status == 'partial')
         blocked_count = sum(1 for row in rows if row.status == 'blocked_by_visibility')
+        has_special_scheme_rows = any(str(getattr(row, 'itemKey', '')).startswith('special') or str(getattr(row, 'itemKey', '')).startswith('powerOutage') for row in rows)
+        baseline = '对照专项施工方案目录要求，本文件结构主干'
+        if not has_special_scheme_rows:
+            baseline = '对照 GB/T 50502-2009，本文件结构主干'
         if missing_count == partial_count == blocked_count == 0:
-            return '对照 GB/T 50502-2009，本文件结构主干已形成闭合。'
+            return f'{baseline}已形成闭合。'
         parts: list[str] = []
         if missing_count:
             parts.append(f'存在 {missing_count} 项明确缺项')
@@ -1130,7 +1260,7 @@ class StructuredReviewReportBuilder:
             parts.append(f'存在 {partial_count} 项仅部分识别')
         if blocked_count:
             parts.append(f'存在 {blocked_count} 项受可视域限制')
-        return f'对照 GB/T 50502-2009，本文件结构主干未完全闭合，{"，".join(parts)}。'
+        return f'{baseline}未完全闭合，{"，".join(parts)}。'
 
     def _matched_sections_text(self, matched_sections) -> str:
         cleaned = self._matched_sections_display_list(matched_sections, limit=2)
@@ -1177,8 +1307,6 @@ class StructuredReviewReportBuilder:
                     '---',
                 ]
             )
-        if lines and lines[-1] == '---':
-            lines.pop()
         return lines
 
     def _duplicate_issue_detail(self, issue) -> str:
@@ -1248,6 +1376,8 @@ class StructuredReviewReportBuilder:
                 continue
             layer = issue.layer.value
             for item_key in matched_keys[:2]:
+                if item_key not in row_map:
+                    continue
                 summary = self._related_issue_summary_text(
                     issue,
                     compact=compact,
@@ -1472,6 +1602,40 @@ class StructuredReviewReportBuilder:
             'project.structureCompleteness.safetyManagementPlan': '安全管理计划',
             'project.structureCompleteness.environmentManagementPlan': '环境管理计划',
             'project.structureCompleteness.costManagementPlan': '成本管理计划',
+            'project.structureCompleteness.specialEngineeringOverview': '工程概况',
+            'project.structureCompleteness.specialPreparationBasis': '编制依据',
+            'project.structureCompleteness.specialConstructionPlan': '施工计划',
+            'project.structureCompleteness.specialProcessTechnology': '施工工艺技术',
+            'project.structureCompleteness.specialAssuranceMeasures': '施工保证措施',
+            'project.structureCompleteness.specialStaffingAndRoles': '施工管理及作业人员配备和分工',
+            'project.structureCompleteness.specialAcceptanceRequirements': '验收要求',
+            'project.structureCompleteness.specialEmergencyMeasures': '应急处置措施',
+            'project.structureCompleteness.specialDrawings': '相关施工图纸 / 节点详图 / 布置图',
+            'project.structureCompleteness.specialRiskIdentification': '风险辨识与分级',
+            'project.structureCompleteness.specialLayoutEnvironment': '施工平面布置或周边环境条件',
+            'project.structureCompleteness.specialCalculationEvidence': '计算书及相关验算依据',
+            'project.structureCompleteness.powerOutageScope': '停电范围',
+            'project.structureCompleteness.powerOutageWorkContent': '作业内容',
+            'project.structureCompleteness.powerOutageMajorRisk': '主要风险',
+            'project.structureCompleteness.powerOutageStaffing': '施工人员',
+            'project.structureCompleteness.powerOutageEquipment': '机具',
+            'project.structureCompleteness.powerOutageMaterials': '材料',
+            'project.structureCompleteness.powerOutageSafetyControl': '安全管控',
+            'project.structureCompleteness.powerOutageQualityControl': '质量管控',
+            'project.structureCompleteness.powerOutageEmergencyMeasures': '应急措施',
+            'project.structureCompleteness.foundationPitSupportSequence': '支护、降水、开挖及加撑关系',
+            'project.structureCompleteness.foundationPitMonitoring': '监测监控措施',
+            'project.structureCompleteness.foundationPitEnvironmentDrawings': '周边环境与监测点相关图纸',
+            'project.structureCompleteness.foundationPitAcceptance': '验收要求',
+            'project.structureCompleteness.formworkSupportParameters': '技术参数',
+            'project.structureCompleteness.formworkSupportProcessFlow': '工艺流程 / 浇筑顺序',
+            'project.structureCompleteness.formworkSupportCalculation': '计算依据',
+            'project.structureCompleteness.formworkSupportAcceptance': '验收要求',
+            'project.structureCompleteness.steelStructureComponentParameters': '构件参数',
+            'project.structureCompleteness.steelStructureLiftingEquipment': '吊装设备选型',
+            'project.structureCompleteness.steelStructureInstallationProcess': '安装流程',
+            'project.structureCompleteness.steelStructureSupportUnloading': '拼装胎架 / 临时支撑 / 卸载条件',
+            'project.structureCompleteness.steelStructureDrawingsAcceptance': '措施图纸及验收章节',
         }
         direct = {
             'hazard.calculatedLiftWeightTon': '计算起重量',

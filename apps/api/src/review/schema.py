@@ -334,6 +334,9 @@ class StructureCompletenessMatrixItem(BaseModel):
     matchedSections: list[StructureCompletenessMatchedSection] = Field(default_factory=list)
     analysis: str
     reportExcerpt: str
+    scope: Literal['special', 'common'] = 'common'
+    displayOrder: int = 0
+    groupLabel: str | None = None
 
 
 class StructuredReviewMatrices(BaseModel):

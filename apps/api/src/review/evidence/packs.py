@@ -152,6 +152,14 @@ def get_evidence_pack_registry() -> dict[str, EvidencePack]:
             applicability='hazardous_special_scheme',
             clauses=[
                 PolicyClause(
+                    id='foundation_pit_structure',
+                    sourceId='construction-《危险性较大的分部分项工程专项施工方案编制指南》（建办质〔2021〕48号）',
+                    title='基坑工程专项补充目录要求',
+                    excerpt='基坑工程专项方案除通用目录外，还应体现支护/降水/开挖及加撑关系、监测监控、周边环境与监测点相关图纸及验收要求。',
+                    forceLevel='must',
+                    applicability='foundation_pit',
+                ),
+                PolicyClause(
                     id='foundation_pit_monitoring',
                     sourceId='construction-《危险性较大的分部分项工程专项施工方案编制指南》（建办质〔2021〕48号）',
                     title='基坑监测与图纸要求',
@@ -177,11 +185,13 @@ def get_evidence_pack_registry() -> dict[str, EvidencePack]:
                 ),
             ],
             severityMapping={
+                'foundation_pit_structure_completeness': 'high',
                 'foundation_pit_monitoring_and_drawings': 'medium',
                 'foundation_pit_support_sequence_integrity': 'high',
                 'foundation_pit_acceptance_completeness': 'medium',
             },
             ruleIds=[
+                'foundation_pit_structure_completeness',
                 'foundation_pit_monitoring_and_drawings',
                 'foundation_pit_support_sequence_integrity',
                 'foundation_pit_acceptance_completeness',
@@ -193,6 +203,14 @@ def get_evidence_pack_registry() -> dict[str, EvidencePack]:
             docTypes=['hazardous_special_scheme'],
             applicability='hazardous_special_scheme',
             clauses=[
+                PolicyClause(
+                    id='formwork_support_structure',
+                    sourceId='construction-《危险性较大的分部分项工程专项施工方案编制指南》（建办质〔2021〕48号）',
+                    title='模板支撑体系专项补充目录要求',
+                    excerpt='模板支撑体系专项方案除通用目录外，还应体现技术参数、工艺流程/浇筑顺序、计算依据和验收要求。',
+                    forceLevel='must',
+                    applicability='formwork_support',
+                ),
                 PolicyClause(
                     id='formwork_support_process',
                     sourceId='construction-《危险性较大的分部分项工程专项施工方案编制指南》（建办质〔2021〕48号）',
@@ -219,11 +237,13 @@ def get_evidence_pack_registry() -> dict[str, EvidencePack]:
                 ),
             ],
             severityMapping={
+                'formwork_support_structure_completeness': 'high',
                 'formwork_support_process_parameters': 'high',
                 'formwork_support_calculation_traceability': 'high',
                 'formwork_support_acceptance_completeness': 'medium',
             },
             ruleIds=[
+                'formwork_support_structure_completeness',
                 'formwork_support_process_parameters',
                 'formwork_support_calculation_traceability',
                 'formwork_support_acceptance_completeness',
@@ -499,6 +519,14 @@ def get_evidence_pack_registry() -> dict[str, EvidencePack]:
             applicability='hazardous_special_scheme',
             clauses=[
                 PolicyClause(
+                    id='steel_structure_installation_structure',
+                    sourceId='construction-《危险性较大的分部分项工程专项施工方案编制指南》（建办质〔2021〕48号）',
+                    title='钢结构安装专项补充目录要求',
+                    excerpt='钢结构安装专项方案除通用目录外，还应体现构件参数、吊装设备选型、安装流程、拼装胎架/临时支撑/卸载条件及措施图纸和验收章节。',
+                    forceLevel='must',
+                    applicability='steel_structure_installation',
+                ),
+                PolicyClause(
                     id='steel_structure_installation_scheme',
                     sourceId='construction-《危险性较大的分部分项工程专项施工方案编制指南》（建办质〔2021〕48号）',
                     title='钢结构安装吊装方案',
@@ -524,11 +552,13 @@ def get_evidence_pack_registry() -> dict[str, EvidencePack]:
                 ),
             ],
             severityMapping={
+                'steel_structure_installation_structure_completeness': 'high',
                 'steel_structure_installation_lifting_scheme_integrity': 'high',
                 'steel_structure_installation_support_and_unloading': 'high',
                 'steel_structure_installation_drawing_and_acceptance': 'medium',
             },
             ruleIds=[
+                'steel_structure_installation_structure_completeness',
                 'steel_structure_installation_lifting_scheme_integrity',
                 'steel_structure_installation_support_and_unloading',
                 'steel_structure_installation_drawing_and_acceptance',
@@ -589,10 +619,51 @@ def get_evidence_pack_registry() -> dict[str, EvidencePack]:
             },
             ruleIds=['review_support_material_context_only', 'review_support_material_attachment_visibility'],
         ),
+        'distribution_network_special_scheme.base': EvidencePack(
+            id='distribution_network_special_scheme.base',
+            version='1.0.0',
+            docTypes=['distribution_network_special_scheme'],
+            applicability='distribution_network_special_scheme',
+            clauses=[
+                PolicyClause(
+                    id='distribution_network_special_scheme_structure',
+                    sourceId='review-control-plane-special-scheme-structure-policy',
+                    title='配网工程专项施工方案通用目录要求',
+                    excerpt='配网工程专项施工方案除专项补充要求外，仍应覆盖工程概况、编制依据、施工计划、施工工艺技术、施工保证措施、人员分工、验收要求、应急处置、图纸、风险辨识、平面布置或周边环境、计算与验算依据等通用内容。',
+                    forceLevel='should',
+                    applicability='distribution_network_special_scheme',
+                ),
+            ],
+            severityMapping={
+                'distribution_network_special_scheme_structure_completeness': 'medium',
+            },
+            ruleIds=['distribution_network_special_scheme_structure_completeness'],
+        ),
+        'power_outage_work.base': EvidencePack(
+            id='power_outage_work.base',
+            version='1.0.0',
+            docTypes=['distribution_network_special_scheme'],
+            applicability='power_outage_work',
+            clauses=[
+                PolicyClause(
+                    id='power_outage_work_structure',
+                    sourceId='review-control-plane-special-scheme-structure-policy',
+                    title='停电施工作业专项补充目录要求',
+                    excerpt='停电施工作业专项施工方案除专项施工方案通用要求外，还应覆盖停电范围、作业内容、主要风险、施工人员、机具、材料、安全管控、质量管控、应急措施等响应内容；不要求完全同名或同层级，但正文应有稳定支撑内容。',
+                    forceLevel='should',
+                    applicability='power_outage_work',
+                ),
+            ],
+            severityMapping={
+                'power_outage_work_structure_completeness': 'high',
+                'temporary_power_control_linkage': 'medium',
+            },
+            ruleIds=['power_outage_work_structure_completeness', 'temporary_power_control_linkage'],
+        ),
         'review.visibility': EvidencePack(
             id='review.visibility',
             version='1.0.0',
-            docTypes=['construction_org', 'construction_scheme', 'hazardous_special_scheme', 'supervision_plan', 'review_support_material'],
+            docTypes=['construction_org', 'construction_scheme', 'hazardous_special_scheme', 'distribution_network_special_scheme', 'supervision_plan', 'review_support_material'],
             applicability='all_review_types',
             clauses=[
                 PolicyClause(
@@ -613,7 +684,7 @@ def get_evidence_pack_registry() -> dict[str, EvidencePack]:
         'review.emergency': EvidencePack(
             id='review.emergency',
             version='1.0.0',
-            docTypes=['construction_org', 'hazardous_special_scheme'],
+            docTypes=['construction_org', 'hazardous_special_scheme', 'distribution_network_special_scheme'],
             applicability='construction_and_hazardous',
             clauses=[
                 PolicyClause(

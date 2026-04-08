@@ -15,6 +15,7 @@ def get_steel_structure_installation_pack() -> PolicyPack:
         disciplineTags=['steel_structure_installation'],
         extractorIds=['project_facts', 'hazard_facts'],
         ruleIds=[
+            'steel_structure_installation_structure_completeness',
             'steel_structure_installation_lifting_scheme_integrity',
             'steel_structure_installation_support_and_unloading',
             'steel_structure_installation_drawing_and_acceptance',
