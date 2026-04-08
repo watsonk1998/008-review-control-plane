@@ -196,36 +196,36 @@ export function CreateTaskForm({
           <div className="field">
             <span>目标审查文档</span>
             {form.sourceDocumentRef ? (
-              <div className="doc-ready-card" style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '16px', background: 'var(--healthy-bg)', border: '1px solid var(--healthy-border)', borderRadius: '8px', color: 'var(--healthy)' }}>
-                <svg fill="currentColor" viewBox="0 0 20 20" style={{ width: '24px', height: '24px' }}>
+              <div className="doc-ready-card">
+                <svg fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                 </svg>
                 <div className="doc-ready-info">
-                  <strong style={{ display: 'block', fontSize: '0.9rem' }}>文档已安全上传并在系统中就绪</strong>
+                  <strong>文档已安全上传并在系统中就绪</strong>
                   <span>{form.sourceDocumentRef.displayName || form.sourceDocumentRef.fileName}</span>
                 </div>
-                <button type="button" className="ghost-button" style={{ marginLeft: "auto", padding: "4px 8px", fontSize: "0.8rem" }} onClick={() => setForm(c => ({...c, sourceDocumentRef: undefined}))}>撤销</button>
+                <button type="button" className="ghost-button doc-ready-undo" onClick={() => setForm(c => ({...c, sourceDocumentRef: undefined}))}>撤销</button>
               </div>
             ) : (
-              <label className={`upload-zone ${uploadingDocument ? "is-uploading" : ""}`} style={{ border: '2px dashed var(--card-border)', borderRadius: '12px', padding: '32px 24px', textAlign: 'center', position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', cursor: uploadingDocument ? 'wait' : 'pointer' }}>
+              <label className={`upload-zone ${uploadingDocument ? "is-uploading" : ""}`}>
                 {uploadingDocument ? (
                   <>
-                    <div className="spinner" style={{ width: '24px', height: '24px', borderRadius: '50%', border: '3px solid rgba(99,102,241,0.2)', borderTopColor: '#6366F1' }} />
+                    <div className="spinner" />
                     <div className="upload-text">
-                      <strong style={{ display: 'block', marginBottom: '4px' }}>正在通过加密通道上传并启动解析引擎</strong>
-                      <span style={{ fontSize: '0.85rem' }}>请稍候，网络传输可能需要十几秒...</span>
+                      <strong>正在通过加密通道上传并启动解析引擎</strong>
+                      <span>请稍候，网络传输可能需要十几秒...</span>
                     </div>
                   </>
                 ) : (
                   <>
-                    <div className="upload-icon" style={{ width: '48px', height: '48px', borderRadius: '50%', border: '1px solid var(--card-border)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '24px', height: '24px' }}>
+                    <div className="upload-icon">
+                      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                       </svg>
                     </div>
                     <div className="upload-text">
-                      <strong style={{ display: 'block', marginBottom: '4px' }}>点击选择或拖拽文件到这里上传</strong>
-                      <span style={{ fontSize: '0.85rem' }}>强制要求 .docx 或 .pdf 格式。端到端直传</span>
+                      <strong>点击选择或拖拽文件到这里上传</strong>
+                      <span>强制要求 .docx 或 .pdf 格式。端到端直传</span>
                     </div>
                   </>
                 )}
@@ -233,7 +233,6 @@ export function CreateTaskForm({
                   type="file"
                   accept=".docx,.pdf,.md,.txt"
                   disabled={uploadingDocument}
-                  style={{ position: 'absolute', inset: '0', opacity: '0', cursor: uploadingDocument ? 'wait' : 'pointer' }}
                   onChange={(e) => {
                     const file = e.target.files?.[0];
                     if (file) { handleDocumentUpload(file); e.currentTarget.value = ""; }
@@ -248,29 +247,29 @@ export function CreateTaskForm({
 
         <div className="toggle-row">
           <button type="button" className="ghost-button" onClick={() => setShowAdvanced((v) => !v)}>
-            {showAdvanced ? "- 收起高级配置" : "+ 展开高级配置"}
+            {showAdvanced ? "- 收起专家配置" : "+ 展开专家配置"}
           </button>
         </div>
 
         {showAdvanced && (
           <div className="advanced-panel stack-lg">
              <label className="field">
-               <span>覆盖策略集</span>
-               <textarea rows={2} value={policyPackInput} onChange={(e) => setPolicyPackInput(e.target.value)} placeholder="留空为自动匹配" />
+               <span>审查模块策略覆盖</span>
+               <textarea rows={2} value={policyPackInput} onChange={(e) => setPolicyPackInput(e.target.value)} placeholder="留空为系统自动匹配最优模块组合" />
              </label>
              <label className="checkbox-row inline-check">
                <input type="checkbox" checked={form.useWeb} onChange={(e) => setForm((c) => ({ ...c, useWeb: e.target.checked }))} />
-               <span>允许智能体调用外网检索器</span>
+               <span>开放外部互联网抓取能力 (适用研究模式)</span>
              </label>
              <label className="checkbox-row inline-check">
                <input type="checkbox" checked={form.debug} onChange={(e) => setForm((c) => ({ ...c, debug: e.target.checked }))} />
-               <span>开启底层诊断模式提取排错日志</span>
+               <span>启用底层排障追溯 (保留执行轨迹与快照)</span>
              </label>
           </div>
         )}
 
         {error && <p className="error-text">{error}</p>}
-        <div className="form-footer" style={{ marginTop: "12px" }}>
+        <div className="form-footer">
           <button type="submit" className="primary-button" disabled={submitting || !canSubmit}>
             {submitting ? "系统调度中..." : "启动审查引擎 [Enter]"}
           </button>

@@ -61,41 +61,41 @@ const CAPABILITY_OPTIONS: Array<{
   label: string;
   hint: string;
 }> = [
-  { value: "auto", label: "Auto", hint: "由总控层决定能力链路。" },
-  { value: "deeptutor", label: "DeepTutor", hint: "偏知识解释与规范问答。" },
+  { value: "auto", label: "自动编排", hint: "由系统智能决策执行链路。" },
+  { value: "deeptutor", label: "专业问答引擎", hint: "基于行业规范体系提供精准解释。" },
   {
     value: "gpt_researcher",
-    label: "GPT Researcher",
-    hint: "偏研究报告与来源归纳。",
+    label: "深度研究引擎",
+    hint: "自动归纳证据链并产出分析报告。",
   },
   {
     value: "fast",
-    label: "FastGPT Chunks",
-    hint: "直接拉取知识片段并轻量总结。",
+    label: "检索增强框架",
+    hint: "切片检索与轻量化规则匹配。",
   },
   {
     value: "llm_only",
-    label: "LLM Only",
-    hint: "仅内部调试；跳过外部知识检索。",
+    label: "纯净推理模型",
+    hint: "外网隔离，仅做系统验证与自测。",
   },
 ];
 
 const CAPABILITY_BOUNDARY = [
   {
-    title: "DeepResearchAgent",
-    body: "总控编排 / planner / router / coordinator，不直接承担正式审查结论。",
+    title: "DeepResearchAgent 智能编排",
+    body: "负责整体规划、路由分发与逻辑综合，自身不直接出具结构化结论。",
   },
   {
-    title: "DeepTutor",
-    body: "标准规范问答、知识解释、基于上下文的说明服务。",
+    title: "DeepTutor 专业问答",
+    body: "标准规程对齐、知识概念解析、全链路上文环境长内容推理。",
   },
   {
-    title: "GPT Researcher",
-    body: "深度研究、本地文档研究、报告与来源整理。",
+    title: "GPT Researcher 深度研究",
+    body: "长文本局部研究、归纳并自动化整理多方证据，输出专业格式报告。",
   },
   {
-    title: "FastGPT",
-    body: "底层知识片段检索层，优先 chunks，不是首选答案黑盒。",
+    title: "FastGPT 检索分片",
+    body: "底层段落特征定位层，仅提供依据切片与粗筛，不对审查逻辑黑盒负责。",
   },
 ];
 
@@ -111,6 +111,17 @@ function taskStatusTone(status: TaskStatus) {
   if (status === "failed") return "is-unhealthy";
   if (status === "partial") return "is-warning";
   return "is-neutral";
+}
+
+function taskStatusLabel(status: TaskStatus) {
+  if (status === "succeeded") return "执行成功";
+  if (status === "failed") return "执行失败";
+  if (status === "partial") return "部分完成";
+  if (status === "created") return "已创建";
+  if (status === "planned") return "规划中";
+  if (status === "running") return "执行中";
+  if (status === "waiting_external") return "等待外部输入";
+  return "状态未知";
 }
 
 function connectionTone(state: "healthy" | "lagging" | "offline" | "checking") {
@@ -436,11 +447,11 @@ export function HomeDashboard() {
 
         <div className="workbench-meta">
           <div>
-            <span>API Base</span>
+            <span>服务网关连接</span>
             <strong>{getApiBaseUrl()}</strong>
           </div>
           <div>
-            <span>Capabilities</span>
+            <span>已就绪子引擎</span>
             <strong>
               {availableCapabilities.length}/{health?.capabilities.length ?? "—"}
             </strong>
@@ -464,8 +475,8 @@ export function HomeDashboard() {
           <div className="workbench-panel stack-lg">
             <div className="section-heading compact">
               <div>
-                <p className="eyebrow">Create Task</p>
-                <h2>直接发起任务</h2>
+                <p className="eyebrow">发号施令</p>
+                <h2>提交任务工单</h2>
               </div>
               <p className="muted small">{selectedTask.hint}</p>
             </div>
@@ -591,10 +602,10 @@ export function HomeDashboard() {
                   onClick={() => setShowAdvanced((value) => !value)}
                   type="button"
                 >
-                  {showAdvanced ? "收起高级项" : "展开高级项"}
+                  {showAdvanced ? "收起专家配置" : "开启专家配置"}
                 </button>
                 <p className="muted small">
-                  高级项用于 source URLs、dataset / collection、debug 与 policy pack 覆盖。
+                  仅当进行特殊测试或人工介入模型链路时开启此配置区。
                 </p>
               </div>
 
@@ -608,7 +619,7 @@ export function HomeDashboard() {
                   ) : null}
 
                   <label className="field">
-                    <span>Source URLs（可选，多行）</span>
+                    <span>定向抓取地址（可选，多行输入）</span>
                     <textarea
                       rows={3}
                       value={sourceUrlInput}
@@ -619,7 +630,7 @@ export function HomeDashboard() {
 
                   {form.taskType === "structured_review" ? (
                     <label className="field">
-                      <span>policyPackIds（高级覆盖，可选）</span>
+                      <span>强制覆写策略（可选）</span>
                       <textarea
                         rows={3}
                         value={policyPackInput}
@@ -632,7 +643,7 @@ export function HomeDashboard() {
 
                   <div className="form-grid two-columns">
                     <label className="field">
-                      <span>datasetId</span>
+                      <span>数据集挂载项 A</span>
                       <input
                         type="text"
                         value={form.datasetId || ""}
@@ -647,7 +658,7 @@ export function HomeDashboard() {
                     </label>
 
                     <label className="field">
-                      <span>collectionId</span>
+                      <span>数据集挂载项 B</span>
                       <input
                         type="text"
                         value={form.collectionId || ""}
@@ -674,7 +685,7 @@ export function HomeDashboard() {
                         }
                         type="checkbox"
                       />
-                      <span>useWeb（用于 GPT Researcher）</span>
+                      <span>允许智能体外网检索信息</span>
                     </label>
 
                     <label className="checkbox-row inline-check">
@@ -688,7 +699,7 @@ export function HomeDashboard() {
                         }
                         type="checkbox"
                       />
-                      <span>debug 模式</span>
+                      <span>强制底层排错日志采集</span>
                     </label>
                   </div>
                 </div>
@@ -731,8 +742,8 @@ export function HomeDashboard() {
           <section className="workbench-panel stack-lg">
             <div className="section-heading compact">
               <div>
-                <p className="eyebrow">System Health</p>
-                <h2>系统状态摘要</h2>
+                <p className="eyebrow">平台健康度</p>
+                <h2>引擎状态矩阵</h2>
               </div>
               <span className={`status-pill ${connectionTone(heartbeatState)}`}>
                 {connectionLabel(heartbeatState)}
@@ -749,7 +760,7 @@ export function HomeDashboard() {
                 </strong>
               </div>
               <div>
-                <span>Fixtures</span>
+                <span>平台基准库</span>
                 <strong>{health?.fixtureCount ?? fixtures.length}</strong>
               </div>
               <div>
@@ -766,7 +777,7 @@ export function HomeDashboard() {
                     <p className="muted small">{capability.detail || capability.mode}</p>
                   </div>
                   <span className={`status-pill ${capability.available ? "is-healthy" : "is-warning"}`}>
-                    {capability.available ? "available" : "degraded"}
+                    {capability.available ? "稳定提供服务" : "当前已降级"}
                   </span>
                 </article>
               ))}
@@ -782,8 +793,8 @@ export function HomeDashboard() {
           <section className="workbench-panel stack-lg">
             <div className="section-heading compact">
               <div>
-                <p className="eyebrow">Recent Tasks</p>
-                <h2>最近任务 / 继续查看</h2>
+                <p className="eyebrow">运行历史追踪</p>
+                <h2>过往执行记录</h2>
               </div>
             </div>
 
@@ -797,7 +808,7 @@ export function HomeDashboard() {
                   >
                     <div className="recent-task-head">
                       <strong>{TASK_OPTIONS.find((item) => item.value === task.taskType)?.label ?? task.taskType}</strong>
-                      <span className={`status-pill ${taskStatusTone(task.status)}`}>{task.status}</span>
+                      <span className={`status-pill ${taskStatusTone(task.status)}`}>{taskStatusLabel(task.status)}</span>
                     </div>
                     <p>{task.query}</p>
                     <div className="recent-task-meta">
@@ -814,12 +825,12 @@ export function HomeDashboard() {
         </aside>
       </section>
 
-      <section className="workbench-panel stack-lg boundary-panel">
+      <section className="workbench-panel stack-lg boundary-panel" style={{ marginTop: "32px", borderTop: "1px dashed var(--card-border)", paddingTop: "32px", paddingBottom: "24px" }}>
         <div>
-          <p className="eyebrow">Capability Boundary</p>
-          <h2>能力边界说明</h2>
+          <p className="eyebrow">平台职责划分</p>
+          <h2>架构底座说明</h2>
         </div>
-        <div className="boundary-grid">
+        <div className="boundary-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
           {CAPABILITY_BOUNDARY.map((item) => (
             <article className="boundary-item subtle" key={item.title}>
               <h3>{item.title}</h3>

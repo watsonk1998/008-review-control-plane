@@ -232,7 +232,7 @@ export function StructuredReviewForm({
         </div>
       ) : null}
       {!documentReadiness ? (
-        <div className="callout">网络域加载中：环境未同步之前，系统将默认阻断所有推理操作。</div>
+        <div className="callout">由于网络环境暂未同步，此时无法发起结构化业务。请等待后端注册完成。</div>
       ) : null}
 
       <div className="form-grid review-profile-grid">
@@ -263,9 +263,9 @@ export function StructuredReviewForm({
               }
               type="checkbox"
             />
-            <span>严格匹配规则（保留特性）</span>
+            <span>强制遵守审查匹配规则</span>
           </label>
-          <small>当前仅作为兼容字段透传给后端，后续将介入正式降级拦截。</small>
+          <small>当前仅作为兼容字段透传给引擎，预留后续严格卡点降级。</small>
         </label>
       </div>
 
