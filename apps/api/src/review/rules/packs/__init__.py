@@ -2,13 +2,22 @@ from __future__ import annotations
 
 from src.review.rules.packs.construction_scheme import get_construction_scheme_base_pack
 from src.review.rules.packs.construction_org import get_construction_org_base_pack
+from src.review.rules.packs.curtain_wall_installation import get_curtain_wall_installation_pack
+from src.review.rules.packs.demolition import get_demolition_pack
+from src.review.rules.packs.foundation_pit import get_foundation_pit_pack
 from src.review.rules.packs.gas_area_ops import get_gas_area_ops_pack
 from src.review.rules.packs.hazardous_special_scheme import get_hazardous_special_scheme_base_pack
 from src.review.rules.packs.hot_work import get_hot_work_pack
 from src.review.rules.packs.lifting_operations import get_lifting_operations_pack
+from src.review.rules.packs.lifting_installation_removal import get_lifting_installation_removal_pack
+from src.review.rules.packs.manual_bored_pile import get_manual_bored_pile_pack
 from src.review.rules.packs.review_support_material import get_review_support_material_base_pack
+from src.review.rules.packs.scaffold import get_scaffold_pack
+from src.review.rules.packs.formwork_support import get_formwork_support_pack
+from src.review.rules.packs.steel_structure_installation import get_steel_structure_installation_pack
 from src.review.rules.packs.supervision_plan import get_supervision_plan_base_pack
 from src.review.rules.packs.temporary_power import get_temporary_power_pack
+from src.review.rules.packs.underground_excavation import get_underground_excavation_pack
 from src.review.schema import PolicyPack
 
 
@@ -25,6 +34,15 @@ _SCENARIO_TAGS = {
     'temporary_power': 'temporary_power.base',
     'hot_work': 'hot_work.base',
     'gas_area_ops': 'gas_area_ops.base',
+    'foundation_pit': 'foundation_pit.base',
+    'formwork_support': 'formwork_support.base',
+    'lifting_installation_removal': 'lifting_installation_removal.base',
+    'scaffold': 'scaffold.base',
+    'demolition': 'demolition.base',
+    'underground_excavation': 'underground_excavation.base',
+    'curtain_wall_installation': 'curtain_wall_installation.base',
+    'manual_bored_pile': 'manual_bored_pile.base',
+    'steel_structure_installation': 'steel_structure_installation.base',
     'special_equipment': 'special_equipment.base',
     'working_at_height': 'working_at_height.base',
 }
@@ -60,6 +78,15 @@ def get_policy_pack_registry() -> dict[str, PolicyPack]:
         'temporary_power.base': get_temporary_power_pack(),
         'hot_work.base': get_hot_work_pack(),
         'gas_area_ops.base': get_gas_area_ops_pack(),
+        'foundation_pit.base': get_foundation_pit_pack(),
+        'formwork_support.base': get_formwork_support_pack(),
+        'lifting_installation_removal.base': get_lifting_installation_removal_pack(),
+        'scaffold.base': get_scaffold_pack(),
+        'demolition.base': get_demolition_pack(),
+        'underground_excavation.base': get_underground_excavation_pack(),
+        'curtain_wall_installation.base': get_curtain_wall_installation_pack(),
+        'manual_bored_pile.base': get_manual_bored_pile_pack(),
+        'steel_structure_installation.base': get_steel_structure_installation_pack(),
     }
     for discipline_tag, pack_id in _SCENARIO_TAGS.items():
         if pack_id in registry:

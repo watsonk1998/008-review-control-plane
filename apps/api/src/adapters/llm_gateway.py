@@ -163,6 +163,16 @@ class LLMGateway:
             return '停机窗口紧、作业并行度高且投入人力较大，存在组织与交叉作业压力。'
         if candidate.candidateId == 'hazardous_special_scheme_core_sections':
             return '危大专项方案缺少核心章节，难以支撑工艺、控制措施与人工复核。'
+        if candidate.candidateId == 'hazardous_special_scheme_staffing_completeness':
+            return '危大专项方案未明确施工管理、专职安全和特种作业人员的配备与分工。'
+        if candidate.candidateId == 'hazardous_special_scheme_acceptance_completeness':
+            return '危大专项方案缺少验收标准、程序或关键验收内容，验收闭环不足。'
+        if candidate.candidateId == 'hazardous_special_scheme_drawing_visibility':
+            return '危大专项方案相关图纸未稳定进入当前可视域，需人工复核原件。'
+        if candidate.candidateId == 'hazardous_special_scheme_risk_identification_completeness':
+            return '危大专项方案缺少风险辨识与分级章节，后续控制链条不完整。'
+        if candidate.candidateId == 'hazardous_special_scheme_layout_and_environment_completeness':
+            return '危大专项方案缺少施工平面布置或周边环境条件章节，作业边界与影响对象不清。'
         if candidate.candidateId == 'hazardous_special_scheme_attachment_visibility':
             return '专项方案存在附件或图纸可视域缺口，当前只能标记人工复核。'
         if candidate.candidateId == 'hazardous_special_scheme_calculation_evidence':
@@ -171,6 +181,24 @@ class LLMGateway:
             return '专项方案的应急处置安排与主要危险源匹配不足。'
         if candidate.candidateId == 'hazardous_special_scheme_measure_linkage':
             return '危险源、控制措施与监测监控未形成完整闭环，现场执行风险较高。'
+        if candidate.candidateId == 'foundation_pit_monitoring_and_drawings':
+            return '基坑工程监测章节或相关图纸未稳定进入可视域，当前需人工复核。'
+        if candidate.candidateId == 'foundation_pit_support_sequence_integrity':
+            return '基坑工程未明确支护、降水、土方开挖与加撑之间的关系链。'
+        if candidate.candidateId == 'foundation_pit_acceptance_completeness':
+            return '基坑工程关键验收内容不完整，后续验收边界不清。'
+        if candidate.candidateId == 'formwork_support_process_parameters':
+            return '模板支撑体系缺少技术参数、工艺流程或浇筑顺序等关键过程信息。'
+        if candidate.candidateId == 'formwork_support_calculation_traceability':
+            return '模板支撑体系未看到强度、刚度、稳定性或基础承载力等计算依据。'
+        if candidate.candidateId == 'formwork_support_acceptance_completeness':
+            return '模板支撑体系缺少明确的验收标准、程序或阶段验收内容。'
+        if candidate.candidateId == 'steel_structure_installation_lifting_scheme_integrity':
+            return '钢结构安装缺少构件参数、吊装设备选型或安装流程等关键方案信息。'
+        if candidate.candidateId == 'steel_structure_installation_support_and_unloading':
+            return '钢结构安装缺少临时支撑、拼装胎架或卸载条件等关键支撑链信息。'
+        if candidate.candidateId == 'steel_structure_installation_drawing_and_acceptance':
+            return '钢结构安装相关措施图纸或验收章节未稳定进入当前可视域，需人工复核。'
         return candidate.title
 
     def _fallback_recommendations(self, candidate) -> list[str]:
@@ -182,10 +210,24 @@ class LLMGateway:
             'construction_org_emergency_plan_targeted': ['按主要危险源补齐对应事故类型、联络链路和现场处置动作。'],
             'construction_org_shutdown_resource_conflict': ['复核停机窗口、班组组织与交叉作业顺序，必要时拆分作业面或增加错峰安排。'],
             'hazardous_special_scheme_core_sections': ['补齐专项方案的工程概况、编制依据、施工工艺、安全措施、应急处置与验算章节。'],
+            'hazardous_special_scheme_staffing_completeness': ['补齐施工管理、专职安全人员、特种作业人员及其他作业人员的配备和岗位职责。'],
+            'hazardous_special_scheme_acceptance_completeness': ['补齐验收标准、验收程序、验收人员组成和关键验收内容。'],
+            'hazardous_special_scheme_drawing_visibility': ['补充专项方案相关施工图纸、节点详图或布置图原件，并将人工复核结论写回正式报告。'],
+            'hazardous_special_scheme_risk_identification_completeness': ['补齐风险辨识与分级章节，明确主要风险因素及风险等级。'],
+            'hazardous_special_scheme_layout_and_environment_completeness': ['补齐施工平面布置和周边环境条件章节，明确作业边界与相邻影响对象。'],
             'hazardous_special_scheme_attachment_visibility': ['补充专项方案附件原件或图纸正文，并将人工复核结论写回正式报告。'],
             'hazardous_special_scheme_calculation_evidence': ['补充与起重/稳定性相关的验算书、设备选型依据和关键参数来源。'],
             'hazardous_special_scheme_emergency_targeted': ['围绕主要危险源补齐专项方案的应急处置流程、联络链路和现场动作。'],
             'hazardous_special_scheme_measure_linkage': ['将危险源、控制措施、监测监控和停工条件形成可执行闭环。'],
+            'foundation_pit_monitoring_and_drawings': ['补齐基坑监测监控章节及监测点、周边环境、施工顺序等相关图纸，并保留人工复核记录。'],
+            'foundation_pit_support_sequence_integrity': ['明确支护、降水、土方开挖与加撑的关系和施工顺序。'],
+            'foundation_pit_acceptance_completeness': ['补齐基坑位移、沉降、轴力、排水和侧壁完整性等验收要求。'],
+            'formwork_support_process_parameters': ['补齐模板支撑体系技术参数、工艺流程、预压方案及混凝土浇筑方式/顺序。'],
+            'formwork_support_calculation_traceability': ['补齐模板支撑体系强度、刚度、稳定性和基础承载力等计算依据。'],
+            'formwork_support_acceptance_completeness': ['补齐模板支撑体系的验收标准、程序和阶段验收内容。'],
+            'steel_structure_installation_lifting_scheme_integrity': ['补齐钢结构构件参数、吊装设备选型、站位路线和安装流程等关键方案信息。'],
+            'steel_structure_installation_support_and_unloading': ['明确拼装胎架、临时支撑、卸载条件及相关工装措施。'],
+            'steel_structure_installation_drawing_and_acceptance': ['补齐钢结构安装措施图纸及验收章节，并将人工复核结果写回正式报告。'],
         }
         return mapping.get(candidate.candidateId, ['结合证据补充整改措施。'])
 

@@ -298,6 +298,133 @@ def test_structured_review_executor_supports_hazardous_special_scheme(tmp_path: 
     assert result['summary']['visibilitySummary']['manualReviewNeeded'] is True
 
 
+def test_structured_review_executor_expands_hazardous_base_core_sections(tmp_path: Path):
+    sample = tmp_path / 'hazardous_special_scheme_base_core.md'
+    sample.write_text(
+        '# 危大专项施工方案\n\n'
+        '## 工程概况\n项目名称：危大专项核心核验\n'
+        '## 编制依据\n依据专项审查要求编制。\n'
+        '## 施工计划\n本专项计划分段实施。\n'
+        '## 施工工艺技术\n明确施工方法。\n'
+        '## 施工保证措施\n采取安全保证措施。\n'
+        '## 应急处置措施\n设置应急联络。\n'
+        '## 计算书\n附计算书。\n',
+        encoding='utf-8',
+    )
+    executor = StructuredReviewExecutor(document_loader=DocumentLoader(), llm_gateway=DummyLLM(), fast_adapter=None)
+    result = executor.run_sync(
+        task_id='hazardous-core-upgrade-test',
+        query='对该危大专项方案执行正式结构化审查',
+        source_document_path=str(sample),
+        fixture_id='hazardous-core-upgrade-fixture',
+        document_type='hazardous_special_scheme',
+    )
+
+    issue_titles = {issue['title'] for issue in result['issues']}
+    assert '危大专项方案核心章节不完整' in issue_titles
+    assert '危大专项方案缺少人员配备与分工章节' in issue_titles
+    assert '危大专项方案缺少验收要求章节' in issue_titles
+    assert '危大专项方案缺少风险辨识与分级章节' in issue_titles
+    assert '危大专项方案缺少平面布置或周边环境章节' in issue_titles
+    drawing_issue = next(issue for issue in result['issues'] if issue['title'] == '危大专项方案相关图纸需人工复核')
+    assert drawing_issue['manualReviewNeeded'] is True
+    assert drawing_issue['manualReviewReason'] == 'drawing_visibility_gap'
+    assert drawing_issue['issueKind'] == 'visibility_gap'
+
+
+def test_structured_review_executor_selects_foundation_pit_pack_and_keeps_drawing_gap_manual(tmp_path: Path):
+    sample = tmp_path / 'foundation_pit_hazardous.md'
+    sample.write_text(
+        '# 基坑工程专项施工方案\n\n'
+        '## 工程概况\n基坑工程概况。\n'
+        '## 周边环境条件\n邻近道路及管线。\n'
+        '## 编制依据\n依据规范编制。\n'
+        '## 施工计划\n基坑工程施工进度安排。\n'
+        '## 风险辨识与分级\n开展风险辨识。\n'
+        '## 施工工艺技术\n包含支护、降水、土方开挖与加撑关系。\n'
+        '## 施工保证措施\n包含监测监控措施。\n'
+        '## 施工管理及作业人员配备和分工\n明确岗位职责。\n'
+        '## 验收要求\n明确位移、沉降和轴力控制。\n'
+        '## 应急处置措施\n设置应急联络。\n',
+        encoding='utf-8',
+    )
+    executor = StructuredReviewExecutor(document_loader=DocumentLoader(), llm_gateway=DummyLLM(), fast_adapter=None)
+    result = executor.run_sync(
+        task_id='foundation-pit-pack-test',
+        query='对该危大专项方案执行正式结构化审查',
+        source_document_path=str(sample),
+        fixture_id='foundation-pit-pack-fixture',
+        document_type='hazardous_special_scheme',
+    )
+
+    assert 'foundation_pit.base' in result['resolvedProfile']['policyPackIds']
+    issue_titles = {issue['title'] for issue in result['issues']}
+    assert '基坑工程监测图纸或监测章节需人工复核' in issue_titles
+    issue = next(issue for issue in result['issues'] if issue['title'] == '基坑工程监测图纸或监测章节需人工复核')
+    assert issue['manualReviewNeeded'] is True
+    assert issue['manualReviewReason'] == 'drawing_visibility_gap'
+    assert issue['issueKind'] == 'visibility_gap'
+
+
+def test_structured_review_executor_selects_formwork_support_pack(tmp_path: Path):
+    sample = tmp_path / 'formwork_support_hazardous.md'
+    sample.write_text(
+        '# 模板支撑体系专项施工方案\n\n'
+        '## 工程概况\n模板支撑体系工程概况。\n'
+        '## 编制依据\n依据规范编制。\n'
+        '## 施工计划\n施工安排。\n'
+        '## 风险辨识与分级\n开展风险辨识。\n'
+        '## 施工管理及作业人员配备和分工\n明确岗位职责。\n'
+        '## 验收要求\n明确验收程序。\n'
+        '## 应急处置措施\n应急安排。\n',
+        encoding='utf-8',
+    )
+    executor = StructuredReviewExecutor(document_loader=DocumentLoader(), llm_gateway=DummyLLM(), fast_adapter=None)
+    result = executor.run_sync(
+        task_id='formwork-support-pack-test',
+        query='对该危大专项方案执行正式结构化审查',
+        source_document_path=str(sample),
+        fixture_id='formwork-support-pack-fixture',
+        document_type='hazardous_special_scheme',
+    )
+
+    assert 'formwork_support.base' in result['resolvedProfile']['policyPackIds']
+    issue_titles = {issue['title'] for issue in result['issues']}
+    assert '模板支撑体系关键工艺参数或浇筑顺序不完整' in issue_titles
+    assert '模板支撑体系缺少可追溯计算依据' in issue_titles
+
+
+def test_structured_review_executor_selects_steel_structure_pack_and_coexists_with_lifting(tmp_path: Path):
+    sample = tmp_path / 'steel_structure_installation_hazardous.md'
+    sample.write_text(
+        '# 钢结构安装工程专项施工方案\n\n'
+        '## 工程概况\n钢结构安装工程概况。\n'
+        '## 编制依据\n依据规范编制。\n'
+        '## 施工计划\n施工安排。\n'
+        '## 施工工艺技术\n钢构件安装；采用50T汽车吊；Q计=12.5t。\n'
+        '## 风险辨识与分级\n开展风险辨识。\n'
+        '## 施工管理及作业人员配备和分工\n明确岗位职责。\n'
+        '## 应急处置措施\n应急安排。\n'
+        '## 计算书及相关施工图纸\n附计算书。\n',
+        encoding='utf-8',
+    )
+    executor = StructuredReviewExecutor(document_loader=DocumentLoader(), llm_gateway=DummyLLM(), fast_adapter=None)
+    result = executor.run_sync(
+        task_id='steel-structure-pack-test',
+        query='对该危大专项方案执行正式结构化审查',
+        source_document_path=str(sample),
+        fixture_id='steel-structure-pack-fixture',
+        document_type='hazardous_special_scheme',
+    )
+
+    selected_packs = set(result['resolvedProfile']['policyPackIds'])
+    assert 'steel_structure_installation.base' in selected_packs
+    assert 'lifting_operations.base' in selected_packs
+    issue_titles = {issue['title'] for issue in result['issues']}
+    assert '钢结构安装缺少临时支撑或卸载条件' in issue_titles
+    assert '钢结构安装图纸或验收章节需人工复核' in issue_titles
+
+
 def test_document_loader_parse_pdf_document_uses_explicit_pdf_parser():
     loader = DocumentLoader()
     result = loader.parse_document(SAMPLE_PDF)

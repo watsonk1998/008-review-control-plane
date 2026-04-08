@@ -24,6 +24,7 @@ def resolve_review_profile(
             ]
         )
     )
+    discipline_tags = _normalize_hazardous_type_tags(document_type, discipline_tags)
     selected_packs = select_policy_packs(
         document_type,
         discipline_tags,
@@ -69,4 +70,16 @@ def _infer_discipline_tags(facts: ExtractedFacts) -> list[str]:
         tags.append('special_equipment')
     if 'working_at_height' in (facts.hazardFacts.get('highRiskCategories') or []):
         tags.append('working_at_height')
+    for tag in facts.projectFacts.get('hazardousSchemeTypeHints') or []:
+        if tag not in tags:
+            tags.append(tag)
+    return tags
+
+
+def _normalize_hazardous_type_tags(document_type: str, discipline_tags: list[str]) -> list[str]:
+    tags = list(discipline_tags)
+    if document_type != 'hazardous_special_scheme':
+        return tags
+    if 'lifting_installation_removal' in tags and 'lifting_operations' in tags:
+        tags = [tag for tag in tags if tag != 'lifting_operations']
     return tags

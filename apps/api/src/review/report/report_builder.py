@@ -341,6 +341,8 @@ class StructuredReviewReportBuilder:
         'parser_limited_pdf_requires_manual_review': '当前 PDF 仅完成基础文本识别，建议结合原件人工复核。',
         'weak_section_structure_signal': '关键章节或附件边界重复，正式定位结果不稳定。',
         'visibility_gap': '当前问题受附件可视域限制，需人工核验原件。',
+        'drawing_visibility_gap': '相关图纸或节点详图未稳定进入当前可视域，需结合原件人工复核。',
+        'complex_calculation_requires_manual_confirmation': '当前仅能识别存在复杂验算主题，尚不足以自动判断其充分性或正确性。',
         'manual_confirmation_required': '当前问题仍需人工确认。',
     }
     _BLOCKING_REASON_LABELS = {
@@ -354,6 +356,7 @@ class StructuredReviewReportBuilder:
         'parser_limited_source': '当前证据受 PDF 解析能力限制，建议结合原件复核。',
         'document_evidence_unavailable': '文档侧证据不足以支撑硬性结论。',
         'policy_evidence_unavailable': '条文依据链未完全闭合。',
+        'drawing_visibility_gap': '相关图纸尚未进入当前稳定可视域。',
         'manual_confirmation_required': '仍需人工确认现场条件或附件内容。',
     }
     _VISIBILITY_VALUE_LABELS = {
@@ -370,6 +373,9 @@ class StructuredReviewReportBuilder:
         'hazard.calculationEvidencePresent': '尚未提取到验算依据',
         'hazard.calculatedLiftWeightTon': '尚未提取到计算吊重参数',
         'hazard.craneCapacityTon': '尚未提取到起重设备额定吨位',
+        'project.foundationPitSupportSequencePresent': '尚未提取到基坑支护/降水/开挖关系',
+        'project.formworkPourSequencePresent': '尚未提取到模板支撑预压或浇筑顺序',
+        'project.steelSupportUnloadingPresent': '尚未提取到钢结构临时支撑或卸载条件',
         'schedule.shutdownWindowDays': '尚未提取到停机窗口时长',
         'resource.laborTotal': '尚未提取到劳动力总量',
         'project.duplicateSections': '章节结构重复导致定位不稳定',
@@ -391,6 +397,9 @@ class StructuredReviewReportBuilder:
         'calculationEvidencePresent': '已提取验算依据',
         'measureSectionPresent': '已识别风险控制措施章节',
         'monitoringSectionPresent': '已识别监测监控章节',
+        'foundationPitSupportSequencePresent': '已识别基坑支护/降水/开挖关系',
+        'formworkPourSequencePresent': '已识别模板支撑预压/浇筑顺序',
+        'steelSupportUnloadingPresent': '已识别钢结构临时支撑/卸载条件',
     }
     _HIGH_RISK_CATEGORY_LABELS = {
         'lifting_operations': '起重吊装',
@@ -412,6 +421,19 @@ class StructuredReviewReportBuilder:
         'emergencyPlan': '应急预案',
         'calculationBook': '计算书/验算书',
         'monitoringPlan': '监测监控',
+        'staffingAndRoles': '人员配备与分工',
+        'acceptanceRequirements': '验收要求',
+        'drawingSet': '相关施工图纸',
+        'riskIdentification': '风险辨识与分级',
+        'siteLayout': '施工平面布置',
+        'surroundingConditions': '周边环境条件',
+        'participantResponsibilities': '参建各方责任主体单位',
+        'technicalParameters': '技术参数',
+        'processFlow': '工艺流程',
+        'inspectionRequirements': '检查要求',
+        'organizationMeasures': '组织保障措施',
+        'technicalMeasures': '技术措施',
+        'monitoringMeasures': '监测监控措施',
     }
     _L1_STRUCTURE_TITLES = {
         '施工组织设计核心章节不完整',
@@ -1431,6 +1453,9 @@ class StructuredReviewReportBuilder:
         direct = {
             'hazard.calculatedLiftWeightTon': '计算起重量',
             'hazard.craneCapacityTon': '起重设备额定吨位',
+            'project.foundationPitSupportSequencePresent': '基坑支护/降水/开挖关系',
+            'project.formworkPourSequencePresent': '模板支撑预压/浇筑顺序',
+            'project.steelSupportUnloadingPresent': '钢结构临时支撑/卸载条件',
             'schedule.shutdownWindowDays': '停机窗口',
             'resource.laborTotal': '劳动力投入',
             'emergency.planTitles': '针对性应急预案标题',
