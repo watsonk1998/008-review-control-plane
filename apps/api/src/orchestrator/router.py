@@ -20,6 +20,8 @@ def infer_review_document_type(query: str, fixture_title: str | None = None, req
     if requested_document_type:
         return requested_document_type
     text = f'{query} {fixture_title or ""}'
+    if '配网' in text or ('停电施工作业' in text and '专项施工方案' in text):
+        return 'distribution_network_special_scheme'
     if '专项施工方案' in text or '危大' in text:
         return 'hazardous_special_scheme'
     if '施工组织设计' in text or '施工组织' in text:
@@ -32,6 +34,7 @@ def infer_review_document_type(query: str, fixture_title: str | None = None, req
 
 
 _TAG_KEYWORDS = {
+    'power_outage_work': ['停电施工作业'],
     'lifting_operations': ['吊装', '起重', '行车'],
     'temporary_power': ['临电', '施工用电', '停送电'],
     'hot_work': ['动火'],
@@ -56,6 +59,19 @@ def infer_review_discipline_tags(
     return tags
 
 
+def _normalize_discipline_tags_for_document_type(document_type: str, discipline_tags: list[str]) -> list[str]:
+    normalized: list[str] = []
+    for tag in discipline_tags:
+        mapped = tag
+        if document_type == 'hazardous_special_scheme' and tag == 'lifting_operations':
+            mapped = 'lifting_installation_removal'
+        if document_type == 'distribution_network_special_scheme' and tag == 'temporary_power':
+            mapped = 'power_outage_work'
+        if mapped not in normalized:
+            normalized.append(mapped)
+    return normalized
+
+
 def choose_structured_review_profile(
     query: str,
     fixture_title: str | None = None,
@@ -66,7 +82,10 @@ def choose_structured_review_profile(
     strict_mode: bool | None = None,
 ) -> dict[str, object]:
     document_type = infer_review_document_type(query, fixture_title, requested_document_type)
-    discipline_tags = infer_review_discipline_tags(query, fixture_title, requested_discipline_tags)
+    discipline_tags = _normalize_discipline_tags_for_document_type(
+        document_type,
+        infer_review_discipline_tags(query, fixture_title, requested_discipline_tags),
+    )
     hinted_packs = [
         pack.id
         for pack in select_policy_packs(

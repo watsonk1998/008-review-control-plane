@@ -301,6 +301,7 @@ class StructuredReviewReportBuilder:
         'construction_org': '施工组织设计',
         'construction_scheme': '施工方案',
         'hazardous_special_scheme': '危大专项施工方案',
+        'distribution_network_special_scheme': '配网工程专项施工方案',
         'supervision_plan': '监理规划',
         'review_support_material': '审查支持材料',
     }

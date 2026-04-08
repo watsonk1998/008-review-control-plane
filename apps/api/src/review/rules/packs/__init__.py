@@ -4,6 +4,7 @@ from src.review.rules.packs.construction_scheme import get_construction_scheme_b
 from src.review.rules.packs.construction_org import get_construction_org_base_pack
 from src.review.rules.packs.curtain_wall_installation import get_curtain_wall_installation_pack
 from src.review.rules.packs.demolition import get_demolition_pack
+from src.review.rules.packs.distribution_network_special_scheme import get_distribution_network_special_scheme_base_pack
 from src.review.rules.packs.foundation_pit import get_foundation_pit_pack
 from src.review.rules.packs.gas_area_ops import get_gas_area_ops_pack
 from src.review.rules.packs.hazardous_special_scheme import get_hazardous_special_scheme_base_pack
@@ -11,6 +12,7 @@ from src.review.rules.packs.hot_work import get_hot_work_pack
 from src.review.rules.packs.lifting_operations import get_lifting_operations_pack
 from src.review.rules.packs.lifting_installation_removal import get_lifting_installation_removal_pack
 from src.review.rules.packs.manual_bored_pile import get_manual_bored_pile_pack
+from src.review.rules.packs.power_outage_work import get_power_outage_work_pack
 from src.review.rules.packs.review_support_material import get_review_support_material_base_pack
 from src.review.rules.packs.scaffold import get_scaffold_pack
 from src.review.rules.packs.formwork_support import get_formwork_support_pack
@@ -25,6 +27,7 @@ _BASE_PACKS = {
     'construction_org': 'construction_org.base',
     'construction_scheme': 'construction_scheme.base',
     'hazardous_special_scheme': 'hazardous_special_scheme.base',
+    'distribution_network_special_scheme': 'distribution_network_special_scheme.base',
     'supervision_plan': 'supervision_plan.base',
     'review_support_material': 'review_support_material.base',
 }
@@ -43,6 +46,7 @@ _SCENARIO_TAGS = {
     'curtain_wall_installation': 'curtain_wall_installation.base',
     'manual_bored_pile': 'manual_bored_pile.base',
     'steel_structure_installation': 'steel_structure_installation.base',
+    'power_outage_work': 'power_outage_work.base',
     'special_equipment': 'special_equipment.base',
     'working_at_height': 'working_at_height.base',
 }
@@ -71,6 +75,7 @@ def get_policy_pack_registry() -> dict[str, PolicyPack]:
     registry = {
         'construction_org.base': get_construction_org_base_pack(),
         'hazardous_special_scheme.base': get_hazardous_special_scheme_base_pack(),
+        'distribution_network_special_scheme.base': get_distribution_network_special_scheme_base_pack(),
         'construction_scheme.base': get_construction_scheme_base_pack(),
         'supervision_plan.base': get_supervision_plan_base_pack(),
         'review_support_material.base': get_review_support_material_base_pack(),
@@ -87,6 +92,7 @@ def get_policy_pack_registry() -> dict[str, PolicyPack]:
         'curtain_wall_installation.base': get_curtain_wall_installation_pack(),
         'manual_bored_pile.base': get_manual_bored_pile_pack(),
         'steel_structure_installation.base': get_steel_structure_installation_pack(),
+        'power_outage_work.base': get_power_outage_work_pack(),
     }
     for discipline_tag, pack_id in _SCENARIO_TAGS.items():
         if pack_id in registry:

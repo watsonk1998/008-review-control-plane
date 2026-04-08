@@ -2,7 +2,13 @@ export type TaskType = "knowledge_qa" | "deep_research" | "document_research" | 
 export type CapabilityMode = "auto" | "deeptutor" | "gpt_researcher" | "fast" | "llm_only";
 export type TaskStatus = "created" | "planned" | "running" | "waiting_external" | "succeeded" | "failed" | "partial";
 export type ReviewLayer = "L1" | "L2" | "L3";
-export type ReviewDocumentType = "construction_org" | "construction_scheme" | "hazardous_special_scheme" | "supervision_plan" | "review_support_material";
+export type ReviewDocumentType =
+  | "construction_org"
+  | "construction_scheme"
+  | "hazardous_special_scheme"
+  | "distribution_network_special_scheme"
+  | "supervision_plan"
+  | "review_support_material";
 export type AttachmentVisibility = "parsed" | "attachment_unparsed" | "referenced_only" | "missing" | "unknown";
 export type FindingType = "hard_evidence" | "engineering_inference" | "visibility_gap" | "suggestion_enhancement";
 export type ConfidenceLevel = "low" | "medium" | "high";
@@ -481,15 +487,48 @@ export interface ReviewerDecisionUpdateRequest {
 export interface SupportScopeResponse {
   documentTypes: Array<{
     documentType: ReviewDocumentType;
+    label: string;
     readiness: "official" | "experimental" | "skeleton";
   }>;
   packs: Array<{
     packId: string;
+    label: string;
     readiness: "ready" | "placeholder";
     docTypes: string[];
     disciplineTags: string[];
     defaultEnabled: boolean;
     description: string;
     promotionCriteria: Record<string, boolean>;
+    entryKey?: string | null;
+    familyKey?: string | null;
+    role?: string | null;
+    tier?: number | null;
+  }>;
+  capabilityTree: Array<{
+    entryKey: string;
+    label: string;
+    families: Array<{
+      familyKey: string;
+      documentType: ReviewDocumentType;
+      label: string;
+      readiness: "official" | "experimental" | "skeleton";
+      basePackId: string;
+      basePackReadiness: "ready" | "placeholder";
+      children: Array<{
+        tag: string;
+        packId: string;
+        label: string;
+        readiness: "ready" | "placeholder";
+        promotionCriteria: Record<string, boolean>;
+      }>;
+    }>;
+    crossCuttingModules: Array<{
+      tag: string;
+      packId: string;
+      label: string;
+      readiness: "ready" | "placeholder";
+      docTypes: string[];
+      promotionCriteria: Record<string, boolean>;
+    }>;
   }>;
 }

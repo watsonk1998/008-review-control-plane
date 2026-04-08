@@ -27,6 +27,7 @@ ReviewDocumentType = Literal[
     'construction_org',
     'construction_scheme',
     'hazardous_special_scheme',
+    'distribution_network_special_scheme',
     'supervision_plan',
     'review_support_material',
 ]

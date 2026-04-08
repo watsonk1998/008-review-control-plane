@@ -32,7 +32,7 @@ const TASK_OPTIONS: Array<{ value: TaskType; label: string; hint: string }> = [
   {
     value: "structured_review",
     label: "正式审查",
-    hint: "支持 fixture 或上传文档；P0 正式支持 construction_org / hazardous_special_scheme。",
+    hint: "支持 fixture 或上传文档；当前稳定支持 construction_org / hazardous_special_scheme，已补充专项方案三级能力树展示。",
   },
   {
     value: "review_assist",

@@ -487,6 +487,37 @@ def test_structured_review_executor_keeps_old_lifting_pack_for_construction_org(
     assert 'lifting_installation_removal.base' not in selected_packs
 
 
+def test_structured_review_executor_selects_distribution_network_base_and_power_outage_work(tmp_path: Path):
+    sample = tmp_path / 'distribution_network_power_outage.md'
+    sample.write_text(
+        '# 配网工程停电施工作业专项施工方案\n\n'
+        '## 工程概况\n配网改造项目概况。\n'
+        '## 编制依据\n依据配网停电作业要求编制。\n'
+        '## 施工计划\n停电窗口内实施。\n'
+        '## 施工工艺技术\n执行停送电作业流程。\n'
+        '## 安全保证措施\n仅提供概括性措施。\n',
+        encoding='utf-8',
+    )
+    executor = StructuredReviewExecutor(document_loader=DocumentLoader(), llm_gateway=DummyLLM(), fast_adapter=None)
+    result = executor.run_sync(
+        task_id='distribution-network-power-outage-test',
+        query='对该配网工程专项施工方案执行正式结构化审查',
+        source_document_path=str(sample),
+        fixture_id='distribution-network-power-outage-fixture',
+        document_type='distribution_network_special_scheme',
+        discipline_tags=['temporary_power'],
+    )
+
+    selected_packs = set(result['resolvedProfile']['policyPackIds'])
+    assert 'distribution_network_special_scheme.base' in selected_packs
+    assert 'power_outage_work.base' in selected_packs
+    assert 'temporary_power.base' not in selected_packs
+    assert 'power_outage_work' in result['resolvedProfile']['disciplineTags']
+    assert 'temporary_power' not in result['resolvedProfile']['disciplineTags']
+    issue_titles = {issue['title'] for issue in result['issues']}
+    assert '临时用电/停送电控制链路不完整' in issue_titles
+
+
 def test_structured_review_executor_selects_scaffold_pack(tmp_path: Path):
     sample = tmp_path / 'scaffold_hazardous.md'
     sample.write_text(

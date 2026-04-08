@@ -1444,6 +1444,7 @@ def test_support_scope_route_returns_official_and_placeholder_scope():
     document_types = {item['documentType']: item['readiness'] for item in payload['documentTypes']}
     assert document_types['construction_org'] == 'official'
     assert document_types['hazardous_special_scheme'] == 'official'
+    assert document_types['distribution_network_special_scheme'] == 'experimental'
     assert document_types['construction_scheme'] == 'experimental'
     assert document_types['supervision_plan'] == 'experimental'
     assert document_types['review_support_material'] == 'experimental'
@@ -1458,12 +1459,28 @@ def test_support_scope_route_returns_official_and_placeholder_scope():
     assert packs['foundation_pit.base']['readiness'] == 'ready'
     assert packs['formwork_support.base']['readiness'] == 'ready'
     assert packs['lifting_installation_removal.base']['readiness'] == 'ready'
+    assert packs['distribution_network_special_scheme.base']['readiness'] == 'ready'
+    assert packs['power_outage_work.base']['readiness'] == 'ready'
     assert packs['scaffold.base']['readiness'] == 'ready'
     assert packs['demolition.base']['readiness'] == 'ready'
     assert packs['underground_excavation.base']['readiness'] == 'ready'
     assert packs['curtain_wall_installation.base']['readiness'] == 'ready'
     assert packs['manual_bored_pile.base']['readiness'] == 'ready'
     assert packs['steel_structure_installation.base']['readiness'] == 'ready'
+    capability_tree = payload['capabilityTree']
+    assert capability_tree[0]['entryKey'] == 'special_scheme_review'
+    families = {item['documentType']: item for item in capability_tree[0]['families']}
+    assert families['hazardous_special_scheme']['label'] == '危大工程专项施工方案'
+    assert families['distribution_network_special_scheme']['label'] == '配网工程专项施工方案'
+    hazardous_children = {item['tag'] for item in families['hazardous_special_scheme']['children']}
+    assert 'foundation_pit' in hazardous_children
+    assert 'steel_structure_installation' in hazardous_children
+    distribution_children = {item['tag'] for item in families['distribution_network_special_scheme']['children']}
+    assert distribution_children == {'power_outage_work'}
+    cross_modules = {item['tag'] for item in capability_tree[0]['crossCuttingModules']}
+    assert 'temporary_power' in cross_modules
+    assert 'hot_work' in cross_modules
+    assert 'gas_area_ops' in cross_modules
     assert any(item['readiness'] == 'placeholder' for item in packs.values())
 
 

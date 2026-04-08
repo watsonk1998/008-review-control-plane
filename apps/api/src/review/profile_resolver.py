@@ -79,22 +79,26 @@ def _infer_discipline_tags(facts: ExtractedFacts) -> list[str]:
 
 def _normalize_hazardous_type_tags(document_type: str, discipline_tags: list[str]) -> list[str]:
     tags = list(discipline_tags)
-    if document_type != 'hazardous_special_scheme':
-        return tags
     normalized: list[str] = []
     for tag in tags:
-        mapped = 'lifting_installation_removal' if tag == 'lifting_operations' else tag
+        mapped = tag
+        if document_type == 'hazardous_special_scheme' and tag == 'lifting_operations':
+            mapped = 'lifting_installation_removal'
+        if document_type == 'distribution_network_special_scheme' and tag == 'temporary_power':
+            mapped = 'power_outage_work'
         if mapped not in normalized:
             normalized.append(mapped)
     return normalized
 
 
 def _normalize_requested_pack_ids(document_type: str, requested_pack_ids: list[str]) -> list[str]:
-    if document_type != 'hazardous_special_scheme':
-        return list(requested_pack_ids)
     normalized: list[str] = []
     for pack_id in requested_pack_ids:
-        mapped = 'lifting_installation_removal.base' if pack_id == 'lifting_operations.base' else pack_id
+        mapped = pack_id
+        if document_type == 'hazardous_special_scheme' and pack_id == 'lifting_operations.base':
+            mapped = 'lifting_installation_removal.base'
+        if document_type == 'distribution_network_special_scheme' and pack_id == 'temporary_power.base':
+            mapped = 'power_outage_work.base'
         if mapped not in normalized:
             normalized.append(mapped)
     return normalized

@@ -26,6 +26,7 @@ def _extract_value(blocks: list[dict[str, Any]], prefix: str) -> tuple[str | Non
 
 
 _DOC_TYPE_HINTS = {
+    'distribution_network_special_scheme': ['配网工程专项施工方案', '配网专项施工方案', '停电施工作业专项施工方案'],
     'hazardous_special_scheme': ['专项施工方案', '危大'],
     'construction_org': ['施工组织设计', '施工组织'],
     'construction_scheme': ['施工方案'],

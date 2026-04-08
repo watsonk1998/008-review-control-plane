@@ -1145,7 +1145,12 @@ class ReviewRuleEngine:
         pack_by_rule: dict[str, tuple[str, str]],
         selected_pack_ids: set[str],
     ) -> list[RuleHit]:
-        if 'temporary_power.base' not in selected_pack_ids or not ({'construction_org.base', 'construction_scheme.base'} & selected_pack_ids):
+        has_power_pack = bool({'temporary_power.base', 'power_outage_work.base'} & selected_pack_ids)
+        has_supported_base = bool(
+            {'construction_org.base', 'construction_scheme.base', 'distribution_network_special_scheme.base'}
+            & selected_pack_ids
+        )
+        if not has_power_pack or not has_supported_base:
             return []
         if not facts.hazardFacts.get('temporaryPower'):
             return []
@@ -1154,7 +1159,8 @@ class ReviewRuleEngine:
         measures_ready = bool(facts.hazardFacts.get('measureSectionPresent'))
         monitoring_ready = bool(facts.hazardFacts.get('monitoringSectionPresent'))
         status = 'pass' if measures_ready and monitoring_ready and has_power_title else 'hit'
-        pack_id, pack_readiness = pack_by_rule.get('temporary_power_control_linkage', ('temporary_power.base', 'ready'))
+        default_pack_id = 'power_outage_work.base' if 'power_outage_work.base' in selected_pack_ids else 'temporary_power.base'
+        pack_id, pack_readiness = pack_by_rule.get('temporary_power_control_linkage', (default_pack_id, 'ready'))
         return [
             RuleHit(
                 ruleId='temporary_power_control_linkage',
