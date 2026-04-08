@@ -6,23 +6,7 @@ from pathlib import Path
 
 from md2pdf.core import md2pdf
 
-_DEFAULT_PDF_CSS = """
-@page {
-  size: A4 landscape;
-  margin: 12mm;
-}
-
-html, body {
-  margin: 0;
-  padding: 0;
-  background: #fff;
-}
-
-body {
-  font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
-  color: #1f2937;
-}
-"""
+_DEFAULT_PDF_CSS = ""
 
 
 def _wrap_html_document(*, report_html: str, report_print_css: str, title: str | None = None) -> str:
@@ -69,7 +53,7 @@ async def _render_html_pdf_via_playwright(
                 landscape=True,
                 print_background=True,
                 prefer_css_page_size=True,
-                margin={'top': '12mm', 'right': '12mm', 'bottom': '12mm', 'left': '12mm'},
+                display_header_footer=False,
             )
             await browser.close()
     except PlaywrightError as exc:  # pragma: no cover - exercised via fallback tests
@@ -108,7 +92,10 @@ async def render_structured_review_pdf(
             output_path=output_path,
             title=title,
         )
-    except Exception:
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        print(f"PLAYWRIGHT CRASHED! Falling back to md2pdf. Error: {e}")
         if markdown_fallback is None:
             raise
         return await asyncio.to_thread(_render_markdown_fallback_pdf, markdown_fallback, output_path)
