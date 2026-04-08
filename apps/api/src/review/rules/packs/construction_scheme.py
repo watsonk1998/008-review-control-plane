@@ -8,6 +8,10 @@ def get_construction_scheme_base_pack() -> PolicyPack:
         id='construction_scheme.base',
         version='1.0.0',
         docTypes=['construction_scheme'],
+        label='一般施工方案审查',
+        role='base',
+        familyKey='construction_scheme',
+        tier='1-object',
         disciplineTags=['lifting_operations', 'temporary_power', 'hot_work'],
         extractorIds=['project_facts', 'hazard_facts', 'schedule_resource_facts'],
         ruleIds=[

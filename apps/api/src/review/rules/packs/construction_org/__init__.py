@@ -8,6 +8,10 @@ def get_construction_org_base_pack() -> PolicyPack:
         id='construction_org.base',
         version='1.0.0',
         docTypes=['construction_org'],
+        label='施工组织设计审查',
+        role='base',
+        familyKey='construction_org',
+        tier='1-object',
         disciplineTags=['electromechanical', 'lifting_operations', 'temporary_power', 'hot_work', 'gas_area_ops', 'special_equipment'],
         extractorIds=['project_facts', 'hazard_facts', 'schedule_resource_facts'],
         ruleIds=[

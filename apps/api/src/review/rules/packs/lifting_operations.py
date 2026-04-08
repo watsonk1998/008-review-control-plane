@@ -8,6 +8,9 @@ def get_lifting_operations_pack() -> PolicyPack:
         id='lifting_operations.base',
         version='1.0.0',
         docTypes=['construction_org', 'hazardous_special_scheme', 'construction_scheme'],
+        label='起重吊装（横向风险）',
+        role='cross_cutting',
+        tier=None,
         disciplineTags=['lifting_operations'],
         extractorIds=['hazard_facts', 'schedule_resource_facts'],
         ruleIds=[

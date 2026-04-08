@@ -8,6 +8,10 @@ def get_steel_structure_installation_pack() -> PolicyPack:
         id='steel_structure_installation.base',
         version='1.0.0',
         docTypes=['hazardous_special_scheme'],
+        label='钢结构安装',
+        role='third_level',
+        familyKey='hazardous_special_scheme',
+        tier='3',
         disciplineTags=['steel_structure_installation'],
         extractorIds=['project_facts', 'hazard_facts'],
         ruleIds=[

@@ -8,6 +8,10 @@ def get_foundation_pit_pack() -> PolicyPack:
         id='foundation_pit.base',
         version='1.0.0',
         docTypes=['hazardous_special_scheme'],
+        label='基坑工程',
+        role='third_level',
+        familyKey='hazardous_special_scheme',
+        tier='3',
         disciplineTags=['foundation_pit'],
         extractorIds=['project_facts', 'hazard_facts'],
         ruleIds=[

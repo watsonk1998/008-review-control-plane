@@ -8,6 +8,10 @@ def get_review_support_material_base_pack() -> PolicyPack:
         id='review_support_material.base',
         version='1.0.0',
         docTypes=['review_support_material'],
+        label='审查辅助材料（边界说明）',
+        role='base',
+        familyKey='review_support_material',
+        tier='1-object',
         extractorIds=['project_facts'],
         ruleIds=[
             'review_support_material_context_only',

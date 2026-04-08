@@ -8,6 +8,10 @@ def get_demolition_pack() -> PolicyPack:
         id='demolition.base',
         version='1.0.0',
         docTypes=['hazardous_special_scheme'],
+        label='拆除工程',
+        role='third_level',
+        familyKey='hazardous_special_scheme',
+        tier='3',
         disciplineTags=['demolition'],
         extractorIds=['project_facts', 'hazard_facts'],
         ruleIds=[

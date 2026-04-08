@@ -8,6 +8,10 @@ def get_formwork_support_pack() -> PolicyPack:
         id='formwork_support.base',
         version='1.0.0',
         docTypes=['hazardous_special_scheme'],
+        label='模板支撑体系',
+        role='third_level',
+        familyKey='hazardous_special_scheme',
+        tier='3',
         disciplineTags=['formwork_support'],
         extractorIds=['project_facts', 'hazard_facts'],
         ruleIds=[

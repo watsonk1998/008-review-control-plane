@@ -8,6 +8,10 @@ def get_curtain_wall_installation_pack() -> PolicyPack:
         id='curtain_wall_installation.base',
         version='1.0.0',
         docTypes=['hazardous_special_scheme'],
+        label='建筑幕墙安装',
+        role='third_level',
+        familyKey='hazardous_special_scheme',
+        tier='3',
         disciplineTags=['curtain_wall_installation'],
         extractorIds=['project_facts', 'hazard_facts'],
         ruleIds=[

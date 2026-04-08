@@ -8,6 +8,10 @@ def get_underground_excavation_pack() -> PolicyPack:
         id='underground_excavation.base',
         version='1.0.0',
         docTypes=['hazardous_special_scheme'],
+        label='暗挖工程',
+        role='third_level',
+        familyKey='hazardous_special_scheme',
+        tier='3',
         disciplineTags=['underground_excavation'],
         extractorIds=['project_facts', 'hazard_facts'],
         ruleIds=[

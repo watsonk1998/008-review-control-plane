@@ -8,6 +8,10 @@ def get_hazardous_special_scheme_base_pack() -> PolicyPack:
         id='hazardous_special_scheme.base',
         version='1.0.0',
         docTypes=['hazardous_special_scheme'],
+        label='危大工程专项施工方案',
+        role='base',
+        familyKey='hazardous_special_scheme',
+        tier='2-family',
         disciplineTags=[
             'lifting_operations',
             'temporary_power',

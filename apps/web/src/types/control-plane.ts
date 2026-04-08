@@ -502,7 +502,7 @@ export interface SupportScopeResponse {
     entryKey?: string | null;
     familyKey?: string | null;
     role?: string | null;
-    tier?: number | null;
+    tier?: string | null;
   }>;
   capabilityTree: Array<{
     entryKey: string;

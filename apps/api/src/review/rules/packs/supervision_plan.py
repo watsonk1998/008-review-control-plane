@@ -8,6 +8,10 @@ def get_supervision_plan_base_pack() -> PolicyPack:
         id='supervision_plan.base',
         version='1.0.0',
         docTypes=['supervision_plan'],
+        label='监理规划审查',
+        role='base',
+        familyKey='supervision_plan',
+        tier='1-object',
         extractorIds=['project_facts', 'hazard_facts', 'schedule_resource_facts'],
         ruleIds=[
             'supervision_plan_structure_completeness',

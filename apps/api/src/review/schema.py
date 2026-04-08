@@ -55,6 +55,10 @@ class PolicyPack(BaseModel):
     id: str
     version: str
     docTypes: list[str]
+    label: str = ''
+    role: Literal['base', 'third_level', 'cross_cutting'] = 'base'
+    familyKey: str | None = None
+    tier: str | None = None
     disciplineTags: list[str] = Field(default_factory=list)
     extractorIds: list[str] = Field(default_factory=list)
     ruleIds: list[str] = Field(default_factory=list)

@@ -8,6 +8,10 @@ def get_manual_bored_pile_pack() -> PolicyPack:
         id='manual_bored_pile.base',
         version='1.0.0',
         docTypes=['hazardous_special_scheme'],
+        label='人工挖孔桩',
+        role='third_level',
+        familyKey='hazardous_special_scheme',
+        tier='3',
         disciplineTags=['manual_bored_pile'],
         extractorIds=['project_facts', 'hazard_facts'],
         ruleIds=[

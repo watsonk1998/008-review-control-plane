@@ -247,7 +247,7 @@ export function StructuredReviewForm({
               </div>
             ) : (
               <div className="callout">
-                当前文档类型不属于“专项方案审查”能力树的二级方案族。
+                当前文档类型不进入“专项方案审查”的二级/三级能力树。该类文档按“主审查对象基础模块 + 横向附属风险模块”执行。
               </div>
             )}
 

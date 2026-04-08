@@ -8,6 +8,10 @@ def get_lifting_installation_removal_pack() -> PolicyPack:
         id='lifting_installation_removal.base',
         version='1.0.0',
         docTypes=['hazardous_special_scheme'],
+        label='起重吊装及安装拆卸',
+        role='third_level',
+        familyKey='hazardous_special_scheme',
+        tier='3',
         disciplineTags=['lifting_installation_removal'],
         extractorIds=['project_facts', 'hazard_facts'],
         ruleIds=[
