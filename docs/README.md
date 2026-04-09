@@ -43,6 +43,7 @@ docs/
   README.md
 
   00-product/
+    008-product-landscape.md
     product-strategy.md
     008-validate-prd-v1.md
 
@@ -79,6 +80,7 @@ docs/
 | 主题 | 主真相源 |
 |---|---|
 | docs 导航入口 | `docs/README.md` |
+| 008 业务顶层设计与商业全景图 | `docs/00-product/008-product-landscape.md` |
 | 008 的 V1 产品定义 | `docs/00-product/008-validate-prd-v1.md` |
 | 008 的长期产品方向与路线 | `docs/00-product/product-strategy.md` |
 | formal-review 制度总纲 | `docs/10-governance/formal-review.md` |
@@ -151,6 +153,7 @@ docs/
 ## 推荐阅读路径
 
 ### 产品经理 / 方案负责人
+- `00-product/008-product-landscape.md`
 - `00-product/008-validate-prd-v1.md`
 - `00-product/product-strategy.md`
 - `10-governance/008-v1-capability-boundary.md`
