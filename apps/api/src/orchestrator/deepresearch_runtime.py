@@ -7,12 +7,15 @@ import json
 from src.adapters.deeptutor_adapter import DeepTutorAdapter
 from src.adapters.fastgpt_adapter import FastGPTAdapter, FastGPTResponseParseError
 from src.adapters.gpt_researcher_adapter import GPTResearcherAdapter
+from src.adapters.hermes_adapter import HermesAdapter
 from src.adapters.llm_gateway import LLMGateway
 from src.domain.models import SourceDocumentRef, TaskEvent, TaskRecord
 from src.orchestrator.planner import TaskPlanner
 from src.orchestrator.router import infer_default_dataset
 from src.repositories.sqlite_store import SQLiteTaskStore
+from src.review.dual_review_orchestrator import DualReviewOrchestrator
 from src.review.pipeline import StructuredReviewExecutor
+from src.review.task_compiler import TaskCompiler
 from src.services.document_loader import DocumentLoader
 from src.services.fixture_service import FixtureService
 
@@ -28,6 +31,7 @@ class DeepResearchRuntime:
         fast_adapter: FastGPTAdapter,
         gpt_researcher: GPTResearcherAdapter,
         deeptutor: DeepTutorAdapter | None,
+        hermes_adapter: HermesAdapter | None = None,
         tasks_dir: Path,
     ):
         self.store = store
@@ -43,6 +47,10 @@ class DeepResearchRuntime:
             document_loader=document_loader,
             llm_gateway=llm_gateway,
             fast_adapter=fast_adapter,
+        )
+        self.task_compiler = TaskCompiler()
+        self.dual_review = DualReviewOrchestrator(
+            hermes_adapter=hermes_adapter or HermesAdapter(),
         )
 
     async def execute_task(self, task_id: str):
@@ -214,6 +222,9 @@ class DeepResearchRuntime:
         if source_document_ref is None or source_document_path is None:
             raise ValueError('structured_review requires a fixtureId or sourceDocumentRef')
 
+        emit_fn = lambda stage, capability, status, message, **kwargs: self._emit(task.id, stage, capability, status, message, **kwargs)
+        write_json_fn = lambda name, payload: self._write_task_artifact(task.id, name, payload)
+
         result = await self.structured_review.run(
             task_id=task.id,
             query=task.query,
@@ -225,11 +236,40 @@ class DeepResearchRuntime:
             discipline_tags=task.disciplineTags,
             strict_mode=task.strictMode,
             policy_pack_ids=task.policyPackIds,
-            emit=lambda stage, capability, status, message, **kwargs: self._emit(task.id, stage, capability, status, message, **kwargs),
-            write_json_artifact=lambda name, payload: self._write_task_artifact(task.id, name, payload),
+            emit=emit_fn,
+            write_json_artifact=write_json_fn,
             write_text_artifact=lambda name, content, suffix='.md': self._write_text_artifact(task.id, name, content, suffix=suffix),
             write_binary_artifact=lambda name, content, suffix='.bin': self._write_binary_artifact(task.id, name, content, suffix=suffix),
         )
+
+        # --- Dual Review: 008 + Hermes (post-hoc, never blocks 008 result) ---
+        try:
+            review_brief = self.task_compiler.compile(
+                task,
+                source_document_ref=source_document_ref,
+                source_document_path=source_document_path,
+                plan=plan,
+            )
+            doc_preview = ''
+            try:
+                doc_preview = self.document_loader.extract_text(source_document_path)[:6000]
+            except Exception:
+                pass
+            result = await self.dual_review.orchestrate(
+                review_brief=review_brief,
+                result_008=result,
+                document_preview=doc_preview,
+                emit=emit_fn,
+                write_json_artifact=write_json_fn,
+            )
+        except Exception as exc:
+            self._emit(
+                task.id, 'dual_review', 'dual_review_orchestrator', 'failed',
+                f'Dual review failed (008 result preserved): {exc}',
+            )
+            result['dualReview'] = {'enabled': False, 'error': str(exc)}
+        # --- End Dual Review ---
+
         if resolved_fixture is not None:
             result['fixture'] = resolved_fixture.model_dump()
         result['steps'] = [event.model_dump(mode='json') for event in self.store.list_events(task.id)]

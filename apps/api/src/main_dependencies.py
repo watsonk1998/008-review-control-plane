@@ -5,6 +5,7 @@ from functools import lru_cache
 from src.adapters.deeptutor_adapter import DeepTutorAdapter
 from src.adapters.fastgpt_adapter import FastGPTAdapter
 from src.adapters.gpt_researcher_adapter import GPTResearcherAdapter
+from src.adapters.hermes_adapter import HermesAdapter
 from src.adapters.llm_gateway import LLMGateway
 from src.config.settings import get_settings
 from src.orchestrator.deepresearch_runtime import DeepResearchRuntime
@@ -53,6 +54,11 @@ def get_deeptutor_adapter() -> DeepTutorAdapter | None:
 
 
 @lru_cache(maxsize=1)
+def get_hermes_adapter() -> HermesAdapter:
+    return HermesAdapter(llm_gateway=get_llm_gateway())
+
+
+@lru_cache(maxsize=1)
 def get_runtime() -> DeepResearchRuntime:
     return DeepResearchRuntime(
         store=get_store(),
@@ -62,6 +68,7 @@ def get_runtime() -> DeepResearchRuntime:
         fast_adapter=get_fast_adapter(),
         gpt_researcher=get_gpt_researcher_adapter(),
         deeptutor=get_deeptutor_adapter(),
+        hermes_adapter=get_hermes_adapter(),
         tasks_dir=get_settings().tasks_dir,
     )
 
