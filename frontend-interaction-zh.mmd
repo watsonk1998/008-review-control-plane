@@ -1,0 +1,39 @@
+sequenceDiagram
+    participant U as 前端工作台 (User)
+    participant C as 任务编译层 (Compiler)
+    participant M008 as 008 引擎 (主审查链)
+    participant H as Hermes 引擎 (旁路增强)
+    
+    Note over U: 单页式审查工作台
+    U->>U: 1. 选定三级方案 (坑位)
+    U->>U: 2. 结构化上传材料 (待审文件/项目资料)
+    U->>U: 3. 审查配置 (审查重点/口径/报告类型)
+    
+    U->>C: 提交审查任务 (包含文件ID + 配置参数)
+    
+    Note over C: 系统拦截输入，不直接调用大模型
+    C->>C: 将用户输入编译为标准化任务书 (Review Brief)
+    
+    C-->>U: 返回 SSE 连接凭证 (状态: 任务编译中)
+    
+    par 双路并发审查
+        C->>M008: 下发审查任务书
+        M008->>M008: 长文本解析 & 结构化事实提取
+        M008-->>U: SSE 推送: "008 结构化提取中..."
+        M008-->>C: 返回 008事实底稿 (fact_packet)
+    and
+        C->>H: 下发审查任务书
+        H->>H: 重点导向审查 / 第二意见推演
+        H-->>U: SSE 推送: "Hermes 深度研判中..."
+        H-->>C: 返回 Hermes审查包 (review_packet)
+    end
+    
+    C->>H: 发起结果融合请求 (任务书 + 008底稿 + Hermes产出)
+    H-->>U: SSE 推送: "结果交叉融合中..."
+    H->>H: 交叉比对与去重，生成对外最终报告
+    
+    H-->>U: SSE 推送: 审查完成 (返回静态报告链接)
+    
+    Note over U: 交付静态报告
+    U->>U: 展示统一的最终报告
+    U->>U: 收集轻反馈 (有帮助/问题不准/有遗漏/存模板)
