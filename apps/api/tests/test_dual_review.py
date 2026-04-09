@@ -15,7 +15,7 @@ from src.review.contracts import (
 from src.review.fact_packet_adapter import FactPacketAdapter
 from src.review.report_fusion import ReportFusionService
 from src.review.task_compiler import TaskCompiler
-from src.adapters.hermes_adapter import HermesAdapter
+from src.adapters.hermes_llm_adapter import HermesLLMAdapter
 from src.review.dual_review_orchestrator import DualReviewOrchestrator
 
 
@@ -140,16 +140,16 @@ class TestFactPacketAdapter:
 
 
 # ---------------------------------------------------------------------------
-# hermes_adapter.py
+# hermes_llm_adapter.py
 # ---------------------------------------------------------------------------
 
-class TestHermesAdapter:
+class TestHermesLLMAdapter:
     def test_not_available_without_gateway(self):
-        adapter = HermesAdapter(llm_gateway=None)
+        adapter = HermesLLMAdapter(llm_gateway=None)
         assert adapter.available is False
 
     def test_degraded_packet_on_no_gateway(self):
-        adapter = HermesAdapter(llm_gateway=None)
+        adapter = HermesLLMAdapter(llm_gateway=None)
         brief = _mock_review_brief()
         packet = asyncio.get_event_loop().run_until_complete(adapter.review(brief))
         assert packet.degraded is True
@@ -157,13 +157,13 @@ class TestHermesAdapter:
         assert 'not configured' in packet.error
 
     def test_json_parsing_with_code_fence(self):
-        adapter = HermesAdapter(llm_gateway=None)
+        adapter = HermesLLMAdapter(llm_gateway=None)
         raw = '```json\n{"overall_assessment": "ok", "grade": "conditional_pass", "findings": []}\n```'
         parsed = adapter._parse_json(raw)
         assert parsed['grade'] == 'conditional_pass'
 
     def test_json_parsing_fallback(self):
-        adapter = HermesAdapter(llm_gateway=None)
+        adapter = HermesLLMAdapter(llm_gateway=None)
         parsed = adapter._parse_json('not json at all')
         assert parsed['grade'] == 'needs_revision'
         assert parsed['findings'] == []
@@ -277,7 +277,7 @@ class TestReportFusion:
 class TestDualReviewOrchestrator:
     def test_orchestrate_without_hermes(self):
         """Orchestrator works even when Hermes is not available."""
-        orch = DualReviewOrchestrator(hermes_adapter=HermesAdapter(llm_gateway=None))
+        orch = DualReviewOrchestrator(hermes_engine=HermesLLMAdapter(llm_gateway=None))
         brief = _mock_review_brief()
         result = _mock_008_result()
 

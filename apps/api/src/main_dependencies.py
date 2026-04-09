@@ -5,11 +5,13 @@ from functools import lru_cache
 from src.adapters.deeptutor_adapter import DeepTutorAdapter
 from src.adapters.fastgpt_adapter import FastGPTAdapter
 from src.adapters.gpt_researcher_adapter import GPTResearcherAdapter
-from src.adapters.hermes_adapter import HermesAdapter
+from src.adapters.hermes_llm_adapter import HermesLLMAdapter
+from src.adapters.hermes_external_adapter import HermesExternalAdapter
 from src.adapters.llm_gateway import LLMGateway
 from src.config.settings import get_settings
 from src.orchestrator.deepresearch_runtime import DeepResearchRuntime
 from src.repositories.sqlite_store import SQLiteTaskStore
+from src.review.hermes_review_engine import HermesReviewEngine
 from src.services.document_loader import DocumentLoader
 from src.services.fixture_service import FixtureService
 from src.services.task_service import TaskService
@@ -54,8 +56,11 @@ def get_deeptutor_adapter() -> DeepTutorAdapter | None:
 
 
 @lru_cache(maxsize=1)
-def get_hermes_adapter() -> HermesAdapter:
-    return HermesAdapter(llm_gateway=get_llm_gateway())
+def get_hermes_engine() -> HermesReviewEngine:
+    endpoint = get_settings().hermes_external_endpoint
+    if endpoint:
+        return HermesExternalAdapter(endpoint=endpoint)
+    return HermesLLMAdapter(llm_gateway=get_llm_gateway())
 
 
 @lru_cache(maxsize=1)
@@ -68,7 +73,7 @@ def get_runtime() -> DeepResearchRuntime:
         fast_adapter=get_fast_adapter(),
         gpt_researcher=get_gpt_researcher_adapter(),
         deeptutor=get_deeptutor_adapter(),
-        hermes_adapter=get_hermes_adapter(),
+        hermes_engine=get_hermes_engine(),
         tasks_dir=get_settings().tasks_dir,
     )
 

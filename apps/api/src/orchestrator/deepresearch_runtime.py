@@ -7,13 +7,13 @@ import json
 from src.adapters.deeptutor_adapter import DeepTutorAdapter
 from src.adapters.fastgpt_adapter import FastGPTAdapter, FastGPTResponseParseError
 from src.adapters.gpt_researcher_adapter import GPTResearcherAdapter
-from src.adapters.hermes_adapter import HermesAdapter
 from src.adapters.llm_gateway import LLMGateway
 from src.domain.models import SourceDocumentRef, TaskEvent, TaskRecord
 from src.orchestrator.planner import TaskPlanner
 from src.orchestrator.router import infer_default_dataset
 from src.repositories.sqlite_store import SQLiteTaskStore
 from src.review.dual_review_orchestrator import DualReviewOrchestrator
+from src.review.hermes_review_engine import HermesReviewEngine
 from src.review.pipeline import StructuredReviewExecutor
 from src.review.task_compiler import TaskCompiler
 from src.services.document_loader import DocumentLoader
@@ -31,7 +31,7 @@ class DeepResearchRuntime:
         fast_adapter: FastGPTAdapter,
         gpt_researcher: GPTResearcherAdapter,
         deeptutor: DeepTutorAdapter | None,
-        hermes_adapter: HermesAdapter | None = None,
+        hermes_engine: HermesReviewEngine,
         tasks_dir: Path,
     ):
         self.store = store
@@ -50,7 +50,7 @@ class DeepResearchRuntime:
         )
         self.task_compiler = TaskCompiler()
         self.dual_review = DualReviewOrchestrator(
-            hermes_adapter=hermes_adapter or HermesAdapter(),
+            hermes_engine=hermes_engine,
         )
 
     async def execute_task(self, task_id: str):

@@ -17,9 +17,9 @@ import logging
 from datetime import datetime, timezone
 from typing import Any, Callable
 
-from src.adapters.hermes_adapter import HermesAdapter
 from src.review.contracts import FactPacket, ReviewBrief
 from src.review.fact_packet_adapter import FactPacketAdapter
+from src.review.hermes_review_engine import HermesReviewEngine
 from src.review.report_fusion import ReportFusionService
 
 logger = logging.getLogger(__name__)
@@ -28,9 +28,9 @@ logger = logging.getLogger(__name__)
 class DualReviewOrchestrator:
     """Orchestrate the 008 + Hermes dual-path review pipeline."""
 
-    def __init__(self, *, hermes_adapter: HermesAdapter | None = None):
+    def __init__(self, *, hermes_engine: HermesReviewEngine):
         self.fact_packet_adapter = FactPacketAdapter()
-        self.hermes_adapter = hermes_adapter or HermesAdapter()
+        self.hermes_engine = hermes_engine
         self.report_fusion = ReportFusionService()
 
     async def orchestrate(
@@ -67,10 +67,10 @@ class DualReviewOrchestrator:
 
         # --- 3. Hermes second-path review ---
         packet_hermes: FactPacket | None = None
-        if self.hermes_adapter.available:
+        if self.hermes_engine.available:
             _emit('hermes_review', 'hermes_engine', 'started', 'Hermes review started')
             try:
-                packet_hermes = await self.hermes_adapter.review(
+                packet_hermes = await self.hermes_engine.review(
                     brief=review_brief,
                     fact_packet_008=packet_008,
                     document_preview=document_preview,
@@ -114,7 +114,7 @@ class DualReviewOrchestrator:
             'enginesUsed': final.engines_used,
             'finalGrade': final.final_grade,
             'executiveSummary': final.executive_summary,
-            'hermesAvailable': self.hermes_adapter.available,
+            'hermesAvailable': self.hermes_engine.available,
             'hermesDegraded': packet_hermes.degraded if packet_hermes else True,
             'keyFindingsCount': len(final.key_findings),
             'supplementalFindingsCount': len(final.supplemental_findings),

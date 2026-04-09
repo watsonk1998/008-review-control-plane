@@ -1,12 +1,11 @@
 """
-Hermes Review Adapter: independent second-path review via LLM.
+Hermes LLM Adapter: independent second-path review via local LLM.
 
 Architecture note:
-- The upstream hermes-agent (NousResearch/hermes-agent) is a CLI agent, NOT a REST API
-- Our integration uses the same LLM infrastructure (LLMGateway) to run an
-  independent "Hermes-style" review — no subprocess, no CLI dependency
-- This keeps the integration lightweight, async-safe, and decoupled from
-  hermes-agent releases
+- This is NOT the real external Hermes integration.
+- This is a local simulation using our LLM infrastructure (LLMGateway) to run an
+  independent "Hermes-style" review.
+- It serves as a fallback or local alternative to the true external Hermes agent.
 
 Boundary contract:
     Input:  ReviewBrief + optional 008 FactPacket
@@ -23,6 +22,7 @@ from typing import Any
 
 from src.adapters.llm_gateway import LLMGateway
 from src.review.contracts import FactPacket, FindingItem, ReviewBrief, ReviewPacketMetrics
+from src.review.hermes_review_engine import HermesReviewEngine
 
 logger = logging.getLogger(__name__)
 
@@ -70,12 +70,11 @@ HERMES_SYSTEM_PROMPT = """\
 - 返回纯 JSON"""
 
 
-class HermesAdapter:
-    """Independent second-path review engine using LLM.
+class HermesLLMAdapter(HermesReviewEngine):
+    """Independent second-path review engine using local LLM simulation.
 
     This adapter is intentionally thin — it owns the prompt, the LLM call,
-    and the response parsing. All orchestration logic lives in
-    DualReviewOrchestrator.
+    and the response parsing.
     """
 
     def __init__(self, llm_gateway: LLMGateway | None = None):
