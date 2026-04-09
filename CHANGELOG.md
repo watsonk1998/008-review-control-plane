@@ -18,13 +18,18 @@
 - 将脚手架、拆除、暗挖、建筑幕墙安装、人工挖孔桩等新增类型 pack 统一纳入 visibility-first 语义：图纸、禁用条件和复杂验算主题优先进入人工复核，而不是直接下硬结论。
 - 补做 `docs/` 分层迁移的 GitHub 可见面对齐核验：确认本地工作树、`origin/main` 树和 GitHub raw 内容一致，`docs/` 根目录当前只保留 `README.md`、4 个 legacy stub 与分层目录，不再把旧页面观察误判为“迁移只完成一半”。
 - 将根 `README.md` 收口为 English-first 仓库入口页，并重建 `CHANGELOG.md` 对 2026-04-02 至 2026-04-08 主线演进的连续记录，使 docs 入口、仓库首页与变更记录三者口径重新对齐。
+- 将 special-scheme 第一部分“审查总览表”从仅显示少量映射 issue 的 4 列总览，改为按“结构判定 / 异常摘要 / 补齐建议（简）”表达结构异常的 5 列总览，并同步调整 `test_structured_review.py` 断言口径。
+- 完成 `structured-review-form` 的三级选择前端收口：在不改后端契约的前提下保留一级类别、二级 family、三级专项与附加风险模块，并把 capability tree 缺失时的 fallback 收缩为诚实提示。
+- 完成一次真实的 weknora 发布闭环：本地变更提交推送后，确认服务器目录 `/root/008-review-control-plane` 不是 git checkout，改用 rsync + `docker compose up -d --build ...` 更新。
+- 识别并线上修复 `Dockerfile.api` 的 WeasyPrint / md2pdf native 依赖缺失问题，避免 API 因缺少 `libpangoft2` 等系统库在 import 阶段崩溃，连带拉垮 `/api/tasks/support-scope`。
 
 ### Notes
 
 - 这一轮的重点不是再扩大“支持列表”，而是把危大专项方案从通用结构核推进到按工程类型审查的正式内部能力。
 - 当前 9 类 pack 的第一阶段仍以章节完整性、参数痕迹、验收链和图纸可视域为主，复杂工程正确性判断仍保留给后续更深层能力演进。
 - docs 收口层面，本轮新增的结论不是继续重写正文，而是明确区分“GitHub 页面视图 / Git refs / raw 内容 / 本地文件系统”四种证据层，避免因缓存或旧视图造成错误评审。
-- 补充收尾验证事实：special-scheme 总览表已收口为 4 列，`test_structured_review.py` 全量通过（38 passed），且 Weiyanda 样本正式 PDF 已确认走 Chromium / Skia 原生导出链路；weknora 发布目前仍停留在方案准备层，尚未写成“已上线”事实。
+- 补充收尾验证事实：special-scheme 总览表已进一步收口为 5 列结构异常总览，`test_structured_review.py` 全量通过（38 passed），且 Weiyanda 样本正式 PDF 已确认走 Chromium / Skia 原生导出链路。
+- weknora 已完成一次真实更新与容器重建，但该服务器部署目录当前不是 git checkout；后续仍应按 rsync/compose 事实维护，不应在 changelog 中伪装成标准 git-pull 型部署。
 
 ## 2026-04-08
 

@@ -1,0 +1,417 @@
+{
+  "version": 2,
+  "nodes": [
+    {
+      "type": "frame",
+      "id": "root",
+      "x": 0,
+      "y": 0,
+      "width": 1600,
+      "height": "fit-content",
+      "layout": "vertical",
+      "gap": 32,
+      "padding": 40,
+      "children": [
+        {
+          "type": "text",
+          "id": "title",
+          "width": "fill-container",
+          "height": "fit-content",
+          "text": "008 智能风控单页工作台 - 用户交互逻辑与数据流",
+          "fontSize": 28,
+          "textAlign": "center",
+          "verticalAlign": "middle",
+          "textColor": "#1f2329"
+        },
+        {
+          "type": "frame",
+          "id": "main-flow",
+          "width": "fill-container",
+          "height": "fit-content",
+          "layout": "horizontal",
+          "alignItems": "stretch",
+          "justifyContent": "space-between",
+          "gap": 48,
+          "padding": 0,
+          "children": [
+            {
+              "type": "frame",
+              "id": "phase-1",
+              "width": 450,
+              "height": "fill-container",
+              "layout": "vertical",
+              "gap": 16,
+              "padding": 24,
+              "borderWidth": 2,
+              "borderRadius": 12,
+              "fillColor": "#f0f4ff",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "p1-title",
+                  "width": "fill-container",
+                  "height": "fit-content",
+                  "text": "Phase 1: 前置配置层 (任务组装)",
+                  "fontSize": 18,
+                  "textAlign": "center",
+                  "textColor": "#3370ff"
+                },
+                {
+                  "type": "frame",
+                  "id": "p1-b1",
+                  "width": "fill-container",
+                  "height": "fit-content",
+                  "layout": "vertical",
+                  "gap": 8,
+                  "padding": 12,
+                  "borderWidth": 1,
+                  "borderRadius": 8,
+                  "fillColor": "#ffffff",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "p1-b1-t",
+                      "width": "fill-container",
+                      "height": "fit-content",
+                      "text": "1. 坑位目标定位",
+                      "fontSize": 14,
+                      "textColor": "#1f2329"
+                    },
+                    {
+                      "type": "rect",
+                      "id": "p1-b1-r",
+                      "width": "fill-container",
+                      "height": "fit-content",
+                      "text": "级联选择（如：危大工程-基坑工程）\n└ 动态触发后续配置项数据的拉取",
+                      "borderRadius": 6,
+                      "borderWidth": 1,
+                      "fontSize": 12
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "p1-b2",
+                  "width": "fill-container",
+                  "height": "fit-content",
+                  "layout": "vertical",
+                  "gap": 8,
+                  "padding": 12,
+                  "borderWidth": 1,
+                  "borderRadius": 8,
+                  "fillColor": "#ffffff",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "p1-b2-t",
+                      "width": "fill-container",
+                      "height": "fit-content",
+                      "text": "2. 结构化插槽上传",
+                      "fontSize": 14,
+                      "textColor": "#1f2329"
+                    },
+                    {
+                      "type": "rect",
+                      "id": "p1-b2-r1",
+                      "width": "fill-container",
+                      "height": "fit-content",
+                      "text": "核心待审主文件 (Target_Doc)",
+                      "borderRadius": 6,
+                      "borderWidth": 1,
+                      "fillColor": "#fff0ec",
+                      "fontSize": 12
+                    },
+                    {
+                      "type": "rect",
+                      "id": "p1-b2-r2",
+                      "width": "fill-container",
+                      "height": "fit-content",
+                      "text": "辅助依据类文件挂载 (Aux_Doc)",
+                      "borderRadius": 6,
+                      "borderWidth": 1,
+                      "fillColor": "#ffffff",
+                      "fontSize": 12
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "p1-b3",
+                  "width": "fill-container",
+                  "height": "fit-content",
+                  "layout": "vertical",
+                  "gap": 8,
+                  "padding": 12,
+                  "borderWidth": 1,
+                  "borderRadius": 8,
+                  "fillColor": "#ffffff",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "p1-b3-t",
+                      "width": "fill-container",
+                      "height": "fit-content",
+                      "text": "3. 边界限定与重点要求 (全局生效)",
+                      "fontSize": 14,
+                      "textColor": "#1f2329"
+                    },
+                    {
+                      "type": "rect",
+                      "id": "p1-b3-r1",
+                      "width": "fill-container",
+                      "height": "fit-content",
+                      "text": "预设排查国标规范/高频审查重点(默认/自选)",
+                      "borderRadius": 6,
+                      "borderWidth": 1,
+                      "fontSize": 12
+                    },
+                    {
+                      "type": "rect",
+                      "id": "p1-b3-r2",
+                      "width": "fill-container",
+                      "height": "fit-content",
+                      "text": "附加人工 Prompt 重点方向\n└ 支持历史配置保存与模板下拉调用",
+                      "borderRadius": 6,
+                      "borderWidth": 1,
+                      "fillColor": "#fff7e8",
+                      "fontSize": 12
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "phase-2",
+              "width": 300,
+              "height": "fill-container",
+              "layout": "vertical",
+              "justifyContent": "center",
+              "gap": 24,
+              "padding": 24,
+              "borderWidth": 2,
+              "borderRadius": 12,
+              "fillColor": "#edfdf8",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "p2-title",
+                  "width": "fill-container",
+                  "height": "fit-content",
+                  "text": "Phase 2: 并发审查执行",
+                  "fontSize": 18,
+                  "textAlign": "center",
+                  "textColor": "#2f9c7a"
+                },
+                {
+                  "type": "frame",
+                  "id": "p2-b1",
+                  "width": "fill-container",
+                  "height": "fit-content",
+                  "layout": "vertical",
+                  "gap": 16,
+                  "padding": 16,
+                  "borderWidth": 1,
+                  "borderRadius": 8,
+                  "fillColor": "#ffffff",
+                  "children": [
+                    {
+                      "type": "rect",
+                      "id": "p2-b1-r1",
+                      "width": "fill-container",
+                      "height": "fit-content",
+                      "text": "文档片段化解析与清洗",
+                      "borderRadius": 6,
+                      "borderWidth": 1,
+                      "fontSize": 12
+                    },
+                    {
+                      "type": "rect",
+                      "id": "p2-b1-r2",
+                      "width": "fill-container",
+                      "height": "fit-content",
+                      "text": "智能调度规则比对 (多线程)",
+                      "borderRadius": 6,
+                      "borderWidth": 1,
+                      "fontSize": 12
+                    },
+                    {
+                      "type": "rect",
+                      "id": "p2-b1-r3",
+                      "width": "fill-container",
+                      "height": "fit-content",
+                      "text": "等待模型长耗时异步返回\n(WebSocket 断点进度回传)",
+                      "borderRadius": 6,
+                      "borderWidth": 1,
+                      "fillColor": "#f8f9fa",
+                      "fontSize": 12
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "phase-3",
+              "width": 450,
+              "height": "fill-container",
+              "layout": "vertical",
+              "gap": 16,
+              "padding": 24,
+              "borderWidth": 2,
+              "borderRadius": 12,
+              "fillColor": "#fdf1fb",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "p3-title",
+                  "width": "fill-container",
+                  "height": "fit-content",
+                  "text": "Phase 3: 审查交付与闭环",
+                  "fontSize": 18,
+                  "textAlign": "center",
+                  "textColor": "#903ab7"
+                },
+                {
+                  "type": "frame",
+                  "id": "p3-b1",
+                  "width": "fill-container",
+                  "height": "fit-content",
+                  "layout": "vertical",
+                  "gap": 8,
+                  "padding": 12,
+                  "borderWidth": 1,
+                  "borderRadius": 8,
+                  "fillColor": "#ffffff",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "p3-b1-t",
+                      "width": "fill-container",
+                      "height": "fit-content",
+                      "text": "1. 智能数据仪表盘 (Overview)",
+                      "fontSize": 14,
+                      "textColor": "#1f2329"
+                    },
+                    {
+                      "type": "rect",
+                      "id": "p3-b1-r",
+                      "width": "fill-container",
+                      "height": "fit-content",
+                      "text": "全局审查得分 / 重大拦截与风险等级提示",
+                      "borderRadius": 6,
+                      "borderWidth": 1,
+                      "fontSize": 12
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "p3-b2",
+                  "width": "fill-container",
+                  "height": "fit-content",
+                  "layout": "vertical",
+                  "gap": 8,
+                  "padding": 12,
+                  "borderWidth": 1,
+                  "borderRadius": 8,
+                  "fillColor": "#ffffff",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "p3-b2-t",
+                      "width": "fill-container",
+                      "height": "fit-content",
+                      "text": "2. 风险溯源清单展示",
+                      "fontSize": 14,
+                      "textColor": "#1f2329"
+                    },
+                    {
+                      "type": "rect",
+                      "id": "p3-b2-r",
+                      "width": "fill-container",
+                      "height": "fit-content",
+                      "text": "Markdown动态渲染：审查结论+原文依据溯源",
+                      "borderRadius": 6,
+                      "borderWidth": 1,
+                      "fontSize": 12
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "p3-b3",
+                  "width": "fill-container",
+                  "height": "fit-content",
+                  "layout": "vertical",
+                  "gap": 8,
+                  "padding": 12,
+                  "borderWidth": 1,
+                  "borderRadius": 8,
+                  "fillColor": "#ffffff",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "p3-b3-t",
+                      "width": "fill-container",
+                      "height": "fit-content",
+                      "text": "3. 成果输出流转",
+                      "fontSize": 14,
+                      "textColor": "#1f2329"
+                    },
+                    {
+                      "type": "rect",
+                      "id": "p3-b3-r",
+                      "width": "fill-container",
+                      "height": "fit-content",
+                      "text": "人工审核定性驳回修改 / 一键生成 Word报告",
+                      "borderRadius": 6,
+                      "borderWidth": 1,
+                      "fontSize": 12
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "connector",
+      "connector": {
+        "from": "phase-1",
+        "to": "phase-2",
+        "fromAnchor": "right",
+        "toAnchor": "left",
+        "lineShape": "straight",
+        "lineWidth": 2,
+        "endArrow": "arrow"
+      }
+    },
+    {
+      "type": "connector",
+      "connector": {
+        "from": "phase-2",
+        "to": "phase-3",
+        "fromAnchor": "right",
+        "toAnchor": "left",
+        "lineShape": "straight",
+        "lineWidth": 2,
+        "endArrow": "arrow"
+      }
+    },
+    {
+      "type": "connector",
+      "connector": {
+        "from": "p1-b1-r",
+        "to": "p1-b3-r1",
+        "fromAnchor": "right",
+        "toAnchor": "right",
+        "lineShape": "rightAngle",
+        "lineWidth": 2,
+        "endArrow": "arrow"
+      }
+    }
+  ]
+}

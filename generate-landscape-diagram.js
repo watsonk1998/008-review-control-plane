@@ -1,0 +1,326 @@
+const fs = require('fs');
+
+const dsl = {
+  "version": 2,
+  "nodes": [
+    {
+      "type": "frame",
+      "id": "root",
+      "x": 0, "y": 0,
+      "width": 1400,
+      "height": "fit-content",
+      "layout": "vertical",
+      "gap": 32,
+      "padding": 40,
+      "children": [
+        {
+          "type": "text",
+          "id": "title",
+          "width": "fill-container",
+          "height": "fit-content",
+          "text": "008 (风控天眼) 业务顶层设计与商业全景图",
+          "fontSize": 32,
+          "fontWeight": "bold",
+          "textAlign": "center",
+          "verticalAlign": "middle",
+          "textColor": "#1F2329"
+        },
+        {
+          "type": "frame",
+          "id": "main-container",
+          "width": "fill-container",
+          "height": "fit-content",
+          "layout": "horizontal",
+          "alignItems": "stretch",
+          "gap": 24,
+          "padding": 0,
+          "children": [
+            {
+              "type": "frame",
+              "id": "layers-container",
+              "width": "fill-container",
+              "height": "fit-content",
+              "layout": "vertical",
+              "alignItems": "stretch",
+              "gap": 24,
+              "padding": 0,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "row-layer-1",
+                  "width": "fill-container",
+                  "height": "fit-content",
+                  "layout": "horizontal",
+                  "gap": 24,
+                  "padding": 0,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "label-1",
+                      "width": 140,
+                      "height": "fit-content",
+                      "text": "1. 战略与护城河",
+                      "fontSize": 20,
+                      "fontWeight": "bold",
+                      "textAlign": "right",
+                      "textColor": "#1F2329"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "layer-1",
+                      "width": "fill-container",
+                      "height": "fit-content",
+                      "borderWidth": 2,
+                      "borderColor": "#3370FF",
+                      "borderRadius": 8,
+                      "fillColor": "#F0F4FF",
+                      "layout": "horizontal",
+                      "gap": 16,
+                      "padding": 24,
+                      "alignItems": "stretch",
+                      "children": [
+                        { "type": "rect", "id": "n-1-1", "width": "fill-container", "height": "fit-content", "text": "核心战略\n突破风险瓶颈提升接单上限", "borderRadius": 8, "borderWidth": 2, "borderColor": "#3370FF", "fillColor": "#FFFFFF", "textColor": "#1F2329", "fontSize": 16, "fontWeight": "bold", "textAlign": "center", "verticalAlign": "middle" },
+                        { "type": "rect", "id": "n-1-2", "width": "fill-container", "height": "fit-content", "text": "商业模式\n降维打击与SaaS众包反哺", "borderRadius": 8, "borderWidth": 2, "borderColor": "#3370FF", "fillColor": "#FFFFFF", "textColor": "#1F2329", "fontSize": 16, "fontWeight": "bold", "textAlign": "center", "verticalAlign": "middle" },
+                        { "type": "rect", "id": "n-1-3", "width": "fill-container", "height": "fit-content", "text": "终极壁垒\n脱水行业真实错题飞轮", "borderRadius": 8, "borderWidth": 2, "borderColor": "#3370FF", "fillColor": "#FFFFFF", "textColor": "#1F2329", "fontSize": 16, "fontWeight": "bold", "textAlign": "center", "verticalAlign": "middle" }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "row-layer-2",
+                  "width": "fill-container",
+                  "height": "fit-content",
+                  "layout": "horizontal",
+                  "gap": 24,
+                  "padding": 0,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "label-2",
+                      "width": 140,
+                      "height": "fit-content",
+                      "text": "2. 人机协同闭环",
+                      "fontSize": 20,
+                      "fontWeight": "bold",
+                      "textAlign": "right",
+                      "textColor": "#1F2329"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "layer-2",
+                      "width": "fill-container",
+                      "height": "fit-content",
+                      "borderWidth": 2,
+                      "borderColor": "#00B365",
+                      "borderRadius": 8,
+                      "fillColor": "#E8F8F2",
+                      "layout": "vertical",
+                      "gap": 16,
+                      "padding": 24,
+                      "alignItems": "stretch",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "subareas-wrapper",
+                          "width": "fill-container",
+                          "height": "fit-content",
+                          "layout": "horizontal",
+                          "alignItems": "stretch",
+                          "gap": 16,
+                          "padding": 0,
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "subarea-a",
+                              "width": "fill-container",
+                              "height": "fit-content",
+                              "layout": "vertical",
+                              "gap": 12,
+                              "padding": 16,
+                              "borderRadius": 8,
+                              "borderWidth": 2,
+                              "borderColor": "#00B365",
+                              "fillColor": "#FFFFFF",
+                              "children": [
+                                { "type": "text", "id": "title-a", "width": "fill-container", "height": "fit-content", "text": "系统: 极速预审与拦截", "textColor": "#1F2329", "fontSize": 16, "fontWeight": "bold", "textAlign": "center", "verticalAlign": "middle" },
+                                {
+                                  "type": "frame",
+                                  "id": "row-a-1",
+                                  "width": "fill-container",
+                                  "height": "fit-content",
+                                  "layout": "horizontal",
+                                  "gap": 12,
+                                  "padding": 0,
+                                  "children": [
+                                    { "type": "rect", "id": "sa-1", "width": "fill-container", "height": "fit-content", "text": "隐患强拦截\n宁错勿漏高召回", "borderRadius": 8, "borderWidth": 2, "borderColor": "#00B365", "fillColor": "#F2F3F5", "textColor": "#1F2329", "fontSize": 14, "textAlign": "center", "verticalAlign": "middle" },
+                                    { "type": "rect", "id": "sa-2", "width": "fill-container", "height": "fit-content", "text": "大声暴露盲区\n遇知识盲点人工兜底", "borderRadius": 8, "borderWidth": 2, "borderColor": "#00B365", "fillColor": "#F2F3F5", "textColor": "#1F2329", "fontSize": 14, "textAlign": "center", "verticalAlign": "middle" }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "subarea-b",
+                              "width": "fill-container",
+                              "height": "fit-content",
+                              "layout": "vertical",
+                              "gap": 12,
+                              "padding": 16,
+                              "borderRadius": 8,
+                              "borderWidth": 2,
+                              "borderColor": "#00B365",
+                              "fillColor": "#FFFFFF",
+                              "children": [
+                                { "type": "text", "id": "title-b", "width": "fill-container", "height": "fit-content", "text": "专家: 确权与闭环", "textColor": "#1F2329", "fontSize": 16, "fontWeight": "bold", "textAlign": "center", "verticalAlign": "middle" },
+                                {
+                                  "type": "frame",
+                                  "id": "row-b-1",
+                                  "width": "fill-container",
+                                  "height": "fit-content",
+                                  "layout": "horizontal",
+                                  "gap": 12,
+                                  "padding": 0,
+                                  "children": [
+                                    { "type": "rect", "id": "sb-1", "width": "fill-container", "height": "fit-content", "text": "留痕免责\n基于证据一键裁决", "borderRadius": 8, "borderWidth": 2, "borderColor": "#00B365", "fillColor": "#F2F3F5", "textColor": "#1F2329", "fontSize": 14, "textAlign": "center", "verticalAlign": "middle" },
+                                    { "type": "rect", "id": "sb-2", "width": "fill-container", "height": "fit-content", "text": "工单派发\n无缝对接企业OA", "borderRadius": 8, "borderWidth": 2, "borderColor": "#00B365", "fillColor": "#F2F3F5", "textColor": "#1F2329", "fontSize": 14, "textAlign": "center", "verticalAlign": "middle" }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "row-layer-3",
+                  "width": "fill-container",
+                  "height": "fit-content",
+                  "layout": "horizontal",
+                  "gap": 24,
+                  "padding": 0,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "label-3",
+                      "width": 140,
+                      "height": "fit-content",
+                      "text": "3. 知识引擎层",
+                      "fontSize": 20,
+                      "fontWeight": "bold",
+                      "textAlign": "right",
+                      "textColor": "#1F2329"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "layer-3",
+                      "width": "fill-container",
+                      "height": "fit-content",
+                      "borderWidth": 2,
+                      "borderColor": "#F54A45",
+                      "borderRadius": 8,
+                      "fillColor": "#FEF1F1",
+                      "layout": "horizontal",
+                      "gap": 0,
+                      "padding": 24,
+                      "justifyContent": "space-around",
+                      "children": [
+                        { "type": "cylinder", "id": "db-1", "width": 180, "height": "fit-content", "text": "动态规则库\n(持续反馈更新)", "borderWidth": 2, "borderColor": "#F54A45", "fillColor": "#FFFFFF", "textColor": "#1F2329", "fontSize": 14, "fontWeight": "bold", "textAlign": "center", "verticalAlign": "middle" },
+                        { "type": "cylinder", "id": "db-2", "width": 180, "height": "fit-content", "text": "国家基线标准库\n(底层合规托底)", "borderWidth": 2, "borderColor": "#F54A45", "fillColor": "#FFFFFF", "textColor": "#1F2329", "fontSize": 14, "fontWeight": "bold", "textAlign": "center", "verticalAlign": "middle" },
+                        { "type": "cylinder", "id": "db-3", "width": 180, "height": "fit-content", "text": "脱敏错误语料库\n(众包反哺数据)", "borderWidth": 2, "borderColor": "#F54A45", "fillColor": "#FFFFFF", "textColor": "#1F2329", "fontSize": 14, "fontWeight": "bold", "textAlign": "center", "verticalAlign": "middle" }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "right-sidebar-wrapper",
+              "width": 240,
+              "height": "fill-container",
+              "layout": "vertical",
+              "alignItems": "stretch",
+              "justifyContent": "space-between",
+              "gap": 24,
+              "padding": 0,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "side-block-1",
+                  "width": "fill-container",
+                  "height": "fill-container",
+                  "layout": "vertical",
+                  "alignItems": "stretch",
+                  "justifyContent": "center",
+                  "gap": 16,
+                  "padding": 20,
+                  "borderRadius": 8,
+                  "borderWidth": 2,
+                  "borderColor": "#FF7D00",
+                  "fillColor": "#FFF7EB",
+                  "children": [
+                    { "type": "text", "id": "side-title-1", "width": "fill-container", "height": "fit-content", "text": "运营与治理", "textColor": "#1F2329", "fontSize": 18, "fontWeight": "bold", "textAlign": "center", "verticalAlign": "middle" },
+                    {
+                      "type": "frame",
+                      "id": "side-items-1",
+                      "width": "fill-container",
+                      "height": "fit-content",
+                      "layout": "vertical",
+                      "gap": 12,
+                      "padding": 0,
+                      "children": [
+                        { "type": "rect", "id": "s-1", "width": "fill-container", "height": "fit-content", "text": "产研共创复盘会\n(漏报熔断治理)", "borderRadius": 8, "borderWidth": 2, "borderColor": "#FF7D00", "fillColor": "#FFFFFF", "textColor": "#1F2329", "fontSize": 14, "textAlign": "center", "verticalAlign": "middle" },
+                        { "type": "rect", "id": "s-2", "width": "fill-container", "height": "fit-content", "text": "外部顾问注入\n(冷启动知识引擎)", "borderRadius": 8, "borderWidth": 2, "borderColor": "#FF7D00", "fillColor": "#FFFFFF", "textColor": "#1F2329", "fontSize": 14, "textAlign": "center", "verticalAlign": "middle" }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "side-block-2",
+                  "width": "fill-container",
+                  "height": "fill-container",
+                  "layout": "vertical",
+                  "alignItems": "stretch",
+                  "justifyContent": "center",
+                  "gap": 16,
+                  "padding": 20,
+                  "borderRadius": 8,
+                  "borderWidth": 2,
+                  "borderColor": "#8F959E",
+                  "fillColor": "#F8F9FA",
+                  "children": [
+                    { "type": "text", "id": "side-title-2", "width": "fill-container", "height": "fit-content", "text": "系统保障", "textColor": "#1F2329", "fontSize": 18, "fontWeight": "bold", "textAlign": "center", "verticalAlign": "middle" },
+                    {
+                      "type": "frame",
+                      "id": "side-items-2",
+                      "width": "fill-container",
+                      "height": "fit-content",
+                      "layout": "vertical",
+                      "gap": 12,
+                      "padding": 0,
+                      "children": [
+                        { "type": "rect", "id": "s-3", "width": "fill-container", "height": "fit-content", "text": "合规脱敏清洗组件", "borderRadius": 8, "borderWidth": 2, "borderColor": "#8F959E", "fillColor": "#FFFFFF", "textColor": "#1F2329", "fontSize": 14, "textAlign": "center", "verticalAlign": "middle" },
+                        { "type": "rect", "id": "s-4", "width": "fill-container", "height": "fit-content", "text": "超时降级熔断通道", "borderRadius": 8, "borderWidth": 2, "borderColor": "#8F959E", "fillColor": "#FFFFFF", "textColor": "#1F2329", "fontSize": 14, "textAlign": "center", "verticalAlign": "middle" }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+};
+
+fs.writeFileSync('landscape-diagram.json', JSON.stringify(dsl, null, 2));
+console.log('JSON file generated.');

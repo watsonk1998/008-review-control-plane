@@ -1,0 +1,633 @@
+{
+  "version": 2,
+  "nodes": [
+    {
+      "type": "frame",
+      "id": "root",
+      "x": 0,
+      "y": 0,
+      "width": 1640,
+      "height": "fit-content",
+      "layout": "vertical",
+      "gap": 40,
+      "padding": 40,
+      "children": [
+        {
+          "type": "text",
+          "id": "title",
+          "width": "fill-container",
+          "height": "fit-content",
+          "text": "008 审查任务上传、分类与依据挂接流转图",
+          "fontSize": 32,
+          "fontWeight": "bold",
+          "textAlign": "center",
+          "verticalAlign": "middle",
+          "textColor": "#1F2329"
+        },
+        {
+          "type": "frame",
+          "id": "main-flow",
+          "width": "fill-container",
+          "height": "fit-content",
+          "layout": "horizontal",
+          "alignItems": "stretch",
+          "justifyContent": "space-between",
+          "gap": 32,
+          "padding": 0,
+          "children": [
+            {
+              "type": "frame",
+              "id": "input-block",
+              "width": 200,
+              "height": "fill-container",
+              "layout": "vertical",
+              "justifyContent": "center",
+              "alignItems": "center",
+              "gap": 16,
+              "padding": 24,
+              "borderRadius": 8,
+              "borderWidth": 2,
+              "borderColor": "#3370FF",
+              "fillColor": "#F0F4FF",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "input-title",
+                  "width": "fill-container",
+                  "height": "fit-content",
+                  "text": "第 1 步: 目标输入",
+                  "fontSize": 18,
+                  "fontWeight": "bold",
+                  "textAlign": "center",
+                  "verticalAlign": "middle",
+                  "textColor": "#1F2329"
+                },
+                {
+                  "type": "rect",
+                  "id": "upload-file",
+                  "width": "fill-container",
+                  "height": "fit-content",
+                  "text": "📄 上传待审文件\n(施组/方案/规划等)",
+                  "borderRadius": 8,
+                  "borderWidth": 2,
+                  "borderColor": "#3370FF",
+                  "fillColor": "#FFFFFF",
+                  "fontSize": 14,
+                  "textAlign": "center",
+                  "verticalAlign": "middle"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "dropdown-block",
+              "width": 640,
+              "height": "fill-container",
+              "layout": "vertical",
+              "alignItems": "stretch",
+              "gap": 16,
+              "padding": 24,
+              "borderRadius": 8,
+              "borderWidth": 2,
+              "borderColor": "#FF7D00",
+              "fillColor": "#FFF7EB",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "dropdown-title",
+                  "width": "fill-container",
+                  "height": "fit-content",
+                  "text": "第 2 步: 三级下拉框体系 (精确挂载审查规则)",
+                  "fontSize": 18,
+                  "fontWeight": "bold",
+                  "textAlign": "center",
+                  "verticalAlign": "middle",
+                  "textColor": "#1F2329"
+                },
+                {
+                  "type": "frame",
+                  "id": "dropdown-layers",
+                  "width": "fill-container",
+                  "height": "fit-content",
+                  "layout": "horizontal",
+                  "alignItems": "stretch",
+                  "gap": 16,
+                  "padding": 0,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "level-1",
+                      "width": "fill-container",
+                      "height": "fit-content",
+                      "layout": "vertical",
+                      "gap": 8,
+                      "padding": 12,
+                      "borderRadius": 8,
+                      "borderWidth": 1,
+                      "borderColor": "#FF7D00",
+                      "fillColor": "#FFFFFF",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "l1-title",
+                          "width": "fill-container",
+                          "height": "fit-content",
+                          "text": "一级选择",
+                          "fontSize": 14,
+                          "fontWeight": "bold",
+                          "textAlign": "center",
+                          "verticalAlign": "middle",
+                          "textColor": "#1F2329"
+                        },
+                        {
+                          "type": "rect",
+                          "id": "l1-item1",
+                          "width": "fill-container",
+                          "height": "fit-content",
+                          "text": "施工组织设计审查",
+                          "borderRadius": 4,
+                          "borderWidth": 1,
+                          "borderColor": "#CCCCCC",
+                          "fontSize": 12,
+                          "textAlign": "center",
+                          "verticalAlign": "middle"
+                        },
+                        {
+                          "type": "rect",
+                          "id": "l1-item2",
+                          "width": "fill-container",
+                          "height": "fit-content",
+                          "text": "一般施工方案审查",
+                          "borderRadius": 4,
+                          "borderWidth": 1,
+                          "borderColor": "#CCCCCC",
+                          "fontSize": 12,
+                          "textAlign": "center",
+                          "verticalAlign": "middle"
+                        },
+                        {
+                          "type": "rect",
+                          "id": "l1-item3",
+                          "width": "fill-container",
+                          "height": "fit-content",
+                          "text": "专项方案审查",
+                          "borderRadius": 4,
+                          "borderWidth": 2,
+                          "borderColor": "#FF7D00",
+                          "fillColor": "#FFF0E0",
+                          "fontSize": 12,
+                          "fontWeight": "bold",
+                          "textAlign": "center",
+                          "verticalAlign": "middle"
+                        },
+                        {
+                          "type": "rect",
+                          "id": "l1-item4",
+                          "width": "fill-container",
+                          "height": "fit-content",
+                          "text": "监理规划审查",
+                          "borderRadius": 4,
+                          "borderWidth": 1,
+                          "borderColor": "#CCCCCC",
+                          "fontSize": 12,
+                          "textAlign": "center",
+                          "verticalAlign": "middle"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "level-2",
+                      "width": "fill-container",
+                      "height": "fit-content",
+                      "layout": "vertical",
+                      "gap": 8,
+                      "padding": 12,
+                      "borderRadius": 8,
+                      "borderWidth": 1,
+                      "borderColor": "#FF7D00",
+                      "fillColor": "#FFFFFF",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "l2-title",
+                          "width": "fill-container",
+                          "height": "fit-content",
+                          "text": "二级选择 (按需)",
+                          "fontSize": 14,
+                          "fontWeight": "bold",
+                          "textAlign": "center",
+                          "verticalAlign": "middle",
+                          "textColor": "#1F2329"
+                        },
+                        {
+                          "type": "rect",
+                          "id": "l2-item1",
+                          "width": "fill-container",
+                          "height": "fit-content",
+                          "text": "危大工程专项施工方案",
+                          "borderRadius": 4,
+                          "borderWidth": 2,
+                          "borderColor": "#FF7D00",
+                          "fillColor": "#FFF0E0",
+                          "fontSize": 12,
+                          "fontWeight": "bold",
+                          "textAlign": "center",
+                          "verticalAlign": "middle"
+                        },
+                        {
+                          "type": "rect",
+                          "id": "l2-item2",
+                          "width": "fill-container",
+                          "height": "fit-content",
+                          "text": "配网工程专项施工方案",
+                          "borderRadius": 4,
+                          "borderWidth": 1,
+                          "borderColor": "#CCCCCC",
+                          "fontSize": 12,
+                          "textAlign": "center",
+                          "verticalAlign": "middle"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "level-3",
+                      "width": "fill-container",
+                      "height": "fit-content",
+                      "layout": "vertical",
+                      "gap": 8,
+                      "padding": 12,
+                      "borderRadius": 8,
+                      "borderWidth": 1,
+                      "borderColor": "#FF7D00",
+                      "fillColor": "#FFFFFF",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "l3-title",
+                          "width": "fill-container",
+                          "height": "fit-content",
+                          "text": "三级专项 (例如)",
+                          "fontSize": 14,
+                          "fontWeight": "bold",
+                          "textAlign": "center",
+                          "verticalAlign": "middle",
+                          "textColor": "#1F2329"
+                        },
+                        {
+                          "type": "rect",
+                          "id": "l3-item1",
+                          "width": "fill-container",
+                          "height": "fit-content",
+                          "text": "基坑工程",
+                          "borderRadius": 4,
+                          "borderWidth": 1,
+                          "borderColor": "#CCCCCC",
+                          "fontSize": 12,
+                          "textAlign": "center",
+                          "verticalAlign": "middle"
+                        },
+                        {
+                          "type": "rect",
+                          "id": "l3-item2",
+                          "width": "fill-container",
+                          "height": "fit-content",
+                          "text": "模板支撑体系",
+                          "borderRadius": 4,
+                          "borderWidth": 1,
+                          "borderColor": "#CCCCCC",
+                          "fontSize": 12,
+                          "textAlign": "center",
+                          "verticalAlign": "middle"
+                        },
+                        {
+                          "type": "rect",
+                          "id": "l3-item3",
+                          "width": "fill-container",
+                          "height": "fit-content",
+                          "text": "起重吊装及安装拆卸",
+                          "borderRadius": 4,
+                          "borderWidth": 2,
+                          "borderColor": "#FF7D00",
+                          "fillColor": "#FFF0E0",
+                          "fontSize": 12,
+                          "fontWeight": "bold",
+                          "textAlign": "center",
+                          "verticalAlign": "middle"
+                        },
+                        {
+                          "type": "rect",
+                          "id": "l3-item4",
+                          "width": "fill-container",
+                          "height": "fit-content",
+                          "text": "脚手架工程",
+                          "borderRadius": 4,
+                          "borderWidth": 1,
+                          "borderColor": "#CCCCCC",
+                          "fontSize": 12,
+                          "textAlign": "center",
+                          "verticalAlign": "middle"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "context-block",
+              "width": 300,
+              "height": "fill-container",
+              "layout": "vertical",
+              "justifyContent": "flex-start",
+              "alignItems": "stretch",
+              "gap": 16,
+              "padding": 24,
+              "borderRadius": 8,
+              "borderWidth": 2,
+              "borderColor": "#8F959E",
+              "fillColor": "#F8F9FA",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "context-title",
+                  "width": "fill-container",
+                  "height": "fit-content",
+                  "text": "第 3 步: 配置审查依据文件",
+                  "fontSize": 18,
+                  "fontWeight": "bold",
+                  "textAlign": "center",
+                  "verticalAlign": "middle",
+                  "textColor": "#1F2329"
+                },
+                {
+                  "type": "frame",
+                  "id": "ctx-system",
+                  "width": "fill-container",
+                  "height": "fit-content",
+                  "layout": "vertical",
+                  "gap": 8,
+                  "padding": 12,
+                  "borderRadius": 8,
+                  "borderWidth": 2,
+                  "borderColor": "#8F959E",
+                  "fillColor": "#E2E6ED",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "ctx-sys-title",
+                      "width": "fill-container",
+                      "height": "fit-content",
+                      "text": "系统内置 (默认提供)",
+                      "fontSize": 12,
+                      "fontWeight": "bold",
+                      "textAlign": "center",
+                      "verticalAlign": "middle",
+                      "textColor": "#1F2329"
+                    },
+                    {
+                      "type": "rect",
+                      "id": "ctx-1",
+                      "width": "fill-container",
+                      "height": "fit-content",
+                      "text": "法律法规",
+                      "borderRadius": 8,
+                      "borderWidth": 1,
+                      "borderColor": "#8F959E",
+                      "fillColor": "#FFFFFF",
+                      "fontSize": 14,
+                      "textAlign": "center",
+                      "verticalAlign": "middle"
+                    },
+                    {
+                      "type": "rect",
+                      "id": "ctx-2",
+                      "width": "fill-container",
+                      "height": "fit-content",
+                      "text": "标准规范",
+                      "borderRadius": 8,
+                      "borderWidth": 1,
+                      "borderColor": "#8F959E",
+                      "fillColor": "#FFFFFF",
+                      "fontSize": 14,
+                      "textAlign": "center",
+                      "verticalAlign": "middle"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "ctx-user",
+                  "width": "fill-container",
+                  "height": "fit-content",
+                  "layout": "vertical",
+                  "gap": 8,
+                  "padding": 12,
+                  "borderRadius": 8,
+                  "borderWidth": 2,
+                  "borderColor": "#8F959E",
+                  "fillColor": "#FFFFFF",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "ctx-usr-title",
+                      "width": "fill-container",
+                      "height": "fit-content",
+                      "text": "项目关联补充 (由用户上传)",
+                      "fontSize": 12,
+                      "fontWeight": "bold",
+                      "textAlign": "center",
+                      "verticalAlign": "middle",
+                      "textColor": "#1F2329"
+                    },
+                    {
+                      "type": "rect",
+                      "id": "ctx-3",
+                      "width": "fill-container",
+                      "height": "fit-content",
+                      "text": "设计文件 / 图纸",
+                      "borderRadius": 8,
+                      "borderWidth": 1,
+                      "borderColor": "#8F959E",
+                      "fillColor": "#F2F3F5",
+                      "fontSize": 14,
+                      "textAlign": "center",
+                      "verticalAlign": "middle"
+                    },
+                    {
+                      "type": "rect",
+                      "id": "ctx-4",
+                      "width": "fill-container",
+                      "height": "fit-content",
+                      "text": "地勘报告",
+                      "borderRadius": 8,
+                      "borderWidth": 1,
+                      "borderColor": "#8F959E",
+                      "fillColor": "#F2F3F5",
+                      "fontSize": 14,
+                      "textAlign": "center",
+                      "verticalAlign": "middle"
+                    },
+                    {
+                      "type": "rect",
+                      "id": "ctx-5",
+                      "width": "fill-container",
+                      "height": "fit-content",
+                      "text": "施工合同 / 招标文件",
+                      "borderRadius": 8,
+                      "borderWidth": 1,
+                      "borderColor": "#8F959E",
+                      "fillColor": "#F2F3F5",
+                      "fontSize": 14,
+                      "textAlign": "center",
+                      "verticalAlign": "middle"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "engine-block",
+              "width": 300,
+              "height": "fill-container",
+              "layout": "vertical",
+              "justifyContent": "center",
+              "alignItems": "stretch",
+              "gap": 16,
+              "padding": 24,
+              "borderRadius": 8,
+              "borderWidth": 2,
+              "borderColor": "#00B365",
+              "fillColor": "#E8F8F2",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "engine-title",
+                  "width": "fill-container",
+                  "height": "fit-content",
+                  "text": "第 4 步: 组合执行引擎",
+                  "fontSize": 18,
+                  "fontWeight": "bold",
+                  "textAlign": "center",
+                  "verticalAlign": "middle",
+                  "textColor": "#1F2329"
+                },
+                {
+                  "type": "frame",
+                  "id": "engine-internals",
+                  "width": "fill-container",
+                  "height": "fit-content",
+                  "layout": "vertical",
+                  "gap": 12,
+                  "padding": 16,
+                  "borderRadius": 8,
+                  "borderWidth": 2,
+                  "borderColor": "#00B365",
+                  "fillColor": "#FFFFFF",
+                  "children": [
+                    {
+                      "type": "rect",
+                      "id": "e-1",
+                      "width": "fill-container",
+                      "height": "fit-content",
+                      "text": "匹配通用+专属验证规则",
+                      "borderRadius": 8,
+                      "borderWidth": 1,
+                      "borderColor": "#00B365",
+                      "fillColor": "#F2F3F5",
+                      "fontSize": 12,
+                      "textAlign": "center",
+                      "verticalAlign": "middle"
+                    },
+                    {
+                      "type": "rect",
+                      "id": "e-2",
+                      "width": "fill-container",
+                      "height": "fit-content",
+                      "text": "读取全部审查依据上下文",
+                      "borderRadius": 8,
+                      "borderWidth": 1,
+                      "borderColor": "#00B365",
+                      "fillColor": "#F2F3F5",
+                      "fontSize": 12,
+                      "textAlign": "center",
+                      "verticalAlign": "middle"
+                    },
+                    {
+                      "type": "rect",
+                      "id": "e-3",
+                      "width": "fill-container",
+                      "height": "fit-content",
+                      "text": "大模型与规则链混合核对",
+                      "borderRadius": 8,
+                      "borderWidth": 1,
+                      "borderColor": "#00B365",
+                      "fillColor": "#F2F3F5",
+                      "fontSize": 12,
+                      "textAlign": "center",
+                      "verticalAlign": "middle"
+                    }
+                  ]
+                },
+                {
+                  "type": "rect",
+                  "id": "e-out",
+                  "width": "fill-container",
+                  "height": "fit-content",
+                  "text": "产出结构化审查底稿",
+                  "borderRadius": 8,
+                  "borderWidth": 2,
+                  "borderColor": "#00B365",
+                  "fillColor": "#FFFFFF",
+                  "fontSize": 14,
+                  "fontWeight": "bold",
+                  "textAlign": "center",
+                  "verticalAlign": "middle"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "connector",
+      "connector": {
+        "from": "input-block",
+        "to": "dropdown-block",
+        "fromAnchor": "right",
+        "toAnchor": "left",
+        "lineShape": "straight",
+        "lineWidth": 2,
+        "endArrow": "arrow"
+      }
+    },
+    {
+      "type": "connector",
+      "connector": {
+        "from": "dropdown-block",
+        "to": "context-block",
+        "fromAnchor": "right",
+        "toAnchor": "left",
+        "lineShape": "straight",
+        "lineWidth": 2,
+        "endArrow": "arrow"
+      }
+    },
+    {
+      "type": "connector",
+      "connector": {
+        "from": "context-block",
+        "to": "engine-block",
+        "fromAnchor": "right",
+        "toAnchor": "left",
+        "lineShape": "straight",
+        "lineWidth": 2,
+        "endArrow": "arrow"
+      }
+    }
+  ]
+}
