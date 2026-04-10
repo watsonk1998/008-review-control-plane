@@ -59,6 +59,10 @@ class FactPacketAdapter:
             overall_assessment=overall_conclusion,
             raw_result=result,
             produced_at=datetime.now(timezone.utc),
+            metadata={
+                'worker_id': 'fact_packet_adapter',
+                'module_id': 'structured_review_result',
+            },
         )
 
         logger.info(

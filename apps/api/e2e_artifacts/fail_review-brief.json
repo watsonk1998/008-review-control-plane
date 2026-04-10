@@ -1,0 +1,25 @@
+{
+  "review_id": "hermes-e2e-fail",
+  "review_object_type": "construction_org",
+  "target_files": [
+    {
+      "path": "dummy.pdf",
+      "type": "pdf",
+      "name": "dummy.pdf"
+    }
+  ],
+  "basis_files": [],
+  "project_context_files": [],
+  "focus_pack": {
+    "discipline_tags": [
+      "safety"
+    ]
+  },
+  "review_policy": {
+    "strict_mode": true
+  },
+  "report_type": "structured_review",
+  "query": "Review for issues.",
+  "compiled_at": "2026-04-09T16:20:48.965443Z",
+  "metadata": {}
+}

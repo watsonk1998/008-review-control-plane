@@ -108,6 +108,7 @@ class FactPacket(BaseModel):
     produced_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     error: str | None = None
     degraded: bool = False
+    metadata: dict[str, Any] = Field(default_factory=dict)
 
 
 # ---------------------------------------------------------------------------
@@ -131,3 +132,4 @@ class FinalReportPacket(BaseModel):
     degradation_info: dict[str, Any] = Field(default_factory=dict)
     produced_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     source_packets: dict[str, dict[str, Any]] = Field(default_factory=dict)
+    metadata: dict[str, Any] = Field(default_factory=dict)

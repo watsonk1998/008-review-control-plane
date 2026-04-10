@@ -67,6 +67,12 @@ class TaskCompiler:
                 'display_name': source_document_ref.displayName,
             })
 
+        hermes_input = dict(plan.get('hermesInput') or {})
+
+        # --- basis/context files ---
+        basis_files = list(hermes_input.get('basisFiles') or [])
+        project_context_files = list(hermes_input.get('contextFiles') or [])
+
         # --- focus pack ---
         focus_pack = {
             'discipline_tags': list(
@@ -79,6 +85,9 @@ class TaskCompiler:
                 or plan_profile.get('policyPackHints')
                 or []
             ),
+            'focus_requirements': list(hermes_input.get('focusRequirements') or []),
+            'enabled_agents': list(hermes_input.get('enabledAgents') or []),
+            'disabled_agents': list(hermes_input.get('disabledAgents') or []),
         }
 
         # --- review policy ---
@@ -94,8 +103,8 @@ class TaskCompiler:
                 or 'construction_org'
             ),
             target_files=target_files,
-            basis_files=[],  # future: populated from policy packs / attached standards
-            project_context_files=[],  # future: populated for multi-file review
+            basis_files=basis_files,
+            project_context_files=project_context_files,
             focus_pack=focus_pack,
             review_policy=review_policy,
             report_type='structured_review',
@@ -106,6 +115,7 @@ class TaskCompiler:
                 'capability_mode': task.capabilityMode,
                 'fixture_id': task.fixtureId,
                 'plan_authority': plan_profile.get('authority'),
+                'hermes_input': hermes_input,
             },
         )
 

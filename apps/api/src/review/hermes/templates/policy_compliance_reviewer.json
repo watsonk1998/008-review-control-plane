@@ -1,0 +1,20 @@
+{
+  "id": "policy_compliance_reviewer",
+  "agent_name": "规范合规审查",
+  "agent_purpose": "复用008 pack/rule/evidence能力，补充规范命中视角",
+  "agent_scope": "policy_and_rule_focus",
+  "execution_mode": "module_only",
+  "module_bindings": ["parse_visibility", "fact_extract", "profile_and_packs", "rule_and_evidence"],
+  "supported_document_types": [],
+  "focus_keywords": ["规范", "法规", "合规", "条款", "规则", "停送电"],
+  "required_context_types": ["target_document", "basis_files"],
+  "input_contract": {"type": "review_brief"},
+  "output_contract": {"type": "fact_packet", "role": "supplemental"},
+  "instructions": "优先输出规则命中、证据缺口、政策依据。",
+  "prompt": "",
+  "default_enabled": true,
+  "save_policy": {"seed": true},
+  "template_version": "1.0.0",
+  "compatibility": {"controller": "hermes_v0"},
+  "metadata": {"preferred_pack_ids": ["power_outage_work.base", "construction_org.base"]}
+}

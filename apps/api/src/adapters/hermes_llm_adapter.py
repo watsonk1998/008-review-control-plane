@@ -84,6 +84,19 @@ class HermesLLMAdapter(HermesReviewEngine):
     def available(self) -> bool:
         return self._llm is not None
 
+    async def health_check(self) -> dict[str, Any]:
+        if not self.available:
+            return {'available': False, 'mode': 'not_configured', 'detail': 'LLM gateway is not configured'}
+        try:
+            llm_health = await self._llm.health_check()
+            return {
+                'available': llm_health.get('available', False),
+                'mode': 'llm_fallback',
+                'detail': llm_health.get('detail', 'OK')
+            }
+        except Exception as e:
+            return {'available': False, 'mode': 'error', 'detail': f'LLM error: {str(e)}'}
+
     async def review(
         self,
         brief: ReviewBrief,

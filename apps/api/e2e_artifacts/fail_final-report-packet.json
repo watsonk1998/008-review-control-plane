@@ -1,0 +1,204 @@
+{
+  "review_id": "hermes-e2e-fail",
+  "final_grade": "needs_revision",
+  "executive_summary": "本次审查综合评级：**需要修改**。 008引擎发现 1 个问题（高 1，中 0，低 0）。 Hermes引擎本次未能参与审查（unexpected error: All connection attempts failed），报告基于008单路结果。",
+  "top_risks": [
+    {
+      "id": "ISSUE-001",
+      "title": "The main structure is missing critical details",
+      "severity": "high",
+      "category": "structure",
+      "layer": "L1",
+      "evidence_status": "grounded",
+      "evidence_refs": [],
+      "basis_refs": [],
+      "suggestion": "Add the missing details.",
+      "summary": "A key section is entirely missing.",
+      "finding_type": "hard_defect",
+      "manual_review_needed": false,
+      "confidence": "high",
+      "source_engine": "008",
+      "raw_data": {
+        "id": "ISSUE-001",
+        "title": "The main structure is missing critical details",
+        "severity": "high",
+        "layer": "L1",
+        "findingType": "hard_defect",
+        "issueKind": "hard_defect",
+        "summary": "A key section is entirely missing.",
+        "manualReviewNeeded": false,
+        "evidenceMissing": false,
+        "docEvidence": [],
+        "policyEvidence": [],
+        "recommendation": [
+          "Add the missing details."
+        ],
+        "confidence": "high"
+      }
+    }
+  ],
+  "key_findings": [
+    {
+      "id": "ISSUE-001",
+      "title": "The main structure is missing critical details",
+      "severity": "high",
+      "category": "structure",
+      "layer": "L1",
+      "evidence_status": "grounded",
+      "evidence_refs": [],
+      "basis_refs": [],
+      "suggestion": "Add the missing details.",
+      "summary": "A key section is entirely missing.",
+      "finding_type": "hard_defect",
+      "manual_review_needed": false,
+      "confidence": "high",
+      "source_engine": "008",
+      "raw_data": {
+        "id": "ISSUE-001",
+        "title": "The main structure is missing critical details",
+        "severity": "high",
+        "layer": "L1",
+        "findingType": "hard_defect",
+        "issueKind": "hard_defect",
+        "summary": "A key section is entirely missing.",
+        "manualReviewNeeded": false,
+        "evidenceMissing": false,
+        "docEvidence": [],
+        "policyEvidence": [],
+        "recommendation": [
+          "Add the missing details."
+        ],
+        "confidence": "high"
+      }
+    }
+  ],
+  "supplemental_findings": [],
+  "all_findings": [
+    {
+      "id": "ISSUE-001",
+      "title": "The main structure is missing critical details",
+      "severity": "high",
+      "category": "structure",
+      "layer": "L1",
+      "evidence_status": "grounded",
+      "evidence_refs": [],
+      "basis_refs": [],
+      "suggestion": "Add the missing details.",
+      "summary": "A key section is entirely missing.",
+      "finding_type": "hard_defect",
+      "manual_review_needed": false,
+      "confidence": "high",
+      "source_engine": "008",
+      "raw_data": {
+        "id": "ISSUE-001",
+        "title": "The main structure is missing critical details",
+        "severity": "high",
+        "layer": "L1",
+        "findingType": "hard_defect",
+        "issueKind": "hard_defect",
+        "summary": "A key section is entirely missing.",
+        "manualReviewNeeded": false,
+        "evidenceMissing": false,
+        "docEvidence": [],
+        "policyEvidence": [],
+        "recommendation": [
+          "Add the missing details."
+        ],
+        "confidence": "high"
+      }
+    }
+  ],
+  "traceability": [
+    {
+      "finding_id": "ISSUE-001",
+      "source_engine": "008",
+      "corroborated": false
+    }
+  ],
+  "report_markdown": "# 施工组织设计 — 综合审查报告\n\n## 综合评估\n\n本次审查综合评级：**需要修改**。 008引擎发现 1 个问题（高 1，中 0，低 0）。 Hermes引擎本次未能参与审查（unexpected error: All connection attempts failed），报告基于008单路结果。\n\n## 重点风险\n\n- **[HIGH]** The main structure is missing critical details\n  A key section is entirely missing.\n\n## 主要问题\n\n| 编号 | 严重度 | 来源 | 问题 | 建议 |\n|------|--------|------|------|------|\n| ISSUE-001 | high | 008 | The main structure is missing critical details | Add the missing details. |\n\n## 审查引擎信息\n\n- 使用引擎: 008\n- hermes 降级: unexpected error: All connection attempts failed\n",
+  "report_sections": [],
+  "engines_used": [
+    "008"
+  ],
+  "degradation_info": {
+    "hermes": {
+      "status": "degraded",
+      "reason": "unexpected error: All connection attempts failed"
+    }
+  },
+  "produced_at": "2026-04-09T16:20:48.987312Z",
+  "source_packets": {
+    "008": {
+      "review_id": "hermes-e2e-fail",
+      "engine": "008",
+      "summary_metrics": {
+        "total_findings": 1,
+        "high_severity": 1,
+        "medium_severity": 0,
+        "low_severity": 0,
+        "info_findings": 0,
+        "grounded_findings": 1,
+        "evidence_gap_findings": 0,
+        "manual_review_needed": 0
+      },
+      "findings": [
+        {
+          "id": "ISSUE-001",
+          "title": "The main structure is missing critical details",
+          "severity": "high",
+          "category": "structure",
+          "layer": "L1",
+          "evidence_status": "grounded",
+          "evidence_refs": [],
+          "basis_refs": [],
+          "suggestion": "Add the missing details.",
+          "summary": "A key section is entirely missing.",
+          "finding_type": "hard_defect",
+          "manual_review_needed": false,
+          "confidence": "high",
+          "source_engine": "008",
+          "raw_data": {
+            "id": "ISSUE-001",
+            "title": "The main structure is missing critical details",
+            "severity": "high",
+            "layer": "L1",
+            "findingType": "hard_defect",
+            "issueKind": "hard_defect",
+            "summary": "A key section is entirely missing.",
+            "manualReviewNeeded": false,
+            "evidenceMissing": false,
+            "docEvidence": [],
+            "policyEvidence": [],
+            "recommendation": [
+              "Add the missing details."
+            ],
+            "confidence": "high"
+          }
+        }
+      ],
+      "overall_assessment": "Needs revision.",
+      "produced_at": "2026-04-09T16:20:48.977104Z",
+      "error": null,
+      "degraded": false
+    },
+    "hermes": {
+      "review_id": "hermes-e2e-fail",
+      "engine": "hermes",
+      "summary_metrics": {
+        "total_findings": 0,
+        "high_severity": 0,
+        "medium_severity": 0,
+        "low_severity": 0,
+        "info_findings": 0,
+        "grounded_findings": 0,
+        "evidence_gap_findings": 0,
+        "manual_review_needed": 0
+      },
+      "findings": [],
+      "overall_assessment": "External Hermes Review unavailable: unexpected error: All connection attempts failed",
+      "produced_at": "2026-04-09T16:20:48.986567Z",
+      "error": "unexpected error: All connection attempts failed",
+      "degraded": true
+    }
+  }
+}

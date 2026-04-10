@@ -9,6 +9,7 @@ and the true external Hermes agent.
 from __future__ import annotations
 
 import abc
+from typing import Any
 
 from src.review.contracts import FactPacket, ReviewBrief
 
@@ -20,6 +21,11 @@ class HermesReviewEngine(abc.ABC):
     @abc.abstractmethod
     def available(self) -> bool:
         """Return True if the engine is configured and fundamentally available."""
+        pass
+
+    @abc.abstractmethod
+    async def health_check(self) -> dict[str, Any]:
+        """Check health status. Should return detailed state like not_configured, available, etc."""
         pass
 
     @abc.abstractmethod

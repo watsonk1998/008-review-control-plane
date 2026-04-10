@@ -1,0 +1,378 @@
+{
+  "review_id": "hermes-e2e-real",
+  "final_grade": "needs_revision",
+  "executive_summary": "本次审查综合评级：**需要修改**。 008引擎发现 1 个问题（高 1，中 0，低 0）。 Hermes引擎补充发现 2 个独立问题。",
+  "top_risks": [
+    {
+      "id": "ISSUE-001",
+      "title": "The main structure is missing critical details",
+      "severity": "high",
+      "category": "structure",
+      "layer": "L1",
+      "evidence_status": "grounded",
+      "evidence_refs": [],
+      "basis_refs": [],
+      "suggestion": "Add the missing details.",
+      "summary": "A key section is entirely missing.",
+      "finding_type": "hard_defect",
+      "manual_review_needed": false,
+      "confidence": "high",
+      "source_engine": "008",
+      "raw_data": {
+        "id": "ISSUE-001",
+        "title": "The main structure is missing critical details",
+        "severity": "high",
+        "layer": "L1",
+        "findingType": "hard_defect",
+        "issueKind": "hard_defect",
+        "summary": "A key section is entirely missing.",
+        "manualReviewNeeded": false,
+        "evidenceMissing": false,
+        "docEvidence": [],
+        "policyEvidence": [],
+        "recommendation": [
+          "Add the missing details."
+        ],
+        "confidence": "high",
+        "corroborated_by_hermes": [
+          "H-001"
+        ]
+      }
+    },
+    {
+      "id": "H-002",
+      "title": "缺乏安全专项方案及风险预控机制",
+      "severity": "high",
+      "category": "safety",
+      "layer": "",
+      "evidence_status": "inferred",
+      "evidence_refs": [],
+      "basis_refs": [],
+      "suggestion": "必须编制独立的安全管理章节，识别基坑支护、高支模、起重吊装等危大工程，并配套专项方案、专家论证记录、监测计划及应急响应流程。",
+      "summary": "文档中未体现任何安全相关内容，既无危险性较大的分部分项工程清单，也无专项施工方案、应急预案、安全技术交底机制或现场安全防护布置，违反《建设工程安全生产管理条例》第二十六条。",
+      "finding_type": "engineering_inference",
+      "manual_review_needed": false,
+      "confidence": "high",
+      "source_engine": "hermes",
+      "raw_data": {
+        "corroborates_008_finding": null
+      }
+    }
+  ],
+  "key_findings": [
+    {
+      "id": "ISSUE-001",
+      "title": "The main structure is missing critical details",
+      "severity": "high",
+      "category": "structure",
+      "layer": "L1",
+      "evidence_status": "grounded",
+      "evidence_refs": [],
+      "basis_refs": [],
+      "suggestion": "Add the missing details.",
+      "summary": "A key section is entirely missing.",
+      "finding_type": "hard_defect",
+      "manual_review_needed": false,
+      "confidence": "high",
+      "source_engine": "008",
+      "raw_data": {
+        "id": "ISSUE-001",
+        "title": "The main structure is missing critical details",
+        "severity": "high",
+        "layer": "L1",
+        "findingType": "hard_defect",
+        "issueKind": "hard_defect",
+        "summary": "A key section is entirely missing.",
+        "manualReviewNeeded": false,
+        "evidenceMissing": false,
+        "docEvidence": [],
+        "policyEvidence": [],
+        "recommendation": [
+          "Add the missing details."
+        ],
+        "confidence": "high",
+        "corroborated_by_hermes": [
+          "H-001"
+        ]
+      }
+    }
+  ],
+  "supplemental_findings": [
+    {
+      "id": "H-002",
+      "title": "缺乏安全专项方案及风险预控机制",
+      "severity": "high",
+      "category": "safety",
+      "layer": "",
+      "evidence_status": "inferred",
+      "evidence_refs": [],
+      "basis_refs": [],
+      "suggestion": "必须编制独立的安全管理章节，识别基坑支护、高支模、起重吊装等危大工程，并配套专项方案、专家论证记录、监测计划及应急响应流程。",
+      "summary": "文档中未体现任何安全相关内容，既无危险性较大的分部分项工程清单，也无专项施工方案、应急预案、安全技术交底机制或现场安全防护布置，违反《建设工程安全生产管理条例》第二十六条。",
+      "finding_type": "engineering_inference",
+      "manual_review_needed": false,
+      "confidence": "high",
+      "source_engine": "hermes",
+      "raw_data": {
+        "corroborates_008_finding": null
+      }
+    },
+    {
+      "id": "H-003",
+      "title": "结构设计逻辑与施工组织脱节",
+      "severity": "medium",
+      "category": "consistency",
+      "layer": "",
+      "evidence_status": "inferred",
+      "evidence_refs": [],
+      "basis_refs": [],
+      "suggestion": "建立结构关键路径与施工组织主线的双向映射关系，在进度计划、资源表、平剖面图中同步体现结构特殊要求。",
+      "summary": "即便假设存在隐含结构信息，当前文本亦未体现结构施工与组织设计之间的逻辑关联（如结构分段与流水段划分、大型构件吊装与机械选型匹配、混凝土供应与浇筑节奏协调等），表明方案缺乏系统性策划。",
+      "finding_type": "engineering_inference",
+      "manual_review_needed": false,
+      "confidence": "medium",
+      "source_engine": "hermes",
+      "raw_data": {
+        "corroborates_008_finding": null
+      }
+    }
+  ],
+  "all_findings": [
+    {
+      "id": "ISSUE-001",
+      "title": "The main structure is missing critical details",
+      "severity": "high",
+      "category": "structure",
+      "layer": "L1",
+      "evidence_status": "grounded",
+      "evidence_refs": [],
+      "basis_refs": [],
+      "suggestion": "Add the missing details.",
+      "summary": "A key section is entirely missing.",
+      "finding_type": "hard_defect",
+      "manual_review_needed": false,
+      "confidence": "high",
+      "source_engine": "008",
+      "raw_data": {
+        "id": "ISSUE-001",
+        "title": "The main structure is missing critical details",
+        "severity": "high",
+        "layer": "L1",
+        "findingType": "hard_defect",
+        "issueKind": "hard_defect",
+        "summary": "A key section is entirely missing.",
+        "manualReviewNeeded": false,
+        "evidenceMissing": false,
+        "docEvidence": [],
+        "policyEvidence": [],
+        "recommendation": [
+          "Add the missing details."
+        ],
+        "confidence": "high",
+        "corroborated_by_hermes": [
+          "H-001"
+        ]
+      }
+    },
+    {
+      "id": "H-002",
+      "title": "缺乏安全专项方案及风险预控机制",
+      "severity": "high",
+      "category": "safety",
+      "layer": "",
+      "evidence_status": "inferred",
+      "evidence_refs": [],
+      "basis_refs": [],
+      "suggestion": "必须编制独立的安全管理章节，识别基坑支护、高支模、起重吊装等危大工程，并配套专项方案、专家论证记录、监测计划及应急响应流程。",
+      "summary": "文档中未体现任何安全相关内容，既无危险性较大的分部分项工程清单，也无专项施工方案、应急预案、安全技术交底机制或现场安全防护布置，违反《建设工程安全生产管理条例》第二十六条。",
+      "finding_type": "engineering_inference",
+      "manual_review_needed": false,
+      "confidence": "high",
+      "source_engine": "hermes",
+      "raw_data": {
+        "corroborates_008_finding": null
+      }
+    },
+    {
+      "id": "H-003",
+      "title": "结构设计逻辑与施工组织脱节",
+      "severity": "medium",
+      "category": "consistency",
+      "layer": "",
+      "evidence_status": "inferred",
+      "evidence_refs": [],
+      "basis_refs": [],
+      "suggestion": "建立结构关键路径与施工组织主线的双向映射关系，在进度计划、资源表、平剖面图中同步体现结构特殊要求。",
+      "summary": "即便假设存在隐含结构信息，当前文本亦未体现结构施工与组织设计之间的逻辑关联（如结构分段与流水段划分、大型构件吊装与机械选型匹配、混凝土供应与浇筑节奏协调等），表明方案缺乏系统性策划。",
+      "finding_type": "engineering_inference",
+      "manual_review_needed": false,
+      "confidence": "medium",
+      "source_engine": "hermes",
+      "raw_data": {
+        "corroborates_008_finding": null
+      }
+    }
+  ],
+  "traceability": [
+    {
+      "finding_id": "ISSUE-001",
+      "source_engine": "008",
+      "corroborated": true
+    },
+    {
+      "finding_id": "H-001",
+      "source_engine": "hermes",
+      "merged_into_008": true
+    },
+    {
+      "finding_id": "H-002",
+      "source_engine": "hermes",
+      "corroborated": false
+    },
+    {
+      "finding_id": "H-003",
+      "source_engine": "hermes",
+      "corroborated": false
+    }
+  ],
+  "report_markdown": "# 施工组织设计 — 综合审查报告\n\n## 综合评估\n\n本次审查综合评级：**需要修改**。 008引擎发现 1 个问题（高 1，中 0，低 0）。 Hermes引擎补充发现 2 个独立问题。\n\n## 重点风险\n\n- **[HIGH]** The main structure is missing critical details\n  A key section is entirely missing.\n- **[HIGH]** 缺乏安全专项方案及风险预控机制\n  文档中未体现任何安全相关内容，既无危险性较大的分部分项工程清单，也无专项施工方案、应急预案、安全技术交底机制或现场安全防护布置，违反《建设工程安全生产管理条例》第二十六条。\n\n## 主要问题\n\n| 编号 | 严重度 | 来源 | 问题 | 建议 |\n|------|--------|------|------|------|\n| ISSUE-001 | high | 008 ✓ | The main structure is missing critical details | Add the missing details. |\n\n## 补充关注项（Hermes 独立发现）\n\n- **[H-002]** [high] 缺乏安全专项方案及风险预控机制\n  文档中未体现任何安全相关内容，既无危险性较大的分部分项工程清单，也无专项施工方案、应急预案、安全技术交底机制或现场安全防护布置，违反《建设工程安全生产管理条例》第二十六条。\n  建议: 必须编制独立的安全管理章节，识别基坑支护、高支模、起重吊装等危大工程，并配套专项方案、专家论证记录、监测计划及应急响应流程。\n- **[H-003]** [medium] 结构设计逻辑与施工组织脱节\n  即便假设存在隐含结构信息，当前文本亦未体现结构施工与组织设计之间的逻辑关联（如结构分段与流水段划分、大型构件吊装与机械选型匹配、混凝土供应与浇筑节奏协调等），表明方案缺乏系统性策划。\n  建议: 建立结构关键路径与施工组织主线的双向映射关系，在进度计划、资源表、平剖面图中同步体现结构特殊要求。\n\n## 审查引擎信息\n\n- 使用引擎: 008, hermes\n",
+  "report_sections": [],
+  "engines_used": [
+    "008",
+    "hermes"
+  ],
+  "degradation_info": {},
+  "produced_at": "2026-04-09T16:20:48.964101Z",
+  "source_packets": {
+    "008": {
+      "review_id": "hermes-e2e-real",
+      "engine": "008",
+      "summary_metrics": {
+        "total_findings": 1,
+        "high_severity": 1,
+        "medium_severity": 0,
+        "low_severity": 0,
+        "info_findings": 0,
+        "grounded_findings": 1,
+        "evidence_gap_findings": 0,
+        "manual_review_needed": 0
+      },
+      "findings": [
+        {
+          "id": "ISSUE-001",
+          "title": "The main structure is missing critical details",
+          "severity": "high",
+          "category": "structure",
+          "layer": "L1",
+          "evidence_status": "grounded",
+          "evidence_refs": [],
+          "basis_refs": [],
+          "suggestion": "Add the missing details.",
+          "summary": "A key section is entirely missing.",
+          "finding_type": "hard_defect",
+          "manual_review_needed": false,
+          "confidence": "high",
+          "source_engine": "008",
+          "raw_data": {
+            "id": "ISSUE-001",
+            "title": "The main structure is missing critical details",
+            "severity": "high",
+            "layer": "L1",
+            "findingType": "hard_defect",
+            "issueKind": "hard_defect",
+            "summary": "A key section is entirely missing.",
+            "manualReviewNeeded": false,
+            "evidenceMissing": false,
+            "docEvidence": [],
+            "policyEvidence": [],
+            "recommendation": [
+              "Add the missing details."
+            ],
+            "confidence": "high"
+          }
+        }
+      ],
+      "overall_assessment": "Needs revision.",
+      "produced_at": "2026-04-09T16:20:30.482900Z",
+      "error": null,
+      "degraded": false
+    },
+    "hermes": {
+      "review_id": "hermes-e2e-real",
+      "engine": "hermes",
+      "summary_metrics": {
+        "total_findings": 3,
+        "high_severity": 2,
+        "medium_severity": 1,
+        "low_severity": 0,
+        "info_findings": 0,
+        "grounded_findings": 0,
+        "evidence_gap_findings": 0,
+        "manual_review_needed": 0
+      },
+      "findings": [
+        {
+          "id": "H-001",
+          "title": "文档实质内容完全缺失，非有效施工组织设计文件",
+          "severity": "high",
+          "category": "completeness",
+          "layer": "",
+          "evidence_status": "inferred",
+          "evidence_refs": [],
+          "basis_refs": [],
+          "suggestion": "立即补充真实、完整的施工组织设计文件，至少应包含工程概况、施工部署、施工进度计划、施工准备与资源配置计划、主要施工方法、施工现场平面布置及安全管理措施等核心章节。",
+          "summary": "所提供内容仅为占位符文本（'This is the mock text...'），无图纸、无章节、无技术参数、无管理流程，不符合《建筑施工组织设计规范》（GB/T 50502）对基本构成的强制性要求。",
+          "finding_type": "engineering_inference",
+          "manual_review_needed": false,
+          "confidence": "high",
+          "source_engine": "hermes",
+          "raw_data": {
+            "corroborates_008_finding": "ISSUE-001"
+          }
+        },
+        {
+          "id": "H-002",
+          "title": "缺乏安全专项方案及风险预控机制",
+          "severity": "high",
+          "category": "safety",
+          "layer": "",
+          "evidence_status": "inferred",
+          "evidence_refs": [],
+          "basis_refs": [],
+          "suggestion": "必须编制独立的安全管理章节，识别基坑支护、高支模、起重吊装等危大工程，并配套专项方案、专家论证记录、监测计划及应急响应流程。",
+          "summary": "文档中未体现任何安全相关内容，既无危险性较大的分部分项工程清单，也无专项施工方案、应急预案、安全技术交底机制或现场安全防护布置，违反《建设工程安全生产管理条例》第二十六条。",
+          "finding_type": "engineering_inference",
+          "manual_review_needed": false,
+          "confidence": "high",
+          "source_engine": "hermes",
+          "raw_data": {
+            "corroborates_008_finding": null
+          }
+        },
+        {
+          "id": "H-003",
+          "title": "结构设计逻辑与施工组织脱节",
+          "severity": "medium",
+          "category": "consistency",
+          "layer": "",
+          "evidence_status": "inferred",
+          "evidence_refs": [],
+          "basis_refs": [],
+          "suggestion": "建立结构关键路径与施工组织主线的双向映射关系，在进度计划、资源表、平剖面图中同步体现结构特殊要求。",
+          "summary": "即便假设存在隐含结构信息，当前文本亦未体现结构施工与组织设计之间的逻辑关联（如结构分段与流水段划分、大型构件吊装与机械选型匹配、混凝土供应与浇筑节奏协调等），表明方案缺乏系统性策划。",
+          "finding_type": "engineering_inference",
+          "manual_review_needed": false,
+          "confidence": "medium",
+          "source_engine": "hermes",
+          "raw_data": {
+            "corroborates_008_finding": null
+          }
+        }
+      ],
+      "overall_assessment": "文档整体结构不完整，核心内容严重缺失；仅提供‘mock text’和模糊描述，未呈现任何实质性施工组织设计要素（如进度计划、资源配置、现场布置、安全专项方案等），不具备技术审查基础。第一路审查指出的结构细节缺失问题属实且具有高度风险。",
+      "produced_at": "2026-04-09T16:20:48.962791Z",
+      "error": null,
+      "degraded": false
+    }
+  }
+}

@@ -12,10 +12,9 @@ from src.domain.models import SourceDocumentRef, TaskEvent, TaskRecord
 from src.orchestrator.planner import TaskPlanner
 from src.orchestrator.router import infer_default_dataset
 from src.repositories.sqlite_store import SQLiteTaskStore
-from src.review.dual_review_orchestrator import DualReviewOrchestrator
 from src.review.hermes_review_engine import HermesReviewEngine
 from src.review.pipeline import StructuredReviewExecutor
-from src.review.task_compiler import TaskCompiler
+from src.review.hermes_controller import HermesController
 from src.services.document_loader import DocumentLoader
 from src.services.fixture_service import FixtureService
 
@@ -32,6 +31,7 @@ class DeepResearchRuntime:
         gpt_researcher: GPTResearcherAdapter,
         deeptutor: DeepTutorAdapter | None,
         hermes_engine: HermesReviewEngine,
+        hermes_controller: HermesController,
         tasks_dir: Path,
     ):
         self.store = store
@@ -48,10 +48,8 @@ class DeepResearchRuntime:
             llm_gateway=llm_gateway,
             fast_adapter=fast_adapter,
         )
-        self.task_compiler = TaskCompiler()
-        self.dual_review = DualReviewOrchestrator(
-            hermes_engine=hermes_engine,
-        )
+        self.hermes_engine = hermes_engine
+        self.hermes_controller = hermes_controller
 
     async def execute_task(self, task_id: str):
         task = self.store.get_task(task_id)
@@ -225,50 +223,41 @@ class DeepResearchRuntime:
         emit_fn = lambda stage, capability, status, message, **kwargs: self._emit(task.id, stage, capability, status, message, **kwargs)
         write_json_fn = lambda name, payload: self._write_task_artifact(task.id, name, payload)
 
-        result = await self.structured_review.run(
-            task_id=task.id,
-            query=task.query,
-            source_document_path=source_document_path,
-            source_document_ref=source_document_ref,
-            fixture_id=resolved_fixture.id if resolved_fixture else None,
-            plan=plan,
-            document_type=task.documentType,
-            discipline_tags=task.disciplineTags,
-            strict_mode=task.strictMode,
-            policy_pack_ids=task.policyPackIds,
-            emit=emit_fn,
-            write_json_artifact=write_json_fn,
-            write_text_artifact=lambda name, content, suffix='.md': self._write_text_artifact(task.id, name, content, suffix=suffix),
-            write_binary_artifact=lambda name, content, suffix='.bin': self._write_binary_artifact(task.id, name, content, suffix=suffix),
-        )
-
-        # --- Dual Review: 008 + Hermes (post-hoc, never blocks 008 result) ---
+        plan = self._with_default_hermes_input(task=task, plan=plan, source_document_path=source_document_path)
         try:
-            review_brief = self.task_compiler.compile(
-                task,
+            result = await self.hermes_controller.run(
+                task=task,
+                plan=plan,
                 source_document_ref=source_document_ref,
                 source_document_path=source_document_path,
-                plan=plan,
-            )
-            doc_preview = ''
-            try:
-                doc_preview = self.document_loader.extract_text(source_document_path)[:6000]
-            except Exception:
-                pass
-            result = await self.dual_review.orchestrate(
-                review_brief=review_brief,
-                result_008=result,
-                document_preview=doc_preview,
+                fixture=resolved_fixture,
                 emit=emit_fn,
                 write_json_artifact=write_json_fn,
+                write_text_artifact=lambda name, content, suffix='.md': self._write_text_artifact(task.id, name, content, suffix=suffix),
+                write_binary_artifact=lambda name, content, suffix='.bin': self._write_binary_artifact(task.id, name, content, suffix=suffix),
             )
         except Exception as exc:
             self._emit(
-                task.id, 'dual_review', 'dual_review_orchestrator', 'failed',
-                f'Dual review failed (008 result preserved): {exc}',
+                task.id, 'hermes_controller', 'hermes_controller', 'failed',
+                f'Hermes controller failed, fallback to structured review only: {exc}',
             )
-            result['dualReview'] = {'enabled': False, 'error': str(exc)}
-        # --- End Dual Review ---
+            result = await self.structured_review.run(
+                task_id=task.id,
+                query=task.query,
+                source_document_path=source_document_path,
+                source_document_ref=source_document_ref,
+                fixture_id=resolved_fixture.id if resolved_fixture else None,
+                plan=plan,
+                document_type=task.documentType,
+                discipline_tags=task.disciplineTags,
+                strict_mode=task.strictMode,
+                policy_pack_ids=task.policyPackIds,
+                emit=emit_fn,
+                write_json_artifact=write_json_fn,
+                write_text_artifact=lambda name, content, suffix='.md': self._write_text_artifact(task.id, name, content, suffix=suffix),
+                write_binary_artifact=lambda name, content, suffix='.bin': self._write_binary_artifact(task.id, name, content, suffix=suffix),
+            )
+            result['hermesController'] = {'enabled': False, 'error': str(exc)}
 
         if resolved_fixture is not None:
             result['fixture'] = resolved_fixture.model_dump()
@@ -372,3 +361,32 @@ class DeepResearchRuntime:
                     resolved_fixture,
                 )
         return None, None, fixture
+
+    def _with_default_hermes_input(self, *, task: TaskRecord, plan: dict, source_document_path: str) -> dict:
+        enriched = dict(plan or {})
+        if enriched.get('hermesInput'):
+            return enriched
+        repo_root = Path(__file__).resolve().parents[4]
+        basis_files: list[dict[str, Any]] = []
+        candidate_basis = [
+            repo_root / 'fixtures/construction/《危险性较大的分部分项工程专项施工方案编制指南》（建办质〔2021〕48号）.md',
+            repo_root / 'fixtures/construction/《建设工程施工现场消防安全技术规范》GB 50720-2011.md',
+        ]
+        if '停电' in task.query or '配网' in task.query or '停电' in Path(source_document_path).name:
+            candidate_basis.insert(0, repo_root / 'fixtures/construction/《建设工程安全生产管理条例》.md')
+        for path in candidate_basis:
+            if path.exists():
+                basis_files.append({'path': str(path), 'type': path.suffix.lstrip('.'), 'name': path.name})
+        focus_parts = [task.query]
+        if '停电' in task.query or '停电' in Path(source_document_path).name:
+            focus_parts.append('重点看停送电控制链路')
+        focus_parts.append('专项章节完整性')
+        focus_parts.append('弱化格式性问题')
+        enriched['hermesInput'] = {
+            'basisFiles': basis_files[:2],
+            'contextFiles': [],
+            'focusRequirements': focus_parts,
+            'enabledAgents': [],
+            'disabledAgents': [],
+        }
+        return enriched

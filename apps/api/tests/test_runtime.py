@@ -9,6 +9,12 @@ from src.adapters.gpt_researcher_adapter import GPTResearcherAdapter
 from src.domain.models import SourceDocumentRef, TaskRecord
 from src.orchestrator.deepresearch_runtime import DeepResearchRuntime
 from src.repositories.sqlite_store import SQLiteTaskStore
+from src.review.fact_packet_adapter import FactPacketAdapter
+from src.review.hermes_controller import HermesController
+from src.review.hermes_review_engine import HermesReviewEngine
+from src.review.pipeline import StructuredReviewExecutor
+from src.review.task_compiler import TaskCompiler
+from src.review.contracts import FactPacket, FindingItem, ReviewPacketMetrics
 from src.services.document_loader import DocumentLoader
 from src.services.fixture_service import FixtureService
 
@@ -83,6 +89,36 @@ class FakeGPTResearcher:
         }
 
 
+
+
+class FakeHermesEngine(HermesReviewEngine):
+    @property
+    def available(self) -> bool:
+        return True
+
+    async def health_check(self) -> dict:
+        return {'available': True, 'mode': 'fake', 'detail': 'ok'}
+
+    async def review(self, brief, fact_packet_008=None, *, document_preview='') -> FactPacket:
+        return FactPacket(
+            review_id=brief.review_id,
+            engine='hermes',
+            findings=[
+                FindingItem(
+                    id='H-TEST-001',
+                    title='实施链路需补充校核',
+                    severity='medium',
+                    category='consistency',
+                    evidence_status='inferred',
+                    summary='Fake Hermes finding',
+                    source_engine='hermes',
+                )
+            ],
+            summary_metrics=ReviewPacketMetrics(total_findings=1, medium_severity=1),
+            overall_assessment='fake hermes ok',
+        )
+
+
 class FakeDeepTutor:
     async def ask_with_context(self, query, context_chunks):
         return {
@@ -118,14 +154,27 @@ def build_fixture_manifest(tmp_path: Path) -> Path:
 def build_runtime(tmp_path: Path, deeptutor=None) -> tuple[DeepResearchRuntime, SQLiteTaskStore]:
     manifest_path = build_fixture_manifest(tmp_path)
     store = SQLiteTaskStore(tmp_path / 'runtime.sqlite')
+    llm = FakeLLM()
+    executor = StructuredReviewExecutor(document_loader=DocumentLoader(), llm_gateway=llm, fast_adapter=FakeFast())
+    controller = HermesController(
+        task_compiler=TaskCompiler(),
+        fact_packet_adapter=FactPacketAdapter(),
+        structured_review_executor=executor,
+        hermes_engine=FakeHermesEngine(),
+        llm_gateway=llm,
+        seed_template_dir=Path('/Users/lucas/repos/review/008-review-control-plane/apps/api/src/review/hermes/templates'),
+        runtime_template_dir=tmp_path / 'runtime_agent_templates',
+    )
     runtime = DeepResearchRuntime(
         store=store,
         fixture_service=FixtureService(manifest_path),
         document_loader=DocumentLoader(),
-        llm_gateway=FakeLLM(),
+        llm_gateway=llm,
         fast_adapter=FakeFast(),
         gpt_researcher=FakeGPTResearcher(),
         deeptutor=deeptutor,
+        hermes_engine=FakeHermesEngine(),
+        hermes_controller=controller,
         tasks_dir=tmp_path / 'artifacts',
     )
     return runtime, store

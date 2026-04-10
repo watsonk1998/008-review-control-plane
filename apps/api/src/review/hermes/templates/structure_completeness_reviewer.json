@@ -1,0 +1,20 @@
+{
+  "id": "structure_completeness_reviewer",
+  "agent_name": "结构完整性审查",
+  "agent_purpose": "复用008正式结构化审查主链，产出主审查packet",
+  "agent_scope": "formal_primary_review",
+  "execution_mode": "module_only",
+  "module_bindings": ["structured_review_worker"],
+  "supported_document_types": [],
+  "focus_keywords": ["完整性", "章节", "结构", "专项"],
+  "required_context_types": ["target_document"],
+  "input_contract": {"type": "review_brief"},
+  "output_contract": {"type": "fact_packet", "role": "primary"},
+  "instructions": "调用008结构化审查主链，作为主packet来源。",
+  "prompt": "",
+  "default_enabled": true,
+  "save_policy": {"seed": true},
+  "template_version": "1.0.0",
+  "compatibility": {"controller": "hermes_v0"},
+  "metadata": {"preferred_pack_ids": []}
+}

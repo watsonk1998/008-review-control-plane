@@ -1,0 +1,20 @@
+{
+  "review_id": "hermes-e2e-fail",
+  "engine": "hermes",
+  "summary_metrics": {
+    "total_findings": 0,
+    "high_severity": 0,
+    "medium_severity": 0,
+    "low_severity": 0,
+    "info_findings": 0,
+    "grounded_findings": 0,
+    "evidence_gap_findings": 0,
+    "manual_review_needed": 0
+  },
+  "findings": [],
+  "overall_assessment": "External Hermes Review unavailable: unexpected error: All connection attempts failed",
+  "raw_result": {},
+  "produced_at": "2026-04-09T16:20:48.986567Z",
+  "error": "unexpected error: All connection attempts failed",
+  "degraded": true
+}

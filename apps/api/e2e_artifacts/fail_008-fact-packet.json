@@ -1,0 +1,80 @@
+{
+  "review_id": "hermes-e2e-fail",
+  "engine": "008",
+  "summary_metrics": {
+    "total_findings": 1,
+    "high_severity": 1,
+    "medium_severity": 0,
+    "low_severity": 0,
+    "info_findings": 0,
+    "grounded_findings": 1,
+    "evidence_gap_findings": 0,
+    "manual_review_needed": 0
+  },
+  "findings": [
+    {
+      "id": "ISSUE-001",
+      "title": "The main structure is missing critical details",
+      "severity": "high",
+      "category": "structure",
+      "layer": "L1",
+      "evidence_status": "grounded",
+      "evidence_refs": [],
+      "basis_refs": [],
+      "suggestion": "Add the missing details.",
+      "summary": "A key section is entirely missing.",
+      "finding_type": "hard_defect",
+      "manual_review_needed": false,
+      "confidence": "high",
+      "source_engine": "008",
+      "raw_data": {
+        "id": "ISSUE-001",
+        "title": "The main structure is missing critical details",
+        "severity": "high",
+        "layer": "L1",
+        "findingType": "hard_defect",
+        "issueKind": "hard_defect",
+        "summary": "A key section is entirely missing.",
+        "manualReviewNeeded": false,
+        "evidenceMissing": false,
+        "docEvidence": [],
+        "policyEvidence": [],
+        "recommendation": [
+          "Add the missing details."
+        ],
+        "confidence": "high"
+      }
+    }
+  ],
+  "overall_assessment": "Needs revision.",
+  "raw_result": {
+    "issues": [
+      {
+        "id": "ISSUE-001",
+        "title": "The main structure is missing critical details",
+        "severity": "high",
+        "layer": "L1",
+        "findingType": "hard_defect",
+        "issueKind": "hard_defect",
+        "summary": "A key section is entirely missing.",
+        "manualReviewNeeded": false,
+        "evidenceMissing": false,
+        "docEvidence": [],
+        "policyEvidence": [],
+        "recommendation": [
+          "Add the missing details."
+        ],
+        "confidence": "high"
+      }
+    ],
+    "summary": {
+      "overallConclusion": "Needs revision."
+    },
+    "capabilitiesUsed": [
+      "structured_review"
+    ]
+  },
+  "produced_at": "2026-04-09T16:20:48.977104Z",
+  "error": null,
+  "degraded": false
+}
