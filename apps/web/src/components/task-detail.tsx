@@ -894,6 +894,8 @@ export function TaskDetail({ taskId }: { taskId: string }) {
 
   const canonicalStructuredReportMarkdown = useMemo(() => {
     if (!structuredResult) return "";
+    // Deprecated fallback: reportMarkdown is only for older task payloads.
+    // New code must treat finalReportMarkdown / finalReportPacket as canonical.
     return structuredResult.finalReportMarkdown || structuredResult.finalReportPacket?.report_markdown || structuredResult.reportMarkdown || "";
   }, [structuredResult]);
 

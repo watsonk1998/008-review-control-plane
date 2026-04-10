@@ -124,7 +124,7 @@ make eval-review-replay
 
 验收要点：
 
-- 能输出 `summary / resolvedProfile / issues / matrices / artifactIndex / reportMarkdown`
+- 能输出 `summary / resolvedProfile / issues / matrices / artifactIndex / finalReportMarkdown`（外部主协议）
 - `structured_review` 同时支持 `fixtureId` 与 `sourceDocumentRef`
 - public API 不接受 `disable_visibility_check`
 - `result.visibility` 与 `unresolvedFacts` 可被 API/UI/eval 一致消费
@@ -154,7 +154,7 @@ make eval-review-replay
 - artifact API 可列出和下载工件，且与 `result.artifactIndex` 同口径；对新任务 `artifactIndex` 即使为空也优先于目录扫描
 - 详情页优先展示 `resolvedProfile / visibility / unresolvedFacts / artifactIndex / reviewerDecision`，再展示报告与原始 JSON
 - reviewer 结果页以结构化方式展示 `attachmentVisibility / ruleHits / conflicts / sectionStructure`；raw JSON 只保留为折叠调试信息
-- `reportMarkdown` 应输出纯中文正式审查报告，包含“审查依据文件”“条文规定”等可读段落，不得出现 JSON 代码块或 `policy pack id / ruleId / issue id` 等技术标识
+- `finalReportMarkdown` 应作为外部/UI 主消费字段输出纯中文正式审查报告；内部 `reportMarkdown` 仍可存在，但不再作为外部 canonical 主字段
 - reviewer 结果页需同时展示 `reviewPreparation` 摘要，并至少暴露 `provenance.sourceTier / caseVersion`；同时保留“仅用于 internal-reviewed preparation，不是 reviewed truth”的语义边界
 - `GET /api/tasks/{taskId}/review-preparation` 必须返回带 provenance 的 preparation asset；未命中版本化样本时必须显式回退 `sourceTier=runtime_only`
 - review-preparation summary/asset 必须对 issue / attachment 显式表达 `eligible / deferred / rejected` promotion disposition；summary 还必须暴露 `issueBlockingReasons / attachmentBlockingReasons`，asset 还必须暴露每条记录的 `promotionBlockingReasons`

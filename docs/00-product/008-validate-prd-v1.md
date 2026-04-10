@@ -57,7 +57,7 @@
 
 2.3 当前仓库事实约束
 
-从仓库现状看，008 已经不是单纯的“审查器本体”，而是总控编排平台；正式审查主线已收敛到 structured_review，并且结果契约已经围绕 summary / visibility / issues / matrices / artifactIndex / reportMarkdown / unresolvedFacts 展开。 ￼
+从仓库现状看，008 已经不是单纯的“审查器本体”，而是总控编排平台；正式审查主线已收敛到 structured_review。对外主协议已围绕 `summary / visibility / issues / matrices / artifactIndex / finalReportMarkdown / finalReportPacket / unresolvedFacts` 展开；008 内部结果仍可保留 `reportMarkdown` 作为内部报告字段。 ￼
 
 ⸻
 

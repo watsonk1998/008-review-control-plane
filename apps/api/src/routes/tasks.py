@@ -21,25 +21,6 @@ TASK_STREAM_POLL_SECONDS = 1.0
 TASK_STREAM_HEARTBEAT_SECONDS = 10.0
 
 
-def _build_minimal_final_report_packet(payload):
-    return {
-        'review_id': payload.get('id') or payload.get('taskId') or '',
-        'final_grade': '',
-        'executive_summary': ((payload.get('summary') or {}).get('overallConclusion') or ''),
-        'top_risks': [],
-        'key_findings': [],
-        'supplemental_findings': [],
-        'all_findings': [],
-        'traceability': [],
-        'report_markdown': payload.get('finalReportMarkdown') or payload.get('reportMarkdown') or payload.get('finalAnswer') or '',
-        'report_sections': [],
-        'engines_used': list((payload.get('hermesController') or {}).get('selectedAgents') or []),
-        'degradation_info': {},
-        'source_packets': {},
-        'metadata': {'compatibilityShim': True},
-    }
-
-
 # Legacy serializer compatibility shim.
 # Freeze boundary: read-only compatibility only; do not add new business fields here.
 def _serialize_structured_review_result(result):
@@ -82,17 +63,6 @@ def _serialize_structured_review_result(result):
             for issue in payload.get('issues', [])
         ]
 
-    final_report_markdown = payload.get('finalReportMarkdown') or payload.get('reportMarkdown') or payload.get('finalAnswer') or ''
-    payload['finalReportMarkdown'] = final_report_markdown
-    payload['traceability'] = list(
-        payload.get('traceability')
-        or ((payload.get('finalReportPacket') or {}).get('traceability') or [])
-    )
-    if 'finalReportPacket' not in payload:
-        payload['finalReportPacket'] = _build_minimal_final_report_packet(payload)
-    payload.setdefault('finalAnswer', final_report_markdown or payload.get('finalAnswer') or '')
-    # One-PR compatibility window: keep reportMarkdown as read-only shim for existing callers.
-    payload['reportMarkdown'] = payload.get('reportMarkdown') or final_report_markdown
     return payload
 
 

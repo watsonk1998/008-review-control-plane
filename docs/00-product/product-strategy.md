@@ -129,7 +129,7 @@ V0.3 之所以不是继续“大扩张”，是因为上游研究已经证明：
 
 **证据与 unresolved facts 层。**这是 V0.3 必须补硬的一层。它负责把 source、fact、clause、policy ref、rule hit、issue 与 evidence gap 串成一条可以追溯的证据链；同时，它也负责诚实承认“当前 blocked 于 visibility”或“blocked 于 missing fact”，而不是把证据缺口伪装成硬缺陷结论。这个层级直接决定 formal-review spine 是否可信。 ([GitHub][12])
 
-**报告与 artifact 层。**报告层不是“把话说好听”，而是把上游对象与证据组织成 reviewer 可读、eval 可回放的外显载体。`reportMarkdown`、各类 matrices、以及 `artifactIndex` 共同构成这一层。对当前产品而言，它是正式主线的输出层，但它的价值在于承载事实与证据，不在于替代主链本身。 ([GitHub][3])
+**报告与 artifact 层。**报告层不是“把话说好听”，而是把上游对象与证据组织成 reviewer 可读、eval 可回放的外显载体。对外主协议使用 `finalReportMarkdown`；008 内部结果仍可保留 `reportMarkdown`。各类 matrices 与 `artifactIndex` 共同构成这一层。 ([GitHub][3])
 
 **reviewer gate 层。**这一层负责把“系统可以正式给出判断”的部分，与“必须由人进一步复核”的部分分开。双样本监督材料和 V0.2 设计文档都强调：L0 gate 不能长期缺席，manual review 不能只是 issue 末端的附带字段，而应该逐步成为 formal-review 的前置或并行治理机制。V0.3 中它已经属于正式主线，但目前仍偏弱。 ([GitHub][13])
 

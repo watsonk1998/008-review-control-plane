@@ -270,10 +270,12 @@ export interface StructuredReviewResult {
   issues: ReviewIssue[];
   matrices: StructuredReviewMatrices;
   artifactIndex: TaskArtifact[];
+  // Canonical final-report field for external/UI consumption.
   finalReportMarkdown?: string;
   finalReportPacket?: FinalReportPacket | null;
   traceability?: Array<Record<string, unknown>>;
-  reportMarkdown: string;
+  // Deprecated fallback for older task payloads; do not treat as canonical.
+  reportMarkdown?: string;
   reportHtml?: string;
   reportPrintCss?: string;
   artifacts: string[];
