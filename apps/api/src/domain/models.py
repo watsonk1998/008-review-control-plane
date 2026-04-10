@@ -295,7 +295,7 @@ class TaskRecord(BaseModel):
     sourceUrls: list[str] = Field(default_factory=list)
     documentType: ReviewDocumentType | None = None
     disciplineTags: list[str] = Field(default_factory=list)
-    strictMode: bool | None = None  # reserved/no-op compatibility field
+    strictMode: bool | None = None  # compatibility field still persisted and propagated into profile/result shaping; not an independent runtime branch switch
     policyPackIds: list[str] = Field(default_factory=list)
     status: TaskStatus = 'created'
     plan: dict[str, Any] | None = None

@@ -1,5 +1,11 @@
 """
-Hermes LLM Adapter: independent second-path review via local LLM.
+Hermes LLM Adapter: frozen fallback/local shim for Hermes review routing.
+
+Freeze boundary:
+- fallback/local shim only
+- not the external Hermes canonical path
+- do not expand with new controller semantics
+
 
 Architecture note:
 - This is NOT the real external Hermes integration.

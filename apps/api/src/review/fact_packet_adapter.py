@@ -1,5 +1,10 @@
 """
-008 Fact Packet Adapter: converts StructuredReviewResult into a FactPacket.
+008 Fact Packet Adapter: frozen 008-to-controller adapter.
+
+Freeze boundary:
+- adapter/bridge only
+- do not expand with new business fields except migration/removal work
+
 
 Design intent:
 - Bridge between 008's native output format and the unified packet contract

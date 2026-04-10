@@ -9,9 +9,12 @@ Its current primary track is `structured_review`: a formal-review pipeline that 
 
 The repository is currently centered on:
 
-- formal-review oriented `structured_review`
+- HermesController-first `structured_review` as the runtime live path
+- 008 `StructuredReviewExecutor` as the structured review capability foundation
 - reviewable structured issues, evidence, and visibility-aware outputs
 - governance-aware capability evolution (`official` / `ready` / `experimental`)
+
+Legacy note: the former post-hoc dual-review path has been removed from the active runtime and survives only as a historical migration reference; it is not part of the current live path.
 
 This repository does **not** position the current system as a fully automatic final review-signing engine.
 

@@ -246,6 +246,23 @@ export interface StructuredReviewMatrices {
   issueLayerCounts?: Record<string, number>;
 }
 
+export interface FinalReportPacket {
+  review_id: string;
+  final_grade: string;
+  executive_summary: string;
+  top_risks: ReviewIssue[] | Array<Record<string, unknown>>;
+  key_findings: ReviewIssue[] | Array<Record<string, unknown>>;
+  supplemental_findings: ReviewIssue[] | Array<Record<string, unknown>>;
+  all_findings: ReviewIssue[] | Array<Record<string, unknown>>;
+  traceability: Array<Record<string, unknown>>;
+  report_markdown: string;
+  report_sections?: Array<Record<string, unknown>>;
+  engines_used: string[];
+  degradation_info?: Record<string, unknown>;
+  source_packets?: Record<string, unknown>;
+  metadata?: Record<string, unknown>;
+}
+
 export interface StructuredReviewResult {
   summary: StructuredReviewSummary;
   visibility: VisibilityAssessment;
@@ -253,6 +270,9 @@ export interface StructuredReviewResult {
   issues: ReviewIssue[];
   matrices: StructuredReviewMatrices;
   artifactIndex: TaskArtifact[];
+  finalReportMarkdown?: string;
+  finalReportPacket?: FinalReportPacket | null;
+  traceability?: Array<Record<string, unknown>>;
   reportMarkdown: string;
   reportHtml?: string;
   reportPrintCss?: string;

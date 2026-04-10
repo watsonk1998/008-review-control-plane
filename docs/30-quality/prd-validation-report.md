@@ -50,7 +50,7 @@ severity_minor_count: 1
 
 ### 3.2 Industry Standards
 - **合理性**：严格限制 V0.3 放弃 OCR 和多模态，以及不做图纸平台化，是非常硬核且负责任的工程决策，完全符合安全与可靠性审查系统的渐进式演进路径。
-- **风险**：(Minor) `strictMode` 被标记为保留字段且 `no-op`。为了防止外部 API 消费者（或 Agent）传入 `strictMode=true` 并错误认为系统进行了强合规检查，API 应显式抛出 warning `strictMode is currently a no-op`，而不能仅在文档中声明。
+- **风险**：(Minor) `strictMode` 仍会被透传到持久化和 profile 解析，但不是独立的 runtime 开关。需要避免外部 API 消费者误以为它单独决定正式审查分支或强合规模式。
 
 ### 3.3 Logical Completeness
 - 见 BLK-01。正式结构化主链 `parse → facts → rules → evidence → report` 在逻辑闭环上已经非常成熟，但在异常传播（Exception Propagation）路径上，从 parse 异常如何映射到 evidence gap 需要绝对唯一的路由表。

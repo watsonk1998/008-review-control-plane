@@ -1,14 +1,19 @@
 """
-Unified review contracts for 008 + Hermes dual-path architecture.
+Frozen bridge/compat review contracts for HermesController-first structured review.
+
+Freeze boundary:
+- bridge/compat only; do not expand with new business capabilities
+- not the canonical 008 internal schema
+- retained to support controller-bridge/final-report migration only
+
 
 Design intent:
-- ReviewBrief: compiled task input, single source of truth for both engines
-- FactPacket: structured output from any review engine, aligned schema
-- FinalReportPacket: fused output from dual-path orchestration
+- ReviewBrief: controller-bridge input contract
+- FactPacket: aligned packet contract across 008 primary + supplemental Hermes packets
+- FinalReportPacket: final merged report contract consumed by the controller assembler
 
-These contracts sit BETWEEN the task entry layer and engine implementations,
-providing a clean boundary for dual-path orchestration. They do NOT replace
-008's internal schemas (review/schema.py) — they wrap them.
+These contracts sit BETWEEN the task entry layer and engine implementations. They do NOT replace
+008's internal schemas (review/schema.py) and should not grow into a second canonical schema layer.
 """
 
 from __future__ import annotations

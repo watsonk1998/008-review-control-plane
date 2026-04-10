@@ -892,6 +892,11 @@ export function TaskDetail({ taskId }: { taskId: string }) {
     return Array.isArray(structuredResult.artifactIndex) ? structuredResult.artifactIndex : artifacts;
   }, [artifacts, structuredResult]);
 
+  const canonicalStructuredReportMarkdown = useMemo(() => {
+    if (!structuredResult) return "";
+    return structuredResult.finalReportMarkdown || structuredResult.finalReportPacket?.report_markdown || structuredResult.reportMarkdown || "";
+  }, [structuredResult]);
+
   const reviewerDecision = task?.reviewerDecision || null;
 
   const issuesByLayer = useMemo(() => {
@@ -1183,7 +1188,7 @@ export function TaskDetail({ taskId }: { taskId: string }) {
                     printCss={structuredResult.reportPrintCss}
                   />
                 ) : (
-                  <StructuredReportMarkdown markdown={structuredResult.reportMarkdown} />
+                  <StructuredReportMarkdown markdown={canonicalStructuredReportMarkdown} />
                 )}
               </section>
 

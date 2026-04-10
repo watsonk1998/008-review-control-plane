@@ -1,0 +1,23 @@
+{
+  "id": "structured_review_primary_worker",
+  "agent_name": "008 主审查工作器",
+  "agent_purpose": "复用 008 正式结构化审查主链，产出 primary review packet",
+  "agent_scope": "formal_primary_review",
+  "execution_mode": "module_only",
+  "module_bindings": ["primary_review"],
+  "supported_document_types": [],
+  "focus_keywords": ["完整性", "章节", "结构", "专项"],
+  "required_context_types": ["target_document"],
+  "input_contract": {"type": "review_brief"},
+  "output_contract": {"type": "fact_packet", "role": "primary"},
+  "instructions": "调用 008 structured review capability facade 的 primary_review 能力，作为主审查 packet 来源。",
+  "prompt": "",
+  "default_enabled": true,
+  "save_policy": {"seed": true},
+  "template_version": "1.1.0",
+  "compatibility": {
+    "controller": "hermes_v0",
+    "legacy_template_ids": ["structure_completeness_reviewer"]
+  },
+  "metadata": {"preferred_pack_ids": []}
+}

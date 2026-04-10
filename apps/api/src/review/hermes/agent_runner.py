@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 from typing import Any
 
 from src.review.contracts import FactPacket, FindingItem, ReviewPacketMetrics
+from src.review.hermes.constants import is_primary_template_id
 from src.review.hermes.template_models import AgentRunResult, AgentTemplate
 
 
@@ -42,7 +43,7 @@ class HermesAgentRunner:
                 'module_ids': list(template.module_bindings),
             }
         else:
-            packet = self._module_output_to_packet(template=template, workspace=workspace, module_outputs=module_outputs)
+            packet = self._module_output_to_packet(template=template, workspace=workspace)
         return AgentRunResult(
             agent_id=template.id,
             template_id=template.id,
@@ -52,15 +53,15 @@ class HermesAgentRunner:
             metadata={'execution_mode': template.execution_mode},
         )
 
-    def _module_output_to_packet(self, *, template: AgentTemplate, workspace: dict[str, Any], module_outputs: dict[str, Any]) -> FactPacket | None:
-        if template.id == 'structure_completeness_reviewer' and workspace.get('primary_packet') is not None:
+    def _module_output_to_packet(self, *, template: AgentTemplate, workspace: dict[str, Any]) -> FactPacket | None:
+        if is_primary_template_id(template.id) and workspace.get('primary_packet') is not None:
             packet = workspace['primary_packet'].model_copy(deep=True)
             packet.engine = '008'
             packet.metadata = {
                 **packet.metadata,
                 'agent_id': template.id,
                 'template_id': template.id,
-                'worker_id': 'structured_review_worker',
+                'worker_id': 'structured_review_primary_worker',
                 'module_ids': list(template.module_bindings),
             }
             return packet

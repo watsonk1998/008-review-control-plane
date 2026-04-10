@@ -1,5 +1,9 @@
 """
-Task Compiler: converts raw task inputs into a unified ReviewBrief.
+Task Compiler: controller-bridge compiler for HermesController-first structured review.
+
+Freeze boundary:
+- bridge/compiler only
+- no new business orchestration here without explicit migration
 
 Design intent:
 - Review engines should NOT receive scattered raw inputs

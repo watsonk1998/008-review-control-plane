@@ -4,12 +4,12 @@ from datetime import datetime, timezone
 from typing import Any
 
 from src.review.contracts import FactPacket, FinalReportPacket, ReviewPacketMetrics
-from src.review.report_fusion import ReportFusionService
+from src.review.final_report_merger import FinalReportMerger
 
 
 class HermesReviewAssembler:
     def __init__(self):
-        self.fusion = ReportFusionService()
+        self.merger = FinalReportMerger()
 
     def assemble(
         self,
@@ -29,7 +29,7 @@ class HermesReviewAssembler:
             }
             return payload, None
         merged_supplemental = self._merge_supplemental_packets(primary_packet.review_id, supplemental_packets)
-        final_packet = self.fusion.fuse(
+        final_packet = self.merger.fuse(
             brief=brief,
             packet_008=primary_packet,
             packet_hermes=merged_supplemental,
@@ -47,6 +47,7 @@ class HermesReviewAssembler:
             'finalReportReady': True,
             'supplementalPacketCount': len(supplemental_packets),
         }
+        payload['traceability'] = final_packet.traceability
         payload['finalReportMarkdown'] = final_packet.report_markdown
         payload['finalReportPacket'] = final_packet.model_dump(mode='json')
         payload['finalAnswer'] = final_packet.report_markdown

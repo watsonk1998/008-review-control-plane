@@ -486,6 +486,8 @@ def test_task_routes_legacy_structured_review_result_keeps_read_only_compatibili
     assert result_payload['visibility']['manualReviewReason'] is None
     assert result_payload['issues'][0]['manualReviewNeeded'] is True
     assert result_payload['issues'][0]['whetherManualReviewNeeded'] is True
+    assert result_payload['finalReportMarkdown'] == '# demo'
+    assert result_payload['finalReportPacket']['metadata']['compatibilityShim'] is True
     assert result_payload['artifactIndex'] == artifacts_response.json()
 
 
@@ -608,6 +610,9 @@ def test_task_routes_fresh_structured_review_result_uses_canonical_visibility_on
     assert result_payload['visibility']['manualReviewReason'] == 'title_detected_without_attachment_body'
     assert result_payload['visibility']['preflight']['gateDecision'] == 'manual_review_required'
     assert result_payload['visibility']['preflight']['blockingReasons'] == ['attachment_unparsed']
+    assert result_payload['finalReportMarkdown'] == '# demo'
+    assert result_payload['reportMarkdown'] == '# demo'
+    assert result_payload['finalReportPacket']['report_markdown'] == '# demo'
     assert 'whetherManualReviewNeeded' not in result_payload['issues'][0]
 
 

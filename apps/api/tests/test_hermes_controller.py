@@ -9,6 +9,7 @@ from src.review.fact_packet_adapter import FactPacketAdapter
 from src.review.hermes_controller import HermesController
 from src.review.hermes_review_engine import HermesReviewEngine
 from src.review.pipeline import StructuredReviewExecutor
+from src.review.structured_review_capability_facade import StructuredReviewCapabilityFacade
 from src.review.task_compiler import TaskCompiler
 from src.services.document_loader import DocumentLoader
 
@@ -135,7 +136,9 @@ async def test_hermes_controller_selects_agents_generates_candidate_and_reports(
     controller = HermesController(
         task_compiler=TaskCompiler(),
         fact_packet_adapter=FactPacketAdapter(),
-        structured_review_executor=StructuredReviewExecutor(document_loader=DocumentLoader(), llm_gateway=llm, fast_adapter=None),
+        capability_facade=StructuredReviewCapabilityFacade(
+            structured_review_executor=StructuredReviewExecutor(document_loader=DocumentLoader(), llm_gateway=llm, fast_adapter=None),
+        ),
         hermes_engine=FakeHermesEngine(),
         llm_gateway=llm,
         seed_template_dir=Path('/Users/lucas/repos/review/008-review-control-plane/apps/api/src/review/hermes/templates'),
@@ -154,7 +157,7 @@ async def test_hermes_controller_selects_agents_generates_candidate_and_reports(
                 'basisFiles': [{'path': '/tmp/basis.md', 'type': 'md', 'name': 'basis.md'}],
                 'contextFiles': [],
                 'focusRequirements': ['停送电控制链路', '母线切换校核'],
-                'enabledAgents': ['structure_completeness_reviewer', 'execution_risk_reviewer'],
+                'enabledAgents': ['structured_review_primary_worker', 'execution_risk_reviewer'],
                 'disabledAgents': ['visibility_gap_reviewer'],
             },
         },

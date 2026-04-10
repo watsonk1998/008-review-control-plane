@@ -13,6 +13,7 @@ from src.review.fact_packet_adapter import FactPacketAdapter
 from src.review.hermes_controller import HermesController
 from src.review.hermes_review_engine import HermesReviewEngine
 from src.review.pipeline import StructuredReviewExecutor
+from src.review.structured_review_capability_facade import StructuredReviewCapabilityFacade
 from src.review.task_compiler import TaskCompiler
 from src.review.contracts import FactPacket, FindingItem, ReviewPacketMetrics
 from src.services.document_loader import DocumentLoader
@@ -159,7 +160,7 @@ def build_runtime(tmp_path: Path, deeptutor=None) -> tuple[DeepResearchRuntime, 
     controller = HermesController(
         task_compiler=TaskCompiler(),
         fact_packet_adapter=FactPacketAdapter(),
-        structured_review_executor=executor,
+        capability_facade=StructuredReviewCapabilityFacade(structured_review_executor=executor),
         hermes_engine=FakeHermesEngine(),
         llm_gateway=llm,
         seed_template_dir=Path('/Users/lucas/repos/review/008-review-control-plane/apps/api/src/review/hermes/templates'),
@@ -334,6 +335,9 @@ async def test_runtime_structured_review_generates_formal_result(tmp_path: Path)
     assert saved.result['visibility']['manualReviewNeeded'] is True
     assert saved.result['visibility']['parseMode'] == 'markdown_text'
     assert saved.result['visibility']['manualReviewReason'] == 'title_detected_without_attachment_body'
+    assert saved.result['finalReportMarkdown']
+    assert saved.result['finalReportPacket']['traceability']
+    assert saved.result['traceability'] == saved.result['finalReportPacket']['traceability']
     assert any(issue['title'] == '附件处于可视域缺口，需人工复核原件' for issue in saved.result['issues'])
     attachment_issue = next(issue for issue in saved.result['issues'] if issue['title'] == '附件处于可视域缺口，需人工复核原件')
     assert attachment_issue['manualReviewNeeded'] is True

@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-import json
 import logging
 from pathlib import Path
 from typing import Any
 
 from src.review.contracts import ReviewBrief
+from src.review.hermes.constants import normalize_template_id
 from src.review.hermes.template_models import AgentTemplate, AgentTemplateMatch
 
 logger = logging.getLogger(__name__)
@@ -21,17 +21,22 @@ class HermesTemplateRegistry:
         for directory in (self.seed_dir, self.runtime_dir):
             if not directory.exists():
                 continue
-            for path in sorted(directory.glob('*.json')):
+            for path in sorted(directory.rglob('*.json')):
                 try:
-                    templates.append(AgentTemplate.model_validate_json(path.read_text(encoding='utf-8')))
+                    template = AgentTemplate.model_validate_json(path.read_text(encoding='utf-8'))
+                    template.id = normalize_template_id(template.id) or template.id
+                    templates.append(template)
                 except Exception as exc:
                     logger.warning('[hermes_template_registry] Failed to load %s: %s', path, exc)
-        return templates
+        unique_templates: dict[str, AgentTemplate] = {}
+        for template in templates:
+            unique_templates[template.id] = template
+        return list(unique_templates.values())
 
     def select_templates(self, *, brief: ReviewBrief, hermes_input: dict[str, Any]) -> list[AgentTemplateMatch]:
         matches: list[AgentTemplateMatch] = []
-        enabled = set(hermes_input.get('enabledAgents') or [])
-        disabled = set(hermes_input.get('disabledAgents') or [])
+        enabled = {normalize_template_id(item) or item for item in set(hermes_input.get('enabledAgents') or [])}
+        disabled = {normalize_template_id(item) or item for item in set(hermes_input.get('disabledAgents') or [])}
         focus_text = ' '.join(self._focus_terms(brief, hermes_input))
         pack_ids = set(((brief.focus_pack or {}).get('policy_pack_ids') or []))
         for template in self.load_templates():

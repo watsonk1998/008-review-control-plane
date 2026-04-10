@@ -6,9 +6,10 @@ import re
 from pathlib import Path
 from typing import Any
 
-from src.review.contracts import ReviewBrief, FactPacket
+from src.review.contracts import FactPacket, ReviewBrief
 from src.review.hermes.agent_runner import HermesAgentRunner
 from src.review.hermes.assembler import HermesReviewAssembler
+from src.review.hermes.constants import is_primary_template_id
 from src.review.hermes.module_registry import HermesModuleRegistry
 from src.review.hermes.template_models import AgentTemplate, AgentTemplateMatch
 from src.review.hermes.template_registry import HermesTemplateRegistry
@@ -22,7 +23,7 @@ class HermesController:
         *,
         task_compiler,
         fact_packet_adapter,
-        structured_review_executor,
+        capability_facade,
         hermes_engine,
         llm_gateway,
         seed_template_dir: Path,
@@ -30,14 +31,14 @@ class HermesController:
     ):
         self.task_compiler = task_compiler
         self.fact_packet_adapter = fact_packet_adapter
-        self.structured_review_executor = structured_review_executor
+        self.capability_facade = capability_facade
         self.hermes_engine = hermes_engine
         self.llm_gateway = llm_gateway
         self.template_registry = HermesTemplateRegistry(
             seed_dir=seed_template_dir,
             runtime_dir=runtime_template_dir,
         )
-        self.module_registry = HermesModuleRegistry(structured_review_executor=structured_review_executor)
+        self.module_registry = HermesModuleRegistry(capability_facade=capability_facade)
         self.agent_runner = HermesAgentRunner(
             hermes_engine=hermes_engine,
             module_registry=self.module_registry,
@@ -114,15 +115,16 @@ class HermesController:
             result_payload = run_result.model_dump(mode='json')
             agent_results.append(result_payload)
             packet_payload = result_payload.get('packet')
-            if packet_payload:
-                packet = FactPacket.model_validate(packet_payload)
-                if template.id == 'structure_completeness_reviewer' and packet.engine == '008':
-                    primary_packet = packet
-                    primary_result = workspace.get('structured_review_result')
-                else:
-                    packet.review_id = brief.review_id
-                    packet.metadata = {**packet.metadata, 'template_id': template.id, 'agent_id': template.id}
-                    supplemental_packets.append(packet)
+            if not packet_payload:
+                continue
+            packet = FactPacket.model_validate(packet_payload)
+            if is_primary_template_id(template.id) and packet.engine == '008':
+                primary_packet = packet
+                primary_result = workspace.get('structured_review_result')
+            else:
+                packet.review_id = brief.review_id
+                packet.metadata = {**packet.metadata, 'template_id': template.id, 'agent_id': template.id}
+                supplemental_packets.append(packet)
 
         enriched, final_packet = self.assembler.assemble(
             brief=brief,

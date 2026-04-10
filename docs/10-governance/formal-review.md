@@ -32,7 +32,7 @@
 - `fixtureId` 与 `sourceDocumentRef` 会在服务端统一归一化为 `sourceDocumentRef`
 - `documentType` 缺省时允许后端推断，但最终生效值必须写回 `resolvedProfile.documentType`
 - `disciplineTags` 缺省时允许由事实抽取补齐
-- `strictMode` 默认 `true`，但当前状态是 `reserved / no-op`
+- `strictMode` 默认 `true`，当前仍作为输入/持久化/profile 透传字段保留，但并不单独决定 HermesController-first 主链分支。
 - `policyPackIds` 为空表示自动选 pack；显式传入时只会执行 `ready` packs
 
 ## 结果结构

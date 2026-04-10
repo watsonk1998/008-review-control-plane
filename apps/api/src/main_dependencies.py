@@ -16,6 +16,7 @@ from src.review.fact_packet_adapter import FactPacketAdapter
 from src.review.hermes_controller import HermesController
 from src.review.hermes_review_engine import HermesReviewEngine
 from src.review.pipeline import StructuredReviewExecutor
+from src.review.structured_review_capability_facade import StructuredReviewCapabilityFacade
 from src.review.task_compiler import TaskCompiler
 from src.services.document_loader import DocumentLoader
 from src.services.fixture_service import FixtureService
@@ -70,6 +71,13 @@ def get_structured_review_executor() -> StructuredReviewExecutor:
     )
 
 
+
+@lru_cache(maxsize=1)
+def get_structured_review_capability_facade() -> StructuredReviewCapabilityFacade:
+    return StructuredReviewCapabilityFacade(
+        structured_review_executor=get_structured_review_executor(),
+    )
+
 @lru_cache(maxsize=1)
 def get_fact_packet_adapter() -> FactPacketAdapter:
     return FactPacketAdapter()
@@ -86,7 +94,7 @@ def get_hermes_controller() -> HermesController:
     return HermesController(
         task_compiler=get_task_compiler(),
         fact_packet_adapter=get_fact_packet_adapter(),
-        structured_review_executor=get_structured_review_executor(),
+        capability_facade=get_structured_review_capability_facade(),
         hermes_engine=get_hermes_engine(),
         llm_gateway=get_llm_gateway(),
         seed_template_dir=repo_root / 'apps' / 'api' / 'src' / 'review' / 'hermes' / 'templates',
