@@ -93,3 +93,10 @@ These capabilities belong to the control-plane shell, not to the Hermes upstream
 - using “latest main” as an implicit dependency target is forbidden
 - the machine-readable source of truth is `config/hermes_upstream.yaml`
 - upgrade and patch policy are defined in `docs/architecture/hermes-upstream-contract.md`
+
+## Local Kernel Smoke Path (Non-Default)
+
+- `HermesLocalKernelAdapter` and `HermesKernelLauncher` provide a **non-default local smoke path** for diagnostic and development purposes only
+- they are **not wired into `main_dependencies.py`** and must not enter the production `get_hermes_engine()` chain without explicit, documented enablement
+- the smoke path is triggered exclusively via `apps/api/scripts/run_local_hermes_smoke.py` (manual execution)
+- `overlays/hermes-agent/` contains shell-side configuration assets (skills, memory, config, prompts) that will be injected into the local kernel by the launcher — these are **not** upstream kernel code

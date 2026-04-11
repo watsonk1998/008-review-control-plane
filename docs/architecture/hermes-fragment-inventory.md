@@ -66,3 +66,24 @@
 2. **大部分带 "hermes" 命名的模块实际上属于【类别 B：应保留在壳层】**：比如 `HermesController`, `HermesReviewAssembler`, `HermesLLMAdapter`, `HermesExternalAdapter`，这些是为了对接或统筹“具有 Hermes 设计理念的审查”而构建的边界层，并不是 Hermes 自身的执行内核。
 3. **未来的真正挑战**也是设计上的利好：**历史包袱较轻**。我们可以直接启动从“HTTP 外部黑盒”向“本地 Subprocess/Kernel Launcher+Overlay”挂载的设计平移，而不必大规模重构目前已被硬编码污染的执行循环。
 4. **【类别 C：应改造成 Overlay】的相关能力目前大多缺失或硬编码在 shim / LLM Adapter 中**。比如真实的 Skills，Memory，以及定制的 Prompts。未来应该在 `overlays/hermes-agent/` 里显式声明这些配置，喂给 launcher。
+
+---
+
+## Overlay / Launcher 迁移进度
+
+### 已开始通过 overlay/launcher 路线处理
+
+| Fragment | 原位 | 处理方式 | overlay 位置 |
+|---|---|---|---|
+| Hermes System Prompt | `hermes_llm_adapter.py:HERMES_SYSTEM_PROMPT` | 复制到 overlay（原位保留） | `overlays/hermes-agent/prompts/hermes_review_system_prompt.md` |
+| Kernel Launch Config | 新增样本 | 直接在 overlay 新建 | `overlays/hermes-agent/config/local_kernel_launch.yaml` |
+
+### 仍留在原处、等待后续迁移
+
+| Fragment | 位置 | 当前角色 | 迁移前置条件 |
+|---|---|---|---|
+| `hermes_server_shim.py` | `apps/api/` | HTTP shim gateway（active path） | local kernel subprocess 替代 shim 后可退役 |
+| `HermesLLMAdapter` 内置 prompt | `hermes_llm_adapter.py` | 硬编码 system prompt（active fallback） | overlay prompt 注入机制就绪后可改为从 overlay 加载 |
+| Skills 定义 | 不存在 | 当前无独立 skill 文件 | 需先确定 kernel skill registry 接口 |
+| Memory 配置 | 不存在 | 当前无独立 memory 配置 | 需先确定 kernel memory 接口 |
+

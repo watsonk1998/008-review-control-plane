@@ -35,6 +35,19 @@ versions:
   template_schema_version: "v1"
   final_packet_schema_version: "v1"
 
+overlay:
+  overlay_root: "overlays/hermes-agent"
+  overlay_subdirs:
+    - "skills"
+    - "memory"
+    - "config"
+    - "prompts"
+
+local_kernel:
+  local_kernel_smoke_available: true
+  smoke_script_path: "apps/api/scripts/run_local_hermes_smoke.py"
+  adapter_status: "non_default_smoke_only"
+
 expected_runtime:
   runtime_kernel_mode: "local_kernel_available_not_enabled"
 

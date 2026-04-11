@@ -252,6 +252,125 @@ def scan_python_files(errors: list[str]) -> None:
                 errors.append(f"{rel}:{lineno}: forbidden subprocess/cwd coupling to external/hermes-agent")
 
 
+# ---------------------------------------------------------------------------
+# Overlay boundary verification
+# ---------------------------------------------------------------------------
+
+OVERLAY_ROOT = Path("overlays/hermes-agent")
+EXPECTED_OVERLAY_SUBDIRS = ("skills", "memory", "config", "prompts")
+
+
+def verify_overlay_structure(errors: list[str]) -> None:
+    """Verify that the overlay directory exists and has expected structure."""
+    overlay_path = REPO_ROOT / OVERLAY_ROOT
+    if not overlay_path.is_dir():
+        errors.append(f"missing overlay root: {OVERLAY_ROOT}")
+        return
+
+    readme = overlay_path / "README.md"
+    if not readme.is_file():
+        errors.append(f"missing overlay README: {OVERLAY_ROOT}/README.md")
+
+    for subdir in EXPECTED_OVERLAY_SUBDIRS:
+        subdir_path = overlay_path / subdir
+        if not subdir_path.is_dir():
+            errors.append(f"missing overlay subdirectory: {OVERLAY_ROOT}/{subdir}/")
+
+
+def verify_overlay_config_consistency(errors: list[str]) -> None:
+    """Verify that config/hermes_upstream.yaml overlay_root matches actual directory."""
+    config_path = REPO_ROOT / "config/hermes_upstream.yaml"
+    if not config_path.exists():
+        return  # Missing config caught elsewhere
+
+    raw = config_path.read_text(encoding="utf-8")
+    overlay_match = re.search(
+        r'^\s*overlay_root:\s*"?(?P<path>[^"\s]+)"?\s*$', raw, flags=re.M
+    )
+    if overlay_match is None:
+        errors.append("config/hermes_upstream.yaml missing overlay.overlay_root field")
+        return
+
+    declared_path = overlay_match.group("path")
+    actual_path = REPO_ROOT / declared_path
+    if not actual_path.is_dir():
+        errors.append(
+            f"config/hermes_upstream.yaml overlay_root '{declared_path}' "
+            f"does not match an existing directory"
+        )
+
+
+# ---------------------------------------------------------------------------
+# Smoke path isolation verification
+# ---------------------------------------------------------------------------
+
+SMOKE_SCRIPT_REL = "apps/api/scripts/run_local_hermes_smoke.py"
+
+# Files that constitute the main runtime wiring — smoke must NOT be imported here
+MAIN_CHAIN_FILES = [
+    "apps/api/src/main_dependencies.py",
+    "apps/api/src/orchestrator/deepresearch_runtime.py",
+]
+
+SMOKE_IMPORT_PATTERNS = [
+    re.compile(r"run_local_hermes_smoke"),
+    re.compile(r"hermes_local_kernel_adapter", re.IGNORECASE),
+    re.compile(r"HermesLocalKernelAdapter"),
+]
+
+
+def verify_smoke_path_isolation(errors: list[str]) -> None:
+    """Verify that smoke path components are not imported by the main chain."""
+    for rel_path in MAIN_CHAIN_FILES:
+        path = REPO_ROOT / rel_path
+        if not path.exists():
+            continue
+        text = path.read_text(encoding="utf-8")
+        for lineno, line in enumerate(text.splitlines(), start=1):
+            for pattern in SMOKE_IMPORT_PATTERNS:
+                if pattern.search(line):
+                    errors.append(
+                        f"{rel_path}:{lineno}: smoke path component "
+                        f"leaked into main chain: {line.strip()}"
+                    )
+
+
+def verify_local_kernel_non_default(errors: list[str]) -> None:
+    """Verify that HermesLocalKernelAdapter is still non-default / not enabled."""
+    config_path = REPO_ROOT / "config/hermes_upstream.yaml"
+    if not config_path.exists():
+        return
+
+    raw = config_path.read_text(encoding="utf-8")
+
+    # Check runtime_kernel_mode
+    mode_match = re.search(
+        r'^\s*runtime_kernel_mode:\s*"?(?P<mode>[^"\s]+)"?\s*$', raw, flags=re.M
+    )
+    if mode_match and mode_match.group("mode") not in (
+        "local_kernel_available_not_enabled",
+        "external_only",
+    ):
+        errors.append(
+            f"config/hermes_upstream.yaml runtime_kernel_mode is "
+            f"'{mode_match.group('mode')}' — expected 'local_kernel_available_not_enabled'"
+        )
+
+    # Check adapter_status
+    status_match = re.search(
+        r'^\s*adapter_status:\s*"?(?P<status>[^"\s]+)"?\s*$', raw, flags=re.M
+    )
+    if status_match and status_match.group("status") not in (
+        "non_default_smoke_only",
+        "skeleton",
+        "disabled",
+    ):
+        errors.append(
+            f"config/hermes_upstream.yaml adapter_status is "
+            f"'{status_match.group('status')}' — local kernel should not be enabled"
+        )
+
+
 def main() -> int:
     errors: list[str] = []
     verify_required_paths(errors)
@@ -261,6 +380,10 @@ def main() -> int:
     verify_readme(errors)
     verify_cross_file_consistency(errors)
     scan_python_files(errors)
+    verify_overlay_structure(errors)
+    verify_overlay_config_consistency(errors)
+    verify_smoke_path_isolation(errors)
+    verify_local_kernel_non_default(errors)
 
     if errors:
         print("Hermes boundary verification: FAIL")
@@ -273,8 +396,12 @@ def main() -> int:
     print("- submodule semantics verified")
     print("- governance/config documents present")
     print("- no forbidden upstream import/path coupling detected")
+    print("- overlay structure verified")
+    print("- smoke path isolation verified")
+    print("- local kernel non-default status confirmed")
     return 0
 
 
 if __name__ == "__main__":
     sys.exit(main())
+

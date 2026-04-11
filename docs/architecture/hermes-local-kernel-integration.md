@@ -59,13 +59,82 @@
 
 必须分阶段实施，确保每一步不阻断现有主流程：
 
-* **Stage 1 (Inventory)**：盘点现有历史冗余，确认是否存在散落代码（已完成，现状良好）。
-* **Stage 2 (Skeleton)**：新增 `HermesLocalKernelAdapter` 及 `HermesKernelLauncher` 骨架代码，制定接口防腐协议，实现占位符功能。
-* **Stage 3 (Smoke Path)**：打通 Local Kernel 的通信链路（不放入主网，提供 Feature Flag 开关支持，允许以 CLI 等单独维度做 E2E 测试）。
-* **Stage 4 (Overlay Setup)**：逐步建立 Overlays 挂载机制（Prompt、配置映射）。
-* **Stage 5 (Routing Shift)**：改造 `HermesRouterAdapter`，正式将 `local_kernel` 列入路由优选列表（比如：`local_kernel` -> `external` -> `llm_fallback`）。
+* **Stage 1 (Inventory)**：盘点现有历史冗余，确认是否存在散落代码。✅ 已完成，现状良好。
+* **Stage 2 (Skeleton)**：新增 `HermesLocalKernelAdapter` 及 `HermesKernelLauncher` 骨架代码，制定接口防腐协议，实现占位符功能。✅ 已完成。
+* **Stage 3 (Smoke Path)**：打通 Local Kernel 的通信链路（不放入主网，提供 Feature Flag 开关支持，允许以 CLI 等单独维度做 E2E 测试）。✅ 已完成（dry-run + smoke 模式）。
+* **Stage 4 (Overlay Setup)**：逐步建立 Overlays 挂载机制（Prompt、配置映射）。🔸 已开始（目录结构 + 样本资产已建立，运行时注入尚未实现）。
+* **Stage 5 (Routing Shift)**：改造 `HermesRouterAdapter`，正式将 `local_kernel` 列入路由优选列表（比如：`local_kernel` -> `external` -> `llm_fallback`）。⬜ 尚未开始。
 
-## 6. Compatibility & Risks (兼容性与风险提示)
+## 6. Smoke Path 实现详情
+
+### 触发方式
+
+```bash
+# 完整 smoke 路径
+python apps/api/scripts/run_local_hermes_smoke.py
+
+# 仅检查路径和 overlay 解析（不进入 smoke 执行）
+python apps/api/scripts/run_local_hermes_smoke.py --dry-run
+
+# JSON 输出模式
+python apps/api/scripts/run_local_hermes_smoke.py --json
+```
+
+### Launcher 支持的模式
+
+| 模式 | 方法 | 行为 |
+|---|---|---|
+| `dry_run` | `launcher.dry_run()` | 检查路径、解析 overlay、生成 LaunchPlan，不启动进程 |
+| `smoke` | `launcher.smoke(payload)` | 在 dry_run 基础上验证 kernel 标志文件（如 `run_agent.py`），回显 payload，返回受控 SmokeResult |
+
+### Smoke Contract
+
+smoke path 验证以下内容：
+
+1. `external/hermes-agent` 能被 launcher 定位
+2. launcher 能解析 overlay 根目录
+3. overlay 子目录（skills, memory, config, prompts）的存在性
+4. `HermesLocalKernelAdapter.smoke_exercise()` 能走完最小执行链
+5. 返回受控的 `LocalKernelSmokeReport`，包含 `FactPacket`（标记为 `degraded=True, error="smoke_only"`）
+
+### 主链隔离保障
+
+* smoke 脚本是独立的 `apps/api/scripts/run_local_hermes_smoke.py`，不被任何 main chain import
+* `HermesLocalKernelAdapter` 未出现在 `main_dependencies.py`
+* `get_hermes_engine()` 的默认行为完全不变
+* `verify_hermes_boundary.py` 会主动检查 smoke 脚本未被主链引用
+
+## 7. Overlay 目录结构
+
+```
+overlays/hermes-agent/
+├── README.md                               # 用途说明
+├── skills/
+│   └── README.md                           # 技能注册样本格式
+├── memory/
+│   └── README.md                           # 记忆配置说明
+├── config/
+│   ├── README.md                           # 配置说明
+│   └── local_kernel_launch.yaml            # 启动配置样本
+└── prompts/
+    ├── README.md                           # 提示词说明
+    └── hermes_review_system_prompt.md      # 从 hermes_llm_adapter.py 提取的 system prompt
+```
+
+### 已迁移的资产
+
+| 资产 | 来源 | overlay 位置 | 原位保留 |
+|---|---|---|---|
+| Hermes System Prompt | `hermes_llm_adapter.py:HERMES_SYSTEM_PROMPT` | `prompts/hermes_review_system_prompt.md` | ✅ 原文件不变 |
+| Launch Config 样本 | 新增 | `config/local_kernel_launch.yaml` | N/A |
+
+### 尚未迁移的资产
+
+* Skills 定义（当前 LLM adapter 中无独立 skill 注册）
+* Memory 配置（当前无独立 memory 配置文件）
+* 更多业务 prompt（需等待 local kernel 真正启用后按需迁移）
+
+## 8. Compatibility & Risks (兼容性与风险提示)
 
 ### 为什么不建议直接在代码里 `import` 上游内部模块
 * _隔离破窗_：一旦开始 `import run_agent`，很快各类工具函数、特化配置都会强耦合。上游一但更改入参或 `pydantic` 版本可能引发 008 核心进程崩溃。
@@ -74,3 +143,9 @@
 ### 本方案的主要风险
 * **启动与上下文时延**：如果每次 Review 请求都要唤起一个重型 Python Subprocess 并加载大模型 Runtime ，可能引发性能问题（相比于 Resident Shim）。因此 Launcher 的设计应考虑到提供类似于 Resident Sidecar / Worker Pool 的模式。
 * **挂载点匹配**：上游必须提供暴露良好的环境变量或命令行参数接口以允许被外部 Launcher 注入 Overlays 资产。如果上游不支持，则可能需要有限度地修改（`patches/`）。
+
+### 当前状态声明
+
+> **业务主链行为不变。** `get_hermes_engine()` 仍返回 `HermesRouterAdapter(external, llm)`。
+> Local kernel adapter / launcher 仅通过手动 smoke 脚本可触达，不参与 runtime 执行。
+
