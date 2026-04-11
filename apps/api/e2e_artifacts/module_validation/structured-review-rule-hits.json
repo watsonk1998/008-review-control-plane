@@ -1,0 +1,125 @@
+[
+  {
+    "ruleId": "distribution_network_special_scheme_structure_completeness",
+    "packId": "distribution_network_special_scheme.base",
+    "packReadiness": "ready",
+    "matchType": "direct_hit",
+    "status": "hit",
+    "applicabilityState": "applies",
+    "layerHint": "L1",
+    "severityHint": "high",
+    "factRefs": [
+      "project.structureCompleteness.specialPreparationBasis",
+      "project.structureCompleteness.specialConstructionPlan",
+      "project.structureCompleteness.specialProcessTechnology",
+      "project.structureCompleteness.specialAssuranceMeasures",
+      "project.structureCompleteness.specialStaffingAndRoles",
+      "project.structureCompleteness.specialAcceptanceRequirements",
+      "project.structureCompleteness.specialEmergencyMeasures",
+      "project.structureCompleteness.specialDrawings",
+      "project.structureCompleteness.specialRiskIdentification",
+      "project.structureCompleteness.specialLayoutEnvironment",
+      "project.structureCompleteness.specialCalculationEvidence"
+    ],
+    "evidenceRefs": [
+      "policy:distribution_network_special_scheme_structure"
+    ],
+    "requiredFactKeys": [
+      "project.structureCompleteness.specialPreparationBasis",
+      "project.structureCompleteness.specialConstructionPlan",
+      "project.structureCompleteness.specialProcessTechnology",
+      "project.structureCompleteness.specialAssuranceMeasures",
+      "project.structureCompleteness.specialStaffingAndRoles",
+      "project.structureCompleteness.specialAcceptanceRequirements",
+      "project.structureCompleteness.specialEmergencyMeasures",
+      "project.structureCompleteness.specialDrawings",
+      "project.structureCompleteness.specialRiskIdentification",
+      "project.structureCompleteness.specialLayoutEnvironment",
+      "project.structureCompleteness.specialCalculationEvidence"
+    ],
+    "missingFactKeys": [],
+    "clauseIds": [
+      "distribution_network_special_scheme_structure"
+    ],
+    "blockingReasons": [],
+    "rationale": "配网工程专项施工方案在具体三级专项之外，仍应满足专项施工方案通用目录要求。"
+  },
+  {
+    "ruleId": "power_outage_work_structure_completeness",
+    "packId": "power_outage_work.base",
+    "packReadiness": "ready",
+    "matchType": "direct_hit",
+    "status": "hit",
+    "applicabilityState": "applies",
+    "layerHint": "L1",
+    "severityHint": "high",
+    "factRefs": [
+      "project.structureCompleteness.powerOutageScope",
+      "project.structureCompleteness.powerOutageWorkContent",
+      "project.structureCompleteness.powerOutageMajorRisk",
+      "project.structureCompleteness.powerOutageStaffing",
+      "project.structureCompleteness.powerOutageEquipment",
+      "project.structureCompleteness.powerOutageMaterials",
+      "project.structureCompleteness.powerOutageSafetyControl",
+      "project.structureCompleteness.powerOutageQualityControl",
+      "project.structureCompleteness.powerOutageEmergencyMeasures"
+    ],
+    "evidenceRefs": [
+      "policy:power_outage_work_structure"
+    ],
+    "requiredFactKeys": [
+      "project.structureCompleteness.powerOutageScope",
+      "project.structureCompleteness.powerOutageWorkContent",
+      "project.structureCompleteness.powerOutageMajorRisk",
+      "project.structureCompleteness.powerOutageStaffing",
+      "project.structureCompleteness.powerOutageEquipment",
+      "project.structureCompleteness.powerOutageMaterials",
+      "project.structureCompleteness.powerOutageSafetyControl",
+      "project.structureCompleteness.powerOutageQualityControl",
+      "project.structureCompleteness.powerOutageEmergencyMeasures"
+    ],
+    "missingFactKeys": [],
+    "clauseIds": [
+      "power_outage_work_structure"
+    ],
+    "blockingReasons": [],
+    "rationale": "停电施工作业专项施工方案除通用要求外，还应覆盖停电范围、作业内容、主要风险、人员、机具、材料、安全/质量管控与应急措施。"
+  },
+  {
+    "ruleId": "temporary_power_control_linkage",
+    "packId": "power_outage_work.base",
+    "packReadiness": "ready",
+    "matchType": "inferred_risk",
+    "status": "hit",
+    "applicabilityState": "blocked_by_missing_fact",
+    "layerHint": "L2",
+    "severityHint": "medium",
+    "factRefs": [
+      "hazard.temporaryPower",
+      "hazard.measureSectionPresent",
+      "hazard.monitoringSectionPresent",
+      "emergency.planTitles"
+    ],
+    "evidenceRefs": [
+      "policy:hazardous_scheme_measures",
+      "policy:emergency_plan_targeted"
+    ],
+    "requiredFactKeys": [
+      "hazard.temporaryPower",
+      "hazard.measureSectionPresent",
+      "hazard.monitoringSectionPresent",
+      "emergency.planTitles"
+    ],
+    "missingFactKeys": [
+      "emergency.planTitles"
+    ],
+    "clauseIds": [
+      "hazardous_scheme_measures",
+      "emergency_plan_targeted"
+    ],
+    "blockingReasons": [
+      "missing_fact"
+    ],
+    "rationale": "临时用电/停送电作业应同时落到控制措施、监测监控和触电类应急处置。"
+  }
+]

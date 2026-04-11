@@ -176,9 +176,13 @@ def test_review_task_status_and_result_routes_map_internal_state(monkeypatch):
                 {'name': 'report', 'fileName': 'hermes-controller-final-report.md', 'mediaType': 'text/markdown', 'sizeBytes': 12, 'downloadUrl': '/api/tasks/task-status-1/artifacts/hermes-controller-final-report.md', 'category': 'report', 'stage': 'result', 'primary': True}
             ],
             'finalReportPacket': {
-                'key_findings': [{'title': '章节缺失'}],
+                'key_findings': [{'id': 'ISSUE-1', 'title': '章节缺失', 'severity': 'high', 'summary': '缺少章节', 'suggestion': '补齐章节', 'raw_data': {'module_name': 'structure_completeness', 'ownership': 'support_material'}}],
+                'all_findings': [
+                    {'id': 'ISSUE-1', 'title': '章节缺失', 'severity': 'high', 'summary': '缺少章节', 'suggestion': '补齐章节', 'raw_data': {'module_name': 'structure_completeness', 'ownership': 'support_material'}},
+                    {'id': 'ISSUE-2', 'title': '停送电链路存在遗漏', 'severity': 'medium', 'summary': '链路闭环不足', 'suggestion': '补充闭环', 'raw_data': {'module_name': 'execution_continuity', 'ownership': 'hermes_main_review'}},
+                ],
                 'traceability': [{'issue_id': 'ISSUE-1'}],
-                'executive_summary': '文档存在结构性问题',
+                'executive_summary': 'Hermes 裁决认为文档存在结构性问题',
                 'metadata': {
                     'decision_owner': 'hermes',
                     'support_owner': 'structured_review_capability_facade',
@@ -217,11 +221,16 @@ def test_review_task_status_and_result_routes_map_internal_state(monkeypatch):
     result_payload = result_response.json()
     assert result_payload['report_id'] == 'task-status-1'
     assert result_payload['summary']['risk_level'] == 'high'
+    assert result_payload['summary']['overall_conclusion'] == 'Hermes 裁决认为文档存在结构性问题'
     assert result_payload['modules']['structure_completeness']['findings'][0]['id'] == 'ISSUE-1'
+    assert result_payload['modules']['execution_continuity']['findings'][0]['id'] == 'ISSUE-2'
     assert result_payload['export_links']['markdown'].endswith('hermes-controller-final-report.md')
     assert result_payload['metadata']['assembler'] == 'HermesReviewAssembler'
     assert result_payload['metadata']['decision_owner'] == 'hermes'
     assert result_payload['metadata']['support_owner'] == 'structured_review_capability_facade'
+    assert result_payload['metadata']['result_ownership'] == 'hermes_decision_layer'
+    assert result_payload['metadata']['module_bucketing'] == 'execution_metadata_first'
+    assert result_payload['metadata']['support_material_present'] is True
 
 
 def test_review_task_events_stream_emits_frozen_event_types(monkeypatch):
@@ -278,3 +287,94 @@ def test_review_report_feedback_route_accepts_feedback(monkeypatch):
     response = client.post('/api/review-reports/task-1/feedback', json={'feedback_type': 'helpful', 'comment': 'ok'})
     assert response.status_code == 200
     assert response.json() == {'accepted': True, 'report_id': 'task-1', 'feedback_id': 'fb-1'}
+
+
+def test_review_task_result_ownership_prefers_decision_sources():
+    now = datetime.now(timezone.utc)
+    task = TaskRecord(
+        id='task-decision-owned-1',
+        taskType='structured_review',
+        capabilityMode='auto',
+        query='query',
+        sourceDocumentRef=SourceDocumentRef(refId='r1', sourceType='upload', fileName='target.md', fileType='md', storagePath='/tmp/target.md', displayName='target.md'),
+        documentType='distribution_network_special_scheme',
+        disciplineTags=[],
+        strictMode=True,
+        policyPackIds=[],
+        status='succeeded',
+        plan={'hermesInput': {'frontendSelections': {'review_intent': {'enabled_modules': ['structure_completeness'], 'disabled_modules': []}}}},
+        result={
+            'summary': {'overallConclusion': 'support says pass'},
+            'issues': [{'id': 'SUP-1', 'title': 'support issue', 'summary': 'support issue', 'severity': 'low', 'recommendation': ['support rec']}],
+            'finalReportPacket': {
+                'executive_summary': 'Hermes decision says revise',
+                'key_findings': [{'id': 'DEC-1', 'title': 'decision issue', 'severity': 'medium', 'summary': 'decision issue', 'suggestion': 'decision rec', 'raw_data': {'module_name': 'structure_completeness', 'ownership': 'hermes_main_review'}}],
+                'all_findings': [{'id': 'DEC-1', 'title': 'decision issue', 'severity': 'medium', 'summary': 'decision issue', 'suggestion': 'decision rec', 'raw_data': {'module_name': 'structure_completeness', 'ownership': 'hermes_main_review'}}],
+                'metadata': {},
+            },
+            'hermesController': {'mainReviewOutcomes': []},
+        },
+        createdAt=now,
+        updatedAt=now,
+    )
+    payload = review_task_contracts.build_review_task_result(task, [])
+    assert payload.summary.overall_conclusion == 'Hermes decision says revise'
+    assert payload.key_findings[0]['id'] == 'DEC-1'
+    assert payload.modules['structure_completeness'].findings[0]['id'] == 'DEC-1'
+    assert payload.recommendations == ['decision rec']
+
+
+def test_module_bucketing_prefers_execution_metadata_over_heuristics():
+    now = datetime.now(timezone.utc)
+    task = TaskRecord(
+        id='task-module-metadata-1',
+        taskType='structured_review',
+        capabilityMode='auto',
+        query='query',
+        sourceDocumentRef=SourceDocumentRef(refId='r1', sourceType='upload', fileName='target.md', fileType='md', storagePath='/tmp/target.md', displayName='target.md'),
+        documentType='distribution_network_special_scheme',
+        disciplineTags=[],
+        strictMode=True,
+        policyPackIds=[],
+        status='succeeded',
+        plan={'hermesInput': {'frontendSelections': {'review_intent': {'enabled_modules': ['legality_compliance', 'execution_continuity'], 'disabled_modules': []}}}},
+        result={
+            'issues': [
+                {
+                    'id': 'ISSUE-META-1',
+                    'title': '停送电链路存在遗漏',
+                    'summary': '标题会被启发式误判到执行连续性',
+                    'severity': 'medium',
+                    'recommendation': ['补齐规范条款'],
+                }
+            ],
+            'finalReportPacket': {
+                'all_findings': [
+                    {
+                        'id': 'ISSUE-META-1',
+                        'title': '停送电链路存在遗漏',
+                        'severity': 'medium',
+                        'summary': '来自裁决层的模块归属',
+                        'suggestion': '补齐规范条款',
+                        'raw_data': {'module_name': 'legality_compliance', 'ownership': 'hermes_main_review'},
+                    }
+                ],
+                'key_findings': [
+                    {
+                        'id': 'ISSUE-META-1',
+                        'title': '停送电链路存在遗漏',
+                        'severity': 'medium',
+                        'summary': '来自裁决层的模块归属',
+                        'suggestion': '补齐规范条款',
+                        'raw_data': {'module_name': 'legality_compliance', 'ownership': 'hermes_main_review'},
+                    }
+                ],
+            },
+            'hermesController': {'mainReviewOutcomes': []},
+        },
+        createdAt=now,
+        updatedAt=now,
+    )
+    payload = review_task_contracts.build_review_task_result(task, [])
+    assert payload.modules['legality_compliance'].findings[0]['id'] == 'ISSUE-META-1'
+    assert payload.modules['execution_continuity'].findings == []

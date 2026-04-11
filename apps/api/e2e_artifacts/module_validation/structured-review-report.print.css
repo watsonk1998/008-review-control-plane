@@ -1,0 +1,282 @@
+
+/* ========================================================
+   Enterprise-Grade Print CSS for Structured Review Reports
+   ======================================================== */
+
+html, body {
+  background-color: #f8fafc !important;
+  margin: 0;
+  padding: 0;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", "WenQuanYi Micro Hei", sans-serif;
+  color: #1e293b;
+  line-height: 1.6;
+}
+
+.structured-report {
+  max-width: 100%;
+  margin: 0 auto;
+  padding: 24px;
+  background-color: #ffffff !important;
+}
+
+.structured-report * {
+  box-sizing: border-box;
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+.structured-report h1,
+.structured-report h2,
+.structured-report h3,
+.structured-report h4 {
+  color: #0f172a;
+  font-weight: 700;
+  margin-top: 0;
+  page-break-after: avoid;
+  break-after: avoid;
+}
+
+/* Document Title */
+.structured-report__title {
+  font-size: 32px;
+  text-align: center;
+  color: #0f172a;
+  padding-bottom: 24px;
+  margin-bottom: 32px;
+  border-bottom: 3px solid #cbd5e1;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+}
+
+/* Sections */
+.structured-report__section {
+  margin-bottom: 32px;
+  padding-bottom: 24px;
+}
+
+.structured-report__section-title {
+  font-size: 22px;
+  color: #1e40af;
+  margin-bottom: 20px;
+  padding: 8px 16px;
+  background-color: #eff6ff;
+  border-left: 5px solid #2563eb;
+  border-radius: 0 4px 4px 0;
+}
+
+.structured-report__subsection {
+  margin-bottom: 24px;
+}
+
+.structured-report__subsection-title {
+  font-size: 18px;
+  color: #334155;
+  margin-bottom: 12px;
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 6px;
+}
+
+/* Lists & Text */
+.structured-report p,
+.structured-report li {
+  font-size: 14px;
+  color: #475569;
+  letter-spacing: 0.2px;
+}
+
+.structured-report__bullet-list,
+.structured-report__basis-list,
+.structured-report__fact-list {
+  padding-left: 20px;
+  margin: 12px 0;
+}
+
+.structured-report__bullet-list li,
+.structured-report__basis-list li,
+.structured-report__fact-list li {
+  margin-bottom: 8px;
+}
+
+/* Tables - Premium Data Layout */
+.structured-report__table-wrap {
+  margin: 20px 0;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+}
+
+.structured-report table {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: #ffffff;
+}
+
+.structured-report th {
+  background-color: #f1f5f9 !important;
+  color: #0f172a;
+  font-size: 13px;
+  font-weight: 700;
+  text-align: left;
+  padding: 12px 16px;
+  border-bottom: 2px solid #cbd5e1;
+}
+
+.structured-report td {
+  padding: 12px 16px;
+  font-size: 13px;
+  color: #334155;
+  border-bottom: 1px solid #e2e8f0;
+  vertical-align: top;
+}
+
+.structured-report tr:last-child td {
+  border-bottom: none;
+}
+
+.structured-report tbody tr:nth-child(even) {
+  background-color: #f8fafc !important;
+}
+
+.structured-overview-table th:nth-child(1),
+.structured-overview-table td:nth-child(1) { width: 6%; }
+.structured-overview-table th:nth-child(2),
+.structured-overview-table td:nth-child(2) { width: 20%; }
+.structured-overview-table th:nth-child(3),
+.structured-overview-table td:nth-child(3) { width: 10%; }
+.structured-overview-table th:nth-child(4),
+.structured-overview-table td:nth-child(4) { width: 34%; }
+.structured-overview-table th:nth-child(5),
+.structured-overview-table td:nth-child(5) { width: 30%; }
+
+.structured-completeness-table th:nth-child(1),
+.structured-completeness-table td:nth-child(1) { width: 6%; }
+.structured-completeness-table th:nth-child(2),
+.structured-completeness-table td:nth-child(2) { width: 14%; }
+.structured-completeness-table th:nth-child(3),
+.structured-completeness-table td:nth-child(3) { width: 15%; }
+.structured-completeness-table th:nth-child(4),
+.structured-completeness-table td:nth-child(4) { width: 30%; }
+.structured-completeness-table th:nth-child(5),
+.structured-completeness-table td:nth-child(5) { width: 10%; }
+.structured-completeness-table th:nth-child(6),
+.structured-completeness-table td:nth-child(6) { width: 25%; }
+
+/* Issue Cards - High Visibility */
+.structured-report__issue-card {
+  background-color: #fff1f2 !important;
+  border: 1px solid #fecdd3;
+  border-left: 5px solid #e11d48;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 20px;
+  page-break-inside: avoid;
+  break-inside: avoid;
+}
+
+.structured-report__issue-card-title {
+  color: #be123c;
+  font-size: 18px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+}
+
+.structured-report__issue-card-section {
+  margin-bottom: 16px;
+}
+
+.structured-report__issue-card-section:last-child {
+  margin-bottom: 0;
+}
+
+.structured-report__issue-card-section-title {
+  font-size: 13px;
+  text-transform: uppercase;
+  color: #9f1239;
+  font-weight: 800;
+  margin-bottom: 6px;
+  letter-spacing: 0.5px;
+}
+
+.structured-report__issue-card-text {
+  color: #4c0519;
+  font-size: 14px;
+}
+
+.structured-report__issue-card-law-list {
+  padding-left: 18px;
+  margin: 0;
+}
+
+.structured-report__issue-card-law-item {
+  color: #881337;
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+
+.structured-report__issue-card-law-title {
+  font-weight: 700;
+}
+
+.structured-report__issue-card-law-requirements {
+  margin: 6px 0 0 18px;
+  padding: 0;
+}
+
+/* Gap Items / Followups */
+.structured-report__gap-item,
+.structured-report__followup-compact {
+  background-color: #fdf4ff !important;
+  border: 1px solid #f5d0fe;
+  border-left: 4px solid #c026d3;
+  border-radius: 6px;
+  padding: 16px;
+  margin-bottom: 16px;
+  page-break-inside: avoid;
+  break-inside: avoid;
+}
+
+.structured-report__gap-item-title,
+.structured-report__followup-compact-title {
+  color: #86198f;
+  font-size: 16px;
+  margin-bottom: 10px;
+}
+
+/* Print Specific Optimizations */
+@media print {
+  @page {
+    size: A4 landscape;
+    margin: 15mm;
+  }
+
+  html, 
+  body, 
+  .structured-report {
+    background-color: #ffffff !important;
+  }
+
+  /* Force page breaks for clean segmentation */
+  .structured-report__section {
+    page-break-inside: auto;
+  }
+
+  .structured-report__overview-section {
+    break-before: page;
+    page-break-before: always;
+  }
+
+  /* Prevent awkward splits */
+  .structured-report table,
+  .structured-report__issue-card,
+  .structured-report__gap-item {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  thead {
+    display: table-header-group;
+  }
+}

@@ -93,8 +93,12 @@ async def test_structured_review_capability_facade_primary_review_matches_execut
     primary = await facade.primary_support_review(workspace=workspace, context=context)
     result = primary['support_result']
 
-    for key in ['summary', 'visibility', 'issues', 'artifactIndex', 'reportMarkdown', 'reportHtml', 'reportPrintCss', 'resolvedProfile']:
+    for key in ['summary', 'visibility', 'artifactIndex', 'reportMarkdown', 'reportHtml', 'reportPrintCss', 'resolvedProfile']:
         assert result[key] == direct[key]
+    assert [issue['id'] for issue in result['issues']] == [issue['id'] for issue in direct['issues']]
+    assert all(issue['ownership'] == 'support_material' for issue in result['issues'])
+    assert all(issue['supportCapabilities'] == ['primary_support_review'] for issue in result['issues'])
+    assert result['issues'][0]['supportModules'] == ['structure_completeness']
     assert primary['module_id'] == 'primary_support_review'
     assert workspace['structured_support_result_008']['summary'] == direct['summary']
     assert primary['support_packet']['engine'] == '008'

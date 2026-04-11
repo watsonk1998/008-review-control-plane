@@ -244,4 +244,12 @@ class StructuredReviewCapabilityFacade:
         annotated = dict(issue)
         annotated.setdefault('ownership', 'support_material')
         annotated.setdefault('supportCapabilities', ['primary_support_review'])
+        layer = annotated.get('layer')
+        if 'supportModules' not in annotated:
+            if layer == 'L1':
+                annotated['supportModules'] = ['structure_completeness']
+            elif layer == 'L2':
+                annotated['supportModules'] = ['legality_compliance']
+            elif layer == 'L3':
+                annotated['supportModules'] = ['parameter_consistency']
         return annotated

@@ -1,0 +1,124 @@
+{
+  "parseMode": "markdown_text",
+  "parserLimited": false,
+  "parseWarnings": [
+    "text_tables_not_preserved",
+    "text_attachment_boundaries_inferred_from_headings"
+  ],
+  "visibility": {
+    "parseMode": "markdown_text",
+    "parserLimited": false,
+    "fileType": "md",
+    "attachmentCount": 0,
+    "counts": {
+      "parsed": 0,
+      "attachment_unparsed": 0,
+      "referenced_only": 0,
+      "missing": 0,
+      "unknown": 0
+    },
+    "reasonCounts": {},
+    "duplicateSectionTitles": [],
+    "parseWarnings": [
+      "text_tables_not_preserved",
+      "text_attachment_boundaries_inferred_from_headings"
+    ],
+    "manualReviewNeeded": false,
+    "manualReviewReason": null,
+    "preflight": {
+      "gateDecision": "ready",
+      "blockingReasons": [],
+      "checklist": [
+        {
+          "key": "parse_source_readiness",
+          "status": "pass",
+          "summary": "当前解析路径未触发 parser-limited gate。",
+          "blocking": false
+        },
+        {
+          "key": "attachment_visibility",
+          "status": "pass",
+          "summary": "附件可视域未触发额外前置阻断。",
+          "blocking": false
+        },
+        {
+          "key": "section_structure_signal",
+          "status": "pass",
+          "summary": "章节结构未检测到重复标题信号。",
+          "blocking": false
+        },
+        {
+          "key": "manual_review_gate",
+          "status": "pass",
+          "summary": "当前任务未触发额外人工复核 gate。",
+          "blocking": false
+        }
+      ],
+      "parserLimitations": [
+        "text_tables_not_preserved",
+        "text_attachment_boundaries_inferred_from_headings"
+      ],
+      "attachmentTaxonomySummary": {
+        "attachmentCount": 0,
+        "counts": {
+          "parsed": 0,
+          "attachment_unparsed": 0,
+          "referenced_only": 0,
+          "missing": 0,
+          "unknown": 0
+        },
+        "reasonCounts": {},
+        "manualReviewReason": null
+      }
+    }
+  },
+  "preflight": {
+    "gateDecision": "ready",
+    "blockingReasons": [],
+    "checklist": [
+      {
+        "key": "parse_source_readiness",
+        "status": "pass",
+        "summary": "当前解析路径未触发 parser-limited gate。",
+        "blocking": false
+      },
+      {
+        "key": "attachment_visibility",
+        "status": "pass",
+        "summary": "附件可视域未触发额外前置阻断。",
+        "blocking": false
+      },
+      {
+        "key": "section_structure_signal",
+        "status": "pass",
+        "summary": "章节结构未检测到重复标题信号。",
+        "blocking": false
+      },
+      {
+        "key": "manual_review_gate",
+        "status": "pass",
+        "summary": "当前任务未触发额外人工复核 gate。",
+        "blocking": false
+      }
+    ],
+    "parserLimitations": [
+      "text_tables_not_preserved",
+      "text_attachment_boundaries_inferred_from_headings"
+    ],
+    "attachmentTaxonomySummary": {
+      "attachmentCount": 0,
+      "counts": {
+        "parsed": 0,
+        "attachment_unparsed": 0,
+        "referenced_only": 0,
+        "missing": 0,
+        "unknown": 0
+      },
+      "reasonCounts": {},
+      "manualReviewReason": null
+    }
+  },
+  "manualReviewNeeded": false,
+  "manualReviewReason": null,
+  "attachmentVisibility": []
+}

@@ -1,0 +1,1656 @@
+{
+  "review_id": "task-module-validation-001",
+  "final_grade": "needs_revision",
+  "executive_summary": "本次审查综合评级：**需要修改**。 008引擎发现 3 个问题（高 2，中 1，低 0）。 Hermes补充发现 5 个独立问题。",
+  "top_risks": [
+    {
+      "id": "ISSUE-001",
+      "title": "配网工程专项施工方案通用章节不完整",
+      "severity": "high",
+      "category": "structure",
+      "layer": "L1",
+      "evidence_status": "grounded",
+      "evidence_refs": [
+        "doc:block-2"
+      ],
+      "basis_refs": [
+        "policy:distribution_network_special_scheme_structure"
+      ],
+      "suggestion": "demo",
+      "summary": "配网工程专项施工方案通用章节不完整",
+      "finding_type": "hard_evidence",
+      "manual_review_needed": false,
+      "confidence": "medium",
+      "source_engine": "008",
+      "raw_data": {
+        "id": "ISSUE-001",
+        "title": "配网工程专项施工方案通用章节不完整",
+        "layer": "L1",
+        "severity": "high",
+        "findingType": "hard_evidence",
+        "summary": "配网工程专项施工方案通用章节不完整",
+        "manualReviewNeeded": false,
+        "evidenceMissing": false,
+        "manualReviewReason": null,
+        "issueKind": "hard_defect",
+        "applicabilityState": "applies",
+        "docEvidence": [
+          {
+            "sourceType": "document",
+            "sourceId": "validation_sample",
+            "locator": {
+              "blockId": "block-2",
+              "sectionId": "section-2"
+            },
+            "excerpt": "第一章 工程概况",
+            "visibility": null,
+            "confidence": "high",
+            "clauseTitle": null,
+            "forceLevel": null,
+            "applicability": null,
+            "sourceProvenance": "document:validation_sample.md:block:block-2",
+            "evidenceGapReason": null
+          }
+        ],
+        "policyEvidence": [
+          {
+            "sourceType": "policy",
+            "sourceId": "review-control-plane-special-scheme-structure-policy",
+            "locator": {
+              "clauseId": "distribution_network_special_scheme_structure"
+            },
+            "excerpt": "配网工程专项施工方案除专项补充要求外，仍应覆盖工程概况、编制依据、施工计划、施工工艺技术、施工保证措施、人员分工、验收要求、应急处置、图纸、风险辨识、平面布置或周边环境、计算与验算依据等通用内容。",
+            "visibility": null,
+            "confidence": "high",
+            "clauseTitle": "配网工程专项施工方案通用目录要求",
+            "forceLevel": "should",
+            "applicability": "distribution_network_special_scheme",
+            "sourceProvenance": "review-control-plane-special-scheme-structure-policy",
+            "evidenceGapReason": null
+          }
+        ],
+        "recommendation": [
+          "demo"
+        ],
+        "confidence": "medium",
+        "missingFactKeys": [],
+        "blockingReasons": [],
+        "template_id": "structured_review_primary_worker",
+        "agent_id": "structured_review_primary_worker",
+        "review_modules": [
+          "structure_completeness"
+        ],
+        "module_name": "structure_completeness",
+        "ownership": "support_material",
+        "hermes_decision_signal": "corroborated",
+        "decision_role": "key_finding",
+        "decision_owner": "hermes",
+        "source_template_id": "structured_review_primary_worker"
+      }
+    },
+    {
+      "id": "ISSUE-002",
+      "title": "停电施工作业专项章节不完整",
+      "severity": "high",
+      "category": "structure",
+      "layer": "L1",
+      "evidence_status": "grounded",
+      "evidence_refs": [],
+      "basis_refs": [
+        "policy:power_outage_work_structure"
+      ],
+      "suggestion": "demo",
+      "summary": "停电施工作业专项章节不完整",
+      "finding_type": "hard_evidence",
+      "manual_review_needed": false,
+      "confidence": "medium",
+      "source_engine": "008",
+      "raw_data": {
+        "id": "ISSUE-002",
+        "title": "停电施工作业专项章节不完整",
+        "layer": "L1",
+        "severity": "high",
+        "findingType": "hard_evidence",
+        "summary": "停电施工作业专项章节不完整",
+        "manualReviewNeeded": false,
+        "evidenceMissing": false,
+        "manualReviewReason": null,
+        "issueKind": "hard_defect",
+        "applicabilityState": "applies",
+        "docEvidence": [],
+        "policyEvidence": [
+          {
+            "sourceType": "policy",
+            "sourceId": "review-control-plane-special-scheme-structure-policy",
+            "locator": {
+              "clauseId": "power_outage_work_structure"
+            },
+            "excerpt": "停电施工作业专项施工方案除专项施工方案通用要求外，还应覆盖停电范围、作业内容、主要风险、施工人员、机具、材料、安全管控、质量管控、应急措施等响应内容；不要求完全同名或同层级，但正文应有稳定支撑内容。",
+            "visibility": null,
+            "confidence": "high",
+            "clauseTitle": "停电施工作业专项补充目录要求",
+            "forceLevel": "should",
+            "applicability": "power_outage_work",
+            "sourceProvenance": "review-control-plane-special-scheme-structure-policy",
+            "evidenceGapReason": null
+          }
+        ],
+        "recommendation": [
+          "demo"
+        ],
+        "confidence": "medium",
+        "missingFactKeys": [],
+        "blockingReasons": [],
+        "template_id": "structured_review_primary_worker",
+        "agent_id": "structured_review_primary_worker",
+        "review_modules": [
+          "structure_completeness"
+        ],
+        "module_name": "structure_completeness",
+        "ownership": "support_material",
+        "hermes_decision_signal": "corroborated",
+        "decision_role": "key_finding",
+        "decision_owner": "hermes",
+        "source_template_id": "structured_review_primary_worker"
+      }
+    },
+    {
+      "id": "H-POL-001",
+      "title": "配网工程专项施工方案通用章节不完整",
+      "severity": "high",
+      "category": "compliance",
+      "layer": "ReviewLayer.L1",
+      "evidence_status": "grounded",
+      "evidence_refs": [],
+      "basis_refs": [
+        "distribution_network_special_scheme_structure"
+      ],
+      "suggestion": "结合命中规则与规范条款进一步补齐正文。",
+      "summary": "配网工程专项施工方案在具体三级专项之外，仍应满足专项施工方案通用目录要求。",
+      "finding_type": "",
+      "manual_review_needed": false,
+      "confidence": "medium",
+      "source_engine": "hermes",
+      "raw_data": {
+        "rule_ids": [
+          "distribution_network_special_scheme_structure_completeness"
+        ],
+        "template_id": "policy_compliance_reviewer",
+        "agent_id": "policy_compliance_reviewer",
+        "review_modules": [
+          "legality_compliance"
+        ],
+        "module_name": "legality_compliance",
+        "ownership": "hermes_main_review",
+        "decision_role": "supplemental_finding",
+        "decision_owner": "hermes",
+        "source_template_id": "policy_compliance_reviewer"
+      }
+    },
+    {
+      "id": "H-POL-002",
+      "title": "停电施工作业专项章节不完整",
+      "severity": "high",
+      "category": "compliance",
+      "layer": "ReviewLayer.L1",
+      "evidence_status": "grounded",
+      "evidence_refs": [],
+      "basis_refs": [
+        "power_outage_work_structure"
+      ],
+      "suggestion": "结合命中规则与规范条款进一步补齐正文。",
+      "summary": "停电施工作业专项施工方案除通用要求外，还应覆盖停电范围、作业内容、主要风险、人员、机具、材料、安全/质量管控与应急措施。",
+      "finding_type": "",
+      "manual_review_needed": false,
+      "confidence": "medium",
+      "source_engine": "hermes",
+      "raw_data": {
+        "rule_ids": [
+          "power_outage_work_structure_completeness"
+        ],
+        "template_id": "policy_compliance_reviewer",
+        "agent_id": "policy_compliance_reviewer",
+        "review_modules": [
+          "legality_compliance"
+        ],
+        "module_name": "legality_compliance",
+        "ownership": "hermes_main_review",
+        "decision_role": "supplemental_finding",
+        "decision_owner": "hermes",
+        "source_template_id": "policy_compliance_reviewer"
+      }
+    }
+  ],
+  "key_findings": [
+    {
+      "id": "ISSUE-001",
+      "title": "配网工程专项施工方案通用章节不完整",
+      "severity": "high",
+      "category": "structure",
+      "layer": "L1",
+      "evidence_status": "grounded",
+      "evidence_refs": [
+        "doc:block-2"
+      ],
+      "basis_refs": [
+        "policy:distribution_network_special_scheme_structure"
+      ],
+      "suggestion": "demo",
+      "summary": "配网工程专项施工方案通用章节不完整",
+      "finding_type": "hard_evidence",
+      "manual_review_needed": false,
+      "confidence": "medium",
+      "source_engine": "008",
+      "raw_data": {
+        "id": "ISSUE-001",
+        "title": "配网工程专项施工方案通用章节不完整",
+        "layer": "L1",
+        "severity": "high",
+        "findingType": "hard_evidence",
+        "summary": "配网工程专项施工方案通用章节不完整",
+        "manualReviewNeeded": false,
+        "evidenceMissing": false,
+        "manualReviewReason": null,
+        "issueKind": "hard_defect",
+        "applicabilityState": "applies",
+        "docEvidence": [
+          {
+            "sourceType": "document",
+            "sourceId": "validation_sample",
+            "locator": {
+              "blockId": "block-2",
+              "sectionId": "section-2"
+            },
+            "excerpt": "第一章 工程概况",
+            "visibility": null,
+            "confidence": "high",
+            "clauseTitle": null,
+            "forceLevel": null,
+            "applicability": null,
+            "sourceProvenance": "document:validation_sample.md:block:block-2",
+            "evidenceGapReason": null
+          }
+        ],
+        "policyEvidence": [
+          {
+            "sourceType": "policy",
+            "sourceId": "review-control-plane-special-scheme-structure-policy",
+            "locator": {
+              "clauseId": "distribution_network_special_scheme_structure"
+            },
+            "excerpt": "配网工程专项施工方案除专项补充要求外，仍应覆盖工程概况、编制依据、施工计划、施工工艺技术、施工保证措施、人员分工、验收要求、应急处置、图纸、风险辨识、平面布置或周边环境、计算与验算依据等通用内容。",
+            "visibility": null,
+            "confidence": "high",
+            "clauseTitle": "配网工程专项施工方案通用目录要求",
+            "forceLevel": "should",
+            "applicability": "distribution_network_special_scheme",
+            "sourceProvenance": "review-control-plane-special-scheme-structure-policy",
+            "evidenceGapReason": null
+          }
+        ],
+        "recommendation": [
+          "demo"
+        ],
+        "confidence": "medium",
+        "missingFactKeys": [],
+        "blockingReasons": [],
+        "template_id": "structured_review_primary_worker",
+        "agent_id": "structured_review_primary_worker",
+        "review_modules": [
+          "structure_completeness"
+        ],
+        "module_name": "structure_completeness",
+        "ownership": "support_material",
+        "hermes_decision_signal": "corroborated",
+        "decision_role": "key_finding",
+        "decision_owner": "hermes",
+        "source_template_id": "structured_review_primary_worker"
+      }
+    },
+    {
+      "id": "ISSUE-002",
+      "title": "停电施工作业专项章节不完整",
+      "severity": "high",
+      "category": "structure",
+      "layer": "L1",
+      "evidence_status": "grounded",
+      "evidence_refs": [],
+      "basis_refs": [
+        "policy:power_outage_work_structure"
+      ],
+      "suggestion": "demo",
+      "summary": "停电施工作业专项章节不完整",
+      "finding_type": "hard_evidence",
+      "manual_review_needed": false,
+      "confidence": "medium",
+      "source_engine": "008",
+      "raw_data": {
+        "id": "ISSUE-002",
+        "title": "停电施工作业专项章节不完整",
+        "layer": "L1",
+        "severity": "high",
+        "findingType": "hard_evidence",
+        "summary": "停电施工作业专项章节不完整",
+        "manualReviewNeeded": false,
+        "evidenceMissing": false,
+        "manualReviewReason": null,
+        "issueKind": "hard_defect",
+        "applicabilityState": "applies",
+        "docEvidence": [],
+        "policyEvidence": [
+          {
+            "sourceType": "policy",
+            "sourceId": "review-control-plane-special-scheme-structure-policy",
+            "locator": {
+              "clauseId": "power_outage_work_structure"
+            },
+            "excerpt": "停电施工作业专项施工方案除专项施工方案通用要求外，还应覆盖停电范围、作业内容、主要风险、施工人员、机具、材料、安全管控、质量管控、应急措施等响应内容；不要求完全同名或同层级，但正文应有稳定支撑内容。",
+            "visibility": null,
+            "confidence": "high",
+            "clauseTitle": "停电施工作业专项补充目录要求",
+            "forceLevel": "should",
+            "applicability": "power_outage_work",
+            "sourceProvenance": "review-control-plane-special-scheme-structure-policy",
+            "evidenceGapReason": null
+          }
+        ],
+        "recommendation": [
+          "demo"
+        ],
+        "confidence": "medium",
+        "missingFactKeys": [],
+        "blockingReasons": [],
+        "template_id": "structured_review_primary_worker",
+        "agent_id": "structured_review_primary_worker",
+        "review_modules": [
+          "structure_completeness"
+        ],
+        "module_name": "structure_completeness",
+        "ownership": "support_material",
+        "hermes_decision_signal": "corroborated",
+        "decision_role": "key_finding",
+        "decision_owner": "hermes",
+        "source_template_id": "structured_review_primary_worker"
+      }
+    },
+    {
+      "id": "ISSUE-003",
+      "title": "临时用电/停送电控制链路不完整",
+      "severity": "medium",
+      "category": "compliance",
+      "layer": "L2",
+      "evidence_status": "evidence_gap",
+      "evidence_refs": [
+        "doc:block-5",
+        "doc:block-6"
+      ],
+      "basis_refs": [
+        "policy:hazardous_scheme_measures",
+        "policy:emergency_plan_targeted"
+      ],
+      "suggestion": "demo",
+      "summary": "临时用电/停送电控制链路不完整",
+      "finding_type": "engineering_inference",
+      "manual_review_needed": false,
+      "confidence": "medium",
+      "source_engine": "008",
+      "raw_data": {
+        "id": "ISSUE-003",
+        "title": "临时用电/停送电控制链路不完整",
+        "layer": "L2",
+        "severity": "medium",
+        "findingType": "engineering_inference",
+        "summary": "临时用电/停送电控制链路不完整",
+        "manualReviewNeeded": false,
+        "evidenceMissing": true,
+        "manualReviewReason": null,
+        "issueKind": "evidence_gap",
+        "applicabilityState": "blocked_by_missing_fact",
+        "docEvidence": [
+          {
+            "sourceType": "document",
+            "sourceId": "validation_sample",
+            "locator": {
+              "blockId": "block-5",
+              "sectionId": "section-3"
+            },
+            "excerpt": "涉及施工用电、动火作业。",
+            "visibility": null,
+            "confidence": "high",
+            "clauseTitle": null,
+            "forceLevel": null,
+            "applicability": null,
+            "sourceProvenance": "document:validation_sample.md:block:block-5",
+            "evidenceGapReason": "missing_fact"
+          },
+          {
+            "sourceType": "document",
+            "sourceId": "validation_sample",
+            "locator": {
+              "blockId": "block-6",
+              "sectionId": "section-4"
+            },
+            "excerpt": "第三章 停送电组织",
+            "visibility": null,
+            "confidence": "high",
+            "clauseTitle": null,
+            "forceLevel": null,
+            "applicability": null,
+            "sourceProvenance": "document:validation_sample.md:block:block-6",
+            "evidenceGapReason": "missing_fact"
+          }
+        ],
+        "policyEvidence": [
+          {
+            "sourceType": "policy",
+            "sourceId": "construction-《危险性较大的分部分项工程专项施工方案编制指南》（建办质〔2021〕48号）",
+            "locator": {
+              "clauseId": "hazardous_scheme_measures"
+            },
+            "excerpt": "专项方案应将主要危险源、控制措施、监测监控和应急处置形成闭环，便于现场执行。",
+            "visibility": null,
+            "confidence": "high",
+            "clauseTitle": "风险措施与监测监控",
+            "forceLevel": "should",
+            "applicability": "hazardous_special_scheme",
+            "sourceProvenance": "construction-《危险性较大的分部分项工程专项施工方案编制指南》（建办质〔2021〕48号）",
+            "evidenceGapReason": "missing_fact"
+          },
+          {
+            "sourceType": "policy",
+            "sourceId": "construction-《建设工程安全生产管理条例》",
+            "locator": {
+              "clauseId": "emergency_plan_targeted"
+            },
+            "excerpt": "应急管理文件应与主要危险源相匹配，便于事故类型、联系链路和现场处置动作快速落地。",
+            "visibility": null,
+            "confidence": "high",
+            "clauseTitle": "应急预案针对性",
+            "forceLevel": "should",
+            "applicability": "construction_org,hazardous_special_scheme",
+            "sourceProvenance": "construction-《建设工程安全生产管理条例》",
+            "evidenceGapReason": "missing_fact"
+          }
+        ],
+        "recommendation": [
+          "demo"
+        ],
+        "confidence": "medium",
+        "missingFactKeys": [
+          "emergency.planTitles"
+        ],
+        "blockingReasons": [
+          "missing_fact"
+        ],
+        "template_id": "structured_review_primary_worker",
+        "agent_id": "structured_review_primary_worker",
+        "review_modules": [
+          "structure_completeness"
+        ],
+        "module_name": "structure_completeness",
+        "ownership": "support_material",
+        "hermes_decision_signal": "corroborated",
+        "decision_role": "key_finding",
+        "decision_owner": "hermes",
+        "source_template_id": "structured_review_primary_worker"
+      }
+    }
+  ],
+  "supplemental_findings": [
+    {
+      "id": "H-POL-001",
+      "title": "配网工程专项施工方案通用章节不完整",
+      "severity": "high",
+      "category": "compliance",
+      "layer": "ReviewLayer.L1",
+      "evidence_status": "grounded",
+      "evidence_refs": [],
+      "basis_refs": [
+        "distribution_network_special_scheme_structure"
+      ],
+      "suggestion": "结合命中规则与规范条款进一步补齐正文。",
+      "summary": "配网工程专项施工方案在具体三级专项之外，仍应满足专项施工方案通用目录要求。",
+      "finding_type": "",
+      "manual_review_needed": false,
+      "confidence": "medium",
+      "source_engine": "hermes",
+      "raw_data": {
+        "rule_ids": [
+          "distribution_network_special_scheme_structure_completeness"
+        ],
+        "template_id": "policy_compliance_reviewer",
+        "agent_id": "policy_compliance_reviewer",
+        "review_modules": [
+          "legality_compliance"
+        ],
+        "module_name": "legality_compliance",
+        "ownership": "hermes_main_review",
+        "decision_role": "supplemental_finding",
+        "decision_owner": "hermes",
+        "source_template_id": "policy_compliance_reviewer"
+      }
+    },
+    {
+      "id": "H-POL-002",
+      "title": "停电施工作业专项章节不完整",
+      "severity": "high",
+      "category": "compliance",
+      "layer": "ReviewLayer.L1",
+      "evidence_status": "grounded",
+      "evidence_refs": [],
+      "basis_refs": [
+        "power_outage_work_structure"
+      ],
+      "suggestion": "结合命中规则与规范条款进一步补齐正文。",
+      "summary": "停电施工作业专项施工方案除通用要求外，还应覆盖停电范围、作业内容、主要风险、人员、机具、材料、安全/质量管控与应急措施。",
+      "finding_type": "",
+      "manual_review_needed": false,
+      "confidence": "medium",
+      "source_engine": "hermes",
+      "raw_data": {
+        "rule_ids": [
+          "power_outage_work_structure_completeness"
+        ],
+        "template_id": "policy_compliance_reviewer",
+        "agent_id": "policy_compliance_reviewer",
+        "review_modules": [
+          "legality_compliance"
+        ],
+        "module_name": "legality_compliance",
+        "ownership": "hermes_main_review",
+        "decision_role": "supplemental_finding",
+        "decision_owner": "hermes",
+        "source_template_id": "policy_compliance_reviewer"
+      }
+    },
+    {
+      "id": "H-POL-003",
+      "title": "临时用电/停送电控制链路不完整",
+      "severity": "medium",
+      "category": "compliance",
+      "layer": "ReviewLayer.L2",
+      "evidence_status": "grounded",
+      "evidence_refs": [],
+      "basis_refs": [
+        "hazardous_scheme_measures",
+        "emergency_plan_targeted"
+      ],
+      "suggestion": "结合命中规则与规范条款进一步补齐正文。",
+      "summary": "临时用电/停送电作业应同时落到控制措施、监测监控和触电类应急处置。",
+      "finding_type": "",
+      "manual_review_needed": false,
+      "confidence": "medium",
+      "source_engine": "hermes",
+      "raw_data": {
+        "rule_ids": [
+          "temporary_power_control_linkage"
+        ],
+        "template_id": "policy_compliance_reviewer",
+        "agent_id": "policy_compliance_reviewer",
+        "review_modules": [
+          "legality_compliance"
+        ],
+        "module_name": "legality_compliance",
+        "ownership": "hermes_main_review",
+        "decision_role": "supplemental_finding",
+        "decision_owner": "hermes",
+        "source_template_id": "policy_compliance_reviewer"
+      }
+    },
+    {
+      "id": "H-CUSTOM-001",
+      "title": "停送电执行链路存在遗漏风险",
+      "severity": "medium",
+      "category": "consistency",
+      "layer": "",
+      "evidence_status": "inferred",
+      "evidence_refs": [],
+      "basis_refs": [],
+      "suggestion": "补齐停送电链路衔接措施。",
+      "summary": "补充识别到停送电链路的执行衔接风险。",
+      "finding_type": "",
+      "manual_review_needed": false,
+      "confidence": "medium",
+      "source_engine": "hermes",
+      "raw_data": {
+        "template_id": "candidate_temporary_power",
+        "agent_id": "candidate_temporary_power",
+        "review_modules": [],
+        "module_name": "execution_continuity",
+        "ownership": "hermes_main_review",
+        "decision_action": "supplement_from_support_gap_scan",
+        "decision_role": "supplemental_finding",
+        "decision_owner": "hermes",
+        "source_template_id": "candidate_temporary_power"
+      }
+    },
+    {
+      "id": "H-CUSTOM-001",
+      "title": "停送电执行链路存在遗漏风险",
+      "severity": "medium",
+      "category": "consistency",
+      "layer": "",
+      "evidence_status": "inferred",
+      "evidence_refs": [],
+      "basis_refs": [],
+      "suggestion": "补齐停送电链路衔接措施。",
+      "summary": "补充识别到停送电链路的执行衔接风险。",
+      "finding_type": "",
+      "manual_review_needed": false,
+      "confidence": "medium",
+      "source_engine": "hermes",
+      "raw_data": {
+        "template_id": "candidate_temporary_power",
+        "agent_id": "candidate_temporary_power",
+        "review_modules": [],
+        "module_name": "execution_continuity",
+        "ownership": "hermes_main_review",
+        "decision_action": "supplement_from_support_gap_scan",
+        "decision_role": "supplemental_finding",
+        "decision_owner": "hermes",
+        "source_template_id": "candidate_temporary_power"
+      }
+    }
+  ],
+  "all_findings": [
+    {
+      "id": "ISSUE-001",
+      "title": "配网工程专项施工方案通用章节不完整",
+      "severity": "high",
+      "category": "structure",
+      "layer": "L1",
+      "evidence_status": "grounded",
+      "evidence_refs": [
+        "doc:block-2"
+      ],
+      "basis_refs": [
+        "policy:distribution_network_special_scheme_structure"
+      ],
+      "suggestion": "demo",
+      "summary": "配网工程专项施工方案通用章节不完整",
+      "finding_type": "hard_evidence",
+      "manual_review_needed": false,
+      "confidence": "medium",
+      "source_engine": "008",
+      "raw_data": {
+        "id": "ISSUE-001",
+        "title": "配网工程专项施工方案通用章节不完整",
+        "layer": "L1",
+        "severity": "high",
+        "findingType": "hard_evidence",
+        "summary": "配网工程专项施工方案通用章节不完整",
+        "manualReviewNeeded": false,
+        "evidenceMissing": false,
+        "manualReviewReason": null,
+        "issueKind": "hard_defect",
+        "applicabilityState": "applies",
+        "docEvidence": [
+          {
+            "sourceType": "document",
+            "sourceId": "validation_sample",
+            "locator": {
+              "blockId": "block-2",
+              "sectionId": "section-2"
+            },
+            "excerpt": "第一章 工程概况",
+            "visibility": null,
+            "confidence": "high",
+            "clauseTitle": null,
+            "forceLevel": null,
+            "applicability": null,
+            "sourceProvenance": "document:validation_sample.md:block:block-2",
+            "evidenceGapReason": null
+          }
+        ],
+        "policyEvidence": [
+          {
+            "sourceType": "policy",
+            "sourceId": "review-control-plane-special-scheme-structure-policy",
+            "locator": {
+              "clauseId": "distribution_network_special_scheme_structure"
+            },
+            "excerpt": "配网工程专项施工方案除专项补充要求外，仍应覆盖工程概况、编制依据、施工计划、施工工艺技术、施工保证措施、人员分工、验收要求、应急处置、图纸、风险辨识、平面布置或周边环境、计算与验算依据等通用内容。",
+            "visibility": null,
+            "confidence": "high",
+            "clauseTitle": "配网工程专项施工方案通用目录要求",
+            "forceLevel": "should",
+            "applicability": "distribution_network_special_scheme",
+            "sourceProvenance": "review-control-plane-special-scheme-structure-policy",
+            "evidenceGapReason": null
+          }
+        ],
+        "recommendation": [
+          "demo"
+        ],
+        "confidence": "medium",
+        "missingFactKeys": [],
+        "blockingReasons": [],
+        "template_id": "structured_review_primary_worker",
+        "agent_id": "structured_review_primary_worker",
+        "review_modules": [
+          "structure_completeness"
+        ],
+        "module_name": "structure_completeness",
+        "ownership": "support_material",
+        "hermes_decision_signal": "corroborated",
+        "decision_role": "key_finding",
+        "decision_owner": "hermes",
+        "source_template_id": "structured_review_primary_worker"
+      }
+    },
+    {
+      "id": "ISSUE-002",
+      "title": "停电施工作业专项章节不完整",
+      "severity": "high",
+      "category": "structure",
+      "layer": "L1",
+      "evidence_status": "grounded",
+      "evidence_refs": [],
+      "basis_refs": [
+        "policy:power_outage_work_structure"
+      ],
+      "suggestion": "demo",
+      "summary": "停电施工作业专项章节不完整",
+      "finding_type": "hard_evidence",
+      "manual_review_needed": false,
+      "confidence": "medium",
+      "source_engine": "008",
+      "raw_data": {
+        "id": "ISSUE-002",
+        "title": "停电施工作业专项章节不完整",
+        "layer": "L1",
+        "severity": "high",
+        "findingType": "hard_evidence",
+        "summary": "停电施工作业专项章节不完整",
+        "manualReviewNeeded": false,
+        "evidenceMissing": false,
+        "manualReviewReason": null,
+        "issueKind": "hard_defect",
+        "applicabilityState": "applies",
+        "docEvidence": [],
+        "policyEvidence": [
+          {
+            "sourceType": "policy",
+            "sourceId": "review-control-plane-special-scheme-structure-policy",
+            "locator": {
+              "clauseId": "power_outage_work_structure"
+            },
+            "excerpt": "停电施工作业专项施工方案除专项施工方案通用要求外，还应覆盖停电范围、作业内容、主要风险、施工人员、机具、材料、安全管控、质量管控、应急措施等响应内容；不要求完全同名或同层级，但正文应有稳定支撑内容。",
+            "visibility": null,
+            "confidence": "high",
+            "clauseTitle": "停电施工作业专项补充目录要求",
+            "forceLevel": "should",
+            "applicability": "power_outage_work",
+            "sourceProvenance": "review-control-plane-special-scheme-structure-policy",
+            "evidenceGapReason": null
+          }
+        ],
+        "recommendation": [
+          "demo"
+        ],
+        "confidence": "medium",
+        "missingFactKeys": [],
+        "blockingReasons": [],
+        "template_id": "structured_review_primary_worker",
+        "agent_id": "structured_review_primary_worker",
+        "review_modules": [
+          "structure_completeness"
+        ],
+        "module_name": "structure_completeness",
+        "ownership": "support_material",
+        "hermes_decision_signal": "corroborated",
+        "decision_role": "key_finding",
+        "decision_owner": "hermes",
+        "source_template_id": "structured_review_primary_worker"
+      }
+    },
+    {
+      "id": "ISSUE-003",
+      "title": "临时用电/停送电控制链路不完整",
+      "severity": "medium",
+      "category": "compliance",
+      "layer": "L2",
+      "evidence_status": "evidence_gap",
+      "evidence_refs": [
+        "doc:block-5",
+        "doc:block-6"
+      ],
+      "basis_refs": [
+        "policy:hazardous_scheme_measures",
+        "policy:emergency_plan_targeted"
+      ],
+      "suggestion": "demo",
+      "summary": "临时用电/停送电控制链路不完整",
+      "finding_type": "engineering_inference",
+      "manual_review_needed": false,
+      "confidence": "medium",
+      "source_engine": "008",
+      "raw_data": {
+        "id": "ISSUE-003",
+        "title": "临时用电/停送电控制链路不完整",
+        "layer": "L2",
+        "severity": "medium",
+        "findingType": "engineering_inference",
+        "summary": "临时用电/停送电控制链路不完整",
+        "manualReviewNeeded": false,
+        "evidenceMissing": true,
+        "manualReviewReason": null,
+        "issueKind": "evidence_gap",
+        "applicabilityState": "blocked_by_missing_fact",
+        "docEvidence": [
+          {
+            "sourceType": "document",
+            "sourceId": "validation_sample",
+            "locator": {
+              "blockId": "block-5",
+              "sectionId": "section-3"
+            },
+            "excerpt": "涉及施工用电、动火作业。",
+            "visibility": null,
+            "confidence": "high",
+            "clauseTitle": null,
+            "forceLevel": null,
+            "applicability": null,
+            "sourceProvenance": "document:validation_sample.md:block:block-5",
+            "evidenceGapReason": "missing_fact"
+          },
+          {
+            "sourceType": "document",
+            "sourceId": "validation_sample",
+            "locator": {
+              "blockId": "block-6",
+              "sectionId": "section-4"
+            },
+            "excerpt": "第三章 停送电组织",
+            "visibility": null,
+            "confidence": "high",
+            "clauseTitle": null,
+            "forceLevel": null,
+            "applicability": null,
+            "sourceProvenance": "document:validation_sample.md:block:block-6",
+            "evidenceGapReason": "missing_fact"
+          }
+        ],
+        "policyEvidence": [
+          {
+            "sourceType": "policy",
+            "sourceId": "construction-《危险性较大的分部分项工程专项施工方案编制指南》（建办质〔2021〕48号）",
+            "locator": {
+              "clauseId": "hazardous_scheme_measures"
+            },
+            "excerpt": "专项方案应将主要危险源、控制措施、监测监控和应急处置形成闭环，便于现场执行。",
+            "visibility": null,
+            "confidence": "high",
+            "clauseTitle": "风险措施与监测监控",
+            "forceLevel": "should",
+            "applicability": "hazardous_special_scheme",
+            "sourceProvenance": "construction-《危险性较大的分部分项工程专项施工方案编制指南》（建办质〔2021〕48号）",
+            "evidenceGapReason": "missing_fact"
+          },
+          {
+            "sourceType": "policy",
+            "sourceId": "construction-《建设工程安全生产管理条例》",
+            "locator": {
+              "clauseId": "emergency_plan_targeted"
+            },
+            "excerpt": "应急管理文件应与主要危险源相匹配，便于事故类型、联系链路和现场处置动作快速落地。",
+            "visibility": null,
+            "confidence": "high",
+            "clauseTitle": "应急预案针对性",
+            "forceLevel": "should",
+            "applicability": "construction_org,hazardous_special_scheme",
+            "sourceProvenance": "construction-《建设工程安全生产管理条例》",
+            "evidenceGapReason": "missing_fact"
+          }
+        ],
+        "recommendation": [
+          "demo"
+        ],
+        "confidence": "medium",
+        "missingFactKeys": [
+          "emergency.planTitles"
+        ],
+        "blockingReasons": [
+          "missing_fact"
+        ],
+        "template_id": "structured_review_primary_worker",
+        "agent_id": "structured_review_primary_worker",
+        "review_modules": [
+          "structure_completeness"
+        ],
+        "module_name": "structure_completeness",
+        "ownership": "support_material",
+        "hermes_decision_signal": "corroborated",
+        "decision_role": "key_finding",
+        "decision_owner": "hermes",
+        "source_template_id": "structured_review_primary_worker"
+      }
+    },
+    {
+      "id": "H-POL-001",
+      "title": "配网工程专项施工方案通用章节不完整",
+      "severity": "high",
+      "category": "compliance",
+      "layer": "ReviewLayer.L1",
+      "evidence_status": "grounded",
+      "evidence_refs": [],
+      "basis_refs": [
+        "distribution_network_special_scheme_structure"
+      ],
+      "suggestion": "结合命中规则与规范条款进一步补齐正文。",
+      "summary": "配网工程专项施工方案在具体三级专项之外，仍应满足专项施工方案通用目录要求。",
+      "finding_type": "",
+      "manual_review_needed": false,
+      "confidence": "medium",
+      "source_engine": "hermes",
+      "raw_data": {
+        "rule_ids": [
+          "distribution_network_special_scheme_structure_completeness"
+        ],
+        "template_id": "policy_compliance_reviewer",
+        "agent_id": "policy_compliance_reviewer",
+        "review_modules": [
+          "legality_compliance"
+        ],
+        "module_name": "legality_compliance",
+        "ownership": "hermes_main_review",
+        "decision_role": "supplemental_finding",
+        "decision_owner": "hermes",
+        "source_template_id": "policy_compliance_reviewer"
+      }
+    },
+    {
+      "id": "H-POL-002",
+      "title": "停电施工作业专项章节不完整",
+      "severity": "high",
+      "category": "compliance",
+      "layer": "ReviewLayer.L1",
+      "evidence_status": "grounded",
+      "evidence_refs": [],
+      "basis_refs": [
+        "power_outage_work_structure"
+      ],
+      "suggestion": "结合命中规则与规范条款进一步补齐正文。",
+      "summary": "停电施工作业专项施工方案除通用要求外，还应覆盖停电范围、作业内容、主要风险、人员、机具、材料、安全/质量管控与应急措施。",
+      "finding_type": "",
+      "manual_review_needed": false,
+      "confidence": "medium",
+      "source_engine": "hermes",
+      "raw_data": {
+        "rule_ids": [
+          "power_outage_work_structure_completeness"
+        ],
+        "template_id": "policy_compliance_reviewer",
+        "agent_id": "policy_compliance_reviewer",
+        "review_modules": [
+          "legality_compliance"
+        ],
+        "module_name": "legality_compliance",
+        "ownership": "hermes_main_review",
+        "decision_role": "supplemental_finding",
+        "decision_owner": "hermes",
+        "source_template_id": "policy_compliance_reviewer"
+      }
+    },
+    {
+      "id": "H-POL-003",
+      "title": "临时用电/停送电控制链路不完整",
+      "severity": "medium",
+      "category": "compliance",
+      "layer": "ReviewLayer.L2",
+      "evidence_status": "grounded",
+      "evidence_refs": [],
+      "basis_refs": [
+        "hazardous_scheme_measures",
+        "emergency_plan_targeted"
+      ],
+      "suggestion": "结合命中规则与规范条款进一步补齐正文。",
+      "summary": "临时用电/停送电作业应同时落到控制措施、监测监控和触电类应急处置。",
+      "finding_type": "",
+      "manual_review_needed": false,
+      "confidence": "medium",
+      "source_engine": "hermes",
+      "raw_data": {
+        "rule_ids": [
+          "temporary_power_control_linkage"
+        ],
+        "template_id": "policy_compliance_reviewer",
+        "agent_id": "policy_compliance_reviewer",
+        "review_modules": [
+          "legality_compliance"
+        ],
+        "module_name": "legality_compliance",
+        "ownership": "hermes_main_review",
+        "decision_role": "supplemental_finding",
+        "decision_owner": "hermes",
+        "source_template_id": "policy_compliance_reviewer"
+      }
+    },
+    {
+      "id": "H-CUSTOM-001",
+      "title": "停送电执行链路存在遗漏风险",
+      "severity": "medium",
+      "category": "consistency",
+      "layer": "",
+      "evidence_status": "inferred",
+      "evidence_refs": [],
+      "basis_refs": [],
+      "suggestion": "补齐停送电链路衔接措施。",
+      "summary": "补充识别到停送电链路的执行衔接风险。",
+      "finding_type": "",
+      "manual_review_needed": false,
+      "confidence": "medium",
+      "source_engine": "hermes",
+      "raw_data": {
+        "template_id": "candidate_temporary_power",
+        "agent_id": "candidate_temporary_power",
+        "review_modules": [],
+        "module_name": "execution_continuity",
+        "ownership": "hermes_main_review",
+        "decision_action": "supplement_from_support_gap_scan",
+        "decision_role": "supplemental_finding",
+        "decision_owner": "hermes",
+        "source_template_id": "candidate_temporary_power"
+      }
+    },
+    {
+      "id": "H-CUSTOM-001",
+      "title": "停送电执行链路存在遗漏风险",
+      "severity": "medium",
+      "category": "consistency",
+      "layer": "",
+      "evidence_status": "inferred",
+      "evidence_refs": [],
+      "basis_refs": [],
+      "suggestion": "补齐停送电链路衔接措施。",
+      "summary": "补充识别到停送电链路的执行衔接风险。",
+      "finding_type": "",
+      "manual_review_needed": false,
+      "confidence": "medium",
+      "source_engine": "hermes",
+      "raw_data": {
+        "template_id": "candidate_temporary_power",
+        "agent_id": "candidate_temporary_power",
+        "review_modules": [],
+        "module_name": "execution_continuity",
+        "ownership": "hermes_main_review",
+        "decision_action": "supplement_from_support_gap_scan",
+        "decision_role": "supplemental_finding",
+        "decision_owner": "hermes",
+        "source_template_id": "candidate_temporary_power"
+      }
+    }
+  ],
+  "traceability": [
+    {
+      "finding_id": "ISSUE-001",
+      "source_engine": "008",
+      "corroborated": false
+    },
+    {
+      "finding_id": "ISSUE-002",
+      "source_engine": "008",
+      "corroborated": false
+    },
+    {
+      "finding_id": "ISSUE-003",
+      "source_engine": "008",
+      "corroborated": false
+    },
+    {
+      "finding_id": "H-POL-001",
+      "source_engine": "hermes",
+      "corroborated": false
+    },
+    {
+      "finding_id": "H-POL-002",
+      "source_engine": "hermes",
+      "corroborated": false
+    },
+    {
+      "finding_id": "H-POL-003",
+      "source_engine": "hermes",
+      "corroborated": false
+    },
+    {
+      "finding_id": "H-CUSTOM-001",
+      "source_engine": "hermes",
+      "corroborated": false
+    },
+    {
+      "finding_id": "H-CUSTOM-001",
+      "source_engine": "hermes",
+      "corroborated": false
+    }
+  ],
+  "report_markdown": "# 配网停电施工专项方案 — 综合审查报告\n\n## 综合评估\n\n本次审查综合评级：**需要修改**。 008引擎发现 3 个问题（高 2，中 1，低 0）。 Hermes补充发现 5 个独立问题。\n\n## 重点风险\n\n- **[HIGH]** 配网工程专项施工方案通用章节不完整\n  配网工程专项施工方案通用章节不完整\n- **[HIGH]** 停电施工作业专项章节不完整\n  停电施工作业专项章节不完整\n- **[HIGH]** 配网工程专项施工方案通用章节不完整\n  配网工程专项施工方案在具体三级专项之外，仍应满足专项施工方案通用目录要求。\n- **[HIGH]** 停电施工作业专项章节不完整\n  停电施工作业专项施工方案除通用要求外，还应覆盖停电范围、作业内容、主要风险、人员、机具、材料、安全/质量管控与应急措施。\n\n## 主要问题\n\n| 编号 | 严重度 | 来源 | 问题 | 建议 |\n|------|--------|------|------|------|\n| ISSUE-001 | high | 008 | 配网工程专项施工方案通用章节不完整 | demo |\n| ISSUE-002 | high | 008 | 停电施工作业专项章节不完整 | demo |\n| ISSUE-003 | medium | 008 | 临时用电/停送电控制链路不完整 | demo |\n\n## 补充关注项\n\n- **[H-POL-001]** [high] 配网工程专项施工方案通用章节不完整\n  配网工程专项施工方案在具体三级专项之外，仍应满足专项施工方案通用目录要求。\n  建议: 结合命中规则与规范条款进一步补齐正文。\n- **[H-POL-002]** [high] 停电施工作业专项章节不完整\n  停电施工作业专项施工方案除通用要求外，还应覆盖停电范围、作业内容、主要风险、人员、机具、材料、安全/质量管控与应急措施。\n  建议: 结合命中规则与规范条款进一步补齐正文。\n- **[H-POL-003]** [medium] 临时用电/停送电控制链路不完整\n  临时用电/停送电作业应同时落到控制措施、监测监控和触电类应急处置。\n  建议: 结合命中规则与规范条款进一步补齐正文。\n- **[H-CUSTOM-001]** [medium] 停送电执行链路存在遗漏风险\n  补充识别到停送电链路的执行衔接风险。\n  建议: 补齐停送电链路衔接措施。\n- **[H-CUSTOM-001]** [medium] 停送电执行链路存在遗漏风险\n  补充识别到停送电链路的执行衔接风险。\n  建议: 补齐停送电链路衔接措施。\n\n## 审查引擎信息\n\n- 使用引擎: 008, hermes\n",
+  "report_sections": [],
+  "engines_used": [
+    "008",
+    "hermes"
+  ],
+  "degradation_info": {},
+  "produced_at": "2026-04-11T10:29:08.176731Z",
+  "source_packets": {
+    "008": {
+      "review_id": "task-module-validation-001",
+      "engine": "008",
+      "summary_metrics": {
+        "total_findings": 3,
+        "high_severity": 2,
+        "medium_severity": 1,
+        "low_severity": 0,
+        "info_findings": 0,
+        "grounded_findings": 2,
+        "evidence_gap_findings": 1,
+        "manual_review_needed": 0
+      },
+      "findings": [
+        {
+          "id": "ISSUE-001",
+          "title": "配网工程专项施工方案通用章节不完整",
+          "severity": "high",
+          "category": "structure",
+          "layer": "L1",
+          "evidence_status": "grounded",
+          "evidence_refs": [
+            "doc:block-2"
+          ],
+          "basis_refs": [
+            "policy:distribution_network_special_scheme_structure"
+          ],
+          "suggestion": "demo",
+          "summary": "配网工程专项施工方案通用章节不完整",
+          "finding_type": "hard_evidence",
+          "manual_review_needed": false,
+          "confidence": "medium",
+          "source_engine": "008",
+          "raw_data": {
+            "id": "ISSUE-001",
+            "title": "配网工程专项施工方案通用章节不完整",
+            "layer": "L1",
+            "severity": "high",
+            "findingType": "hard_evidence",
+            "summary": "配网工程专项施工方案通用章节不完整",
+            "manualReviewNeeded": false,
+            "evidenceMissing": false,
+            "manualReviewReason": null,
+            "issueKind": "hard_defect",
+            "applicabilityState": "applies",
+            "docEvidence": [
+              {
+                "sourceType": "document",
+                "sourceId": "validation_sample",
+                "locator": {
+                  "blockId": "block-2",
+                  "sectionId": "section-2"
+                },
+                "excerpt": "第一章 工程概况",
+                "visibility": null,
+                "confidence": "high",
+                "clauseTitle": null,
+                "forceLevel": null,
+                "applicability": null,
+                "sourceProvenance": "document:validation_sample.md:block:block-2",
+                "evidenceGapReason": null
+              }
+            ],
+            "policyEvidence": [
+              {
+                "sourceType": "policy",
+                "sourceId": "review-control-plane-special-scheme-structure-policy",
+                "locator": {
+                  "clauseId": "distribution_network_special_scheme_structure"
+                },
+                "excerpt": "配网工程专项施工方案除专项补充要求外，仍应覆盖工程概况、编制依据、施工计划、施工工艺技术、施工保证措施、人员分工、验收要求、应急处置、图纸、风险辨识、平面布置或周边环境、计算与验算依据等通用内容。",
+                "visibility": null,
+                "confidence": "high",
+                "clauseTitle": "配网工程专项施工方案通用目录要求",
+                "forceLevel": "should",
+                "applicability": "distribution_network_special_scheme",
+                "sourceProvenance": "review-control-plane-special-scheme-structure-policy",
+                "evidenceGapReason": null
+              }
+            ],
+            "recommendation": [
+              "demo"
+            ],
+            "confidence": "medium",
+            "missingFactKeys": [],
+            "blockingReasons": [],
+            "template_id": "structured_review_primary_worker",
+            "agent_id": "structured_review_primary_worker",
+            "review_modules": [
+              "structure_completeness"
+            ],
+            "module_name": "structure_completeness",
+            "ownership": "support_material",
+            "hermes_decision_signal": "corroborated"
+          }
+        },
+        {
+          "id": "ISSUE-002",
+          "title": "停电施工作业专项章节不完整",
+          "severity": "high",
+          "category": "structure",
+          "layer": "L1",
+          "evidence_status": "grounded",
+          "evidence_refs": [],
+          "basis_refs": [
+            "policy:power_outage_work_structure"
+          ],
+          "suggestion": "demo",
+          "summary": "停电施工作业专项章节不完整",
+          "finding_type": "hard_evidence",
+          "manual_review_needed": false,
+          "confidence": "medium",
+          "source_engine": "008",
+          "raw_data": {
+            "id": "ISSUE-002",
+            "title": "停电施工作业专项章节不完整",
+            "layer": "L1",
+            "severity": "high",
+            "findingType": "hard_evidence",
+            "summary": "停电施工作业专项章节不完整",
+            "manualReviewNeeded": false,
+            "evidenceMissing": false,
+            "manualReviewReason": null,
+            "issueKind": "hard_defect",
+            "applicabilityState": "applies",
+            "docEvidence": [],
+            "policyEvidence": [
+              {
+                "sourceType": "policy",
+                "sourceId": "review-control-plane-special-scheme-structure-policy",
+                "locator": {
+                  "clauseId": "power_outage_work_structure"
+                },
+                "excerpt": "停电施工作业专项施工方案除专项施工方案通用要求外，还应覆盖停电范围、作业内容、主要风险、施工人员、机具、材料、安全管控、质量管控、应急措施等响应内容；不要求完全同名或同层级，但正文应有稳定支撑内容。",
+                "visibility": null,
+                "confidence": "high",
+                "clauseTitle": "停电施工作业专项补充目录要求",
+                "forceLevel": "should",
+                "applicability": "power_outage_work",
+                "sourceProvenance": "review-control-plane-special-scheme-structure-policy",
+                "evidenceGapReason": null
+              }
+            ],
+            "recommendation": [
+              "demo"
+            ],
+            "confidence": "medium",
+            "missingFactKeys": [],
+            "blockingReasons": [],
+            "template_id": "structured_review_primary_worker",
+            "agent_id": "structured_review_primary_worker",
+            "review_modules": [
+              "structure_completeness"
+            ],
+            "module_name": "structure_completeness",
+            "ownership": "support_material",
+            "hermes_decision_signal": "corroborated"
+          }
+        },
+        {
+          "id": "ISSUE-003",
+          "title": "临时用电/停送电控制链路不完整",
+          "severity": "medium",
+          "category": "compliance",
+          "layer": "L2",
+          "evidence_status": "evidence_gap",
+          "evidence_refs": [
+            "doc:block-5",
+            "doc:block-6"
+          ],
+          "basis_refs": [
+            "policy:hazardous_scheme_measures",
+            "policy:emergency_plan_targeted"
+          ],
+          "suggestion": "demo",
+          "summary": "临时用电/停送电控制链路不完整",
+          "finding_type": "engineering_inference",
+          "manual_review_needed": false,
+          "confidence": "medium",
+          "source_engine": "008",
+          "raw_data": {
+            "id": "ISSUE-003",
+            "title": "临时用电/停送电控制链路不完整",
+            "layer": "L2",
+            "severity": "medium",
+            "findingType": "engineering_inference",
+            "summary": "临时用电/停送电控制链路不完整",
+            "manualReviewNeeded": false,
+            "evidenceMissing": true,
+            "manualReviewReason": null,
+            "issueKind": "evidence_gap",
+            "applicabilityState": "blocked_by_missing_fact",
+            "docEvidence": [
+              {
+                "sourceType": "document",
+                "sourceId": "validation_sample",
+                "locator": {
+                  "blockId": "block-5",
+                  "sectionId": "section-3"
+                },
+                "excerpt": "涉及施工用电、动火作业。",
+                "visibility": null,
+                "confidence": "high",
+                "clauseTitle": null,
+                "forceLevel": null,
+                "applicability": null,
+                "sourceProvenance": "document:validation_sample.md:block:block-5",
+                "evidenceGapReason": "missing_fact"
+              },
+              {
+                "sourceType": "document",
+                "sourceId": "validation_sample",
+                "locator": {
+                  "blockId": "block-6",
+                  "sectionId": "section-4"
+                },
+                "excerpt": "第三章 停送电组织",
+                "visibility": null,
+                "confidence": "high",
+                "clauseTitle": null,
+                "forceLevel": null,
+                "applicability": null,
+                "sourceProvenance": "document:validation_sample.md:block:block-6",
+                "evidenceGapReason": "missing_fact"
+              }
+            ],
+            "policyEvidence": [
+              {
+                "sourceType": "policy",
+                "sourceId": "construction-《危险性较大的分部分项工程专项施工方案编制指南》（建办质〔2021〕48号）",
+                "locator": {
+                  "clauseId": "hazardous_scheme_measures"
+                },
+                "excerpt": "专项方案应将主要危险源、控制措施、监测监控和应急处置形成闭环，便于现场执行。",
+                "visibility": null,
+                "confidence": "high",
+                "clauseTitle": "风险措施与监测监控",
+                "forceLevel": "should",
+                "applicability": "hazardous_special_scheme",
+                "sourceProvenance": "construction-《危险性较大的分部分项工程专项施工方案编制指南》（建办质〔2021〕48号）",
+                "evidenceGapReason": "missing_fact"
+              },
+              {
+                "sourceType": "policy",
+                "sourceId": "construction-《建设工程安全生产管理条例》",
+                "locator": {
+                  "clauseId": "emergency_plan_targeted"
+                },
+                "excerpt": "应急管理文件应与主要危险源相匹配，便于事故类型、联系链路和现场处置动作快速落地。",
+                "visibility": null,
+                "confidence": "high",
+                "clauseTitle": "应急预案针对性",
+                "forceLevel": "should",
+                "applicability": "construction_org,hazardous_special_scheme",
+                "sourceProvenance": "construction-《建设工程安全生产管理条例》",
+                "evidenceGapReason": "missing_fact"
+              }
+            ],
+            "recommendation": [
+              "demo"
+            ],
+            "confidence": "medium",
+            "missingFactKeys": [
+              "emergency.planTitles"
+            ],
+            "blockingReasons": [
+              "missing_fact"
+            ],
+            "template_id": "structured_review_primary_worker",
+            "agent_id": "structured_review_primary_worker",
+            "review_modules": [
+              "structure_completeness"
+            ],
+            "module_name": "structure_completeness",
+            "ownership": "support_material",
+            "hermes_decision_signal": "corroborated"
+          }
+        }
+      ],
+      "overall_assessment": "修改后重新报审",
+      "produced_at": "2026-04-11T10:29:08.173968Z",
+      "error": null,
+      "degraded": false,
+      "metadata": {
+        "worker_id": "structured_review_primary_worker",
+        "module_id": "primary_support_review",
+        "support_owner": "structured_review_capability_facade",
+        "ownership": "support_material",
+        "agent_id": "structured_review_primary_worker",
+        "template_id": "structured_review_primary_worker",
+        "module_ids": [
+          "primary_support_review"
+        ],
+        "review_modules": [
+          "structure_completeness"
+        ]
+      }
+    },
+    "hermes": {
+      "review_id": "task-module-validation-001",
+      "engine": "hermes",
+      "summary_metrics": {
+        "total_findings": 5,
+        "high_severity": 2,
+        "medium_severity": 3,
+        "low_severity": 0,
+        "info_findings": 0,
+        "grounded_findings": 3,
+        "evidence_gap_findings": 0,
+        "manual_review_needed": 0
+      },
+      "findings": [
+        {
+          "id": "H-POL-001",
+          "title": "配网工程专项施工方案通用章节不完整",
+          "severity": "high",
+          "category": "compliance",
+          "layer": "ReviewLayer.L1",
+          "evidence_status": "grounded",
+          "evidence_refs": [],
+          "basis_refs": [
+            "distribution_network_special_scheme_structure"
+          ],
+          "suggestion": "结合命中规则与规范条款进一步补齐正文。",
+          "summary": "配网工程专项施工方案在具体三级专项之外，仍应满足专项施工方案通用目录要求。",
+          "finding_type": "",
+          "manual_review_needed": false,
+          "confidence": "medium",
+          "source_engine": "hermes",
+          "raw_data": {
+            "rule_ids": [
+              "distribution_network_special_scheme_structure_completeness"
+            ],
+            "template_id": "policy_compliance_reviewer",
+            "agent_id": "policy_compliance_reviewer",
+            "review_modules": [
+              "legality_compliance"
+            ],
+            "module_name": "legality_compliance",
+            "ownership": "hermes_main_review"
+          }
+        },
+        {
+          "id": "H-POL-002",
+          "title": "停电施工作业专项章节不完整",
+          "severity": "high",
+          "category": "compliance",
+          "layer": "ReviewLayer.L1",
+          "evidence_status": "grounded",
+          "evidence_refs": [],
+          "basis_refs": [
+            "power_outage_work_structure"
+          ],
+          "suggestion": "结合命中规则与规范条款进一步补齐正文。",
+          "summary": "停电施工作业专项施工方案除通用要求外，还应覆盖停电范围、作业内容、主要风险、人员、机具、材料、安全/质量管控与应急措施。",
+          "finding_type": "",
+          "manual_review_needed": false,
+          "confidence": "medium",
+          "source_engine": "hermes",
+          "raw_data": {
+            "rule_ids": [
+              "power_outage_work_structure_completeness"
+            ],
+            "template_id": "policy_compliance_reviewer",
+            "agent_id": "policy_compliance_reviewer",
+            "review_modules": [
+              "legality_compliance"
+            ],
+            "module_name": "legality_compliance",
+            "ownership": "hermes_main_review"
+          }
+        },
+        {
+          "id": "H-POL-003",
+          "title": "临时用电/停送电控制链路不完整",
+          "severity": "medium",
+          "category": "compliance",
+          "layer": "ReviewLayer.L2",
+          "evidence_status": "grounded",
+          "evidence_refs": [],
+          "basis_refs": [
+            "hazardous_scheme_measures",
+            "emergency_plan_targeted"
+          ],
+          "suggestion": "结合命中规则与规范条款进一步补齐正文。",
+          "summary": "临时用电/停送电作业应同时落到控制措施、监测监控和触电类应急处置。",
+          "finding_type": "",
+          "manual_review_needed": false,
+          "confidence": "medium",
+          "source_engine": "hermes",
+          "raw_data": {
+            "rule_ids": [
+              "temporary_power_control_linkage"
+            ],
+            "template_id": "policy_compliance_reviewer",
+            "agent_id": "policy_compliance_reviewer",
+            "review_modules": [
+              "legality_compliance"
+            ],
+            "module_name": "legality_compliance",
+            "ownership": "hermes_main_review"
+          }
+        },
+        {
+          "id": "H-CUSTOM-001",
+          "title": "停送电执行链路存在遗漏风险",
+          "severity": "medium",
+          "category": "consistency",
+          "layer": "",
+          "evidence_status": "inferred",
+          "evidence_refs": [],
+          "basis_refs": [],
+          "suggestion": "补齐停送电链路衔接措施。",
+          "summary": "补充识别到停送电链路的执行衔接风险。",
+          "finding_type": "",
+          "manual_review_needed": false,
+          "confidence": "medium",
+          "source_engine": "hermes",
+          "raw_data": {
+            "template_id": "execution_risk_reviewer",
+            "agent_id": "execution_risk_reviewer",
+            "review_modules": [
+              "parameter_consistency",
+              "execution_continuity"
+            ],
+            "module_name": "execution_continuity",
+            "ownership": "hermes_main_review",
+            "decision_action": "supplement_from_support_gap_scan"
+          }
+        },
+        {
+          "id": "H-CUSTOM-001",
+          "title": "停送电执行链路存在遗漏风险",
+          "severity": "medium",
+          "category": "consistency",
+          "layer": "",
+          "evidence_status": "inferred",
+          "evidence_refs": [],
+          "basis_refs": [],
+          "suggestion": "补齐停送电链路衔接措施。",
+          "summary": "补充识别到停送电链路的执行衔接风险。",
+          "finding_type": "",
+          "manual_review_needed": false,
+          "confidence": "medium",
+          "source_engine": "hermes",
+          "raw_data": {
+            "template_id": "candidate_temporary_power",
+            "agent_id": "candidate_temporary_power",
+            "review_modules": [],
+            "module_name": "execution_continuity",
+            "ownership": "hermes_main_review",
+            "decision_action": "supplement_from_support_gap_scan"
+          }
+        }
+      ],
+      "overall_assessment": "规范命中与证据线索已整理。；fake hermes review；fake hermes review",
+      "produced_at": "2026-04-11T10:29:08.176023Z",
+      "error": null,
+      "degraded": false,
+      "metadata": {
+        "worker_id": "supplemental_packet_merge",
+        "source_packets": [
+          {
+            "metadata": {
+              "agent_id": "policy_compliance_reviewer",
+              "template_id": "policy_compliance_reviewer",
+              "worker_id": "module_only",
+              "module_ids": [
+                "parse_visibility",
+                "fact_extract",
+                "profile_and_packs",
+                "rule_and_evidence"
+              ],
+              "review_modules": [
+                "legality_compliance"
+              ],
+              "ownership": "hermes_main_review"
+            },
+            "overall_assessment": "规范命中与证据线索已整理。"
+          },
+          {
+            "metadata": {
+              "agent_id": "execution_risk_reviewer",
+              "template_id": "execution_risk_reviewer",
+              "worker_id": "hermes_router",
+              "module_ids": [
+                "fact_extract"
+              ],
+              "review_modules": [
+                "parameter_consistency",
+                "execution_continuity"
+              ],
+              "ownership": "hermes_main_review"
+            },
+            "overall_assessment": "fake hermes review"
+          },
+          {
+            "metadata": {
+              "agent_id": "candidate_temporary_power",
+              "template_id": "candidate_temporary_power",
+              "worker_id": "hermes_router",
+              "module_ids": [
+                "fact_extract"
+              ],
+              "review_modules": [],
+              "ownership": "hermes_main_review"
+            },
+            "overall_assessment": "fake hermes review"
+          }
+        ],
+        "ownership": "hermes_main_review"
+      }
+    }
+  },
+  "metadata": {
+    "assembler": "hermes_review_assembler",
+    "supplemental_packet_count": 3,
+    "decision_owner": "hermes",
+    "support_owner": "structured_review_capability_facade",
+    "final_output_entrypoint": "hermes_review_assembler"
+  }
+}

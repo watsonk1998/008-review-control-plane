@@ -1,0 +1,290 @@
+[
+  {
+    "candidateId": "distribution_network_special_scheme_structure_completeness",
+    "title": "配网工程专项施工方案通用章节不完整",
+    "ruleHits": [
+      {
+        "ruleId": "distribution_network_special_scheme_structure_completeness",
+        "packId": "distribution_network_special_scheme.base",
+        "packReadiness": "ready",
+        "matchType": "direct_hit",
+        "status": "hit",
+        "applicabilityState": "applies",
+        "layerHint": "L1",
+        "severityHint": "high",
+        "factRefs": [
+          "project.structureCompleteness.specialPreparationBasis",
+          "project.structureCompleteness.specialConstructionPlan",
+          "project.structureCompleteness.specialProcessTechnology",
+          "project.structureCompleteness.specialAssuranceMeasures",
+          "project.structureCompleteness.specialStaffingAndRoles",
+          "project.structureCompleteness.specialAcceptanceRequirements",
+          "project.structureCompleteness.specialEmergencyMeasures",
+          "project.structureCompleteness.specialDrawings",
+          "project.structureCompleteness.specialRiskIdentification",
+          "project.structureCompleteness.specialLayoutEnvironment",
+          "project.structureCompleteness.specialCalculationEvidence"
+        ],
+        "evidenceRefs": [
+          "policy:distribution_network_special_scheme_structure"
+        ],
+        "requiredFactKeys": [
+          "project.structureCompleteness.specialPreparationBasis",
+          "project.structureCompleteness.specialConstructionPlan",
+          "project.structureCompleteness.specialProcessTechnology",
+          "project.structureCompleteness.specialAssuranceMeasures",
+          "project.structureCompleteness.specialStaffingAndRoles",
+          "project.structureCompleteness.specialAcceptanceRequirements",
+          "project.structureCompleteness.specialEmergencyMeasures",
+          "project.structureCompleteness.specialDrawings",
+          "project.structureCompleteness.specialRiskIdentification",
+          "project.structureCompleteness.specialLayoutEnvironment",
+          "project.structureCompleteness.specialCalculationEvidence"
+        ],
+        "missingFactKeys": [],
+        "clauseIds": [
+          "distribution_network_special_scheme_structure"
+        ],
+        "blockingReasons": [],
+        "rationale": "配网工程专项施工方案在具体三级专项之外，仍应满足专项施工方案通用目录要求。"
+      }
+    ],
+    "layerHint": "L1",
+    "severityHint": "high",
+    "findingType": "hard_evidence",
+    "docEvidence": [
+      {
+        "sourceType": "document",
+        "sourceId": "validation_sample",
+        "locator": {
+          "blockId": "block-2",
+          "sectionId": "section-2"
+        },
+        "excerpt": "第一章 工程概况",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": "document:validation_sample.md:block:block-2",
+        "evidenceGapReason": null
+      }
+    ],
+    "policyEvidence": [
+      {
+        "sourceType": "policy",
+        "sourceId": "review-control-plane-special-scheme-structure-policy",
+        "locator": {
+          "clauseId": "distribution_network_special_scheme_structure"
+        },
+        "excerpt": "配网工程专项施工方案除专项补充要求外，仍应覆盖工程概况、编制依据、施工计划、施工工艺技术、施工保证措施、人员分工、验收要求、应急处置、图纸、风险辨识、平面布置或周边环境、计算与验算依据等通用内容。",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": "配网工程专项施工方案通用目录要求",
+        "forceLevel": "should",
+        "applicability": "distribution_network_special_scheme",
+        "sourceProvenance": "review-control-plane-special-scheme-structure-policy",
+        "evidenceGapReason": null
+      }
+    ],
+    "evidenceMissing": false,
+    "manualReviewNeeded": false,
+    "manualReviewReason": null,
+    "missingFactKeys": [],
+    "blockingReasons": []
+  },
+  {
+    "candidateId": "power_outage_work_structure_completeness",
+    "title": "停电施工作业专项章节不完整",
+    "ruleHits": [
+      {
+        "ruleId": "power_outage_work_structure_completeness",
+        "packId": "power_outage_work.base",
+        "packReadiness": "ready",
+        "matchType": "direct_hit",
+        "status": "hit",
+        "applicabilityState": "applies",
+        "layerHint": "L1",
+        "severityHint": "high",
+        "factRefs": [
+          "project.structureCompleteness.powerOutageScope",
+          "project.structureCompleteness.powerOutageWorkContent",
+          "project.structureCompleteness.powerOutageMajorRisk",
+          "project.structureCompleteness.powerOutageStaffing",
+          "project.structureCompleteness.powerOutageEquipment",
+          "project.structureCompleteness.powerOutageMaterials",
+          "project.structureCompleteness.powerOutageSafetyControl",
+          "project.structureCompleteness.powerOutageQualityControl",
+          "project.structureCompleteness.powerOutageEmergencyMeasures"
+        ],
+        "evidenceRefs": [
+          "policy:power_outage_work_structure"
+        ],
+        "requiredFactKeys": [
+          "project.structureCompleteness.powerOutageScope",
+          "project.structureCompleteness.powerOutageWorkContent",
+          "project.structureCompleteness.powerOutageMajorRisk",
+          "project.structureCompleteness.powerOutageStaffing",
+          "project.structureCompleteness.powerOutageEquipment",
+          "project.structureCompleteness.powerOutageMaterials",
+          "project.structureCompleteness.powerOutageSafetyControl",
+          "project.structureCompleteness.powerOutageQualityControl",
+          "project.structureCompleteness.powerOutageEmergencyMeasures"
+        ],
+        "missingFactKeys": [],
+        "clauseIds": [
+          "power_outage_work_structure"
+        ],
+        "blockingReasons": [],
+        "rationale": "停电施工作业专项施工方案除通用要求外，还应覆盖停电范围、作业内容、主要风险、人员、机具、材料、安全/质量管控与应急措施。"
+      }
+    ],
+    "layerHint": "L1",
+    "severityHint": "high",
+    "findingType": "hard_evidence",
+    "docEvidence": [],
+    "policyEvidence": [
+      {
+        "sourceType": "policy",
+        "sourceId": "review-control-plane-special-scheme-structure-policy",
+        "locator": {
+          "clauseId": "power_outage_work_structure"
+        },
+        "excerpt": "停电施工作业专项施工方案除专项施工方案通用要求外，还应覆盖停电范围、作业内容、主要风险、施工人员、机具、材料、安全管控、质量管控、应急措施等响应内容；不要求完全同名或同层级，但正文应有稳定支撑内容。",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": "停电施工作业专项补充目录要求",
+        "forceLevel": "should",
+        "applicability": "power_outage_work",
+        "sourceProvenance": "review-control-plane-special-scheme-structure-policy",
+        "evidenceGapReason": null
+      }
+    ],
+    "evidenceMissing": false,
+    "manualReviewNeeded": false,
+    "manualReviewReason": null,
+    "missingFactKeys": [],
+    "blockingReasons": []
+  },
+  {
+    "candidateId": "temporary_power_control_linkage",
+    "title": "临时用电/停送电控制链路不完整",
+    "ruleHits": [
+      {
+        "ruleId": "temporary_power_control_linkage",
+        "packId": "power_outage_work.base",
+        "packReadiness": "ready",
+        "matchType": "inferred_risk",
+        "status": "hit",
+        "applicabilityState": "blocked_by_missing_fact",
+        "layerHint": "L2",
+        "severityHint": "medium",
+        "factRefs": [
+          "hazard.temporaryPower",
+          "hazard.measureSectionPresent",
+          "hazard.monitoringSectionPresent",
+          "emergency.planTitles"
+        ],
+        "evidenceRefs": [
+          "policy:hazardous_scheme_measures",
+          "policy:emergency_plan_targeted"
+        ],
+        "requiredFactKeys": [
+          "hazard.temporaryPower",
+          "hazard.measureSectionPresent",
+          "hazard.monitoringSectionPresent",
+          "emergency.planTitles"
+        ],
+        "missingFactKeys": [
+          "emergency.planTitles"
+        ],
+        "clauseIds": [
+          "hazardous_scheme_measures",
+          "emergency_plan_targeted"
+        ],
+        "blockingReasons": [
+          "missing_fact"
+        ],
+        "rationale": "临时用电/停送电作业应同时落到控制措施、监测监控和触电类应急处置。"
+      }
+    ],
+    "layerHint": "L2",
+    "severityHint": "medium",
+    "findingType": "engineering_inference",
+    "docEvidence": [
+      {
+        "sourceType": "document",
+        "sourceId": "validation_sample",
+        "locator": {
+          "blockId": "block-5",
+          "sectionId": "section-3"
+        },
+        "excerpt": "涉及施工用电、动火作业。",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": "document:validation_sample.md:block:block-5",
+        "evidenceGapReason": "missing_fact"
+      },
+      {
+        "sourceType": "document",
+        "sourceId": "validation_sample",
+        "locator": {
+          "blockId": "block-6",
+          "sectionId": "section-4"
+        },
+        "excerpt": "第三章 停送电组织",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": null,
+        "forceLevel": null,
+        "applicability": null,
+        "sourceProvenance": "document:validation_sample.md:block:block-6",
+        "evidenceGapReason": "missing_fact"
+      }
+    ],
+    "policyEvidence": [
+      {
+        "sourceType": "policy",
+        "sourceId": "construction-《危险性较大的分部分项工程专项施工方案编制指南》（建办质〔2021〕48号）",
+        "locator": {
+          "clauseId": "hazardous_scheme_measures"
+        },
+        "excerpt": "专项方案应将主要危险源、控制措施、监测监控和应急处置形成闭环，便于现场执行。",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": "风险措施与监测监控",
+        "forceLevel": "should",
+        "applicability": "hazardous_special_scheme",
+        "sourceProvenance": "construction-《危险性较大的分部分项工程专项施工方案编制指南》（建办质〔2021〕48号）",
+        "evidenceGapReason": "missing_fact"
+      },
+      {
+        "sourceType": "policy",
+        "sourceId": "construction-《建设工程安全生产管理条例》",
+        "locator": {
+          "clauseId": "emergency_plan_targeted"
+        },
+        "excerpt": "应急管理文件应与主要危险源相匹配，便于事故类型、联系链路和现场处置动作快速落地。",
+        "visibility": null,
+        "confidence": "high",
+        "clauseTitle": "应急预案针对性",
+        "forceLevel": "should",
+        "applicability": "construction_org,hazardous_special_scheme",
+        "sourceProvenance": "construction-《建设工程安全生产管理条例》",
+        "evidenceGapReason": "missing_fact"
+      }
+    ],
+    "evidenceMissing": true,
+    "manualReviewNeeded": false,
+    "manualReviewReason": null,
+    "missingFactKeys": [
+      "emergency.planTitles"
+    ],
+    "blockingReasons": [
+      "missing_fact"
+    ]
+  }
+]

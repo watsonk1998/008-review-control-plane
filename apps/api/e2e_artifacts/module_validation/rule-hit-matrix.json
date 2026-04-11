@@ -1,0 +1,82 @@
+[
+  {
+    "ruleId": "distribution_network_special_scheme_structure_completeness",
+    "packId": "distribution_network_special_scheme.base",
+    "packReadiness": "ready",
+    "status": "hit",
+    "applicabilityState": "applies",
+    "layerHint": "L1",
+    "severityHint": "high",
+    "matchType": "direct_hit",
+    "requiredFactKeys": [
+      "project.structureCompleteness.specialPreparationBasis",
+      "project.structureCompleteness.specialConstructionPlan",
+      "project.structureCompleteness.specialProcessTechnology",
+      "project.structureCompleteness.specialAssuranceMeasures",
+      "project.structureCompleteness.specialStaffingAndRoles",
+      "project.structureCompleteness.specialAcceptanceRequirements",
+      "project.structureCompleteness.specialEmergencyMeasures",
+      "project.structureCompleteness.specialDrawings",
+      "project.structureCompleteness.specialRiskIdentification",
+      "project.structureCompleteness.specialLayoutEnvironment",
+      "project.structureCompleteness.specialCalculationEvidence"
+    ],
+    "missingFactKeys": [],
+    "clauseIds": [
+      "distribution_network_special_scheme_structure"
+    ],
+    "blockingReasons": []
+  },
+  {
+    "ruleId": "power_outage_work_structure_completeness",
+    "packId": "power_outage_work.base",
+    "packReadiness": "ready",
+    "status": "hit",
+    "applicabilityState": "applies",
+    "layerHint": "L1",
+    "severityHint": "high",
+    "matchType": "direct_hit",
+    "requiredFactKeys": [
+      "project.structureCompleteness.powerOutageScope",
+      "project.structureCompleteness.powerOutageWorkContent",
+      "project.structureCompleteness.powerOutageMajorRisk",
+      "project.structureCompleteness.powerOutageStaffing",
+      "project.structureCompleteness.powerOutageEquipment",
+      "project.structureCompleteness.powerOutageMaterials",
+      "project.structureCompleteness.powerOutageSafetyControl",
+      "project.structureCompleteness.powerOutageQualityControl",
+      "project.structureCompleteness.powerOutageEmergencyMeasures"
+    ],
+    "missingFactKeys": [],
+    "clauseIds": [
+      "power_outage_work_structure"
+    ],
+    "blockingReasons": []
+  },
+  {
+    "ruleId": "temporary_power_control_linkage",
+    "packId": "power_outage_work.base",
+    "packReadiness": "ready",
+    "status": "hit",
+    "applicabilityState": "blocked_by_missing_fact",
+    "layerHint": "L2",
+    "severityHint": "medium",
+    "matchType": "inferred_risk",
+    "requiredFactKeys": [
+      "hazard.temporaryPower",
+      "hazard.measureSectionPresent",
+      "hazard.monitoringSectionPresent",
+      "emergency.planTitles"
+    ],
+    "missingFactKeys": [
+      "emergency.planTitles"
+    ],
+    "clauseIds": [
+      "hazardous_scheme_measures",
+      "emergency_plan_targeted"
+    ],
+    "blockingReasons": [
+      "missing_fact"
+    ]
+  }
+]

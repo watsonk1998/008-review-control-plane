@@ -36,6 +36,8 @@ class HermesAgentRunner:
                 fact_packet_008=workspace.get('support_packet_008'),
                 document_preview=(workspace.get('parse_result').preview if workspace.get('parse_result') else ''),
             )
+            for finding in packet.findings:
+                self._annotate_finding_ownership(template, finding)
             packet.metadata = {
                 **packet.metadata,
                 'agent_id': template.id,
@@ -58,7 +60,7 @@ class HermesAgentRunner:
 
     def _annotate_finding_ownership(self, template: AgentTemplate, finding: FindingItem) -> FindingItem:
         review_modules = template_review_modules(template.id)
-        module_name = review_modules[0] if len(review_modules) == 1 else ''
+        module_name = self._resolve_finding_module_name(finding, review_modules)
         finding.raw_data = {
             **finding.raw_data,
             'template_id': template.id,
@@ -71,6 +73,16 @@ class HermesAgentRunner:
             ),
         }
         return finding
+
+    def _resolve_finding_module_name(self, finding: FindingItem, review_modules: list[str]) -> str:
+        if len(review_modules) == 1:
+            return review_modules[0]
+        title = f'{finding.title} {finding.summary}'.lower()
+        if any(token in title for token in ['停送电', '执行链路', '流程', '工序', '连续']):
+            return 'execution_continuity'
+        if any(token in title for token in ['参数', 'capacity', '荷载', '吨', '重量', '一致']):
+            return 'parameter_consistency'
+        return ''
 
     def _module_output_to_packet(self, *, template: AgentTemplate, workspace: dict[str, Any]) -> FactPacket | None:
         if is_primary_template_id(template.id) and workspace.get('support_packet_008') is not None:

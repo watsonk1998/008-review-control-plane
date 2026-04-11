@@ -1,0 +1,22 @@
+{
+  "values": {
+    "scheduleVsResources": {
+      "shutdownWindowDays": null,
+      "laborTotal": null,
+      "highRiskCategories": [
+        "temporary_power",
+        "hot_work"
+      ],
+      "issueTriggered": false
+    },
+    "hazardVsMeasures": {
+      "highRiskCategories": [
+        "temporary_power",
+        "hot_work"
+      ],
+      "measureSectionPresent": false,
+      "monitoringSectionPresent": false,
+      "issueTriggered": false
+    }
+  }
+}

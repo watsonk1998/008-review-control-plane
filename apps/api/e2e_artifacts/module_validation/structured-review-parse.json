@@ -1,0 +1,285 @@
+{
+  "documentId": "validation_sample",
+  "filePath": "/Users/lucas/repos/review/008-review-control-plane/apps/api/e2e_artifacts/module_validation/validation_sample.md",
+  "fileType": "md",
+  "parseMode": "markdown_text",
+  "parserLimited": false,
+  "sections": [
+    {
+      "id": "section-1",
+      "title": "停电施工方案",
+      "key": "停电施工方案",
+      "level": 1,
+      "parentId": null,
+      "blockId": "block-1",
+      "styleName": "Heading 1",
+      "position": 1
+    },
+    {
+      "id": "section-2",
+      "title": "第一章 工程概况",
+      "key": "工程概况",
+      "level": 2,
+      "parentId": "section-1",
+      "blockId": "block-2",
+      "styleName": "Heading 2",
+      "position": 3
+    },
+    {
+      "id": "section-3",
+      "title": "第二章 施工组织",
+      "key": "施工组织",
+      "level": 2,
+      "parentId": "section-1",
+      "blockId": "block-4",
+      "styleName": "Heading 2",
+      "position": 6
+    },
+    {
+      "id": "section-4",
+      "title": "第三章 停送电组织",
+      "key": "停送电组织",
+      "level": 2,
+      "parentId": "section-1",
+      "blockId": "block-6",
+      "styleName": "Heading 2",
+      "position": 9
+    },
+    {
+      "id": "section-5",
+      "title": "第四章 规范依据",
+      "key": "规范依据",
+      "level": 2,
+      "parentId": "section-1",
+      "blockId": "block-8",
+      "styleName": "Heading 2",
+      "position": 12
+    }
+  ],
+  "blocks": [
+    {
+      "id": "block-1",
+      "type": "heading",
+      "text": "停电施工方案",
+      "sectionId": "section-1",
+      "styleName": "Heading 1",
+      "headingLevel": 1,
+      "position": 1
+    },
+    {
+      "id": "block-2",
+      "type": "heading",
+      "text": "第一章 工程概况",
+      "sectionId": "section-2",
+      "styleName": "Heading 2",
+      "headingLevel": 2,
+      "position": 3
+    },
+    {
+      "id": "block-3",
+      "type": "paragraph",
+      "text": "停电窗口7天。",
+      "sectionId": "section-2",
+      "styleName": "",
+      "headingLevel": null,
+      "position": 4
+    },
+    {
+      "id": "block-4",
+      "type": "heading",
+      "text": "第二章 施工组织",
+      "sectionId": "section-3",
+      "styleName": "Heading 2",
+      "headingLevel": 2,
+      "position": 6
+    },
+    {
+      "id": "block-5",
+      "type": "paragraph",
+      "text": "涉及施工用电、动火作业。",
+      "sectionId": "section-3",
+      "styleName": "",
+      "headingLevel": null,
+      "position": 7
+    },
+    {
+      "id": "block-6",
+      "type": "heading",
+      "text": "第三章 停送电组织",
+      "sectionId": "section-4",
+      "styleName": "Heading 2",
+      "headingLevel": 2,
+      "position": 9
+    },
+    {
+      "id": "block-7",
+      "type": "paragraph",
+      "text": "需明确执行顺序与闭环。",
+      "sectionId": "section-4",
+      "styleName": "",
+      "headingLevel": null,
+      "position": 10
+    },
+    {
+      "id": "block-8",
+      "type": "heading",
+      "text": "第四章 规范依据",
+      "sectionId": "section-5",
+      "styleName": "Heading 2",
+      "headingLevel": 2,
+      "position": 12
+    },
+    {
+      "id": "block-9",
+      "type": "paragraph",
+      "text": "引用配网停电施工规范。",
+      "sectionId": "section-5",
+      "styleName": "",
+      "headingLevel": null,
+      "position": 13
+    }
+  ],
+  "tables": [],
+  "attachments": [],
+  "figures": [],
+  "normalizedText": "停电施工方案\n第一章 工程概况\n停电窗口7天。\n第二章 施工组织\n涉及施工用电、动火作业。\n第三章 停送电组织\n需明确执行顺序与闭环。\n第四章 规范依据\n引用配网停电施工规范。",
+  "preview": "停电施工方案\n第一章 工程概况\n停电窗口7天。\n第二章 施工组织\n涉及施工用电、动火作业。\n第三章 停送电组织\n需明确执行顺序与闭环。\n第四章 规范依据\n引用配网停电施工规范。",
+  "visibility": {
+    "parseMode": "markdown_text",
+    "parserLimited": false,
+    "fileType": "md",
+    "attachmentCount": 0,
+    "counts": {
+      "parsed": 0,
+      "attachment_unparsed": 0,
+      "referenced_only": 0,
+      "missing": 0,
+      "unknown": 0
+    },
+    "reasonCounts": {},
+    "duplicateSectionTitles": [],
+    "parseWarnings": [
+      "text_tables_not_preserved",
+      "text_attachment_boundaries_inferred_from_headings"
+    ],
+    "manualReviewNeeded": false,
+    "manualReviewReason": null,
+    "preflight": {
+      "gateDecision": "ready",
+      "blockingReasons": [],
+      "checklist": [
+        {
+          "key": "parse_source_readiness",
+          "status": "pass",
+          "summary": "当前解析路径未触发 parser-limited gate。",
+          "blocking": false
+        },
+        {
+          "key": "attachment_visibility",
+          "status": "pass",
+          "summary": "附件可视域未触发额外前置阻断。",
+          "blocking": false
+        },
+        {
+          "key": "section_structure_signal",
+          "status": "pass",
+          "summary": "章节结构未检测到重复标题信号。",
+          "blocking": false
+        },
+        {
+          "key": "manual_review_gate",
+          "status": "pass",
+          "summary": "当前任务未触发额外人工复核 gate。",
+          "blocking": false
+        }
+      ],
+      "parserLimitations": [
+        "text_tables_not_preserved",
+        "text_attachment_boundaries_inferred_from_headings"
+      ],
+      "attachmentTaxonomySummary": {
+        "attachmentCount": 0,
+        "counts": {
+          "parsed": 0,
+          "attachment_unparsed": 0,
+          "referenced_only": 0,
+          "missing": 0,
+          "unknown": 0
+        },
+        "reasonCounts": {},
+        "manualReviewReason": null
+      }
+    }
+  },
+  "visibilityReport": {
+    "parseMode": "markdown_text",
+    "parserLimited": false,
+    "fileType": "md",
+    "attachmentCount": 0,
+    "counts": {
+      "parsed": 0,
+      "attachment_unparsed": 0,
+      "referenced_only": 0,
+      "missing": 0,
+      "unknown": 0
+    },
+    "reasonCounts": {},
+    "duplicateSectionTitles": [],
+    "parseWarnings": [
+      "text_tables_not_preserved",
+      "text_attachment_boundaries_inferred_from_headings"
+    ],
+    "manualReviewNeeded": false,
+    "manualReviewReason": null,
+    "preflight": {
+      "gateDecision": "ready",
+      "blockingReasons": [],
+      "checklist": [
+        {
+          "key": "parse_source_readiness",
+          "status": "pass",
+          "summary": "当前解析路径未触发 parser-limited gate。",
+          "blocking": false
+        },
+        {
+          "key": "attachment_visibility",
+          "status": "pass",
+          "summary": "附件可视域未触发额外前置阻断。",
+          "blocking": false
+        },
+        {
+          "key": "section_structure_signal",
+          "status": "pass",
+          "summary": "章节结构未检测到重复标题信号。",
+          "blocking": false
+        },
+        {
+          "key": "manual_review_gate",
+          "status": "pass",
+          "summary": "当前任务未触发额外人工复核 gate。",
+          "blocking": false
+        }
+      ],
+      "parserLimitations": [
+        "text_tables_not_preserved",
+        "text_attachment_boundaries_inferred_from_headings"
+      ],
+      "attachmentTaxonomySummary": {
+        "attachmentCount": 0,
+        "counts": {
+          "parsed": 0,
+          "attachment_unparsed": 0,
+          "referenced_only": 0,
+          "missing": 0,
+          "unknown": 0
+        },
+        "reasonCounts": {},
+        "manualReviewReason": null
+      }
+    }
+  },
+  "parseWarnings": [
+    "text_tables_not_preserved",
+    "text_attachment_boundaries_inferred_from_headings"
+  ]
+}

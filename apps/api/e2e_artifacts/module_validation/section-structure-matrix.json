@@ -1,0 +1,37 @@
+[
+  {
+    "id": "section-1",
+    "title": "停电施工方案",
+    "level": 1,
+    "parentId": null,
+    "duplicate": false
+  },
+  {
+    "id": "section-2",
+    "title": "第一章 工程概况",
+    "level": 2,
+    "parentId": "section-1",
+    "duplicate": false
+  },
+  {
+    "id": "section-3",
+    "title": "第二章 施工组织",
+    "level": 2,
+    "parentId": "section-1",
+    "duplicate": false
+  },
+  {
+    "id": "section-4",
+    "title": "第三章 停送电组织",
+    "level": 2,
+    "parentId": "section-1",
+    "duplicate": false
+  },
+  {
+    "id": "section-5",
+    "title": "第四章 规范依据",
+    "level": 2,
+    "parentId": "section-1",
+    "duplicate": false
+  }
+]

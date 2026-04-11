@@ -174,6 +174,14 @@ async def test_hermes_controller_selects_agents_generates_candidate_and_reports(
     assert result['hermesController']['mainReviewOwnedBy'] == 'hermes'
     assert result['hermesController']['supportLayerOwnedBy'] == 'structured_review_capability_facade'
     assert result['hermesController']['mainReviewOutcomes']
+    hermes_packets = list(result['hermesController']['mainReviewOutcomes'])
+    assert hermes_packets
+    assert any(
+        finding['raw_data'].get('module_name')
+        and finding['raw_data'].get('ownership') == 'hermes_main_review'
+        for packet in hermes_packets
+        for finding in packet.get('findings', [])
+    )
     assert len(result['hermesController']['selectedAgents']) >= 2
     assert 'candidateTemplateId' in result['hermesController']
     assert 'finalReportMarkdown' in result

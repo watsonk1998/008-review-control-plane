@@ -23,7 +23,7 @@ from src.domain.models import (
     TaskEvent,
     TaskRecord,
 )
-from src.review.hermes.module_bindings import module_binding, module_template_ids, module_titles, template_review_modules
+from src.review.hermes.module_bindings import module_template_ids, module_titles, template_review_modules
 
 MODULE_TITLES = module_titles()
 
