@@ -6,8 +6,7 @@ This directory hosts **externally owned components** that are integrated into th
 
 - Path: `external/hermes-agent/`
 - Upstream: `https://github.com/NousResearch/hermes-agent.git`
-- Intended mode: **git submodule**
-- Current mode in this checkout: **planned_submodule**
+- Current mode in this checkout: **git submodule**
 - Current pin: `af9caec44fdab7a1b883dede16fe1ce8c2d60fb9`
 
 ## Boundary Rules
@@ -27,7 +26,17 @@ If an upstream patch is unavoidable:
 
 ## Upgrade Guidance
 
-Use the upgrade workflow defined in:
+Standard update flow:
+
+1. `git submodule update --init --recursive`
+2. `cd external/hermes-agent`
+3. `git fetch origin`
+4. `git checkout <new-pinned-commit>`
+5. `cd ../..`
+6. record the updated gitlink in the parent repository
+7. run `make verify-hermes-boundary`
+
+Detailed contract and governance rules remain in:
 
 - `docs/architecture/hermes-upstream-contract.md`
 - `config/hermes_upstream.yaml`

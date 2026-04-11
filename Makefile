@@ -1,7 +1,7 @@
 SHELL := /bin/bash
 ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
 
-.PHONY: bootstrap dev-bridge dev-api dev-web dev test test-review-unit test-review-integration smoke verify-connectivity eval-review eval-review-ablations eval-review-cross-pack eval-review-cross-model eval-review-replay
+.PHONY: bootstrap dev-bridge dev-api dev-web dev test test-review-unit test-review-integration smoke verify-connectivity verify-hermes-boundary eval-review eval-review-ablations eval-review-cross-pack eval-review-cross-model eval-review-replay
 
 bootstrap:
 	$(ROOT)/scripts/bootstrap.sh
@@ -48,3 +48,6 @@ smoke:
 
 verify-connectivity:
 	$(ROOT)/scripts/verify_connectivity.sh
+
+verify-hermes-boundary:
+	python3 $(ROOT)/scripts/verify_hermes_boundary.py

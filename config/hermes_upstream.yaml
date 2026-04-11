@@ -3,7 +3,7 @@ upstream:
   tracking_branch: "main"
   pinned_commit: "af9caec44fdab7a1b883dede16fe1ce8c2d60fb9"
 
-integration_mode: "planned_submodule"
+integration_mode: "submodule"
 
 boundary:
   external_kernel_path: "external/hermes-agent"

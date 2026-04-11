@@ -5,8 +5,7 @@
 - Upstream repository: `https://github.com/NousResearch/hermes-agent.git`
 - Tracking branch: `main`
 - Current pinned commit: `af9caec44fdab7a1b883dede16fe1ce8c2d60fb9`
-- Integration mode in this checkout: `planned_submodule`
-- Preferred steady-state mode: `submodule`
+- Integration mode in this checkout: `submodule`
 
 Pinning is required so the control plane does not silently drift with upstream internal changes.
 
@@ -54,14 +53,16 @@ Local business logic must not directly depend on unstable upstream internals suc
 
 ## Upgrade Workflow
 
-1. review current upstream release notes or target commit
-2. if running in fallback mode, first complete `git submodule add -b main https://github.com/NousResearch/hermes-agent.git external/hermes-agent`
-3. update the submodule pointer (or documented fallback pin)
-4. check out the pinned commit
-5. update `config/hermes_upstream.yaml`
-6. run boundary verification and adapter compatibility checks
-7. review any contract breakage in request/response shape, routing assumptions, or metadata conventions
-8. if breaking changes exist, update shell-side adapters/contracts first, then advance the pin
+1. `git submodule update --init --recursive`
+2. review current upstream release notes or target commit
+3. `cd external/hermes-agent`
+4. `git fetch origin`
+5. `git checkout <new-pinned-commit>`
+6. `cd ../..`
+7. update `config/hermes_upstream.yaml`
+8. run `make verify-hermes-boundary`
+9. review any contract breakage in request/response shape, routing assumptions, or metadata conventions
+10. if breaking changes exist, update shell-side adapters/contracts first, then record the new gitlink in the parent repo
 
 Breaking change handling rule:
 
