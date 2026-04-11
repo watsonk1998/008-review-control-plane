@@ -2,16 +2,24 @@
 Local Kernel Adapter for Hermes Review.
 
 Status:
-- smoke / non-default
-- not enabled in active runtime — MUST NOT be wired into main_dependencies.py
+- minimal real execution available
+- non-default / explicit-only
+- NOT wired into production runtime — MUST NOT appear in main_dependencies.py
 
 This adapter abstracts the communication with a local Hermes kernel
 instance (submodule) managed by the HermesKernelLauncher.
 
-Current capability:
+Current capabilities:
 - smoke mode: exercises the launcher dry-run + smoke path to validate
   kernel location, overlay resolution, and controlled result generation.
-- Full kernel execution: not yet implemented.
+- real execution mode: invokes a subprocess via the launcher's invoke()
+  method to perform a minimal real review through the local kernel.
+  Returns structured FactPacket mapped from subprocess output.
+
+Capability boundary:
+- Minimal execution only — not a full production-grade review path.
+- Non-default: adapter._is_enabled must be explicitly set to True.
+- Allows graceful degradation and controlled failure.
 """
 from __future__ import annotations
 
@@ -51,6 +59,7 @@ class HermesLocalKernelAdapter(HermesReviewEngine):
     WARNING: This adapter is NOT wired into the production runtime.
     It is only accessible through:
     - the explicit smoke script (apps/api/scripts/run_local_hermes_smoke.py)
+    - the explicit minimal review script (apps/api/scripts/run_local_hermes_minimal_review.py)
     - direct programmatic construction in tests
 
     It must NOT appear in main_dependencies.get_hermes_engine().
@@ -62,7 +71,7 @@ class HermesLocalKernelAdapter(HermesReviewEngine):
 
     @property
     def available(self) -> bool:
-        """Currently disabled by default as the kernel path is planned/skeleton mode."""
+        """Non-default: disabled unless adapter._is_enabled is explicitly set to True."""
         return self._is_enabled and self._launcher is not None
 
     async def health_check(self) -> dict[str, Any]:
@@ -90,8 +99,8 @@ class HermesLocalKernelAdapter(HermesReviewEngine):
         """
         Execute review against the locally launched kernel.
 
-        In smoke mode (default), returns a controlled degraded packet.
-        Full kernel execution path is not yet implemented.
+        When not enabled, returns a controlled degraded packet.
+        When enabled, invokes the launcher subprocess for minimal real execution.
         """
         if not self.available:
             return FactPacket(
@@ -242,7 +251,7 @@ class HermesLocalKernelAdapter(HermesReviewEngine):
             summary_metrics=ReviewPacketMetrics(),
             overall_assessment=(
                 "Smoke path executed successfully. "
-                "This is a controlled result — full kernel execution is not yet implemented."
+                "This is a controlled diagnostic result — use review() with _is_enabled=True for real execution."
             ),
             degraded=True,
             error="smoke_only",

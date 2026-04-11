@@ -154,5 +154,6 @@ overlays/hermes-agent/
 ### 当前状态声明
 
 > **业务主链行为不变。** `get_hermes_engine()` 仍返回 `HermesRouterAdapter(external, llm)`。
-> Local kernel adapter / launcher 仅通过手动 smoke 脚本可触达，不参与 runtime 执行。
+> Local kernel adapter / launcher 具备 **minimal real execution capability**（smoke 诊断路径 + subprocess 真实执行路径均可用），
+> 但仍为 **non-default / explicit-only**，仅可通过手动脚本触达，不参与正式 runtime 执行。
 

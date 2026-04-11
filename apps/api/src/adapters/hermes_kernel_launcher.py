@@ -2,16 +2,24 @@
 Hermes Kernel Launcher.
 
 Status:
-- smoke / non-default
-- not enabled in active runtime
+- minimal real execution available
+- non-default / explicit-only
+- NOT wired into production runtime (main_dependencies.py)
 
 Responsible for managing the execution environment, lifecycle, and
 overlay injections (skills, memory, config) for the isolated external/hermes-agent submodule.
 
 Modes:
 - dry_run: inspect paths, resolve overlays, generate launch plan — never spawn process
-- smoke:   attempt minimal startup logic, return controlled degraded result
-           if full kernel execution is not yet available
+- smoke:   validate kernel locatability and overlay resolution, return controlled
+           SmokeResult without spawning a subprocess
+- invoke:  spawn a real subprocess via invoke_kernel.py shim, send JSON payload
+           via stdin, parse structured output — minimal real execution path
+
+Current capability boundary:
+- Minimal execution via subprocess (not full production-grade review)
+- Graceful degradation on timeout, missing paths, or parse failure
+- Process isolation via subprocess — no in-process kernel imports
 """
 from __future__ import annotations
 
@@ -34,7 +42,7 @@ class LaunchMode(Enum):
 
 @dataclass
 class LaunchPlan:
-    """Describes what the launcher *would* do if fully enabled."""
+    """Describes the launch plan from path inspection (used by dry_run and smoke)."""
 
     kernel_path: str
     kernel_exists: bool
@@ -51,7 +59,7 @@ class LaunchPlan:
 
 @dataclass
 class SmokeResult:
-    """Controlled result object from a smoke invocation."""
+    """Controlled result object from a smoke invocation (no subprocess spawned)."""
 
     success: bool
     mode: str = "smoke"
@@ -68,11 +76,13 @@ class HermesKernelLauncher:
     """Manages the invocation of the local Hermes agent kernel.
 
     This launcher is intentionally NOT wired into the production runtime.
-    It exists to:
-    1. Let developers verify that the kernel boundary is locatable.
-    2. Let developers verify that the overlay directory structure is valid.
-    3. Provide a minimal smoke execution contract that can be extended
-       as the local kernel integration matures.
+    Current capabilities:
+    1. dry_run / inspect: verify kernel boundary and overlay structure.
+    2. smoke: validate locatability without spawning a subprocess.
+    3. invoke: spawn a real subprocess via invoke_kernel.py shim for
+       minimal real execution (non-default, explicit-only).
+
+    This launcher must NOT appear in main_dependencies.py.
     """
 
     def __init__(
@@ -132,10 +142,10 @@ class HermesKernelLauncher:
     # ── Smoke execution ─────────────────────────────────────────────
 
     async def smoke(self, payload: dict[str, Any] | None = None) -> SmokeResult:
-        """Attempt minimal startup logic.
+        """Validate kernel locatability and overlay resolution.
 
-        Does NOT spawn a real kernel subprocess yet.
-        Returns a controlled SmokeResult indicating current capability.
+        Does NOT spawn a subprocess — this is a pure diagnostic check.
+        Use invoke() for real subprocess execution.
         """
         plan = self.inspect()
         plan.mode = "smoke"
@@ -160,17 +170,17 @@ class HermesKernelLauncher:
         return SmokeResult(
             success=True,
             mode="smoke",
-            message="Smoke path OK: kernel located, overlay resolved, payload echoed. Full execution not yet implemented.",
+            message="Smoke path OK: kernel located, overlay resolved, payload echoed. Use invoke() for real subprocess execution.",
             plan=plan,
             payload_echo=echo,
         )
 
-    # ── Future interfaces (skeleton) ────────────────────────────────
+    # ── Lifecycle interfaces (skeleton) ─────────────────────────────
 
     async def start(self) -> None:
         """
-        Prepare environment and spawn the kernel process.
-        TODO: Implement subprocess start, passing overlay boundaries as ENV or CLI args.
+        Prepare environment and spawn a persistent kernel process.
+        Not yet implemented — use invoke() for per-request subprocess execution.
         """
         logger.info("[hermes_launcher] start() called (skeleton implementation).")
         pass

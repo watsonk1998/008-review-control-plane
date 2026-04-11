@@ -94,9 +94,26 @@ These capabilities belong to the control-plane shell, not to the Hermes upstream
 - the machine-readable source of truth is `config/hermes_upstream.yaml`
 - upgrade and patch policy are defined in `docs/architecture/hermes-upstream-contract.md`
 
-## Local Kernel Smoke Path (Non-Default)
+## Local Kernel Path (Non-Default)
 
-- `HermesLocalKernelAdapter` and `HermesKernelLauncher` provide a **non-default local smoke path** for diagnostic and development purposes only
+- `HermesLocalKernelAdapter` and `HermesKernelLauncher` provide a **non-default local kernel path** with **minimal real execution capability**
 - they are **not wired into `main_dependencies.py`** and must not enter the production `get_hermes_engine()` chain without explicit, documented enablement
-- the smoke path is triggered exclusively via `apps/api/scripts/run_local_hermes_smoke.py` (manual execution)
-- `overlays/hermes-agent/` contains shell-side configuration assets (skills, memory, config, prompts) that will be injected into the local kernel by the launcher — these are **not** upstream kernel code
+- any local kernel path may only be invoked in development/verification contexts — it must not be connected to the production review runtime without explicit approval
+
+### Entry Points
+
+| Script | Purpose | Subprocess? |
+|---|---|---|
+| `apps/api/scripts/run_local_hermes_smoke.py` | Diagnostic-only: validate kernel locatability and overlay resolution | No |
+| `apps/api/scripts/run_local_hermes_minimal_review.py` | Minimal real execution: spawn subprocess, invoke kernel with real LLM | Yes |
+
+### Current Capability
+
+- **Smoke path**: pure diagnostic — no subprocess spawned, validates paths and overlays only
+- **Minimal real execution**: spawns `invoke_kernel.py` as subprocess, performs a real (but minimal) review via local kernel, maps result back to `FactPacket`
+- Both paths are **non-default** and **explicit-only**
+- Neither path is wired into the production runtime
+
+### Shell-side Assets
+
+- `overlays/hermes-agent/` contains shell-side configuration assets (skills, memory, config, prompts, scripts) that are injected into the local kernel by the launcher — these are **not** upstream kernel code

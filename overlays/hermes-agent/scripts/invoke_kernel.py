@@ -161,7 +161,7 @@ def main():
             "completed": False,
             "api_calls": 0,
             "model": model,
-            "provider": provider,
+            "provider": payload.get("provider", ""),
             "input_tokens": 0,
             "output_tokens": 0,
             "elapsed_seconds": round(elapsed, 2),

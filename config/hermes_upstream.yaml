@@ -45,8 +45,10 @@ overlay:
 
 local_kernel:
   local_kernel_smoke_available: true
+  local_kernel_minimal_execution_available: true
   smoke_script_path: "apps/api/scripts/run_local_hermes_smoke.py"
-  adapter_status: "non_default_smoke_only"
+  minimal_review_script_path: "apps/api/scripts/run_local_hermes_minimal_review.py"
+  adapter_status: "non_default_minimal_execution_available"
 
 expected_runtime:
   runtime_kernel_mode: "local_kernel_available_not_enabled"

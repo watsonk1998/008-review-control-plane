@@ -71,6 +71,9 @@ next-env.d.ts
 *secret*.json
 *credentials*.json
 *.keystore
+*local*.yaml
+*secret*.yaml
+
 
 # Fixtures — archive only (V0.3 prompts / guides should be tracked)
 fixtures/任务书/archive/

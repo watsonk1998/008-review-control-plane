@@ -305,6 +305,7 @@ def verify_overlay_config_consistency(errors: list[str]) -> None:
 # ---------------------------------------------------------------------------
 
 SMOKE_SCRIPT_REL = "apps/api/scripts/run_local_hermes_smoke.py"
+MINIMAL_REVIEW_SCRIPT_REL = "apps/api/scripts/run_local_hermes_minimal_review.py"
 
 # Files that constitute the main runtime wiring — smoke must NOT be imported here
 MAIN_CHAIN_FILES = [
@@ -314,8 +315,10 @@ MAIN_CHAIN_FILES = [
 
 SMOKE_IMPORT_PATTERNS = [
     re.compile(r"run_local_hermes_smoke"),
+    re.compile(r"run_local_hermes_minimal_review"),
     re.compile(r"hermes_local_kernel_adapter", re.IGNORECASE),
     re.compile(r"HermesLocalKernelAdapter"),
+    re.compile(r"HermesKernelLauncher"),
 ]
 
 
@@ -362,6 +365,7 @@ def verify_local_kernel_non_default(errors: list[str]) -> None:
     )
     if status_match and status_match.group("status") not in (
         "non_default_smoke_only",
+        "non_default_minimal_execution_available",
         "skeleton",
         "disabled",
     ):
@@ -397,8 +401,9 @@ def main() -> int:
     print("- governance/config documents present")
     print("- no forbidden upstream import/path coupling detected")
     print("- overlay structure verified")
-    print("- smoke path isolation verified")
+    print("- local kernel path isolation verified")
     print("- local kernel non-default status confirmed")
+    print("- minimal execution available, but not wired into production")
     return 0
 
 
