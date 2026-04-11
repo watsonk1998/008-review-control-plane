@@ -28,6 +28,11 @@ export interface SourceDocumentRef {
   mediaType?: string | null;
   fixtureId?: string | null;
   uploadedAt?: string | null;
+  file_id?: string;
+  file_name?: string;
+  file_type?: string;
+  display_name?: string | null;
+  uploaded_at?: string | null;
 }
 
 export interface CapabilityHealth {
@@ -556,4 +561,164 @@ export interface SupportScopeResponse {
       promotionCriteria: Record<string, boolean>;
     }>;
   }>;
+}
+
+export type ReviewModuleName =
+  | "structure_completeness"
+  | "parameter_consistency"
+  | "legality_compliance"
+  | "execution_continuity"
+  | "evidence_validation";
+
+export type FrozenReviewTaskStatus =
+  | "created"
+  | "compiling"
+  | "running"
+  | "assembling"
+  | "completed"
+  | "failed"
+  | "degraded";
+
+export type FrozenReviewTaskProgressStage =
+  | "review_brief_compiling"
+  | "assets_loading"
+  | "agents_running"
+  | "modules_running"
+  | "report_assembling"
+  | "done";
+
+export type ReviewTaskEventType =
+  | "task_created"
+  | "progress"
+  | "artifact_ready"
+  | "completed"
+  | "failed";
+
+export type ReviewFeedbackType = "helpful" | "inaccurate" | "missing" | "save_as_template";
+
+export interface FrozenUploadResponse {
+  file_id: string;
+  file_name: string;
+  file_type: string;
+  display_name?: string | null;
+  uploaded_at?: string | null;
+  source_ref: SourceDocumentRef;
+}
+
+export interface ReviewTaskCreateRequest {
+  classification: {
+    l1: string;
+    l2: ReviewDocumentType;
+    l3: string[];
+  };
+  documents: {
+    target_file_ids: string[];
+    basis_file_ids: string[];
+    project_context_file_ids: string[];
+  };
+  builtin_asset_selections: {
+    standard_ids: string[];
+    template_ids: string[];
+    rule_pack_ids: string[];
+  };
+  review_intent: {
+    enabled_modules: ReviewModuleName[];
+    disabled_modules: ReviewModuleName[];
+    focus_requirements: string[];
+  };
+  metadata: {
+    client_request_id?: string;
+    source?: string;
+    debug: boolean;
+  };
+}
+
+export interface ReviewTaskCreateResponse {
+  task_id: string;
+  status: FrozenReviewTaskStatus;
+  review_brief_id: string;
+  links: {
+    status: string;
+    events: string;
+    result: string;
+  };
+}
+
+export interface ReviewTaskStatusResponse {
+  task_id: string;
+  status: FrozenReviewTaskStatus;
+  progress_stage: FrozenReviewTaskProgressStage;
+  progress_message: string;
+  created_at: string;
+  updated_at: string;
+  report_id?: string | null;
+  degraded: boolean;
+  error?: {
+    code: string;
+    message: string;
+  } | null;
+}
+
+export interface ReviewTaskSseEvent {
+  event: ReviewTaskEventType;
+  task_id: string;
+  stage: FrozenReviewTaskProgressStage;
+  message: string;
+  timestamp: string;
+  status: FrozenReviewTaskStatus;
+  artifact?: {
+    file_name: string;
+    download_url: string;
+    category?: string | null;
+    stage?: string | null;
+  } | null;
+  payload?: Record<string, unknown> | null;
+}
+
+export interface FrozenReviewModuleResult {
+  title: string;
+  findings: ReviewIssue[] | Array<Record<string, unknown>>;
+  severity_summary: Record<string, number>;
+  traceability_summary: Array<Record<string, unknown>>;
+  status: "available" | "partial" | "not_applicable";
+}
+
+export interface ReviewTaskResultResponse {
+  task_id: string;
+  status: FrozenReviewTaskStatus;
+  report_id: string;
+  summary: {
+    overall_conclusion: string;
+    risk_level: "low" | "medium" | "high" | "unknown";
+    key_counts: Record<string, number>;
+    key_metrics: Record<string, number>;
+  };
+  modules: Record<ReviewModuleName, FrozenReviewModuleResult>;
+  key_findings: Array<Record<string, unknown>>;
+  recommendations: string[];
+  export_links: {
+    markdown?: string | null;
+    pdf?: string | null;
+    html?: string | null;
+  };
+  metadata: {
+    report_id: string;
+    generated_at: string;
+    degraded: boolean;
+    traceability_available: boolean;
+    assembler: string;
+  };
+  raw: Record<string, unknown>;
+}
+
+export interface ReviewReportFeedbackRequest {
+  feedback_type: ReviewFeedbackType;
+  comment?: string;
+  source?: string;
+}
+
+export interface ReviewReportFeedbackResponse {
+  accepted: boolean;
+  report_id: string;
+  feedback_id: string;
 }

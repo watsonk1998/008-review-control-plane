@@ -75,6 +75,19 @@ class SQLiteTaskStore:
                 )
                 '''
             )
+            conn.execute(
+                '''
+                CREATE TABLE IF NOT EXISTS review_report_feedback (
+                    id TEXT PRIMARY KEY,
+                    report_id TEXT NOT NULL,
+                    task_id TEXT NOT NULL,
+                    feedback_type TEXT NOT NULL,
+                    comment TEXT,
+                    source TEXT,
+                    created_at TEXT NOT NULL
+                )
+                '''
+            )
 
     def _ensure_task_columns(self, conn: sqlite3.Connection):
         rows = conn.execute('PRAGMA table_info(tasks)').fetchall()
@@ -240,6 +253,44 @@ class SQLiteTaskStore:
             )
             for row in rows
         ]
+
+    def append_report_feedback(
+        self,
+        *,
+        feedback_id: str,
+        report_id: str,
+        task_id: str,
+        feedback_type: str,
+        comment: str | None,
+        source: str | None,
+        created_at: datetime,
+    ) -> dict[str, Any]:
+        with self._connect() as conn:
+            conn.execute(
+                '''
+                INSERT INTO review_report_feedback (
+                    id, report_id, task_id, feedback_type, comment, source, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?)
+                ''',
+                (
+                    feedback_id,
+                    report_id,
+                    task_id,
+                    feedback_type,
+                    comment,
+                    source,
+                    created_at.isoformat(),
+                ),
+            )
+        return {
+            'id': feedback_id,
+            'report_id': report_id,
+            'task_id': task_id,
+            'feedback_type': feedback_type,
+            'comment': comment,
+            'source': source,
+            'created_at': created_at.isoformat(),
+        }
 
     def _row_to_task(self, row: sqlite3.Row) -> TaskRecord:
         source_document_ref = self._load_model(row['source_document_ref_json'], SourceDocumentRef)

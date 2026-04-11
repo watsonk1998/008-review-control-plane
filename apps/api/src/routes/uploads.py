@@ -28,22 +28,26 @@ def _normalize_content_type(raw: str | None) -> str | None:
     return normalized or None
 
 
+def _upload_error(code: str, message: str) -> HTTPException:
+    return HTTPException(status_code=400, detail={'code': code, 'message': message})
+
+
 @router.post('/documents')
 async def upload_document(file: UploadFile = File(...)):
     raw_name = (file.filename or '').strip()
     if not raw_name:
-        raise HTTPException(status_code=400, detail='Invalid upload filename: missing file name')
+        raise _upload_error('invalid_file_name', 'Invalid upload filename: missing file name')
     file_name = Path(raw_name).name
     if not file_name.strip():
-        raise HTTPException(status_code=400, detail='Invalid upload filename: missing file name')
+        raise _upload_error('invalid_file_name', 'Invalid upload filename: missing file name')
     suffix = Path(file_name).suffix.lower()
     if suffix not in _ALLOWED_SUFFIXES:
-        raise HTTPException(status_code=400, detail=f'Unsupported file type: {suffix or "unknown"}')
+        raise _upload_error('unsupported_file_type', f'Unsupported file type: {suffix or "unknown"}')
     content_type = _normalize_content_type(file.content_type)
     if content_type is None:
-        raise HTTPException(status_code=400, detail=f'Missing content type for {suffix} upload')
+        raise _upload_error('missing_content_type', f'Missing content type for {suffix} upload')
     if content_type not in _ALLOWED_MEDIA_TYPES[suffix]:
-        raise HTTPException(status_code=400, detail=f'Unexpected content type for {suffix} upload: {content_type}')
+        raise _upload_error('content_type_mismatch', f'Unexpected content type for {suffix} upload: {content_type}')
 
     ref_id = uuid.uuid4().hex
     upload_dir = get_settings().uploads_dir / ref_id
@@ -53,7 +57,7 @@ async def upload_document(file: UploadFile = File(...)):
     with destination.open('wb') as output:
         shutil.copyfileobj(file.file, output)
 
-    return SourceDocumentRef(
+    payload = SourceDocumentRef(
         refId=ref_id,
         sourceType='upload',
         fileName=file_name,
@@ -63,3 +67,13 @@ async def upload_document(file: UploadFile = File(...)):
         mediaType=content_type,
         uploadedAt=datetime.now(timezone.utc),
     ).model_dump(mode='json')
+    payload.update(
+        {
+            'file_id': payload['refId'],
+            'file_name': payload['fileName'],
+            'file_type': payload['fileType'],
+            'display_name': payload['displayName'],
+            'uploaded_at': payload['uploadedAt'],
+        }
+    )
+    return payload

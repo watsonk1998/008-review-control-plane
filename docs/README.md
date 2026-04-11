@@ -94,6 +94,7 @@ docs/
 | 审查结构总览 | `docs/20-design/review-structure-overview.md` |
 | Structured review 模块边界 | `docs/20-design/structured-review-module-boundary.md` |
 | Hermes controller-first 边界 ADR | `docs/20-design/adr/ADR-001-hermes-controller-first-boundary.md` |
+| 审查 Agent 前端冻结契约 | `docs/20-design/review-agent-frontend-contract-freeze.md` |
 | 测试执行方式与回归入口 | `docs/30-quality/testing.md` |
 | 当前已知限制 | `docs/30-quality/known-limitations.md` |
 | PRD 验证结果与验证纪要 | `docs/30-quality/prd-validation-report.md` |

@@ -62,6 +62,8 @@ class DeepResearchRuntime:
             fixture_title=fixture.title if fixture else None,
             has_source_document=task.sourceDocumentRef is not None,
         )
+        if task.plan:
+            plan = self._merge_plan_seed(plan, task.plan)
         self.store.update_task(task_id, status='planned', plan=plan)
         self._emit(task_id, 'planning', 'deepresearch_runtime', 'completed', 'Execution plan created', debug=plan)
         self.store.update_task(task_id, status='running')
@@ -361,6 +363,15 @@ class DeepResearchRuntime:
                     resolved_fixture,
                 )
         return None, None, fixture
+
+    def _merge_plan_seed(self, generated_plan: dict, seeded_plan: dict) -> dict:
+        merged = dict(generated_plan)
+        for key, value in (seeded_plan or {}).items():
+            if isinstance(value, dict) and isinstance(merged.get(key), dict):
+                merged[key] = {**merged[key], **value}
+            else:
+                merged[key] = value
+        return merged
 
     def _with_default_hermes_input(self, *, task: TaskRecord, plan: dict, source_document_path: str) -> dict:
         enriched = dict(plan or {})

@@ -89,6 +89,21 @@ class TaskService:
         decision = merge_reviewer_decision(task, payload)
         return self.store.update_task(task_id, reviewerDecision=decision)
 
+    def submit_report_feedback(self, *, report_id: str, feedback_type: str, comment: str | None = None, source: str | None = None) -> dict:
+        task = self.store.get_task(report_id)
+        if task is None:
+            raise KeyError(f'Report not found: {report_id}')
+        feedback_id = uuid.uuid4().hex
+        return self.store.append_report_feedback(
+            feedback_id=feedback_id,
+            report_id=report_id,
+            task_id=task.id,
+            feedback_type=feedback_type,
+            comment=comment,
+            source=source,
+            created_at=datetime.now(timezone.utc),
+        )
+
     def list_task_artifacts(self, task_id: str) -> list[TaskArtifact]:
         task = self.store.get_task(task_id)
         if task is None:

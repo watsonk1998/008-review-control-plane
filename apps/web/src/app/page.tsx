@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import Link from "next/link";
 import { CreateTaskForm } from "@/components/create-task-form";
 import { SystemHealth } from "@/components/system-health";
 import { RecentTasks } from "@/components/recent-tasks";
@@ -25,6 +26,12 @@ export default async function Home() {
             <div>
               <span className="muted small">API 终端节点</span>
               <strong style={{ display: "block", marginTop: 4 }}>{getApiBaseUrl()}</strong>
+            </div>
+            <div>
+              <span className="muted small">冻结接口验收页</span>
+              <strong style={{ display: "block", marginTop: 4 }}>
+                <Link href="/review-acceptance">/review-acceptance</Link>
+              </strong>
             </div>
           </div>
         </div>

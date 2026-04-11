@@ -1532,6 +1532,8 @@ def test_upload_route_returns_source_document_ref(monkeypatch, tmp_path: Path):
     payload = response.json()
     assert payload['sourceType'] == 'upload'
     assert payload['fileType'] == 'md'
+    assert payload['file_id'] == payload['refId']
+    assert payload['file_name'] == payload['fileName']
     stored_path = Path(payload['storagePath'])
     assert stored_path.exists()
     assert stored_path.read_text(encoding='utf-8') == '# demo\n\ncontent\n'
@@ -1550,7 +1552,10 @@ def test_upload_route_rejects_missing_content_type(monkeypatch, tmp_path: Path):
         files={'file': ('uploaded.md', b'# demo\n\ncontent\n', '')},
     )
     assert response.status_code == 400
-    assert response.json()['detail'] == 'Missing content type for .md upload'
+    assert response.json()['detail'] == {
+        'code': 'missing_content_type',
+        'message': 'Missing content type for .md upload',
+    }
 
 
 def test_upload_route_rejects_suffix_mime_mismatch(monkeypatch, tmp_path: Path):
@@ -1566,7 +1571,10 @@ def test_upload_route_rejects_suffix_mime_mismatch(monkeypatch, tmp_path: Path):
         files={'file': ('uploaded.md', b'# demo\n\ncontent\n', 'application/pdf')},
     )
     assert response.status_code == 400
-    assert response.json()['detail'] == 'Unexpected content type for .md upload: application/pdf'
+    assert response.json()['detail'] == {
+        'code': 'content_type_mismatch',
+        'message': 'Unexpected content type for .md upload: application/pdf',
+    }
 
 
 def test_task_routes_list_recent_tasks(monkeypatch):
