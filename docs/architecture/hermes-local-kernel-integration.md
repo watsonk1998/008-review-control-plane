@@ -61,16 +61,18 @@
 
 * **Stage 1 (Inventory)**：盘点现有历史冗余，确认是否存在散落代码。✅ 已完成，现状良好。
 * **Stage 2 (Skeleton)**：新增 `HermesLocalKernelAdapter` 及 `HermesKernelLauncher` 骨架代码，制定接口防腐协议，实现占位符功能。✅ 已完成。
-* **Stage 3 (Smoke Path)**：打通 Local Kernel 的通信链路（不放入主网，提供 Feature Flag 开关支持，允许以 CLI 等单独维度做 E2E 测试）。✅ 已完成（dry-run + smoke 模式）。
-* **Stage 4 (Overlay Setup)**：逐步建立 Overlays 挂载机制（Prompt、配置映射）。🔸 已开始（目录结构 + 样本资产已建立，运行时注入尚未实现）。
+* **Stage 3 (Smoke Path)**：打通 Local Kernel 的通信链路（不放入主网，提供 Feature Flag 开关支持，允许以 CLI 等单独维度做 dry-run 和 E2E测试）。✅ 已完成。
+* **Stage 4 (Minimal Real Execution & Overlay)**：实现真正的 Subprocess 调用路径 (`invoke_kernel.py` shim)，使得 008 可以通过 Launcher 唤起具备真实大模型请求能力的本地内核进程，并注入 Overlay（如 System Prompts），同时返回结构化结果供 Adapter 合成为 FactPacket。✅ 已完成。
 * **Stage 5 (Routing Shift)**：改造 `HermesRouterAdapter`，正式将 `local_kernel` 列入路由优选列表（比如：`local_kernel` -> `external` -> `llm_fallback`）。⬜ 尚未开始。
 
 ## 6. Smoke Path 实现详情
 
 ### 触发方式
 
+### 触发方式
+
 ```bash
-# 完整 smoke 路径
+# 1. 完整 smoke 路径 (仅做诊断输出)
 python apps/api/scripts/run_local_hermes_smoke.py
 
 # 仅检查路径和 overlay 解析（不进入 smoke 执行）
@@ -78,6 +80,10 @@ python apps/api/scripts/run_local_hermes_smoke.py --dry-run
 
 # JSON 输出模式
 python apps/api/scripts/run_local_hermes_smoke.py --json
+
+# 2. Minimal Real Review (真实调用本地大模型)
+export DASHSCOPE_API_KEY="sk-..."
+python apps/api/scripts/run_local_hermes_minimal_review.py
 ```
 
 ### Launcher 支持的模式
@@ -85,7 +91,8 @@ python apps/api/scripts/run_local_hermes_smoke.py --json
 | 模式 | 方法 | 行为 |
 |---|---|---|
 | `dry_run` | `launcher.dry_run()` | 检查路径、解析 overlay、生成 LaunchPlan，不启动进程 |
-| `smoke` | `launcher.smoke(payload)` | 在 dry_run 基础上验证 kernel 标志文件（如 `run_agent.py`），回显 payload，返回受控 SmokeResult |
+| `smoke` | `launcher.smoke(payload)` | 在 dry_run 基础上验证 kernel 标志文件，回显 payload，返回受控 SmokeResult |
+| `invoke` | `launcher.invoke(payload)` | 真实唤起 `invoke_kernel.py` 的 subprocess 进行对话和 Overlay Prompt 挂载 |
 
 ### Smoke Contract
 

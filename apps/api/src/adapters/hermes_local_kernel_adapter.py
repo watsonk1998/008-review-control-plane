@@ -15,7 +15,9 @@ Current capability:
 """
 from __future__ import annotations
 
+import json
 import logging
+import os
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Any
@@ -101,17 +103,107 @@ class HermesLocalKernelAdapter(HermesReviewEngine):
             )
 
         logger.info(
-            "[hermes_local_kernel] Initiating review for %s via local kernel",
+            "[hermes_local_kernel] Initiating review for %s via local kernel invoke",
             brief.review_id,
         )
-        # TODO: Implement request serialization and exchange protocol utilizing self._launcher
-        return FactPacket(
-            review_id=brief.review_id,
-            engine="hermes",
-            overall_assessment="Method not implemented in skeleton adapter.",
-            degraded=True,
-            error="not_implemented",
-        )
+
+        try:
+            # Construct minimal input payload
+            # Reading Dashscope API key from environment for now
+            api_key = os.environ.get("DASHSCOPE_API_KEY", "")
+            if not api_key:
+                logger.warning("DASHSCOPE_API_KEY not found in environment")
+
+            # Extract context from brief or fact_packet if available
+            context_excerpt = document_preview
+            if not context_excerpt and fact_packet_008 and fact_packet_008.findings:
+                context_excerpt = f"We have {len(fact_packet_008.findings)} previous findings from 008 engine."
+
+            # Construct the query matching typical objective
+            prompt = (
+                f"Review ID: {brief.review_id}\n"
+                f"Document Type: {brief.review_object_type}\n\n"
+                f"Please review the following document excerpt and provide a JSON response:\n"
+                f"{context_excerpt[:2000] if context_excerpt else 'No excerpt available.'}"
+            )
+
+            payload = {
+                "review_id": brief.review_id,
+                "query": prompt,
+                "model": "qwen-max",
+                "provider": "openai",
+                "api_key": api_key,
+                "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+            }
+
+            # Invoke launcher subprocess
+            result = await self._launcher.invoke(payload)
+
+            if not result.get("success"):
+                return FactPacket(
+                    review_id=brief.review_id,
+                    engine="hermes",
+                    overall_assessment=f"Local kernel execution failed: {result.get('error')}",
+                    degraded=True,
+                    error="local_kernel_error",
+                    metadata=result,
+                )
+
+            response_json_str = result.get("response", "")
+            
+            # Try to parse the LLM output as JSON
+            parsed_result = {}
+            if response_json_str:
+                # Strip markdown code blocks if the LLM wrapped it
+                clean_json = response_json_str
+                if clean_json.startswith("```json"):
+                    clean_json = clean_json[7:]
+                if clean_json.startswith("```"):
+                    clean_json = clean_json[3:]
+                clean_json = clean_json.strip()
+                if clean_json.endswith("```"):
+                    clean_json = clean_json[:-3].strip()
+
+                try:
+                    parsed_result = json.loads(clean_json)
+                except json.JSONDecodeError as e:
+                    logger.warning("Failed to parse LLM response as JSON: %s. Response: %s", e, response_json_str[:200])
+
+            # Convert to FactPacket
+            assessment = parsed_result.get("overall_assessment", "")
+            if not assessment:
+                assessment = "Review completed via minimal local kernel path (non-JSON response)."
+                if response_json_str:
+                    assessment += f"\nRaw response: {response_json_str[:500]}..."
+
+            return FactPacket(
+                review_id=brief.review_id,
+                engine="hermes",
+                summary_metrics=ReviewPacketMetrics(
+                    total_findings=len(parsed_result.get("findings", [])),
+                ),
+                overall_assessment=assessment,
+                degraded=False,
+                error=None,
+                metadata={
+                    "source": "local_kernel_invoke",
+                    "api_calls": result.get("api_calls"),
+                    "elapsed_seconds": result.get("elapsed_seconds"),
+                    "overlay_prompt_loaded": result.get("overlay_prompt_loaded"),
+                    "parsed_top_risks": parsed_result.get("top_risks", []),
+                    "parsed_grade": parsed_result.get("grade", ""),
+                },
+            )
+
+        except Exception as e:
+            logger.exception("Unexpected error during local kernel review")
+            return FactPacket(
+                review_id=brief.review_id,
+                engine="hermes",
+                overall_assessment=f"Unexpected error: {e}",
+                degraded=True,
+                error="unexpected_adapter_error",
+            )
 
     # ── Smoke-specific interface ────────────────────────────────────
 

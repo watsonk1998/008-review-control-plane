@@ -15,7 +15,10 @@ Modes:
 """
 from __future__ import annotations
 
+import asyncio
+import json
 import logging
+import sys
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
@@ -172,13 +175,116 @@ class HermesKernelLauncher:
         logger.info("[hermes_launcher] start() called (skeleton implementation).")
         pass
 
-    async def invoke(self, payload: dict[str, Any]) -> dict[str, Any]:
+    async def invoke(self, payload: dict[str, Any], timeout_seconds: int = 120) -> dict[str, Any]:
         """
-        Send a payload to the kernel and await the response.
-        TODO: Implement communication (e.g. process pipes or a local domain socket/port).
+        Send a payload to the kernel via the invoke_kernel.py shim.
         """
-        logger.warning("[hermes_launcher] invoke() is a skeleton placeholder.")
-        return {}
+        plan = self.inspect()
+        if not plan.viable:
+            return {
+                "success": False,
+                "review_id": payload.get("review_id", ""),
+                "source": "local_kernel_launcher",
+                "response": "",
+                "error": f"Kernel not viable: {'; '.join(plan.errors)}",
+            }
+            
+        if self.overlays_path is None:
+            return {
+                "success": False,
+                "review_id": payload.get("review_id", ""),
+                "source": "local_kernel_launcher",
+                "response": "",
+                "error": "No overlays_path configured",
+            }
+
+        shim_path = self.overlays_path / "scripts" / "invoke_kernel.py"
+        if not shim_path.is_file():
+            return {
+                "success": False,
+                "review_id": payload.get("review_id", ""),
+                "source": "local_kernel_launcher",
+                "response": "",
+                "error": f"Invocation shim not found: {shim_path}",
+            }
+
+        cmd = [
+            sys.executable,
+            str(shim_path),
+            "--kernel-root", str(self.kernel_path),
+            "--overlay-root", str(self.overlays_path),
+            "--timeout-hint", str(timeout_seconds),
+        ]
+
+        try:
+            logger.info("[hermes_launcher] Invoking local kernel subprocess: %s", " ".join(cmd))
+            
+            proc = await asyncio.create_subprocess_exec(
+                *cmd,
+                stdin=asyncio.subprocess.PIPE,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+            )
+
+            payload_bytes = json.dumps(payload).encode("utf-8")
+            
+            try:
+                stdout_bytes, stderr_bytes = await asyncio.wait_for(
+                    proc.communicate(input=payload_bytes),
+                    timeout=timeout_seconds,
+                )
+            except asyncio.TimeoutError:
+                proc.kill()
+                await proc.wait()
+                return {
+                    "success": False,
+                    "review_id": payload.get("review_id", ""),
+                    "source": "local_kernel_launcher",
+                    "response": "",
+                    "error": f"Subprocess timed out after {timeout_seconds}s",
+                }
+
+            stdout_str = stdout_bytes.decode("utf-8")
+            stderr_str = stderr_bytes.decode("utf-8")
+            
+            if stderr_str:
+                logger.debug("[hermes_launcher] Kernel stderr: %s", stderr_str)
+
+            # Parse delimited JSON output from shim
+            marker = "<<<HERMES_KERNEL_RESULT>>>"
+            parts = stdout_str.split(marker)
+            
+            if len(parts) >= 3:
+                json_str = parts[1].strip()
+                try:
+                    result = json.loads(json_str)
+                    return result
+                except json.JSONDecodeError as e:
+                    return {
+                        "success": False,
+                        "review_id": payload.get("review_id", ""),
+                        "source": "local_kernel_launcher",
+                        "response": "",
+                        "error": f"Failed to parse structured JSON from subprocess: {e}\nRaw output: {json_str[:500]}...",
+                    }
+            else:
+                return {
+                    "success": False,
+                    "review_id": payload.get("review_id", ""),
+                    "source": "local_kernel_launcher",
+                    "response": "",
+                    "error": f"No <<<HERMES_KERNEL_RESULT>>> markers found in output.\nStdout: {stdout_str}\nStderr: {stderr_str}",
+                }
+
+        except Exception as e:
+            logger.exception("[hermes_launcher] Subprocess execution failed")
+            return {
+                "success": False,
+                "review_id": payload.get("review_id", ""),
+                "source": "local_kernel_launcher",
+                "response": "",
+                "error": f"Subprocess execution failed: {e}",
+            }
 
     async def stop(self) -> None:
         """
