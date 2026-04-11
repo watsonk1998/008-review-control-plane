@@ -2,7 +2,7 @@
 
 ## Upstream Source of Truth
 
-- Upstream repository: `https://github.com/NousResearch/hermes-agent.git`
+- Upstream repository: `https://github.com/NousResearch/hermes-agent`
 - Tracking branch: `main`
 - Current pinned commit: `af9caec44fdab7a1b883dede16fe1ce8c2d60fb9`
 - Integration mode in this checkout: `submodule`

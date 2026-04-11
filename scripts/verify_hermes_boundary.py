@@ -10,6 +10,7 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[1]
 EXPECTED_SUBMODULE_PATH = "external/hermes-agent"
 EXPECTED_SUBMODULE_URL = "https://github.com/NousResearch/hermes-agent"
+EXPECTED_BRANCH = "main"
 COMMIT_RE = re.compile(r"^[0-9a-f]{40}$")
 
 REQUIRED_PATHS = [
@@ -96,6 +97,10 @@ def verify_gitmodules(errors: list[str]) -> None:
         errors.append(
             f".gitmodules URL mismatch for {EXPECTED_SUBMODULE_PATH}: expected {EXPECTED_SUBMODULE_URL}, got {matched.get('url')!r}"
         )
+    if matched.get("branch") != EXPECTED_BRANCH:
+        errors.append(
+            f".gitmodules branch mismatch for {EXPECTED_SUBMODULE_PATH}: expected {EXPECTED_BRANCH}, got {matched.get('branch')!r}"
+        )
 
 
 def verify_submodule_semantics(errors: list[str]) -> None:
@@ -132,11 +137,27 @@ def verify_config(errors: list[str]) -> None:
 
     mode_match = re.search(r'^\s*integration_mode:\s*"?(?P<mode>[A-Za-z0-9_\-]+)"?\s*$', raw, flags=re.M)
     pin_match = re.search(r'^\s*pinned_commit:\s*"?(?P<pin>[0-9a-f]{40})"?\s*$', raw, flags=re.M)
+    repo_match = re.search(r'^\s*repo:\s*"?(?P<repo>https://github\.com/NousResearch/hermes-agent)"?\s*$', raw, flags=re.M)
+    path_match = re.search(r'^\s*external_kernel_path:\s*"?(?P<path>external/hermes-agent)"?\s*$', raw, flags=re.M)
+    submodule_path_match = re.search(r'^\s*submodule_path:\s*"?(?P<path>external/hermes-agent)"?\s*$', raw, flags=re.M)
+    submodule_required_match = re.search(r'^\s*submodule_required:\s*(?P<value>true|false)\s*$', raw, flags=re.M)
+    enforce_boundary_match = re.search(r'^\s*enforce_submodule_boundary:\s*(?P<value>true|false)\s*$', raw, flags=re.M)
 
     if mode_match is None:
         errors.append("config/hermes_upstream.yaml missing integration_mode")
     elif mode_match.group("mode") != "submodule":
         errors.append(f'config/hermes_upstream.yaml integration_mode must be "submodule", got "{mode_match.group("mode")}"')
+
+    if repo_match is None:
+        errors.append(f"config/hermes_upstream.yaml repo must match {EXPECTED_SUBMODULE_URL}")
+    if path_match is None:
+        errors.append(f"config/hermes_upstream.yaml external_kernel_path must match {EXPECTED_SUBMODULE_PATH}")
+    if submodule_path_match is None:
+        errors.append(f"config/hermes_upstream.yaml submodule_path must match {EXPECTED_SUBMODULE_PATH}")
+    if submodule_required_match is None or submodule_required_match.group('value') != "true":
+        errors.append("config/hermes_upstream.yaml submodule_required must be true")
+    if enforce_boundary_match is None or enforce_boundary_match.group('value') != "true":
+        errors.append("config/hermes_upstream.yaml enforce_submodule_boundary must be true")
 
     if pin_match is None:
         errors.append("config/hermes_upstream.yaml missing valid pinned_commit")
@@ -157,6 +178,29 @@ def verify_config(errors: list[str]) -> None:
         errors.append(
             f"config/hermes_upstream.yaml pinned_commit {pin} does not match submodule HEAD {actual_head}"
         )
+
+
+def verify_readme(errors: list[str]) -> None:
+    readme_path = REPO_ROOT / "external/README.md"
+    text = readme_path.read_text(encoding="utf-8")
+
+    forbidden_terms = [
+        "planned_submodule",
+        "Current mode in this checkout: planned_submodule",
+    ]
+    for term in forbidden_terms:
+        if term in text:
+            errors.append(f"external/README.md still contains deprecated planned-state wording: {term}")
+
+    required_terms = [
+        "Current mode in this checkout: **git submodule**",
+        EXPECTED_SUBMODULE_URL,
+        "Current pin: `af9caec44fdab7a1b883dede16fe1ce8c2d60fb9`",
+        "make verify-hermes-boundary",
+    ]
+    for term in required_terms:
+        if term not in text:
+            errors.append(f"external/README.md missing required current-state text: {term}")
 
 
 def scan_python_files(errors: list[str]) -> None:
@@ -188,6 +232,7 @@ def main() -> int:
     verify_gitmodules(errors)
     verify_submodule_semantics(errors)
     verify_config(errors)
+    verify_readme(errors)
     scan_python_files(errors)
 
     if errors:

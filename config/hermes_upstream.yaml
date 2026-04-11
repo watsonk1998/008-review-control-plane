@@ -1,5 +1,5 @@
 upstream:
-  repo: "https://github.com/NousResearch/hermes-agent.git"
+  repo: "https://github.com/NousResearch/hermes-agent"
   tracking_branch: "main"
   pinned_commit: "af9caec44fdab7a1b883dede16fe1ce8c2d60fb9"
 
@@ -7,6 +7,9 @@ integration_mode: "submodule"
 
 boundary:
   external_kernel_path: "external/hermes-agent"
+  submodule_path: "external/hermes-agent"
+  submodule_required: true
+  enforce_submodule_boundary: true
   patch_directory: "patches/hermes-agent"
 
 allowed_integration_surfaces:
