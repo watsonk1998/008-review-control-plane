@@ -1,8 +1,21 @@
 """
-Hermes Router Adapter.
+Hermes backend router for HermesController-first structured review.
 
-Dynamically routes Hermes review requests based on the health and availability
-of the external Hermes endpoint vs the local LLM fallback.
+Status:
+- official backend router
+
+Freeze boundary:
+- backend routing only
+- do not add controller semantics or final-output ownership here
+
+Do not extend:
+- no template-selection policy
+- no runtime orchestration logic
+- no second result protocol
+
+Canonical path:
+- HermesController owns orchestration
+- HermesRouterAdapter chooses between external Hermes and local fallback backends
 """
 from __future__ import annotations
 

@@ -1,11 +1,23 @@
 """
-Hermes LLM Adapter: frozen fallback/local shim for Hermes review routing.
+Hermes LLM fallback/local shim for Hermes review routing.
+
+Status:
+- fallback
 
 Freeze boundary:
 - fallback/local shim only
 - not the external Hermes canonical path
 - do not expand with new controller semantics
 
+Do not extend:
+- no template-selection logic
+- no final-output ownership
+- no claims of being the canonical external Hermes backend
+
+Canonical path:
+- HermesRouterAdapter chooses a Hermes backend
+- HermesReviewEngine defines the backend contract
+- this adapter is only the local/fallback implementation
 
 Architecture note:
 - This is NOT the real external Hermes integration.

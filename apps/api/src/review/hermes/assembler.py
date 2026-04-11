@@ -8,6 +8,12 @@ from src.review.final_report_merger import FinalReportMerger
 
 
 class HermesReviewAssembler:
+    """Official final output entrypoint for HermesController-first structured review.
+
+    The assembler owns the external final result protocol exposed by controller/runtime.
+    FinalReportMerger is only an internal helper used here for packet fusion.
+    """
+
     def __init__(self):
         self.merger = FinalReportMerger()
 

@@ -1,9 +1,21 @@
 """
-Hermes Review Engine Abstract Interface.
+Hermes backend interface for HermesController-first structured review.
 
-Defines the boundary contract for Hermes second-path review, allowing the
-orchestrator to seamlessly switch between local LLM-based approximation
-and the true external Hermes agent.
+Status:
+- official backend boundary
+
+Freeze boundary:
+- backend interface only
+- do not add controller semantics or final-output ownership here
+
+Do not extend:
+- no template-selection policy
+- no runtime orchestration semantics
+- no second result protocol
+
+Canonical path:
+- HermesController selects templates and orchestrates work
+- HermesReviewEngine only defines the backend review contract used by router/adapter implementations
 """
 
 from __future__ import annotations

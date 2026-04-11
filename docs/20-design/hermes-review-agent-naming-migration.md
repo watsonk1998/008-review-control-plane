@@ -16,4 +16,4 @@ PR1 records the migration map without forcing import-path churn; PR2/PR3 apply t
 
 - `contracts.py`, `task_compiler.py`, `fact_packet_adapter.py`, `hermes_llm_adapter.py`, and the legacy serializer path are freeze-boundary files.
 - Template selection now uses `structured_review_primary_worker` as the canonical primary worker ID, with one-PR internal alias support for `structure_completeness_reviewer`.
-- `final_report_merger.py` is the canonical name for final merged report composition; it is not a runtime router or an 008 internal schema owner.
+- `final_report_merger.py` is an assembler-internal helper name for packet fusion; `HermesReviewAssembler` is the only official final output entrypoint.

@@ -1,7 +1,21 @@
-"""Final report merger for HermesController-first structured review.
+"""Assembler-internal final report merger for HermesController-first structured review.
 
-This module owns merged/final-report composition only.
-It does not define the 008 internal result schema and is not a runtime router.
+Status:
+- internal helper / legacy-helper semantics
+
+Freeze boundary:
+- merger logic only
+- not a runtime entrypoint
+- not an independently owned final-output path
+
+Do not extend:
+- no new direct call sites outside HermesReviewAssembler
+- no route/runtime/controller protocol ownership
+- no 008 internal schema ownership
+
+Canonical path:
+- HermesReviewAssembler is the only official final output entrypoint
+- FinalReportMerger exists only as an internal helper used by the assembler to fuse packets
 """
 
 from __future__ import annotations

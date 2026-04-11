@@ -1,15 +1,21 @@
 """
-008 Fact Packet Adapter: frozen 008-to-controller adapter.
+008-to-controller packet bridge for HermesController-first structured review.
+
+Status:
+- bridge / compat
 
 Freeze boundary:
 - adapter/bridge only
 - do not expand with new business fields except migration/removal work
 
+Do not extend:
+- no controller policy
+- no new external result protocol
+- no mutation of 008 review semantics
 
-Design intent:
-- Bridge between 008's native output format and the unified packet contract
-- Does NOT change 008's internal behaviour — only adapts the output
-- Preserves traceability to original issue IDs
+Canonical path:
+- adapts 008 native StructuredReviewResult into FactPacket for HermesController/HermesReviewAssembler
+- does NOT define 008 internal schemas or final output ownership
 """
 
 from __future__ import annotations

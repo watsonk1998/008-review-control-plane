@@ -1,8 +1,16 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 from src.review.contracts import FactPacket, FindingItem, ReviewBrief, ReviewPacketMetrics
 from src.review.fact_packet_adapter import FactPacketAdapter
 from src.review.final_report_merger import FinalReportMerger
+
+"""Tests for the assembler-internal final report merger helper.
+
+These tests protect packet-fusion behavior only. They do not elevate FinalReportMerger
+to an independent runtime entrypoint.
+"""
 
 
 def _mock_008_result() -> dict:
@@ -107,3 +115,15 @@ def test_final_report_merger_keeps_hermes_only_findings_as_supplemental():
     assert len(report.key_findings) == 2
     assert len(report.supplemental_findings) == 1
     assert report.supplemental_findings[0].id == 'H-001'
+
+
+def test_runtime_live_path_does_not_directly_depend_on_final_report_merger():
+    root = Path(__file__).resolve().parents[1] / 'src'
+    for relpath in [
+        'orchestrator/deepresearch_runtime.py',
+        'review/hermes_controller.py',
+        'routes/tasks.py',
+    ]:
+        source = (root / relpath).read_text(encoding='utf-8')
+        assert 'FinalReportMerger' not in source
+        assert 'final_report_merger' not in source

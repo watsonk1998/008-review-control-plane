@@ -1,22 +1,63 @@
 from __future__ import annotations
 
-"""Structured review capability facade.
+"""Structured review module boundary for HermesController-first structured review.
 
-This facade exposes 008 structured-review capabilities to Hermes-side callers
-without leaking StructuredReviewExecutor internals into controller code.
+Status:
+- official module boundary
 
-Non-goals:
+Freeze boundary:
+- exposes 008 capabilities to Hermes-side callers
+- does not own controller orchestration or final-output assembly
+
+Do not extend:
 - no HermesController semantics
 - no template selection
 - no final report assembly
 - no supplemental review orchestration
 - no second contract layer
 - no duplicated 008 implementation
+
+Canonical path:
+- Hermes-side callers use this facade as the only supported boundary into 008 structured-review capabilities
+- executor internals stay behind this facade and are normalized before controller/module consumption
 """
 
 from typing import Any
 
+from pydantic import BaseModel, Field
+
 from src.review.profile_resolver import resolve_review_profile
+
+
+class ParseVisibilityOutput(BaseModel):
+    module_id: str = 'parse_visibility'
+    visibility: dict[str, Any]
+    parse_result: dict[str, Any]
+    manual_review_needed: bool
+
+
+class FactExtractOutput(BaseModel):
+    module_id: str = 'fact_extract'
+    facts: dict[str, Any]
+
+
+class ProfileAndPacksOutput(BaseModel):
+    module_id: str = 'profile_and_packs'
+    resolved_profile: dict[str, Any]
+    packs: list[dict[str, Any]] = Field(default_factory=list)
+    executable_pack_ids: list[str] = Field(default_factory=list)
+
+
+class RuleAndEvidenceOutput(BaseModel):
+    module_id: str = 'rule_and_evidence'
+    rule_hits: list[dict[str, Any]] = Field(default_factory=list)
+    candidates: list[dict[str, Any]] = Field(default_factory=list)
+
+
+class PrimaryReviewOutput(BaseModel):
+    module_id: str = 'primary_review'
+    normalized_result: dict[str, Any]
+    packet: dict[str, Any]
 
 
 class StructuredReviewCapabilityFacade:
@@ -28,12 +69,12 @@ class StructuredReviewCapabilityFacade:
         if parse_result is None:
             parse_result = self.executor.document_loader.parse_document(context['source_document_path'])
             workspace['parse_result'] = parse_result
-        return {
-            'module_id': 'parse_visibility',
-            'parse_result': parse_result.model_dump(mode='json'),
-            'visibility': parse_result.visibility.model_dump(mode='json'),
-            'manual_review_needed': parse_result.visibility.manualReviewNeeded,
-        }
+        output = ParseVisibilityOutput(
+            parse_result=parse_result.model_dump(mode='json'),
+            visibility=parse_result.visibility.model_dump(mode='json'),
+            manual_review_needed=parse_result.visibility.manualReviewNeeded,
+        )
+        return output.model_dump(mode='json')
 
     def fact_extract(self, *, workspace: dict[str, Any], context: dict[str, Any]) -> dict[str, Any]:
         parse_result = workspace.get('parse_result')
@@ -44,10 +85,7 @@ class StructuredReviewCapabilityFacade:
         if facts is None:
             facts = self.executor._extract_facts(parse_result)
             workspace['facts'] = facts
-        return {
-            'module_id': 'fact_extract',
-            'facts': facts.model_dump(mode='json'),
-        }
+        return FactExtractOutput(facts=facts.model_dump(mode='json')).model_dump(mode='json')
 
     def profile_and_packs(self, *, workspace: dict[str, Any], context: dict[str, Any]) -> dict[str, Any]:
         facts = workspace.get('facts')
@@ -77,12 +115,11 @@ class StructuredReviewCapabilityFacade:
         workspace['resolved_profile'] = resolved_profile
         workspace['packs'] = packs
         workspace['executable_packs'] = executable_packs
-        return {
-            'module_id': 'profile_and_packs',
-            'resolved_profile': resolved_profile.model_dump(mode='json'),
-            'packs': [pack.model_dump(mode='json') for pack in packs],
-            'executable_pack_ids': [pack.id for pack in executable_packs],
-        }
+        return ProfileAndPacksOutput(
+            resolved_profile=resolved_profile.model_dump(mode='json'),
+            packs=[pack.model_dump(mode='json') for pack in packs],
+            executable_pack_ids=[pack.id for pack in executable_packs],
+        ).model_dump(mode='json')
 
     def rule_and_evidence(self, *, workspace: dict[str, Any], context: dict[str, Any]) -> dict[str, Any]:
         parse_result = workspace.get('parse_result')
@@ -112,11 +149,10 @@ class StructuredReviewCapabilityFacade:
         workspace['facts'] = facts
         workspace['rule_hits'] = rule_hits
         workspace['candidates'] = candidates
-        return {
-            'module_id': 'rule_and_evidence',
-            'rule_hits': [hit.model_dump(mode='json') for hit in rule_hits],
-            'candidates': [candidate.model_dump(mode='json') for candidate in candidates],
-        }
+        return RuleAndEvidenceOutput(
+            rule_hits=[hit.model_dump(mode='json') for hit in rule_hits],
+            candidates=[candidate.model_dump(mode='json') for candidate in candidates],
+        ).model_dump(mode='json')
 
     async def primary_review(self, *, workspace: dict[str, Any], context: dict[str, Any]) -> dict[str, Any]:
         result = await self.executor.run(
@@ -135,7 +171,8 @@ class StructuredReviewCapabilityFacade:
             write_text_artifact=context.get('write_text_artifact'),
             write_binary_artifact=context.get('write_binary_artifact'),
         )
-        workspace['structured_review_result'] = result
+        normalized_result = self._normalize_primary_review_result(result)
+        workspace['structured_review_result'] = normalized_result
         packet = context['fact_packet_adapter'].adapt(context['task_id'], result)
         packet.metadata = {
             **packet.metadata,
@@ -143,8 +180,31 @@ class StructuredReviewCapabilityFacade:
             'worker_id': 'structured_review_executor',
         }
         workspace['primary_packet'] = packet
-        return {
-            'module_id': 'primary_review',
-            'result': result,
-            'packet': packet.model_dump(mode='json'),
-        }
+        return PrimaryReviewOutput(
+            normalized_result=normalized_result,
+            packet=packet.model_dump(mode='json'),
+        ).model_dump(mode='json')
+
+    def _normalize_primary_review_result(self, result: dict[str, Any]) -> dict[str, Any]:
+        """Return the stable facade-owned normalized view of the 008 primary result.
+
+        This preserves the current result shape needed by HermesReviewAssembler while
+        making the facade the single place that decides which keys are supported across
+        the controller boundary.
+        """
+
+        normalized = dict(result)
+        normalized.setdefault('summary', {})
+        normalized.setdefault('visibility', {})
+        normalized.setdefault('issues', [])
+        normalized.setdefault('artifactIndex', [])
+        normalized.setdefault('reportMarkdown', '')
+        normalized.setdefault('reportHtml', '')
+        normalized.setdefault('reportPrintCss', '')
+        normalized.setdefault('resolvedProfile', {})
+        normalized.setdefault('unresolvedFacts', [])
+        normalized.setdefault('matrices', {})
+        normalized.setdefault('capabilitiesUsed', [])
+        normalized.setdefault('artifacts', [])
+        normalized.setdefault('finalAnswer', normalized.get('reportMarkdown') or '')
+        return normalized

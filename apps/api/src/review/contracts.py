@@ -1,16 +1,23 @@
 """
-Frozen bridge/compat review contracts for HermesController-first structured review.
+Controller bridge contracts for HermesController-first structured review.
+
+Status:
+- bridge / compat
 
 Freeze boundary:
 - bridge/compat only; do not expand with new business capabilities
 - not the canonical 008 internal schema
-- retained to support controller-bridge/final-report migration only
+- retained to support controller-bridge/final-output boundaries only
 
+Do not extend:
+- no second canonical schema layer
+- no executor-internal ownership
+- no controller orchestration semantics
 
-Design intent:
-- ReviewBrief: controller-bridge input contract
-- FactPacket: aligned packet contract across 008 primary + supplemental Hermes packets
-- FinalReportPacket: final merged report contract consumed by the controller assembler
+Canonical path:
+- ReviewBrief = controller-bridge input contract
+- FactPacket = aligned packet contract across 008 primary + Hermes supplemental packets
+- FinalReportPacket = final packet contract owned by HermesReviewAssembler as the external final-output path
 
 These contracts sit BETWEEN the task entry layer and engine implementations. They do NOT replace
 008's internal schemas (review/schema.py) and should not grow into a second canonical schema layer.

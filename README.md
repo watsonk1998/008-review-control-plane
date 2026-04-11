@@ -18,6 +18,36 @@ Legacy note: the former post-hoc dual-review path has been removed from the acti
 
 This repository does **not** position the current system as a fully automatic final review-signing engine.
 
+## Current Live Path / Frozen Layers / Internal-only Layers
+
+### Current live path
+
+The active structured review path is:
+
+`DeepResearchRuntime -> HermesController -> HermesReviewAssembler`
+
+Within that path:
+
+- `StructuredReviewExecutor` is the 008 capability foundation
+- `StructuredReviewCapabilityFacade` is the module boundary exposed to Hermes-side callers
+- `HermesReviewAssembler` is the only official final output entrypoint
+
+### Frozen layers
+
+The following categories are frozen and must not accumulate new business capability:
+
+- controller bridge contracts and packet bridges
+- fallback/local Hermes shims
+- legacy serializer compatibility and other compat-only layers
+
+When these files remain in the repository, they are retained for migration, compatibility, or boundary clarity — not as active expansion surfaces.
+
+### Legacy or internal-only layers
+
+- `FinalReportMerger` is an assembler-internal helper, not an independent runtime entrypoint
+- `reportMarkdown` remains an internal 008 result field; external final protocol uses `finalReportMarkdown / finalReportPacket`
+- historical compiled docs under `docs/90-archive/` are retained for reference, not as day-to-day source of truth
+
 ## Repository Guide
 
 ### Key areas

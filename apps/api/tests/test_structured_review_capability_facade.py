@@ -5,7 +5,14 @@ from pathlib import Path
 from src.review.fact_packet_adapter import FactPacketAdapter
 from src.review.hermes.module_registry import HermesModuleRegistry
 from src.review.pipeline import StructuredReviewExecutor
-from src.review.structured_review_capability_facade import StructuredReviewCapabilityFacade
+from src.review.structured_review_capability_facade import (
+    FactExtractOutput,
+    ParseVisibilityOutput,
+    PrimaryReviewOutput,
+    ProfileAndPacksOutput,
+    RuleAndEvidenceOutput,
+    StructuredReviewCapabilityFacade,
+)
 from src.services.document_loader import DocumentLoader
 
 
@@ -84,13 +91,14 @@ async def test_structured_review_capability_facade_primary_review_matches_execut
     )
     workspace: dict = {}
     primary = await facade.primary_review(workspace=workspace, context=context)
-    result = primary['result']
+    result = primary['normalized_result']
 
     for key in ['summary', 'visibility', 'issues', 'artifactIndex', 'reportMarkdown', 'reportHtml', 'reportPrintCss', 'resolvedProfile']:
         assert result[key] == direct[key]
     assert primary['module_id'] == 'primary_review'
     assert workspace['structured_review_result']['summary'] == direct['summary']
     assert primary['packet']['engine'] == '008'
+    assert PrimaryReviewOutput.model_validate(primary).normalized_result['summary'] == direct['summary']
 
 
 def test_structured_review_capability_facade_exposes_incremental_capabilities(tmp_path: Path):
@@ -105,10 +113,10 @@ def test_structured_review_capability_facade_exposes_incremental_capabilities(tm
     profile_result = facade.profile_and_packs(workspace=workspace, context=context)
     rules_result = facade.rule_and_evidence(workspace=workspace, context=context)
 
-    assert parse_result['module_id'] == 'parse_visibility'
-    assert facts_result['module_id'] == 'fact_extract'
-    assert profile_result['module_id'] == 'profile_and_packs'
-    assert rules_result['module_id'] == 'rule_and_evidence'
+    assert ParseVisibilityOutput.model_validate(parse_result).module_id == 'parse_visibility'
+    assert FactExtractOutput.model_validate(facts_result).module_id == 'fact_extract'
+    assert ProfileAndPacksOutput.model_validate(profile_result).module_id == 'profile_and_packs'
+    assert RuleAndEvidenceOutput.model_validate(rules_result).module_id == 'rule_and_evidence'
     assert workspace['parse_result'].visibility.manualReviewNeeded is True
     assert workspace['resolved_profile'].documentType == 'construction_org'
     assert isinstance(rules_result['candidates'], list)
@@ -160,3 +168,16 @@ def test_hermes_module_registry_source_does_not_grab_executor_internals():
         'executor.run(',
     ]:
         assert forbidden not in source
+
+
+def test_structured_review_capability_facade_source_declares_boundary_non_goals():
+    source = (Path(__file__).resolve().parents[1] / 'src' / 'review' / 'structured_review_capability_facade.py').read_text(encoding='utf-8')
+    for phrase in [
+        'no HermesController semantics',
+        'no template selection',
+        'no final report assembly',
+        'no supplemental review orchestration',
+        'no second contract layer',
+        'no duplicated 008 implementation',
+    ]:
+        assert phrase in source

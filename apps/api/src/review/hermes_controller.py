@@ -120,6 +120,7 @@ class HermesController:
             packet = FactPacket.model_validate(packet_payload)
             if is_primary_template_id(template.id) and packet.engine == '008':
                 primary_packet = packet
+                # Controller consumes the facade-owned normalized result contract only.
                 primary_result = workspace.get('structured_review_result')
             else:
                 packet.review_id = brief.review_id
