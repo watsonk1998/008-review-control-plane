@@ -203,6 +203,32 @@ def verify_readme(errors: list[str]) -> None:
             errors.append(f"external/README.md missing required current-state text: {term}")
 
 
+def verify_cross_file_consistency(errors: list[str]) -> None:
+    readme_path = REPO_ROOT / "external/README.md"
+    contract_path = REPO_ROOT / "docs/architecture/hermes-upstream-contract.md"
+    config_path = REPO_ROOT / "config/hermes_upstream.yaml"
+    
+    if not (readme_path.exists() and contract_path.exists() and config_path.exists()):
+        return # Missing files are caught by verify_required_paths
+
+    readme_text = readme_path.read_text(encoding="utf-8")
+    contract_text = contract_path.read_text(encoding="utf-8")
+    
+    # Very lightweight consistency mapping
+    if EXPECTED_SUBMODULE_URL not in contract_text:
+         errors.append("docs/architecture/hermes-upstream-contract.md missing correct upstream URL")
+         
+    if EXPECTED_BRANCH not in contract_text:
+         errors.append("docs/architecture/hermes-upstream-contract.md missing correct tracking branch")
+         
+    # Ensure pin in readme matches contract roughly (if a pin is explicitly mentioned)
+    match_readme = re.search(r'`([0-9a-f]{40})`', readme_text)
+    match_contract = re.search(r'`([0-9a-f]{40})`', contract_text)
+    
+    if match_readme and match_contract:
+        if match_readme.group(1) != match_contract.group(1):
+             errors.append("Mismatch in pinned commit hashes between docs/architecture/...contract.md and external/README.md")
+
 def scan_python_files(errors: list[str]) -> None:
     src_root = REPO_ROOT / "apps/api/src"
     if not src_root.exists():
@@ -233,6 +259,7 @@ def main() -> int:
     verify_submodule_semantics(errors)
     verify_config(errors)
     verify_readme(errors)
+    verify_cross_file_consistency(errors)
     scan_python_files(errors)
 
     if errors:

@@ -25,6 +25,9 @@ Within this repository boundary:
 
 This repository must not treat upstream Hermes internals as ordinary local business modules.
 
+**CRITICAL NOTE**: `external/hermes-agent/` currently serves as the **pinned upstream kernel source boundary**. The current runtime **is not** defaulted to directly leverage this local submodule kernel yet and heavily relies on adapter-driven / external HTTP endpoint integration for its main execution pathways.
+
+
 ## Kernel Safety Rules
 
 - `external/hermes-agent/` is external kernel territory and must remain **pristine by default**

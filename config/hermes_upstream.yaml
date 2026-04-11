@@ -32,5 +32,9 @@ forbidden_dependency_surfaces:
 
 versions:
   adapter_contract: "v1"
-  template_schema: "v1"
-  final_packet_schema: "v1"
+  template_schema_version: "v1"
+  final_packet_schema_version: "v1"
+
+expected_runtime:
+  runtime_kernel_mode: "local_kernel_available_not_enabled"
+
