@@ -51,6 +51,17 @@ next-env.d.ts
 
 # Codex / AI agent working dirs
 .codex/
+.agents/
+.claude/
+.kilocode/
+.kiro/
+.trae/
+.cursor/
+.cline/
+.windsurf/
+
+# Linters / Formatters
+.ruff_cache/
 
 # Security & Keys (Prevent accidental leaks)
 *.pem
