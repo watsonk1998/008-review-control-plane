@@ -4,6 +4,28 @@
 
 > 说明：本次按 2026-03 至 2026-04 的时间窗进行了核查。当前仓库可确认的主线变更集中在 `2026-04-02` 至 `2026-04-08`；若无对应 repo 事实，不为 3 月单独虚构条目。
 
+## 2026-04-12
+
+### Added
+
+- 新增 `docs/architecture/hermes-fragment-inventory.md`，系统盘点历史 Hermes-Agent 代码，确认当前系统处于未产生源码依赖污染的“干净壳层”状态。
+- 新增 `docs/architecture/hermes-local-kernel-integration.md`，确立 external local kernel 以 Subprocess / Sidecar + Launcher 方式注入的非侵入集成架构。
+- 新增 `HermesLocalKernelAdapter` 与 `HermesKernelLauncher` 的本地内核挂载骨架，基于 dry-run 机制支持了隔离环境内的诊断路线。
+- 新增 `overlays/hermes-agent/scripts/invoke_kernel.py` 作为 Local Kernel 真实执行时的独立子进程调用垫片（Shim），在物理进程层面与 008 主控面对接原生大模型会话请求。
+- 新增 `apps/api/scripts/run_local_hermes_minimal_review.py`，打通最小真实执行链路（Minimal Real Execution），作为一个只供显式触发的封闭验证入口，保证测试端到端安全且不干预默认运行主链。
+- 新增对于 `verify_hermes_boundary.py` 边界校验脚本的强化，增强对跨文本文件配置版本一致性、Overlay 资源挂载文件齐备与否、以及主链防泄漏隔离的验证。
+- 新增 `apps/api/tests/test_hermes_local_kernel_minimal_execution.py` 专门测试 Local Kernel 执行子进程调用的隔离容错与协议处理（覆盖超时捕获、异常退出）。
+
+### Changed
+
+- 增补 `config/hermes_upstream.yaml` 以更新 `expected_runtime` 状态、添加 `overlay` 映射路径和明确 `local_kernel` 执行权限设定声明。
+- 更新 `AGENTS.md` 核心声明，补全有关 Local Kernel 作为显式测试选项未进入 `main_dependencies.py` 生产执行主链路的“非默认可用”安全纪律说明。
+- 重写 `HermesKernelLauncher` 的 `invoke()` 机制并接入 `subprocess` 模块，使 008 主控面能够安全调度外部 Hermes 进程运行，屏蔽终端原生乱码噪音并只提取确定性 JSON 输出结果。
+- 在 `HermesLocalKernelAdapter` 的 `review` 接口内适配挂载管道流，完成从最小 payload 解析转换为 `FactPacket` 实体的降级/可用逻辑。
+- 通过 Launcher 把原先在 adapter 内零散维护的 Hermes System Prompt、执行参数拆解归纳至全新 `overlays/hermes-agent/` 文件夹并分层托管。
+- 全栈统一 Local Kernel 状态语义的表述同步：在代码 Docstring、边界脚本文案、配置标识与 AGENTS.md 中废弃 `smoke-only` 写法，正式声明为 `minimal real execution available`，仍坚守不耦合主链的 explicit-only 纪律。
+- 修复 `invoke_kernel.py` 错误兜底中可能引发 NameError 的 `provider` 未定义引用漏洞；加强 `.gitignore` 以拦截 `*local*.yaml` 等环境重写模板防泄漏。
+
 ## 2026-04-09
 
 ### Added
