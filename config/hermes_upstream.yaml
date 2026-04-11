@@ -1,0 +1,33 @@
+upstream:
+  repo: "https://github.com/NousResearch/hermes-agent.git"
+  tracking_branch: "main"
+  pinned_commit: "af9caec44fdab7a1b883dede16fe1ce8c2d60fb9"
+
+integration_mode: "planned_submodule"
+
+boundary:
+  external_kernel_path: "external/hermes-agent"
+  patch_directory: "patches/hermes-agent"
+
+allowed_integration_surfaces:
+  - "HermesReviewEngine contract"
+  - "HermesExternalAdapter"
+  - "HermesLLMAdapter"
+  - "HermesRouterAdapter"
+  - "Hermes review request/response schema"
+  - "template payload contract"
+  - "candidate template metadata contract"
+
+forbidden_dependency_surfaces:
+  - "run_agent.py internal loop details"
+  - "model_tools.py internal discovery/execution details"
+  - "agent/* internal implementation"
+  - "gateway/* internal implementation"
+  - "upstream tools/* internal implementation"
+  - "sys.path injection into external/hermes-agent"
+  - "runtime cwd coupling to external/hermes-agent internal files"
+
+versions:
+  adapter_contract: "v1"
+  template_schema: "v1"
+  final_packet_schema: "v1"
