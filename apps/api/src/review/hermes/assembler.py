@@ -3,8 +3,14 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Any
 
-from src.review.contracts import FactPacket, FinalReportPacket, ReviewPacketMetrics
+from src.review.contracts import FactPacket, FinalReportPacket, FindingItem, ReviewPacketMetrics, ReviewBrief
 from src.review.final_report_merger import FinalReportMerger
+
+_GRADE_LABELS = {
+    'conditional_pass': '有条件通过',
+    'needs_revision': '需要修改',
+    'fail': '不通过',
+}
 
 
 class HermesReviewAssembler:
@@ -143,21 +149,138 @@ class HermesReviewAssembler:
     def _build_final_decision_packet(
         self,
         *,
-        brief,
+        brief: ReviewBrief,
         support_packet_008: FactPacket,
         hermes_review_packet: FactPacket | None,
     ) -> FinalReportPacket:
-        packet = self.merger.fuse(
+        material = self.merger.prepare_decision_material(
             brief=brief,
             packet_008=support_packet_008,
             packet_hermes=hermes_review_packet,
         )
+
+        all_findings = material['all_findings']
+        key_findings = material['key_findings']
+        supplemental_findings = material['supplemental_findings']
+
+        # Hermes Assembler decides the final grade and risks
+        top_risks = [item for item in all_findings if item.severity == 'high']
+        final_grade = self._decide_grade(all_findings)
+        executive_summary = self._decide_executive_summary(
+            metrics=support_packet_008.summary_metrics,
+            hermes_packet=hermes_review_packet,
+            supplemental_count=len(supplemental_findings),
+            grade=final_grade
+        )
+
+        report_markdown = self._render_markdown(
+            doc_label=material['doc_label'],
+            summary=executive_summary,
+            top_risks=top_risks,
+            key_findings=key_findings,
+            supplemental=supplemental_findings,
+            engines=material['engines_used'],
+            degradation=material['degradation_info'],
+        )
+
+        packet = FinalReportPacket(
+            review_id=brief.review_id,
+            final_grade=final_grade,
+            executive_summary=executive_summary,
+            top_risks=top_risks,
+            key_findings=key_findings,
+            supplemental_findings=supplemental_findings,
+            all_findings=all_findings,
+            traceability=material['traceability'],
+            report_markdown=report_markdown,
+            engines_used=material['engines_used'],
+            degradation_info=material['degradation_info'],
+            produced_at=datetime.now(timezone.utc),
+            source_packets=material['source_packets'],
+        )
+
         self._annotate_final_decision_findings(
             packet,
             support_packet_008=support_packet_008,
             hermes_review_packet=hermes_review_packet,
         )
         return packet
+
+    def _decide_grade(self, all_findings: list[FindingItem]) -> str:
+        high = sum(1 for finding in all_findings if finding.severity == 'high')
+        medium = sum(1 for finding in all_findings if finding.severity == 'medium')
+        if high >= 3:
+            return 'fail'
+        if high >= 1 or medium >= 5:
+            return 'needs_revision'
+        return 'conditional_pass'
+
+    def _decide_executive_summary(
+        self,
+        metrics: ReviewPacketMetrics,
+        hermes_packet: FactPacket | None,
+        supplemental_count: int,
+        grade: str,
+    ) -> str:
+        lines = [
+            f"本次审查由 Hermes 裁决，综合评级：**{_GRADE_LABELS.get(grade, grade)}**。",
+            f"底层结构化引擎提供支持，发现 {metrics.total_findings} 个基础事实（高 {metrics.high_severity}，中 {metrics.medium_severity}，低 {metrics.low_severity}）。",
+        ]
+        if hermes_packet and not hermes_packet.degraded:
+            lines.append(f"Hermes 主控层补充裁定 {supplemental_count} 个独立问题/风险。")
+        elif hermes_packet and hermes_packet.degraded:
+            lines.append(f"Hermes 主控层本次处于降级模式（{hermes_packet.error}），裁决基于降级保障。")
+        return ' '.join(lines)
+
+    def _render_markdown(
+        self,
+        doc_label: str,
+        summary: str,
+        top_risks: list[FindingItem],
+        key_findings: list[FindingItem],
+        supplemental: list[FindingItem],
+        engines: list[str],
+        degradation: dict[str, Any],
+    ) -> str:
+        lines: list[str] = []
+        lines.append(f'# {doc_label} — 综合审查报告\n')
+        lines.append(f'## Hermes 最终裁决\n\n{summary}\n')
+
+        if top_risks:
+            lines.append('## 重点风险\n')
+            for finding in top_risks:
+                lines.append(f'- **[{finding.severity.upper()}]** {finding.title}')
+                if finding.summary:
+                    lines.append(f'  {finding.summary[:200]}')
+            lines.append('')
+
+        if key_findings:
+            lines.append('## 支撑问题 (底层提取)\n')
+            lines.append('| 编号 | 严重度 | 来源 | 问题 | 建议 |')
+            lines.append('|------|--------|------|------|------|')
+            for finding in key_findings:
+                source = finding.source_engine or '008'
+                corroborated = ' ✓' if (finding.raw_data or {}).get('corroborated_by_hermes') else ''
+                suggestion = (finding.suggestion[:80] + '…') if finding.suggestion and len(finding.suggestion) > 80 else (finding.suggestion or '')
+                lines.append(f'| {finding.id} | {finding.severity} | {source}{corroborated} | {finding.title} | {suggestion} |')
+            lines.append('')
+
+        if supplemental:
+            lines.append('## 主审独立问题\n')
+            for finding in supplemental:
+                lines.append(f'- **[{finding.id}]** [{finding.severity}] {finding.title}')
+                if finding.summary:
+                    lines.append(f'  {finding.summary[:200]}')
+                if finding.suggestion:
+                    lines.append(f'  建议: {finding.suggestion[:200]}')
+            lines.append('')
+
+        lines.append('## 审查引擎信息\n')
+        lines.append(f"- 使用引擎: {', '.join(engines)}")
+        for engine, info in degradation.items():
+            lines.append(f"- {engine} 降级: {info.get('reason', 'unknown')}")
+        lines.append('')
+        return '\n'.join(lines)
 
     def _annotate_final_decision_findings(
         self,

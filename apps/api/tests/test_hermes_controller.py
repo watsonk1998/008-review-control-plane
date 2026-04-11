@@ -190,3 +190,77 @@ async def test_hermes_controller_selects_agents_generates_candidate_and_reports(
     assert '停送电执行链路存在遗漏风险' in result['finalReportMarkdown']
     runtime_template = tmp_path / 'runtime_templates' / task.id / f"{result['hermesController']['candidateTemplateId']}.json"
     assert runtime_template.exists()
+
+async def test_hermes_controller_handles_degraded_path(tmp_path: Path):
+    sample = tmp_path / 'sample.md'
+    sample.write_text('# 停电施工方案', encoding='utf-8')
+    task = TaskRecord(
+        id='task-hermes-degraded',
+        taskType='structured_review',
+        capabilityMode='auto',
+        query='审查',
+        datasetId=None,
+        collectionId=None,
+        fixtureId=None,
+        sourceDocumentRef=SourceDocumentRef(
+            refId='upload-1',
+            sourceType='upload',
+            fileName=sample.name,
+            fileType='md',
+            storagePath=str(sample),
+            displayName=sample.name,
+        ),
+        useWeb=False,
+        debug=False,
+        sourceUrls=[],
+        documentType='distribution_network_special_scheme',
+        disciplineTags=[],
+        strictMode=True,
+        policyPackIds=[],
+        status='created',
+        plan=None,
+        result=None,
+        error=None,
+        createdAt=datetime.now(timezone.utc),
+        updatedAt=datetime.now(timezone.utc),
+    )
+    llm = DummyLLM()
+    # Force the engine to raise an exception
+    class FailingEngine(FakeHermesEngine):
+        async def review(self, *args, **kwargs):
+            raise RuntimeError('Forced failure')
+            
+    class FailingTemplateRegistry:
+        def select_templates(self, *args, **kwargs):
+            raise RuntimeError('Forced failure in selection')
+            
+    controller = HermesController(
+        task_compiler=TaskCompiler(),
+        fact_packet_adapter=FactPacketAdapter(),
+        capability_facade=StructuredReviewCapabilityFacade(
+            structured_review_executor=StructuredReviewExecutor(document_loader=DocumentLoader(), llm_gateway=llm, fast_adapter=None),
+        ),
+        hermes_engine=FailingEngine(),
+        llm_gateway=llm,
+        seed_template_dir=Path('/Users/lucas/repos/review/008-review-control-plane/apps/api/src/review/hermes/templates'),
+        runtime_template_dir=tmp_path / 'runtime_templates',
+    )
+    controller.template_registry = FailingTemplateRegistry() # to force an exception early
+    
+    result = await controller.run(
+        task=task,
+        plan={},
+        source_document_ref=task.sourceDocumentRef,
+        source_document_path=str(sample),
+        fixture=None,
+        emit=lambda *args, **kwargs: None,
+        write_json_artifact=_write_json_factory(tmp_path / 'artifacts'),
+        write_text_artifact=_write_text_factory(tmp_path / 'artifacts'),
+        write_binary_artifact=_write_binary_factory(tmp_path / 'artifacts'),
+    )
+
+    assert result['hermesController']['enabled'] is False
+    assert result['hermesController']['degraded'] is True
+    assert 'finalReportMarkdown' in result
+    assert result['finalReportPacket']['metadata']['decision_owner'] == 'hermes'
+    assert result['finalReportPacket']['metadata']['support_owner'] == 'structured_review_capability_facade'

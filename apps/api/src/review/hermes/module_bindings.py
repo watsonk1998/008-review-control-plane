@@ -28,7 +28,7 @@ REVIEW_MODULE_BINDINGS: dict[str, ReviewModuleBinding] = {
     'structure_completeness': ReviewModuleBinding(
         module_name='structure_completeness',
         title='结构完整性',
-        hermes_templates=['structured_review_primary_worker'],
+        hermes_templates=['structure_completeness_reviewer'],
         support_capabilities=['primary_support_review', 'profile_and_packs'],
         decision_policy='prefer_conservative_structure_gap_expression',
         result_bucket='structure_completeness',

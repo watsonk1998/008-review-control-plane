@@ -226,40 +226,18 @@ class DeepResearchRuntime:
         write_json_fn = lambda name, payload: self._write_task_artifact(task.id, name, payload)
 
         plan = self._with_default_hermes_input(task=task, plan=plan, source_document_path=source_document_path)
-        try:
-            result = await self.hermes_controller.run(
-                task=task,
-                plan=plan,
-                source_document_ref=source_document_ref,
-                source_document_path=source_document_path,
-                fixture=resolved_fixture,
-                emit=emit_fn,
-                write_json_artifact=write_json_fn,
-                write_text_artifact=lambda name, content, suffix='.md': self._write_text_artifact(task.id, name, content, suffix=suffix),
-                write_binary_artifact=lambda name, content, suffix='.bin': self._write_binary_artifact(task.id, name, content, suffix=suffix),
-            )
-        except Exception as exc:
-            self._emit(
-                task.id, 'hermes_controller', 'hermes_controller', 'failed',
-                f'Hermes controller failed, fallback to structured review only: {exc}',
-            )
-            result = await self.structured_review.run(
-                task_id=task.id,
-                query=task.query,
-                source_document_path=source_document_path,
-                source_document_ref=source_document_ref,
-                fixture_id=resolved_fixture.id if resolved_fixture else None,
-                plan=plan,
-                document_type=task.documentType,
-                discipline_tags=task.disciplineTags,
-                strict_mode=task.strictMode,
-                policy_pack_ids=task.policyPackIds,
-                emit=emit_fn,
-                write_json_artifact=write_json_fn,
-                write_text_artifact=lambda name, content, suffix='.md': self._write_text_artifact(task.id, name, content, suffix=suffix),
-                write_binary_artifact=lambda name, content, suffix='.bin': self._write_binary_artifact(task.id, name, content, suffix=suffix),
-            )
-            result['hermesController'] = {'enabled': False, 'error': str(exc)}
+
+        result = await self.hermes_controller.run(
+            task=task,
+            plan=plan,
+            source_document_ref=source_document_ref,
+            source_document_path=source_document_path,
+            fixture=resolved_fixture,
+            emit=emit_fn,
+            write_json_artifact=write_json_fn,
+            write_text_artifact=lambda name, content, suffix='.md': self._write_text_artifact(task.id, name, content, suffix=suffix),
+            write_binary_artifact=lambda name, content, suffix='.bin': self._write_binary_artifact(task.id, name, content, suffix=suffix),
+        )
 
         if resolved_fixture is not None:
             result['fixture'] = resolved_fixture.model_dump()

@@ -144,7 +144,7 @@ async def stream_review_task_events(task_id: str, request: Request):
 
 
 @router.get('/{task_id}/result')
-async def get_review_task_result(task_id: str):
+async def get_review_task_result(task_id: str, debug: bool = False):
     service = get_task_service()
     task = service.get_task(task_id)
     if task is None:
@@ -154,4 +154,4 @@ async def get_review_task_result(task_id: str):
     if task.result is None:
         raise HTTPException(status_code=409, detail={'code': 'result_not_ready', 'message': 'Result is not ready yet'})
     artifacts = service.list_task_artifacts(task_id)
-    return build_review_task_result(task, artifacts).model_dump(mode='json')
+    return build_review_task_result(task, artifacts, include_raw=debug).model_dump(mode='json')

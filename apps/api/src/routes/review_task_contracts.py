@@ -430,7 +430,7 @@ def _severity_counts(findings: list[dict[str, Any]]) -> dict[str, int]:
     }
 
 
-def build_review_task_result(task: TaskRecord, artifacts: list[TaskArtifact]) -> ReviewTaskResultResponse:
+def build_review_task_result(task: TaskRecord, artifacts: list[TaskArtifact], include_raw: bool = False) -> ReviewTaskResultResponse:
     if not isinstance(task.result, dict):
         raise ValueError('Task result is not available')
     result = dict(task.result)
@@ -549,5 +549,5 @@ def build_review_task_result(task: TaskRecord, artifacts: list[TaskArtifact]) ->
             module_bucketing='execution_metadata_first',
             support_material_present=bool(issues),
         ),
-        raw=result,
+        raw=result if include_raw else {},
     )

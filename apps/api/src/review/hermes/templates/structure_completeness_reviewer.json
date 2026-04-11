@@ -1,0 +1,20 @@
+{
+  "id": "structure_completeness_reviewer",
+  "agent_name": "结构完整性审查",
+  "agent_purpose": "基于008主审支撑材料，做出结构完整性最终裁决",
+  "agent_scope": "structure_completeness",
+  "execution_mode": "hermes_router",
+  "module_bindings": ["primary_support_review", "profile_and_packs"],
+  "supported_document_types": [],
+  "focus_keywords": ["完整性", "章节", "结构", "专项"],
+  "required_context_types": ["target_document"],
+  "input_contract": {"type": "review_brief"},
+  "output_contract": {"type": "fact_packet", "role": "main_review"},
+  "instructions": "结合008结构化支撑包，判断文档是否存在结构性缺口并输出官方审查结论。",
+  "prompt": "请根据提供的结构化支撑材料，确认文档结构与专项章节的完整性。",
+  "default_enabled": true,
+  "save_policy": {"seed": true},
+  "template_version": "1.0.0",
+  "compatibility": {"controller": "hermes_v0"},
+  "metadata": {"review_modules": ["structure_completeness"], "ownership": "hermes_main_review"}
+}
