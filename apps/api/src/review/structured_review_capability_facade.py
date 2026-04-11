@@ -55,9 +55,10 @@ class RuleAndEvidenceOutput(BaseModel):
 
 
 class PrimaryReviewOutput(BaseModel):
-    module_id: str = 'primary_review'
-    normalized_result: dict[str, Any]
-    packet: dict[str, Any]
+    module_id: str = 'primary_support_review'
+    support_result: dict[str, Any]
+    support_packet: dict[str, Any]
+    support_report_material: dict[str, Any]
 
 
 class StructuredReviewCapabilityFacade:
@@ -154,7 +155,7 @@ class StructuredReviewCapabilityFacade:
             candidates=[candidate.model_dump(mode='json') for candidate in candidates],
         ).model_dump(mode='json')
 
-    async def primary_review(self, *, workspace: dict[str, Any], context: dict[str, Any]) -> dict[str, Any]:
+    async def primary_support_review(self, *, workspace: dict[str, Any], context: dict[str, Any]) -> dict[str, Any]:
         result = await self.executor.run(
             task_id=context['task_id'],
             query=context['query'],
@@ -172,18 +173,36 @@ class StructuredReviewCapabilityFacade:
             write_binary_artifact=context.get('write_binary_artifact'),
         )
         normalized_result = self._normalize_primary_review_result(result)
-        workspace['structured_review_result'] = normalized_result
+        workspace['structured_support_result_008'] = normalized_result
         packet = context['fact_packet_adapter'].adapt(context['task_id'], result)
         packet.metadata = {
             **packet.metadata,
-            'module_id': 'primary_review',
+            'module_id': 'primary_support_review',
             'worker_id': 'structured_review_executor',
+            'support_owner': 'structured_review_capability_facade',
+            'ownership': 'support_material',
         }
-        workspace['primary_packet'] = packet
+        workspace['support_packet_008'] = packet
+        support_report_material = {
+            'reportMarkdown': normalized_result.get('reportMarkdown', ''),
+            'reportHtml': normalized_result.get('reportHtml', ''),
+            'reportPrintCss': normalized_result.get('reportPrintCss', ''),
+            'artifactIndex': normalized_result.get('artifactIndex', []),
+            'artifacts': normalized_result.get('artifacts', []),
+        }
         return PrimaryReviewOutput(
-            normalized_result=normalized_result,
-            packet=packet.model_dump(mode='json'),
+            support_result=normalized_result,
+            support_packet=packet.model_dump(mode='json'),
+            support_report_material=support_report_material,
         ).model_dump(mode='json')
+
+    async def primary_review(self, *, workspace: dict[str, Any], context: dict[str, Any]) -> dict[str, Any]:
+        """Compatibility bridge for older controller/module paths.
+
+        Hermes-side callers should migrate to `primary_support_review`.
+        """
+
+        return await self.primary_support_review(workspace=workspace, context=context)
 
     def _normalize_primary_review_result(self, result: dict[str, Any]) -> dict[str, Any]:
         """Return the stable facade-owned normalized view of the 008 primary result.
@@ -207,4 +226,22 @@ class StructuredReviewCapabilityFacade:
         normalized.setdefault('capabilitiesUsed', [])
         normalized.setdefault('artifacts', [])
         normalized.setdefault('finalAnswer', normalized.get('reportMarkdown') or '')
+        normalized['issues'] = [self._annotate_support_issue(issue) for issue in normalized.get('issues', [])]
+        normalized['support_summary'] = normalized.get('summary', {})
+        normalized['support_issues'] = normalized.get('issues', [])
+        normalized['support_artifacts'] = normalized.get('artifactIndex', [])
+        normalized['support_report_material'] = {
+            'reportMarkdown': normalized.get('reportMarkdown', ''),
+            'reportHtml': normalized.get('reportHtml', ''),
+            'reportPrintCss': normalized.get('reportPrintCss', ''),
+        }
+        normalized['ownership'] = 'support_material'
         return normalized
+
+    def _annotate_support_issue(self, issue: dict[str, Any]) -> dict[str, Any]:
+        if not isinstance(issue, dict):
+            return issue
+        annotated = dict(issue)
+        annotated.setdefault('ownership', 'support_material')
+        annotated.setdefault('supportCapabilities', ['primary_support_review'])
+        return annotated

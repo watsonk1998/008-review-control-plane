@@ -175,7 +175,16 @@ def test_review_task_status_and_result_routes_map_internal_state(monkeypatch):
             'artifactIndex': [
                 {'name': 'report', 'fileName': 'hermes-controller-final-report.md', 'mediaType': 'text/markdown', 'sizeBytes': 12, 'downloadUrl': '/api/tasks/task-status-1/artifacts/hermes-controller-final-report.md', 'category': 'report', 'stage': 'result', 'primary': True}
             ],
-            'finalReportPacket': {'key_findings': [{'title': '章节缺失'}], 'traceability': [{'issue_id': 'ISSUE-1'}], 'executive_summary': '文档存在结构性问题'},
+            'finalReportPacket': {
+                'key_findings': [{'title': '章节缺失'}],
+                'traceability': [{'issue_id': 'ISSUE-1'}],
+                'executive_summary': '文档存在结构性问题',
+                'metadata': {
+                    'decision_owner': 'hermes',
+                    'support_owner': 'structured_review_capability_facade',
+                    'final_output_entrypoint': 'hermes_review_assembler',
+                },
+            },
             'traceability': [{'issue_id': 'ISSUE-1'}],
             'finalAnswer': '文档存在结构性问题',
         },
@@ -211,6 +220,8 @@ def test_review_task_status_and_result_routes_map_internal_state(monkeypatch):
     assert result_payload['modules']['structure_completeness']['findings'][0]['id'] == 'ISSUE-1'
     assert result_payload['export_links']['markdown'].endswith('hermes-controller-final-report.md')
     assert result_payload['metadata']['assembler'] == 'HermesReviewAssembler'
+    assert result_payload['metadata']['decision_owner'] == 'hermes'
+    assert result_payload['metadata']['support_owner'] == 'structured_review_capability_facade'
 
 
 def test_review_task_events_stream_emits_frozen_event_types(monkeypatch):

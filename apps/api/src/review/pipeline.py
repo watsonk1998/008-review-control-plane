@@ -1,5 +1,13 @@
 from __future__ import annotations
 
+"""008 structured-review support executor.
+
+This executor remains the implementation backbone for parsing, fact extraction,
+rule hits, evidence construction, and support report materials. In the current
+product architecture it is a support layer under HermesController, not the
+product-level main-review owner or final decision owner.
+"""
+
 import asyncio
 import mimetypes
 from pathlib import Path

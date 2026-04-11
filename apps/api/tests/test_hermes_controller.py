@@ -171,9 +171,14 @@ async def test_hermes_controller_selects_agents_generates_candidate_and_reports(
     )
 
     assert result['hermesController']['enabled'] is True
+    assert result['hermesController']['mainReviewOwnedBy'] == 'hermes'
+    assert result['hermesController']['supportLayerOwnedBy'] == 'structured_review_capability_facade'
+    assert result['hermesController']['mainReviewOutcomes']
     assert len(result['hermesController']['selectedAgents']) >= 2
     assert 'candidateTemplateId' in result['hermesController']
     assert 'finalReportMarkdown' in result
+    assert result['finalReportPacket']['metadata']['decision_owner'] == 'hermes'
+    assert result['finalReportPacket']['metadata']['support_owner'] == 'structured_review_capability_facade'
     assert '停送电执行链路存在遗漏风险' in result['finalReportMarkdown']
     runtime_template = tmp_path / 'runtime_templates' / task.id / f"{result['hermesController']['candidateTemplateId']}.json"
     assert runtime_template.exists()

@@ -20,5 +20,5 @@ class HermesModuleRegistry:
         if normalized_module_id == 'rule_and_evidence':
             return self.capability_facade.rule_and_evidence(workspace=workspace, context=context)
         if normalized_module_id == PRIMARY_MODULE_ID:
-            return await self.capability_facade.primary_review(workspace=workspace, context=context)
+            return await self.capability_facade.primary_support_review(workspace=workspace, context=context)
         raise KeyError(f'Unsupported Hermes module: {module_id}')

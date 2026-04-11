@@ -3,8 +3,8 @@ from __future__ import annotations
 PRIMARY_TEMPLATE_ID = 'structured_review_primary_worker'
 PRIMARY_TEMPLATE_LEGACY_IDS = ('structure_completeness_reviewer',)
 PRIMARY_TEMPLATE_IDS = (PRIMARY_TEMPLATE_ID, *PRIMARY_TEMPLATE_LEGACY_IDS)
-PRIMARY_MODULE_ID = 'primary_review'
-PRIMARY_MODULE_LEGACY_IDS = ('structured_review_worker',)
+PRIMARY_MODULE_ID = 'primary_support_review'
+PRIMARY_MODULE_LEGACY_IDS = ('primary_review', 'structured_review_worker')
 PRIMARY_MODULE_IDS = (PRIMARY_MODULE_ID, *PRIMARY_MODULE_LEGACY_IDS)
 
 

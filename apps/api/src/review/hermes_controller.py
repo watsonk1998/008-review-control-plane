@@ -10,6 +10,7 @@ from src.review.contracts import FactPacket, ReviewBrief
 from src.review.hermes.agent_runner import HermesAgentRunner
 from src.review.hermes.assembler import HermesReviewAssembler
 from src.review.hermes.constants import is_primary_template_id
+from src.review.hermes.decision_models import HermesReviewDecisionInputs
 from src.review.hermes.module_registry import HermesModuleRegistry
 from src.review.hermes.template_models import AgentTemplate, AgentTemplateMatch
 from src.review.hermes.template_registry import HermesTemplateRegistry
@@ -98,9 +99,9 @@ class HermesController:
             'fact_packet_adapter': self.fact_packet_adapter,
         }
         agent_results: list[dict[str, Any]] = []
-        primary_packet: FactPacket | None = None
-        primary_result: dict[str, Any] | None = None
-        supplemental_packets: list[FactPacket] = []
+        support_packet_008: FactPacket | None = None
+        support_result_008: dict[str, Any] | None = None
+        hermes_review_packets: list[FactPacket] = []
 
         for match in selected_templates:
             template = match.template
@@ -119,21 +120,32 @@ class HermesController:
                 continue
             packet = FactPacket.model_validate(packet_payload)
             if is_primary_template_id(template.id) and packet.engine == '008':
-                primary_packet = packet
-                # Controller consumes the facade-owned normalized result contract only.
-                primary_result = workspace.get('structured_review_result')
+                support_packet_008 = packet
+                # Controller consumes the facade-owned normalized support contract only.
+                support_result_008 = workspace.get('structured_support_result_008')
             else:
                 packet.review_id = brief.review_id
                 packet.metadata = {**packet.metadata, 'template_id': template.id, 'agent_id': template.id}
-                supplemental_packets.append(packet)
+                hermes_review_packets.append(packet)
+
+        decision_inputs = HermesReviewDecisionInputs(
+            support_packet_008=support_packet_008.model_dump(mode='json') if support_packet_008 else None,
+            support_result_008=support_result_008,
+            hermes_review_packets=[packet.model_dump(mode='json') for packet in hermes_review_packets],
+            agent_results=agent_results,
+        )
 
         enriched, final_packet = self.assembler.assemble(
             brief=brief,
-            primary_packet=primary_packet,
-            supplemental_packets=supplemental_packets,
-            structured_result=primary_result,
+            support_packet_008=support_packet_008,
+            hermes_review_packets=hermes_review_packets,
+            support_result_008=support_result_008,
             agent_results=agent_results,
         )
+        enriched.setdefault('hermesController', {})['mainReviewOwnedBy'] = 'hermes'
+        enriched['hermesController']['supportLayerOwnedBy'] = 'structured_review_capability_facade'
+        enriched['hermesController']['mainReviewOutcomes'] = [packet.model_dump(mode='json') for packet in hermes_review_packets]
+        enriched['hermesController']['decisionInputs'] = decision_inputs.model_dump(mode='json')
         if candidate_template is not None:
             enriched.setdefault('hermesController', {})['candidateTemplateId'] = candidate_template.id
         if write_json_artifact:

@@ -16,5 +16,5 @@
   "save_policy": {"seed": true},
   "template_version": "1.0.0",
   "compatibility": {"controller": "hermes_v0"},
-  "metadata": {"preferred_pack_ids": ["power_outage_work.base", "construction_org.base"]}
+  "metadata": {"preferred_pack_ids": ["power_outage_work.base", "construction_org.base"], "review_modules": ["legality_compliance"], "ownership": "hermes_main_review"}
 }

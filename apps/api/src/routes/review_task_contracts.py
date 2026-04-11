@@ -23,22 +23,9 @@ from src.domain.models import (
     TaskEvent,
     TaskRecord,
 )
+from src.review.hermes.module_bindings import module_binding, module_template_ids, module_titles, template_review_modules
 
-MODULE_TEMPLATE_MAP: dict[str, list[str]] = {
-    'structure_completeness': ['structured_review_primary_worker'],
-    'parameter_consistency': ['execution_risk_reviewer'],
-    'legality_compliance': ['policy_compliance_reviewer'],
-    'execution_continuity': ['execution_risk_reviewer'],
-    'evidence_validation': ['visibility_gap_reviewer'],
-}
-
-MODULE_TITLES = {
-    'structure_completeness': '结构完整性',
-    'parameter_consistency': '参数一致性',
-    'legality_compliance': '合法合规性',
-    'execution_continuity': '执行连续性',
-    'evidence_validation': '证据校验',
-}
+MODULE_TITLES = module_titles()
 
 RISK_ORDER = {'info': 0, 'low': 1, 'medium': 2, 'high': 3}
 
@@ -82,10 +69,7 @@ def _merge_unique(items: list[str]) -> list[str]:
 
 
 def _module_names_to_template_ids(module_names: list[str]) -> list[str]:
-    template_ids: list[str] = []
-    for module_name in module_names:
-        template_ids.extend(MODULE_TEMPLATE_MAP.get(module_name, []))
-    return _merge_unique(template_ids)
+    return _merge_unique(module_template_ids(module_names))
 
 
 def _build_generated_query(request: CreateReviewTaskRequest) -> str:
@@ -281,7 +265,14 @@ def _build_export_links(task: TaskRecord, artifacts: list[TaskArtifact]) -> Revi
     return links
 
 
-def _group_issue_module(issue: dict[str, Any]) -> str:
+def _group_issue_module_fallback(issue: dict[str, Any]) -> str:
+    """Legacy heuristic fallback only.
+
+    The canonical path prefers explicit module metadata emitted by Hermes review packets,
+    decision packets, and support-material annotations. This function exists only for
+    orphan support issues that still lack execution metadata.
+    """
+
     title = f"{issue.get('title', '')} {issue.get('summary', '')}".lower()
     if issue.get('issueKind') in {'visibility_gap', 'evidence_gap'} or issue.get('evidenceMissing') or issue.get('manualReviewNeeded'):
         return 'evidence_validation'
@@ -304,27 +295,180 @@ def _module_traceability(module_name: str, traceability: list[dict[str, Any]]) -
     return traceability[:3]
 
 
+def _first_module_name(payload: dict[str, Any] | None) -> str | None:
+    if not isinstance(payload, dict):
+        return None
+    module_name = payload.get('module_name')
+    if isinstance(module_name, str) and module_name in MODULE_TITLES:
+        return module_name
+    review_modules = payload.get('review_modules')
+    if isinstance(review_modules, list):
+        for candidate in review_modules:
+            if isinstance(candidate, str) and candidate in MODULE_TITLES:
+                return candidate
+    template_id = payload.get('template_id') or payload.get('source_template_id') or payload.get('agent_id')
+    if isinstance(template_id, str):
+        for candidate in template_review_modules(template_id):
+            if candidate in MODULE_TITLES:
+                return candidate
+    return None
+
+
+def _normalize_decision_finding(finding: dict[str, Any], *, role: str) -> dict[str, Any]:
+    raw_data = dict(finding.get('raw_data') or {})
+    module_name = _first_module_name(raw_data)
+    suggestion = finding.get('suggestion')
+    return {
+        'id': finding.get('id'),
+        'title': finding.get('title') or '',
+        'summary': finding.get('summary') or '',
+        'severity': finding.get('severity') or 'info',
+        'issueKind': finding.get('finding_type') or raw_data.get('decision_role') or role,
+        'layer': finding.get('layer') or '',
+        'manualReviewNeeded': bool(finding.get('manual_review_needed')),
+        'evidenceMissing': finding.get('evidence_status') in {'evidence_gap', 'visibility_gap'},
+        'findingType': finding.get('finding_type') or '',
+        'recommendation': [suggestion] if isinstance(suggestion, str) and suggestion.strip() else [],
+        'sourceEngine': finding.get('source_engine') or 'hermes',
+        'ownership': raw_data.get('ownership') or 'hermes_decision_layer',
+        'module_name': module_name,
+        'review_modules': raw_data.get('review_modules') or ([module_name] if module_name else []),
+        'decision_role': raw_data.get('decision_role') or role,
+        'supportDerived': raw_data.get('ownership') == 'support_material',
+        'traceabilityHint': raw_data.get('traceability_hint'),
+    }
+
+
+def _annotate_support_issue_source(issue: dict[str, Any]) -> dict[str, Any]:
+    annotated = dict(issue)
+    annotated.setdefault('ownership', 'support_material')
+    annotated.setdefault('supportDerived', True)
+    annotated.setdefault('sourceEngine', '008')
+    return annotated
+
+
+def _support_traceability_source(traceability: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    return [{**item, 'source': item.get('source', 'support-derived')} for item in traceability]
+
+
+def _decision_finding_lists(final_packet: dict[str, Any]) -> tuple[list[dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]]]:
+    key_findings = [_normalize_decision_finding(item, role='key_finding') for item in list(final_packet.get('key_findings') or [])]
+    supplemental_findings = [_normalize_decision_finding(item, role='supplemental_finding') for item in list(final_packet.get('supplemental_findings') or [])]
+    all_findings = [_normalize_decision_finding(item, role='all_finding') for item in list(final_packet.get('all_findings') or [])]
+    return key_findings, supplemental_findings, all_findings
+
+
+def _build_module_indices(
+    *,
+    decision_findings: list[dict[str, Any]],
+    main_review_outcomes: list[dict[str, Any]],
+) -> tuple[dict[str, str], dict[str, str]]:
+    by_id: dict[str, str] = {}
+    by_title: dict[str, str] = {}
+
+    for finding in decision_findings:
+        module_name = finding.get('module_name') or _first_module_name(finding)
+        if not module_name:
+            continue
+        if finding.get('id'):
+            by_id[str(finding['id'])] = module_name
+        title = str(finding.get('title') or '').strip().lower()
+        if title:
+            by_title[title] = module_name
+
+    for outcome in main_review_outcomes:
+        packet = dict(outcome.get('packet') or {})
+        packet_metadata = dict(packet.get('metadata') or {})
+        packet_module = _first_module_name(packet_metadata)
+        for finding in list(packet.get('findings') or []):
+            module_name = _first_module_name(dict(finding.get('raw_data') or {})) or packet_module
+            if not module_name:
+                continue
+            if finding.get('id'):
+                by_id[str(finding['id'])] = module_name
+            title = str(finding.get('title') or '').strip().lower()
+            if title:
+                by_title[title] = module_name
+
+    return by_id, by_title
+
+
+def _resolve_issue_module(
+    issue: dict[str, Any],
+    *,
+    module_by_id: dict[str, str],
+    module_by_title: dict[str, str],
+) -> str:
+    explicit = _first_module_name(issue)
+    if explicit:
+        return explicit
+    issue_id = issue.get('id')
+    if isinstance(issue_id, str) and issue_id in module_by_id:
+        return module_by_id[issue_id]
+    title = str(issue.get('title') or '').strip().lower()
+    if title and title in module_by_title:
+        return module_by_title[title]
+    return _group_issue_module_fallback(issue)
+
+
+def _decision_module_findings(final_packet: dict[str, Any]) -> dict[str, list[dict[str, Any]]]:
+    _, _, all_findings = _decision_finding_lists(final_packet)
+    grouped: dict[str, list[dict[str, Any]]] = {name: [] for name in MODULE_TITLES}
+    for finding in all_findings:
+        module_name = finding.get('module_name')
+        if not module_name or module_name not in grouped:
+            continue
+        grouped[module_name].append(finding)
+    return grouped
+
+
+def _severity_counts(findings: list[dict[str, Any]]) -> dict[str, int]:
+    return {
+        level: sum(1 for item in findings if item.get('severity') == level)
+        for level in ['high', 'medium', 'low', 'info']
+        if any(item.get('severity') == level for item in findings)
+    }
+
+
 def build_review_task_result(task: TaskRecord, artifacts: list[TaskArtifact]) -> ReviewTaskResultResponse:
     if not isinstance(task.result, dict):
         raise ValueError('Task result is not available')
     result = dict(task.result)
-    issues = list(result.get('issues') or [])
-    summary = dict(result.get('summary') or {})
     final_packet = dict(result.get('finalReportPacket') or {})
-    traceability = list(result.get('traceability') or final_packet.get('traceability') or [])
+    hermes_controller = dict(result.get('hermesController') or {})
+    main_review_outcomes = list(hermes_controller.get('mainReviewOutcomes') or [])
+    support_material = {
+        'structured_support_result_008': result.get('structured_support_result_008'),
+        'support_summary': result.get('support_summary') or result.get('summary') or {},
+        'support_issues': list(result.get('support_issues') or result.get('issues') or []),
+        'support_traceability': _support_traceability_source(list(result.get('traceability') or final_packet.get('traceability') or [])),
+    }
+    summary = dict(support_material['support_summary'] or {})
+    issues = [_annotate_support_issue_source(issue) for issue in support_material['support_issues']]
+    traceability = support_material['support_traceability']
     selected = (((task.plan or {}).get('hermesInput') or {}).get('frontendSelections') or {})
     review_intent = dict(selected.get('review_intent') or {})
     disabled_modules = set(review_intent.get('disabled_modules') or [])
     enabled_modules = set(review_intent.get('enabled_modules') or [])
+    key_findings, _, all_decision_findings = _decision_finding_lists(final_packet)
+    module_by_id, module_by_title = _build_module_indices(
+        decision_findings=all_decision_findings,
+        main_review_outcomes=main_review_outcomes,
+    )
+    grouped_decision_findings = _decision_module_findings(final_packet)
 
     modules: dict[str, ReviewTaskModuleResult] = {}
+    covered_issue_ids = {str(item.get('id')) for item in all_decision_findings if item.get('id')}
     for module_name, title in MODULE_TITLES.items():
-        module_findings = [issue for issue in issues if _group_issue_module(issue) == module_name]
-        severity_summary = {
-            level: sum(1 for issue in module_findings if issue.get('severity') == level)
-            for level in ['high', 'medium', 'low', 'info']
-            if any(issue.get('severity') == level for issue in module_findings)
-        }
+        module_findings = list(grouped_decision_findings.get(module_name) or [])
+        for issue in issues:
+            issue_module = _resolve_issue_module(issue, module_by_id=module_by_id, module_by_title=module_by_title)
+            if issue_module != module_name:
+                continue
+            if issue.get('id') and str(issue.get('id')) in covered_issue_ids:
+                continue
+            module_findings.append({**issue, 'module_name': module_name})
+        severity_summary = _severity_counts(module_findings)
         if module_name in disabled_modules:
             status = 'not_applicable'
         elif enabled_modules and module_name not in enabled_modules and not module_findings:
@@ -341,19 +485,23 @@ def build_review_task_result(task: TaskRecord, artifacts: list[TaskArtifact]) ->
             status=status,
         )
 
-    key_findings = list(final_packet.get('key_findings') or [])
     if not key_findings:
         key_findings = sorted(issues, key=lambda item: RISK_ORDER.get(str(item.get('severity')), 0), reverse=True)[:5]
 
     recommendations = _merge_unique([
         recommendation
-        for issue in issues
-        for recommendation in issue.get('recommendation', [])
+        for issue in (all_decision_findings or issues)
+        for recommendation in (
+            issue.get('recommendation', [])
+            if isinstance(issue.get('recommendation'), list)
+            else ([issue.get('suggestion')] if isinstance(issue.get('suggestion'), str) and issue.get('suggestion') else [])
+        )
         if isinstance(recommendation, str) and recommendation.strip()
     ])
 
+    risk_source = all_decision_findings or issues
     severity_counts = {
-        level: sum(1 for issue in issues if issue.get('severity') == level)
+        level: sum(1 for issue in risk_source if issue.get('severity') == level)
         for level in ['high', 'medium', 'low']
     }
     if severity_counts['high'] > 0:
@@ -366,16 +514,17 @@ def build_review_task_result(task: TaskRecord, artifacts: list[TaskArtifact]) ->
         risk_level = 'unknown'
 
     generated_at = task.updatedAt
+    final_metadata = dict(final_packet.get('metadata') or {})
     return ReviewTaskResultResponse(
         task_id=task.id,
         status=map_internal_status(task),
         report_id=task.id,
         summary=ReviewTaskResultSummary(
-            overall_conclusion=summary.get('overallConclusion') or final_packet.get('executive_summary') or result.get('finalAnswer') or '',
+            overall_conclusion=final_packet.get('executive_summary') or summary.get('overallConclusion') or result.get('finalAnswer') or '',
             risk_level=risk_level,
             key_counts={
-                'issues': len(issues),
-                'manual_review_needed': sum(1 for issue in issues if issue.get('manualReviewNeeded')),
+                'issues': len(all_decision_findings or issues),
+                'manual_review_needed': sum(1 for issue in (all_decision_findings or issues) if issue.get('manualReviewNeeded') or issue.get('manual_review_needed')),
             },
             key_metrics={
                 'high': severity_counts['high'],
@@ -392,6 +541,13 @@ def build_review_task_result(task: TaskRecord, artifacts: list[TaskArtifact]) ->
             generated_at=generated_at,
             degraded=task.status == 'partial',
             traceability_available=bool(traceability),
+            assembler='HermesReviewAssembler',
+            decision_owner=str(final_metadata.get('decision_owner') or 'hermes'),
+            support_owner=str(final_metadata.get('support_owner') or 'structured_review_capability_facade'),
+            final_output_entrypoint=str(final_metadata.get('final_output_entrypoint') or 'hermes_review_assembler'),
+            result_ownership='hermes_decision_layer',
+            module_bucketing='execution_metadata_first',
+            support_material_present=bool(issues),
         ),
         raw=result,
     )

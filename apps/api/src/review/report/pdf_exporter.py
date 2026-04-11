@@ -1,5 +1,11 @@
 from __future__ import annotations
 
+"""008 support/export report material rendering.
+
+Generated PDFs remain export materials for the Hermes-controlled final result flow.
+They do not define product-level final decision ownership.
+"""
+
 import asyncio
 import html
 from pathlib import Path

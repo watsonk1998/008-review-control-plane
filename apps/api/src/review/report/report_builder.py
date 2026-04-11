@@ -1,5 +1,12 @@
 from __future__ import annotations
 
+"""008 support report material generation.
+
+This builder exists to produce structured support materials (summary tables, markdown,
+HTML, print CSS) for the Hermes-controlled review flow. It does not own the product
+final-report decision or external result protocol.
+"""
+
 from collections import Counter
 import html
 import re

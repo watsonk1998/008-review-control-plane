@@ -90,15 +90,15 @@ async def test_structured_review_capability_facade_primary_review_matches_execut
         policy_pack_ids=context['policy_pack_ids'],
     )
     workspace: dict = {}
-    primary = await facade.primary_review(workspace=workspace, context=context)
-    result = primary['normalized_result']
+    primary = await facade.primary_support_review(workspace=workspace, context=context)
+    result = primary['support_result']
 
     for key in ['summary', 'visibility', 'issues', 'artifactIndex', 'reportMarkdown', 'reportHtml', 'reportPrintCss', 'resolvedProfile']:
         assert result[key] == direct[key]
-    assert primary['module_id'] == 'primary_review'
-    assert workspace['structured_review_result']['summary'] == direct['summary']
-    assert primary['packet']['engine'] == '008'
-    assert PrimaryReviewOutput.model_validate(primary).normalized_result['summary'] == direct['summary']
+    assert primary['module_id'] == 'primary_support_review'
+    assert workspace['structured_support_result_008']['summary'] == direct['summary']
+    assert primary['support_packet']['engine'] == '008'
+    assert PrimaryReviewOutput.model_validate(primary).support_result['summary'] == direct['summary']
 
 
 def test_structured_review_capability_facade_exposes_incremental_capabilities(tmp_path: Path):
@@ -146,6 +146,10 @@ class SpyFacade:
         self.called.append('primary_review')
         return {'module_id': 'primary_review'}
 
+    async def primary_support_review(self, *, workspace, context):
+        self.called.append('primary_support_review')
+        return {'module_id': 'primary_support_review'}
+
 
 async def test_hermes_module_registry_routes_only_through_facade():
     registry = HermesModuleRegistry(capability_facade=SpyFacade())
@@ -153,8 +157,9 @@ async def test_hermes_module_registry_routes_only_through_facade():
     context: dict = {}
 
     await registry.run_module('structured_review_worker', workspace=workspace, context=context)
-    assert await registry.run_module('primary_review', workspace=workspace, context=context) == {'module_id': 'primary_review'}
-    assert registry.capability_facade.called == ['primary_review', 'primary_review']
+    assert await registry.run_module('primary_review', workspace=workspace, context=context) == {'module_id': 'primary_support_review'}
+    assert await registry.run_module('primary_support_review', workspace=workspace, context=context) == {'module_id': 'primary_support_review'}
+    assert registry.capability_facade.called == ['primary_support_review', 'primary_support_review', 'primary_support_review']
 
 
 def test_hermes_module_registry_source_does_not_grab_executor_internals():

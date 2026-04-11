@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Any
 
 from src.review.contracts import ReviewBrief
+from src.review.hermes.module_bindings import template_review_modules
 from src.review.hermes.constants import normalize_template_id
 from src.review.hermes.template_models import AgentTemplate, AgentTemplateMatch
 
@@ -25,6 +26,10 @@ class HermesTemplateRegistry:
                 try:
                     template = AgentTemplate.model_validate_json(path.read_text(encoding='utf-8'))
                     template.id = normalize_template_id(template.id) or template.id
+                    template.metadata = {
+                        **template.metadata,
+                        'review_modules': template.metadata.get('review_modules') or template_review_modules(template.id),
+                    }
                     templates.append(template)
                 except Exception as exc:
                     logger.warning('[hermes_template_registry] Failed to load %s: %s', path, exc)

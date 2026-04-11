@@ -1,5 +1,11 @@
 from __future__ import annotations
 
+"""008 support issue material generation.
+
+This module builds structured issue/support candidates for Hermes-controlled review.
+It does not own the product-level main-review or final-decision semantics.
+"""
+
 from src.domain.models import ConfidenceLevel
 from src.review.schema import FinalIssue, IssueCandidate
 

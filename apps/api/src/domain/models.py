@@ -466,6 +466,12 @@ class ReviewTaskResultMetadata(BaseModel):
     degraded: bool = False
     traceability_available: bool = False
     assembler: str = 'HermesReviewAssembler'
+    decision_owner: str = 'hermes'
+    support_owner: str = 'structured_review_capability_facade'
+    final_output_entrypoint: str = 'hermes_review_assembler'
+    result_ownership: str = 'hermes_decision_layer'
+    module_bucketing: str = 'execution_metadata_first'
+    support_material_present: bool = False
 
 
 class ReviewTaskResultResponse(BaseModel):

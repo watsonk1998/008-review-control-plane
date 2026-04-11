@@ -16,5 +16,5 @@
   "save_policy": {"seed": true},
   "template_version": "1.0.0",
   "compatibility": {"controller": "hermes_v0"},
-  "metadata": {}
+  "metadata": {"review_modules": ["evidence_validation"], "ownership": "hermes_main_review"}
 }
