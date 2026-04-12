@@ -3,19 +3,23 @@
 
 Status:
 - bridge / compat
+- SUPPORT LAYER ONLY — all adapted packets are advisory support material
 
 Freeze boundary:
 - adapter/bridge only
 - do not expand with new business fields except migration/removal work
+- MUST NOT emit official final_grade, verdict, or decision semantics
 
 Do not extend:
 - no controller policy
 - no new external result protocol
 - no mutation of 008 review semantics
+- no official grade/verdict/decision fields
 
 Canonical path:
 - adapts 008 native StructuredReviewResult into FactPacket for HermesController/HermesReviewAssembler
 - does NOT define 008 internal schemas or final output ownership
+- all adapted packets carry engine='008' and ownership='support_material'
 """
 
 from __future__ import annotations
@@ -73,6 +77,8 @@ class FactPacketAdapter:
             metadata={
                 'worker_id': 'fact_packet_adapter',
                 'module_id': 'structured_review_result',
+                'ownership': 'support_material',
+                'advisory_note': '008 engine output is advisory support material; official verdict is determined by Hermes Assembler.',
             },
         )
 

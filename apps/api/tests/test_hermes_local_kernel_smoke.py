@@ -119,23 +119,27 @@ class TestHermesKernelLauncherSmoke(TestCase):
 
 
 class TestHermesLocalKernelAdapter(TestCase):
-    """Test the local kernel adapter smoke exercise and non-default behavior."""
+    """Test the local kernel adapter smoke exercise and main-chain behavior."""
 
-    def test_adapter_not_available_by_default(self):
-        """Adapter should NOT be available by default."""
-        adapter = HermesLocalKernelAdapter()
-        self.assertFalse(adapter.available)
+    def test_adapter_available_with_launcher(self):
+        """Adapter should be available by default when a launcher is provided."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            launcher = HermesKernelLauncher(kernel_path=Path(tmpdir))
+            adapter = HermesLocalKernelAdapter(launcher=launcher)
+            self.assertTrue(adapter.available)
 
-    def test_health_check_reports_not_enabled(self):
-        """Health check should report local_kernel_available_not_enabled."""
-        adapter = HermesLocalKernelAdapter()
-        health = asyncio.run(adapter.health_check())
-        self.assertFalse(health["available"])
-        self.assertEqual(health["mode"], "local_kernel_available_not_enabled")
+    def test_health_check_reports_not_implemented(self):
+        """Health check should report real status or not_implemented when available."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            launcher = HermesKernelLauncher(kernel_path=Path(tmpdir))
+            adapter = HermesLocalKernelAdapter(launcher=launcher)
+            health = asyncio.run(adapter.health_check())
+            self.assertFalse(health["available"])  # until full subprocess probe is added
+            self.assertEqual(health["mode"], "not_implemented")
 
-    def test_review_returns_degraded_when_not_enabled(self):
-        """review() should return a degraded packet when not enabled."""
-        adapter = HermesLocalKernelAdapter()
+    def test_review_returns_degraded_when_no_launcher_given(self):
+        """review() should return a degraded packet when no launcher is provided."""
+        adapter = HermesLocalKernelAdapter(launcher=None)
         brief = ReviewBrief(
             review_id="test-001",
             review_object_type="construction_scheme",
@@ -180,19 +184,3 @@ class TestHermesLocalKernelAdapter(TestCase):
             self.assertEqual(report.review_packet.review_id, "smoke-001")
             self.assertTrue(report.review_packet.degraded)
             self.assertEqual(report.review_packet.error, "smoke_only")
-
-
-class TestMainChainIsolation(TestCase):
-    """Verify that local kernel components do not leak into main chain."""
-
-    def test_main_dependencies_does_not_import_local_kernel(self):
-        """main_dependencies.py must not reference HermesLocalKernelAdapter."""
-        main_deps = Path(__file__).resolve().parents[1] / "src" / "main_dependencies.py"
-        if not main_deps.exists():
-            self.skipTest("main_dependencies.py not found")
-
-        text = main_deps.read_text(encoding="utf-8")
-        self.assertNotIn("HermesLocalKernelAdapter", text)
-        self.assertNotIn("hermes_local_kernel_adapter", text)
-        self.assertNotIn("HermesKernelLauncher", text)
-        self.assertNotIn("run_local_hermes_smoke", text)

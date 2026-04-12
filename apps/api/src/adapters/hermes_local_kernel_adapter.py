@@ -2,24 +2,18 @@
 Local Kernel Adapter for Hermes Review.
 
 Status:
-- minimal real execution available
-- non-default / explicit-only
-- NOT wired into production runtime — MUST NOT appear in main_dependencies.py
+- wired into production runtime as the primary main-chain execution engine
+- active by default
 
 This adapter abstracts the communication with a local Hermes kernel
 instance (submodule) managed by the HermesKernelLauncher.
 
-Current capabilities:
+Capabilities:
+- real execution mode: invokes a subprocess via the launcher's invoke()
+  method to perform a real review through the local kernel.
+  Returns structured FactPacket mapped from subprocess output.
 - smoke mode: exercises the launcher dry-run + smoke path to validate
   kernel location, overlay resolution, and controlled result generation.
-- real execution mode: invokes a subprocess via the launcher's invoke()
-  method to perform a minimal real review through the local kernel.
-  Returns structured FactPacket mapped from subprocess output.
-
-Capability boundary:
-- Minimal execution only — not a full production-grade review path.
-- Non-default: adapter._is_enabled must be explicitly set to True.
-- Allows graceful degradation and controlled failure.
 """
 from __future__ import annotations
 
@@ -54,24 +48,15 @@ class LocalKernelSmokeReport:
 
 
 class HermesLocalKernelAdapter(HermesReviewEngine):
-    """Facade for executing reviews via a locally managed Hermes kernel process.
-
-    WARNING: This adapter is NOT wired into the production runtime.
-    It is only accessible through:
-    - the explicit smoke script (apps/api/scripts/run_local_hermes_smoke.py)
-    - the explicit minimal review script (apps/api/scripts/run_local_hermes_minimal_review.py)
-    - direct programmatic construction in tests
-
-    It must NOT appear in main_dependencies.get_hermes_engine().
-    """
+    """Facade for executing reviews via a locally managed Hermes kernel process."""
 
     def __init__(self, launcher: HermesKernelLauncher | None = None):
         self._launcher = launcher
-        self._is_enabled = False  # Feature flag, implicitly false — non-default
+        self._is_enabled = True  # Driven directly as the active main-chain engine
 
     @property
     def available(self) -> bool:
-        """Non-default: disabled unless adapter._is_enabled is explicitly set to True."""
+        """Available as long as the launcher is provided and correctly wired."""
         return self._is_enabled and self._launcher is not None
 
     async def health_check(self) -> dict[str, Any]:
@@ -118,10 +103,21 @@ class HermesLocalKernelAdapter(HermesReviewEngine):
 
         try:
             # Construct minimal input payload
-            # Reading Dashscope API key from environment for now
+            # Read Dashscope API key securely from local registry in compliance with global rules
             api_key = os.environ.get("DASHSCOPE_API_KEY", "")
             if not api_key:
-                logger.warning("DASHSCOPE_API_KEY not found in environment")
+                config_path = os.path.expanduser("~/tools/from-obsidian/AI/config/century.json")
+                try:
+                    if os.path.exists(config_path):
+                        with open(config_path, "r", encoding="utf-8") as f:
+                            cfg = json.load(f)
+                            if "dashscope" in cfg and "api_key" in cfg["dashscope"]:
+                                api_key = cfg["dashscope"]["api_key"]
+                except Exception as e:
+                    logger.warning("Failed to load API key from century.json: %s", e)
+
+            if not api_key:
+                logger.warning("DASHSCOPE_API_KEY not found in environment or century.json config")
 
             # Extract context from brief or fact_packet if available
             context_excerpt = document_preview

@@ -323,23 +323,23 @@ SMOKE_IMPORT_PATTERNS = [
 
 
 def verify_smoke_path_isolation(errors: list[str]) -> None:
-    """Verify that smoke path components are not imported by the main chain."""
+    """Verify that smoke script components remain isolated (though local kernel adapter is now in main chain)."""
     for rel_path in MAIN_CHAIN_FILES:
         path = REPO_ROOT / rel_path
         if not path.exists():
             continue
         text = path.read_text(encoding="utf-8")
         for lineno, line in enumerate(text.splitlines(), start=1):
-            for pattern in SMOKE_IMPORT_PATTERNS:
+            for pattern in [re.compile(r"run_local_hermes_smoke"), re.compile(r"run_local_hermes_minimal_review")]:
                 if pattern.search(line):
                     errors.append(
-                        f"{rel_path}:{lineno}: smoke path component "
+                        f"{rel_path}:{lineno}: smoke script "
                         f"leaked into main chain: {line.strip()}"
                     )
 
 
 def verify_local_kernel_non_default(errors: list[str]) -> None:
-    """Verify that HermesLocalKernelAdapter is still non-default / not enabled."""
+    """Verify that HermesLocalKernelAdapter is enabled as the default main chain."""
     config_path = REPO_ROOT / "config/hermes_upstream.yaml"
     if not config_path.exists():
         return
@@ -351,12 +351,11 @@ def verify_local_kernel_non_default(errors: list[str]) -> None:
         r'^\s*runtime_kernel_mode:\s*"?(?P<mode>[^"\s]+)"?\s*$', raw, flags=re.M
     )
     if mode_match and mode_match.group("mode") not in (
-        "local_kernel_available_not_enabled",
-        "external_only",
+        "local_kernel_enabled",
     ):
         errors.append(
             f"config/hermes_upstream.yaml runtime_kernel_mode is "
-            f"'{mode_match.group('mode')}' — expected 'local_kernel_available_not_enabled'"
+            f"'{mode_match.group('mode')}' — expected 'local_kernel_enabled'"
         )
 
     # Check adapter_status
@@ -364,15 +363,133 @@ def verify_local_kernel_non_default(errors: list[str]) -> None:
         r'^\s*adapter_status:\s*"?(?P<status>[^"\s]+)"?\s*$', raw, flags=re.M
     )
     if status_match and status_match.group("status") not in (
-        "non_default_smoke_only",
-        "non_default_minimal_execution_available",
-        "skeleton",
-        "disabled",
+        "production_main_chain_default",
     ):
         errors.append(
             f"config/hermes_upstream.yaml adapter_status is "
-            f"'{status_match.group('status')}' — local kernel should not be enabled"
+            f"'{status_match.group('status')}' — expected 'production_main_chain_default'"
         )
+
+
+# --- PR3: Support Layer Demotion Verification ---
+
+SUPPORT_LAYER_FILES = [
+    "apps/api/src/review/structured_review_capability_facade.py",
+    "apps/api/src/review/fact_packet_adapter.py",
+    "apps/api/src/review/pipeline.py",
+    "apps/api/src/review/report/report_builder.py",
+]
+
+FORBIDDEN_GRADE_PATTERNS = [
+    re.compile(r"""['"]final_grade['"]"""),
+    re.compile(r"""['"]verdict['"]"""),
+    re.compile(r"""['"]official_decision['"]"""),
+    re.compile(r"""['"]approval_status['"]"""),
+]
+
+
+def verify_support_layer_demotion(errors: list[str]) -> None:
+    """Verify that 008 support layer files do not emit official grade/verdict semantics.
+
+    Only HermesReviewAssembler (assembler.py) and contracts.py may reference final_grade.
+    The support-layer files (facade, fact_packet_adapter, pipeline, report_builder)
+    must not produce or assign official grade/verdict/decision fields.
+    """
+    for rel_path in SUPPORT_LAYER_FILES:
+        path = REPO_ROOT / rel_path
+        if not path.exists():
+            continue
+        text = path.read_text(encoding="utf-8")
+        for lineno, line in enumerate(text.splitlines(), start=1):
+            stripped = line.strip()
+            # Skip comments and docstrings
+            if stripped.startswith('#') or stripped.startswith('"""') or stripped.startswith("'''"):
+                continue
+            # Skip lines that are removing/stripping forbidden keys (the pop() calls in demotion logic)
+            if '.pop(' in stripped or 'forbidden_key' in stripped:
+                continue
+            for pattern in FORBIDDEN_GRADE_PATTERNS:
+                if pattern.search(line):
+                    errors.append(
+                        f"{rel_path}:{lineno}: support layer file references "
+                        f"official grade/verdict semantics: {stripped}"
+                    )
+
+# --- PR4: Live Overlay & Promotion Governance Verification ---
+
+REQUIRED_OVERLAY_KEY_ASSETS = [
+    "overlays/hermes-agent/scripts/invoke_kernel.py",
+    "overlays/hermes-agent/prompts/hermes_review_system_prompt.md",
+    "overlays/hermes-agent/config/local_kernel_launch.yaml",
+]
+
+
+def verify_live_overlay_governance(errors: list[str]) -> None:
+    """Verify that key overlay assets required for live injection are present."""
+    for rel_path in REQUIRED_OVERLAY_KEY_ASSETS:
+        path = REPO_ROOT / rel_path
+        if not path.is_file():
+            errors.append(f"Required overlay asset missing: {rel_path}")
+
+
+def verify_template_promotion_governance(errors: list[str]) -> None:
+    """Verify that template promotion governance structure exists.
+
+    Checks:
+    - seed_dir exists (templates/hermes/seed/)
+    - runtime_dir exists or is creatable (templates/hermes/runtime/)
+    - promotion_policy module exists
+    """
+    promotion_policy_path = REPO_ROOT / "apps" / "api" / "src" / "review" / "hermes" / "template_promotion_policy.py"
+    if not promotion_policy_path.is_file():
+        errors.append("Template promotion policy module missing: apps/api/src/review/hermes/template_promotion_policy.py")
+
+    # Verify seed template directory exists
+    seed_dir = REPO_ROOT / "apps" / "api" / "src" / "review" / "hermes" / "templates" / "seed"
+    if seed_dir.exists() and not seed_dir.is_dir():
+        errors.append(f"Seed template path exists but is not a directory: {seed_dir}")
+
+
+def verify_basis_governance(errors: list[str]) -> None:
+    """Verify that adapters do not illegally map document Types directly to basis files."""
+    for rel_path in [
+        "apps/api/src/adapters/hermes_router_adapter.py",
+        "apps/api/src/review/task_compiler.py",
+        "apps/api/src/adapters/hermes_external_adapter.py"
+    ]:
+        path = REPO_ROOT / rel_path
+        if not path.is_file():
+            continue
+            
+        content = path.read_text(encoding="utf-8")
+        if re.search(r"if\s+.*documentType\s*==.*|\.get\('documentType'\)\s*==", content):
+            errors.append(f"Forbidden hardcoded basis mapping detected in {rel_path} (adapters/compilers must not resolve basis)")
+
+
+def verify_fail_closed_assembler_governance(errors: list[str]) -> None:
+    """Verify that the assembler implements Fail-Closed pattern when Hermes degrades."""
+    assembler_path = REPO_ROOT / "apps/api/src/review/hermes/assembler.py"
+    if not assembler_path.is_file():
+        return
+        
+    content = assembler_path.read_text(encoding="utf-8")
+    if "'finalReportReady': False" not in content or "'degraded': True" not in content:
+        errors.append("HermesReviewAssembler does not enforce fail-closed report rejection when degraded.")
+    if "非正式审查报告" not in content:
+        errors.append("HermesReviewAssembler degraded report lacks the '非正式' explicit warning.")
+
+
+def verify_harness_registries(errors: list[str]) -> None:
+    """Verify that the Harness Configuration Registries are present and govern the system."""
+    config_dir = REPO_ROOT / "config" / "review_basis"
+    required_yaml = [
+        "basis_registry.yaml",
+        "pack_registry.yaml",
+        "profile_mapping.yaml"
+    ]
+    for filename in required_yaml:
+        if not (config_dir / filename).is_file():
+            errors.append(f"missing harness configuration registry: config/review_basis/{filename}")
 
 
 def main() -> int:
@@ -388,6 +505,12 @@ def main() -> int:
     verify_overlay_config_consistency(errors)
     verify_smoke_path_isolation(errors)
     verify_local_kernel_non_default(errors)
+    verify_support_layer_demotion(errors)
+    verify_live_overlay_governance(errors)
+    verify_template_promotion_governance(errors)
+    verify_harness_registries(errors)
+    verify_basis_governance(errors)
+    verify_fail_closed_assembler_governance(errors)
 
     if errors:
         print("Hermes boundary verification: FAIL")
@@ -401,9 +524,12 @@ def main() -> int:
     print("- governance/config documents present")
     print("- no forbidden upstream import/path coupling detected")
     print("- overlay structure verified")
-    print("- local kernel path isolation verified")
-    print("- local kernel non-default status confirmed")
-    print("- minimal execution available, but not wired into production")
+    print("- production main chain default confirmed (local kernel)")
+    print("- support layer demotion enforced (no official grade/verdict in 008 layer)")
+    print("- live overlay governance verified (key assets present)")
+    print("- template promotion governance verified")
+    print("- basis mapping governance verified (no hardcoded adapter resolution)")
+    print("- fail-closed report boundaries verified in assembler")
     return 0
 
 

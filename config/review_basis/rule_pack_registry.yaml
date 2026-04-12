@@ -1,0 +1,82 @@
+# config/review_basis/rule_pack_registry.yaml
+# Direct execution-layer constraints derived from packs.
+
+rule_packs:
+  "hazardous.core.v1":
+    rule_pack_id: "hazardous.core.v1"
+    related_pack_ids: 
+      - "hazardous_special_scheme.base"
+    scope: "危大工程通用审查点"
+    evidence_requirements:
+      - require_expert_signature
+      - require_emergency_plan
+      - require_detailed_calculation
+    output_issue_types:
+      - "structural_safety"
+      - "process_missing"
+      - "lack_of_evidence"
+    false_positive_risk: "low"
+
+  "hazardous.foundation_pit.v1":
+    rule_pack_id: "hazardous.foundation_pit.v1"
+    related_pack_ids: 
+      - "foundation_pit.base"
+    scope: "基坑专项要求"
+    evidence_requirements:
+      - require_groundwater_control_plan
+      - require_support_monitoring_plan
+    output_issue_types:
+      - "water_control_flaw"
+      - "support_design_flaw"
+    false_positive_risk: "medium"
+
+  "hazardous.formwork.v1":
+    rule_pack_id: "hazardous.formwork.v1"
+    related_pack_ids: 
+      - "formwork_support.base"
+    scope: "高支模专项要求"
+    evidence_requirements:
+      - require_load_distribution_calc
+      - require_concrete_pour_sequence
+    output_issue_types:
+      - "unstable_support"
+      - "calculation_error"
+    false_positive_risk: "medium"
+
+  "construction_org.core.v1":
+    rule_pack_id: "construction_org.core.v1"
+    related_pack_ids: 
+      - "construction_org.base"
+    scope: "施组总体要求"
+    evidence_requirements:
+      - require_milestone_schedule
+      - require_resource_allocation
+    output_issue_types:
+      - "schedule_infeasible"
+      - "resource_mismatch"
+    false_positive_risk: "low"
+
+  "distribution_network.core.v1":
+    rule_pack_id: "distribution_network.core.v1"
+    related_pack_ids: 
+      - "distribution_network_special_scheme.base"
+    scope: "配网作业安全"
+    evidence_requirements:
+      - require_outage_range_def
+      - require_grounding_wire_plan
+    output_issue_types:
+      - "outage_conflict"
+      - "electric_shock_risk"
+    false_positive_risk: "high"
+
+  "supervision.core.v1":
+    rule_pack_id: "supervision.core.v1"
+    related_pack_ids: 
+      - "supervision_plan.base"
+    scope: "监理方案要求"
+    evidence_requirements:
+      - require_supervision_milestones
+      - require_witness_testing_list
+    output_issue_types:
+      - "missing_supervision_step"
+    false_positive_risk: "low"

@@ -89,6 +89,18 @@ def get_task_compiler() -> TaskCompiler:
 
 
 @lru_cache(maxsize=1)
+def get_basis_pack_resolver() -> 'BasisPackResolver':
+    from src.review.basis_pack_resolver import BasisPackResolver
+    return BasisPackResolver()
+
+
+@lru_cache(maxsize=1)
+def get_support_packet_builder() -> 'SupportPacketBuilder':
+    from src.review.support_packet_builder import SupportPacketBuilder
+    return SupportPacketBuilder()
+
+
+@lru_cache(maxsize=1)
 def get_hermes_controller() -> HermesController:
     repo_root = get_settings().tasks_dir.parent.parent
     return HermesController(
@@ -97,16 +109,26 @@ def get_hermes_controller() -> HermesController:
         capability_facade=get_structured_review_capability_facade(),
         hermes_engine=get_hermes_engine(),
         llm_gateway=get_llm_gateway(),
+        basis_pack_resolver=get_basis_pack_resolver(),
+        support_packet_builder=get_support_packet_builder(),
         seed_template_dir=repo_root / 'apps' / 'api' / 'src' / 'review' / 'hermes' / 'templates',
         runtime_template_dir=get_settings().tasks_dir / '_runtime_agent_templates',
     )
 
 @lru_cache(maxsize=1)
 def get_hermes_engine() -> HermesReviewEngine:
+    from src.adapters.hermes_external_adapter import HermesExternalAdapter
+    from src.adapters.hermes_llm_adapter import HermesLLMAdapter
+    from src.adapters.hermes_router_adapter import HermesRouterAdapter
+    """
+    Returns the hermes review engine instance.
+    Per AGENTS.md, local kernel is NOT wired into the default production chain.
+    """
     endpoint = get_settings().hermes_external_endpoint
     external = HermesExternalAdapter(endpoint=endpoint)
     llm = HermesLLMAdapter(llm_gateway=get_llm_gateway())
-    return HermesRouterAdapter(external, llm)
+
+    return HermesRouterAdapter(None, external, llm)
 
 
 @lru_cache(maxsize=1)

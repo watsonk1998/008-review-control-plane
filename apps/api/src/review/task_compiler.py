@@ -4,6 +4,8 @@ Task Compiler: controller-bridge compiler for HermesController-first structured 
 Freeze boundary:
 - bridge/compiler only
 - no new business orchestration here without explicit migration
+- FORBIDDEN: This class must NOT perform basis selection, mapping, or override
+  resolution. It purely forwards parameters intact to the execution brief.
 
 Design intent:
 - Review engines should NOT receive scattered raw inputs

@@ -63,7 +63,7 @@
 * **Stage 2 (Skeleton)**：新增 `HermesLocalKernelAdapter` 及 `HermesKernelLauncher` 骨架代码，制定接口防腐协议，实现占位符功能。✅ 已完成。
 * **Stage 3 (Smoke Path)**：打通 Local Kernel 的通信链路（不放入主网，提供 Feature Flag 开关支持，允许以 CLI 等单独维度做 dry-run 和 E2E测试）。✅ 已完成。
 * **Stage 4 (Minimal Real Execution & Overlay)**：实现真正的 Subprocess 调用路径 (`invoke_kernel.py` shim)，使得 008 可以通过 Launcher 唤起具备真实大模型请求能力的本地内核进程，并注入 Overlay（如 System Prompts），同时返回结构化结果供 Adapter 合成为 FactPacket。✅ 已完成。
-* **Stage 5 (Routing Shift)**：改造 `HermesRouterAdapter`，正式将 `local_kernel` 列入路由优选列表（比如：`local_kernel` -> `external` -> `llm_fallback`）。⬜ 尚未开始。
+* **Stage 5 (Routing Shift)**：改造 `HermesRouterAdapter`，正式将 `local_kernel` 列入路由优选列表（比如：`local_kernel` -> `external` -> `llm_fallback`）。✅ 已完成。
 
 ## 6. Smoke Path 实现详情
 
@@ -104,12 +104,11 @@ smoke path 验证以下内容：
 4. `HermesLocalKernelAdapter.smoke_exercise()` 能走完最小执行链
 5. 返回受控的 `LocalKernelSmokeReport`，包含 `FactPacket`（标记为 `degraded=True, error="smoke_only"`）
 
-### 主链隔离保障
+### 主链隔离保障被解除 (Phase 1 移除)
 
-* smoke 脚本是独立的 `apps/api/scripts/run_local_hermes_smoke.py`，不被任何 main chain import
-* `HermesLocalKernelAdapter` 未出现在 `main_dependencies.py`
-* `get_hermes_engine()` 的默认行为完全不变
-* `verify_hermes_boundary.py` 会主动检查 smoke 脚本未被主链引用
+* `HermesLocalKernelAdapter` 现已正式接入 `main_dependencies.py`
+* `get_hermes_engine()` 返回配置了 `local_kernel` 兜底的首选策略
+* `verify_hermes_boundary.py` 移除了关于隔离状态的硬断言，将 local kernel 视为合法的核心生产引擎。
 
 ## 7. Overlay 目录结构
 
@@ -153,7 +152,85 @@ overlays/hermes-agent/
 
 ### 当前状态声明
 
-> **业务主链行为不变。** `get_hermes_engine()` 仍返回 `HermesRouterAdapter(external, llm)`。
-> Local kernel adapter / launcher 具备 **minimal real execution capability**（smoke 诊断路径 + subprocess 真实执行路径均可用），
-> 但仍为 **non-default / explicit-only**，仅可通过手动脚本触达，不参与正式 runtime 执行。
+> **路由正式切换。** `get_hermes_engine()` 现在将优先探测 `local_kernel`。若未就绪或发生崩溃，系统将自动依次降级至 `external` 和 `llm_fallback`，降级细节会在 runtime diagnostics 中暴露。
+> `HermesLocalKernelAdapter` 已经正式跨入 Main Chain 生产序列。
 
+## 9. Support Layer Demotion (PR3)
+
+008 结构化审查引擎（`StructuredReviewCapabilityFacade`, `FactPacketAdapter`, `pipeline`, `report_builder`）现在被严格定义为 **advisory support layer**，禁止输出官方最终评级/判决语义。
+
+### 强制措施
+
+| 措施 | 位置 | 效果 |
+|---|---|---|
+| `ownership='support_material'` 强制标注 | `FactPacketAdapter`, `StructuredReviewCapabilityFacade` | 所有 008 产出的 FactPacket 和 normalized result 均携带 support_material 所有权标记 |
+| 禁止字段剥离 | `_normalize_primary_review_result()` | `final_grade`, `verdict`, `official_decision`, `approval_status` 在 support 层输出中被显式 pop 掉 |
+| `_advisory_note` 注入 | `_normalize_primary_review_result()` | summary 级别的 `overallConclusion` 被标注为"仅供参考" |
+| support issue 注解 | `_annotate_support_issue_source()` (`review_task_contracts.py`) | 附加 `supportDerived=True`，移除 `raw_data` 和 `source_packets` |
+| 边界脚本验证 | `verify_hermes_boundary.py` → `verify_support_layer_demotion()` | 自动扫描 support layer 文件，若检测到 `final_grade` / `verdict` / `official_decision` / `approval_status` 字段赋值则报错 |
+
+### 决策所有权
+
+- **Hermes Assembler** (`assembler.py`) 是唯一允许发出 `final_grade`、`executive_summary`、`top_risks` 等官方最终裁决字段的组件。
+- 008 结构化引擎的 `overallConclusion` 仅作为 advisory input 供 Assembler 参考，不会出现在 `/result` 正式协议中。
+
+## 10. Live Overlay & Promotion Governance (PR4)
+
+### Overlay 资产活注入
+
+`HermesKernelLauncher` 现在支持通过 `repo_root` 构造函数自动解析 kernel 和 overlay 路径。Launcher 在每次 `invoke()` 调用时，通过 `--overlay-root` 参数将 overlay 根目录传递给 `invoke_kernel.py` shim，shim 在子进程内读取实际的 overlay 资产。
+
+#### 注入链路
+
+```
+HermesKernelLauncher.__init__(repo_root=...)
+  ├─ kernel_path = repo_root / external / hermes-agent
+  ├─ overlays_path = repo_root / overlays / hermes-agent
+  │
+  invoke(payload)
+  ├─ --overlay-root → overlays/hermes-agent/
+  │   ├─ prompts/hermes_review_system_prompt.md  → system prompt 覆盖
+  │   ├─ config/local_kernel_launch.yaml         → 启动配置
+  │   └─ scripts/invoke_kernel.py                → shim 入口
+  │
+  invoke_kernel.py (subprocess)
+  └─ 读取 overlay prompt → 注入 AIAgent ephemeral_system_prompt
+```
+
+#### Overlay 健康检查
+
+`launcher.verify_overlay_manifest()` 返回结构化报告：
+- overlay 根目录是否存在
+- 各子目录（skills, memory, config, prompts）是否存在
+- 关键资产（system prompt, launch config, invoke shim）是否就绪
+- 错误和警告列表
+
+### 模板晋升治理 (Template Promotion Governance)
+
+新增 `template_promotion_policy.py` 模块，强制执行模板晋升生命周期：
+
+```
+runtime_candidate → validated → promoted_to_seed
+                 └─ rejected (annotated, not deleted)
+```
+
+#### 晋升规则
+
+| 规则 | 含义 |
+|---|---|
+| 结构完整性 | 必须是合法的 AgentTemplate JSON，含 id, agent_name, agent_purpose, execution_mode |
+| 使用证据 | 必须有关联的 task_id（即必须被实际使用过） |
+| 非实验性 | `metadata.experimental` 必须为 false |
+| 文档类型覆盖 | `supported_document_types` 不能为空 |
+
+#### 晋升流程
+
+1. `list_candidates()` — 列举 runtime_dir 中所有候选模板
+2. `validate_candidate(id)` — 执行 4 项验证规则
+3. `promote(id)` — 验证通过后拷贝到 seed_dir，剥离实验标记，记录晋升日志
+
+#### 边界脚本验证
+
+`verify_hermes_boundary.py` 新增两项检查：
+- `verify_live_overlay_governance()` — 验证关键 overlay 资产文件存在
+- `verify_template_promotion_governance()` — 验证晋升治理模块和目录结构存在

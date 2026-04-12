@@ -2,24 +2,23 @@
 Hermes Kernel Launcher.
 
 Status:
-- minimal real execution available
-- non-default / explicit-only
-- NOT wired into production runtime (main_dependencies.py)
+- production main chain engine (wired into get_hermes_engine())
+- default first-priority backend in 3-stage routing
 
 Responsible for managing the execution environment, lifecycle, and
-overlay injections (skills, memory, config) for the isolated external/hermes-agent submodule.
+overlay injections (skills, memory, config, prompts) for the isolated external/hermes-agent submodule.
 
 Modes:
 - dry_run: inspect paths, resolve overlays, generate launch plan — never spawn process
 - smoke:   validate kernel locatability and overlay resolution, return controlled
            SmokeResult without spawning a subprocess
 - invoke:  spawn a real subprocess via invoke_kernel.py shim, send JSON payload
-           via stdin, parse structured output — minimal real execution path
+           via stdin, parse structured output
 
-Current capability boundary:
-- Minimal execution via subprocess (not full production-grade review)
-- Graceful degradation on timeout, missing paths, or parse failure
-- Process isolation via subprocess — no in-process kernel imports
+Overlay governance:
+- Overlay assets (skills, memory, config, prompts) are live-injected into the kernel subprocess
+- verify_overlay_manifest() validates the expected overlay structure at startup
+- The launcher passes --overlay-root to the shim; the shim reads overlay prompts at invocation time
 """
 from __future__ import annotations
 
@@ -75,23 +74,89 @@ EXPECTED_OVERLAY_SUBDIRS = ("skills", "memory", "config", "prompts")
 class HermesKernelLauncher:
     """Manages the invocation of the local Hermes agent kernel.
 
-    This launcher is intentionally NOT wired into the production runtime.
-    Current capabilities:
+    Wired into the production runtime via get_hermes_engine().
+    Capabilities:
     1. dry_run / inspect: verify kernel boundary and overlay structure.
     2. smoke: validate locatability without spawning a subprocess.
-    3. invoke: spawn a real subprocess via invoke_kernel.py shim for
-       minimal real execution (non-default, explicit-only).
-
-    This launcher must NOT appear in main_dependencies.py.
+    3. invoke: spawn a real subprocess via invoke_kernel.py shim.
+    4. verify_overlay_manifest: validate live overlay asset structure.
     """
 
     def __init__(
         self,
-        kernel_path: Path,
+        kernel_path: Path | None = None,
         overlays_path: Path | None = None,
+        *,
+        repo_root: Path | None = None,
     ):
+        if repo_root is not None and kernel_path is None:
+            kernel_path = repo_root / 'external' / 'hermes-agent'
+        if repo_root is not None and overlays_path is None:
+            overlays_path = repo_root / 'overlays' / 'hermes-agent'
+        if kernel_path is None:
+            raise ValueError('kernel_path or repo_root must be provided')
         self.kernel_path = kernel_path
         self.overlays_path = overlays_path
+        self.repo_root = repo_root
+
+    # ── Live Overlay Governance ────────────────────────────────────
+
+    def verify_overlay_manifest(self) -> dict[str, Any]:
+        """Validate overlay asset structure for live injection readiness.
+
+        Returns a structured report of overlay health:
+        - which subdirectories exist
+        - which key assets are present (prompts, config, scripts)
+        - whether the invoke shim is available
+        """
+        report: dict[str, Any] = {
+            'overlay_root': str(self.overlays_path) if self.overlays_path else None,
+            'overlay_available': False,
+            'subdirs': {},
+            'key_assets': {},
+            'shim_available': False,
+            'errors': [],
+            'warnings': [],
+        }
+
+        if self.overlays_path is None:
+            report['errors'].append('No overlays_path configured')
+            return report
+
+        if not self.overlays_path.is_dir():
+            report['errors'].append(f'Overlay root does not exist: {self.overlays_path}')
+            return report
+
+        report['overlay_available'] = True
+
+        # Check subdirectories
+        for subdir in EXPECTED_OVERLAY_SUBDIRS:
+            subdir_path = self.overlays_path / subdir
+            report['subdirs'][subdir] = subdir_path.is_dir()
+            if not subdir_path.is_dir():
+                report['warnings'].append(f'Overlay subdir missing: {subdir}')
+
+        # Check key assets
+        key_assets = {
+            'system_prompt': self.overlays_path / 'prompts' / 'hermes_review_system_prompt.md',
+            'launch_config': self.overlays_path / 'config' / 'local_kernel_launch.yaml',
+            'invoke_shim': self.overlays_path / 'scripts' / 'invoke_kernel.py',
+        }
+        for asset_name, asset_path in key_assets.items():
+            report['key_assets'][asset_name] = asset_path.is_file()
+
+        report['shim_available'] = report['key_assets'].get('invoke_shim', False)
+
+        if not report['shim_available']:
+            report['errors'].append('invoke_kernel.py shim not found — subprocess execution will fail')
+
+        logger.info(
+            '[hermes_launcher] Overlay manifest: available=%s, subdirs=%s, shim=%s',
+            report['overlay_available'],
+            report['subdirs'],
+            report['shim_available'],
+        )
+        return report
 
     # ── Inspection ──────────────────────────────────────────────────
 

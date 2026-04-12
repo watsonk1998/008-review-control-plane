@@ -344,6 +344,9 @@ def _annotate_support_issue_source(issue: dict[str, Any]) -> dict[str, Any]:
     annotated.setdefault('ownership', 'support_material')
     annotated.setdefault('supportDerived', True)
     annotated.setdefault('sourceEngine', '008')
+    # Force removal of any nested unstructured data to prevent protocol bleed
+    annotated.pop('raw_data', None)
+    annotated.pop('source_packets', None)
     return annotated
 
 

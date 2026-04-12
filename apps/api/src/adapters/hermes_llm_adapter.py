@@ -52,40 +52,34 @@ HERMES_SYSTEM_PROMPT = """\
 你的职责是对施工方案/施工组织设计进行独立的第二路审查。
 
 你会收到：
-1. 审查任务书（ReviewBrief），包含文档类型、关注领域等
-2. 第一路审查（008引擎）已发现的问题清单
+1. 审查任务书（ReviewBrief），包含文档类型、指示要求、“规范标准全文”
+2. 依据的源文档全文（必须仔细阅读，因为第一路引擎能力受限且未能提取专门事实）
+3. 第一路审查（008引擎）已发现的问题清单
 
-你的任务：
-- 独立评估文档的整体质量和合规性
-- 发现第一路审查可能遗漏的问题
-- 对第一路审查已有的重要问题给出你的独立判断
-- 关注宏观层面的风险和系统性问题
+你的【核心任务】：
+- 绝不要仅仅复述或洗稿第一路审查的结果！你需要作为高级专家挖出真正的问题。
+- 仔细阅读审查指令中的【规范标准】，并独立根据这些标准对【源文档全文】进行极其严苛、深度的挑刺。
+- 在审查“章节完整性”、“参数一致性”、“合法合规性”、“工序连贯性”、“证据验证”等维度时仔细找出参数错误、工序颠倒、合规性风险。
+- 请务必提供不少于 4 条针对性极强的重要风险问题。每一条都要明确指出源文档的哪一部分违反了给定规范的哪一部分。
 
-输出格式（严格 JSON，不要包裹 markdown 代码块）：
+输出格式（严格 JSON，不要包含额外的 markdown 标记或代码块符）：
 {
-  "overall_assessment": "总体评价（一段话）",
-  "grade": "conditional_pass | needs_revision | fail",
+  "overall_assessment": "总体评价（说明你查阅全文后独立发现了哪些深层问题）",
+  "grade": "needs_revision",
   "findings": [
     {
       "id": "H-001",
-      "title": "问题标题",
-      "severity": "high | medium | low | info",
-      "category": "structure | compliance | safety | completeness | consistency",
-      "summary": "问题概述",
-      "suggestion": "改进建议",
-      "confidence": "high | medium | low",
-      "corroborates_008_finding": "如与008问题相关填008问题ID，否则null"
+      "severity": "high",
+      "title": "（全新发现）具体违反的条款和现象",
+      "category": "compliance",
+      "summary": "重述或描述发现的具体不符点",
+      "suggestion": "指出具体违反哪条规范并给出修正动作",
+      "evidence_status": "grounded"
     }
   ],
-  "top_risks": ["风险1", "风险2"],
-  "supplemental_observations": "补充观察（可选）"
+  "top_risks": ["1", "2"]
 }
-
-规则：
-- 不要简单重复第一路审查的内容，要有独立视角
-- 重点关注系统性风险、逻辑一致性、关键遗漏
-- severity 要保守，没有充分依据时用 info
-- 返回纯 JSON"""
+"""
 
 
 class HermesLLMAdapter(HermesReviewEngine):
@@ -138,7 +132,7 @@ class HermesLLMAdapter(HermesReviewEngine):
             response = await self._llm.chat(
                 [
                     {'role': 'system', 'content': HERMES_SYSTEM_PROMPT},
-                    {'role': 'user', 'content': user_prompt[:15000]},
+                    {'role': 'user', 'content': user_prompt[:80000]},
                 ],
                 temperature=0.15,
                 max_tokens=3000,
@@ -180,7 +174,7 @@ class HermesLLMAdapter(HermesReviewEngine):
         # Document preview
         if document_preview:
             parts.append('## 文档内容预览')
-            parts.append(document_preview[:6000])
+            parts.append(document_preview[:25000])
             parts.append('')
 
         # 008 results
@@ -204,16 +198,18 @@ class HermesLLMAdapter(HermesReviewEngine):
 
     def _parse_json(self, content: str) -> dict[str, Any]:
         text = content.strip()
-        if text.startswith('```'):
-            parts = text.split('```')
+        if '```json' in text:
+            parts = text.split('```json')
             if len(parts) >= 2:
-                text = parts[1]
-                if text.startswith('json'):
-                    text = text[4:]
+                text = parts[1].split('```')[0].strip()
+        elif '```' in text:
+            parts = text.split('```')
+            if len(parts) >= 3:
+                text = parts[1].strip()
         try:
             return json.loads(text.strip())
-        except json.JSONDecodeError:
-            logger.warning('[hermes] JSON parse failed, using fallback')
+        except json.JSONDecodeError as exc:
+            logger.warning('[hermes] JSON parse failed: %s. Content start: %s...', exc, content[:200])
             return {
                 'overall_assessment': content[:500],
                 'grade': 'needs_revision',

@@ -27,6 +27,8 @@ class HermesController:
         capability_facade,
         hermes_engine,
         llm_gateway,
+        basis_pack_resolver,
+        support_packet_builder,
         seed_template_dir: Path,
         runtime_template_dir: Path,
     ):
@@ -35,6 +37,8 @@ class HermesController:
         self.capability_facade = capability_facade
         self.hermes_engine = hermes_engine
         self.llm_gateway = llm_gateway
+        self.basis_pack_resolver = basis_pack_resolver
+        self.support_packet_builder = support_packet_builder
         self.template_registry = HermesTemplateRegistry(
             seed_dir=seed_template_dir,
             runtime_dir=runtime_template_dir,
@@ -186,6 +190,14 @@ class HermesController:
         if candidate_template is not None:
             enriched.setdefault('hermesController', {})['candidateTemplateId'] = candidate_template.id
 
+        if final_packet is not None and getattr(self, 'llm_gateway', None):
+            if emit:
+                emit('hermes_controller', 'hermes_controller', 'info', '派出最终审查报告汇总子agent...')
+            synthesized_markdown = await self._synthesize_final_report(final_packet.report_markdown)
+            final_packet.report_markdown = synthesized_markdown
+            enriched['finalReportMarkdown'] = synthesized_markdown
+            enriched['finalAnswer'] = synthesized_markdown
+
         if write_json_artifact:
             write_json_artifact('hermes-controller-agent-results', agent_results)
             if final_packet is not None:
@@ -194,6 +206,40 @@ class HermesController:
             write_text_artifact('hermes-controller-final-report', final_packet.report_markdown, '.md')
 
         return enriched
+
+    async def _synthesize_final_report(self, report_markdown: str) -> str:
+        prompt = f"""
+你是一个专业的资深工程安全审查总监（Hermes Final Synthesizer）。
+请依据下方的原始审查报告内容，对其进行“人类习惯语言”的润色、转换和汇总。
+
+必须要严格遵守以下 5 个章节展开叙述：
+1. 章节完整性
+2. 参数一致性
+3. 合法合规性
+4. 工序连贯性
+5. 证据验证
+
+要求：
+- 严格忠于原始审查结论（原报告里指出的问题，包含风险等级、严重程度等必须保留，绝对不可遗漏）。
+- 忠于原始报告的引用依据。
+- 如果某章节在原报告中没有被指出对应的问题，请客观地说明“暂未发现明显问题”或概述现有的合规情况。
+- 适当组织语言使其更加连贯、专业且易读，去除冷冰冰的系统生成痕迹。
+- 最终输出必须是纯 Markdown 格式。
+
+【原始审查报告如下】：
+{report_markdown}
+"""
+        try:
+            content = await self.llm_gateway.chat([
+                {'role': 'system', 'content': '你是高级审查结论综合撰写专家。请输出专业、结构清晰的报告。'},
+                {'role': 'user', 'content': prompt}
+            ], temperature=0.3, max_tokens=2500)
+            text = content.get('content', '')
+            if text:
+                return text
+        except Exception as exc:
+            logger.warning('[hermes_controller] Final report synthesis failed: %s', exc)
+        return report_markdown
 
     async def _generate_candidate_template(
         self,

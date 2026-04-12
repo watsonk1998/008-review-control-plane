@@ -1,0 +1,93 @@
+# knowledge/review_basis registry definition
+# Defines the canonical source of truth for review basis (rules, laws, standards, policies).
+
+"construction-《建筑施工组织设计规范》GB/T 50502-2009":
+  basis_id: "construction-《建筑施工组织设计规范》GB/T 50502-2009"
+  title: "《建筑施工组织设计规范》"
+  source_type: "national_standard"
+  version: "GB/T 50502-2009"
+  effective_status: "active"
+  jurisdiction: "National"
+  file_refs:
+    - "knowledge/review_basis/national_standards/gb_t_50502_2009.md"
+  applicability_tags: ["construction_org", "base"]
+  owner: "MOHURD"
+  freshness_rule: "yearly"
+
+"construction-《建设工程监理规范》GB/T 50319":
+  basis_id: "construction-《建设工程监理规范》GB/T 50319"
+  title: "《建设工程监理规范》"
+  source_type: "national_standard"
+  version: "GB/T 50319"
+  effective_status: "active"
+  jurisdiction: "National"
+  file_refs:
+    - "knowledge/review_basis/national_standards/gb_t_50319.md"
+  applicability_tags: ["supervision_plan", "base"]
+  owner: "MOHURD"
+  freshness_rule: "yearly"
+
+"construction-《危险性较大的分部分项工程专项施工方案编制指南》（建办质〔2021〕48号）":
+  basis_id: "construction-《危险性较大的分部分项工程专项施工方案编制指南》（建办质〔2021〕48号）"
+  title: "《危险性较大的分部分项工程专项施工方案编制指南》"
+  source_type: "industry_standard"
+  version: "建办质〔2021〕48号"
+  effective_status: "active"
+  jurisdiction: "National"
+  file_refs:
+    - "knowledge/review_basis/industry_standards/mohurd_2021_48.md"
+  applicability_tags: ["hazardous_special_scheme", "base"]
+  owner: "MOHURD"
+  freshness_rule: "yearly"
+
+"construction-《建设工程安全生产管理条例》":
+  basis_id: "construction-《建设工程安全生产管理条例》"
+  title: "《建设工程安全生产管理条例》"
+  source_type: "law"
+  version: "国务院令第393号"
+  effective_status: "active"
+  jurisdiction: "National"
+  file_refs:
+    - "knowledge/review_basis/laws/safety_management_regulation.md"
+  applicability_tags: ["all"]
+  owner: "State Council"
+  freshness_rule: "yearly"
+
+"review-control-plane-special-scheme-structure-policy":
+  basis_id: "review-control-plane-special-scheme-structure-policy"
+  title: "review-control-plane-special-scheme-structure-policy"
+  source_type: "enterprise"
+  version: "v1.0"
+  effective_status: "active"
+  jurisdiction: "System/Enterprise"
+  file_refs:
+    - "knowledge/review_basis/enterprise/special_scheme_structure_policy.md"
+  applicability_tags: ["system_runtime", "hazardous_special_scheme"]
+  owner: "Platform Engineering"
+  freshness_rule: "on_demand"
+
+"review-control-plane-visibility-policy":
+  basis_id: "review-control-plane-visibility-policy"
+  title: "review-control-plane-visibility-policy"
+  source_type: "enterprise"
+  version: "v1.0"
+  effective_status: "active"
+  jurisdiction: "System/Enterprise"
+  file_refs:
+    - "knowledge/review_basis/enterprise/visibility_policy.md"
+  applicability_tags: ["system_runtime", "report_generation"]
+  owner: "Platform Engineering"
+  freshness_rule: "on_demand"
+
+"review-control-plane-support-scope-policy":
+  basis_id: "review-control-plane-support-scope-policy"
+  title: "review-control-plane-support-scope-policy"
+  source_type: "enterprise"
+  version: "v1.0"
+  effective_status: "active"
+  jurisdiction: "System/Enterprise"
+  file_refs:
+    - "knowledge/review_basis/enterprise/support_scope_policy.md"
+  applicability_tags: ["system_runtime", "hermes_controller"]
+  owner: "Platform Engineering"
+  freshness_rule: "on_demand"

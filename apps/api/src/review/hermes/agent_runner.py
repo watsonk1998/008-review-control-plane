@@ -30,11 +30,14 @@ class HermesAgentRunner:
                 workspace=workspace,
                 context=context,
             )
+            
         if template.execution_mode == 'hermes_router':
+            parse_result = workspace.get('parse_result')
+            doc_text = parse_result.normalizedText if parse_result else ''
             packet = await self.hermes_engine.review(
                 brief=brief,
                 fact_packet_008=workspace.get('support_packet_008'),
-                document_preview=(workspace.get('parse_result').preview if workspace.get('parse_result') else ''),
+                document_preview=doc_text,
             )
             for finding in packet.findings:
                 self._annotate_finding_ownership(template, finding)

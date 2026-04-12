@@ -4,10 +4,13 @@ from __future__ import annotations
 
 Status:
 - official module boundary
+- SUPPORT LAYER ONLY — advisory, non-authoritative
 
 Freeze boundary:
 - exposes 008 capabilities to Hermes-side callers
 - does not own controller orchestration or final-output assembly
+- MUST NOT emit official final grade, verdict, or decision semantics
+- all outputs carry ownership='support_material' by construction
 
 Do not extend:
 - no HermesController semantics
@@ -16,10 +19,12 @@ Do not extend:
 - no supplemental review orchestration
 - no second contract layer
 - no duplicated 008 implementation
+- no official grade/verdict/decision fields
 
 Canonical path:
 - Hermes-side callers use this facade as the only supported boundary into 008 structured-review capabilities
 - executor internals stay behind this facade and are normalized before controller/module consumption
+- 008 findings are advisory support inputs only; Hermes Assembler owns all final decisions
 """
 
 from typing import Any
@@ -54,7 +59,13 @@ class RuleAndEvidenceOutput(BaseModel):
     candidates: list[dict[str, Any]] = Field(default_factory=list)
 
 
-class PrimaryReviewOutput(BaseModel):
+class PrimarySupportReviewOutput(BaseModel):
+    """Output of 008 structured review — strictly support/advisory material.
+
+    This output MUST NOT contain official final_grade, verdict, or decision
+    semantics. All findings are stamped as support_material ownership.
+    """
+
     module_id: str = 'primary_support_review'
     support_result: dict[str, Any]
     support_packet: dict[str, Any]
@@ -190,7 +201,7 @@ class StructuredReviewCapabilityFacade:
             'artifactIndex': normalized_result.get('artifactIndex', []),
             'artifacts': normalized_result.get('artifacts', []),
         }
-        return PrimaryReviewOutput(
+        return PrimarySupportReviewOutput(
             support_result=normalized_result,
             support_packet=packet.model_dump(mode='json'),
             support_report_material=support_report_material,
@@ -210,6 +221,11 @@ class StructuredReviewCapabilityFacade:
         This preserves the current result shape needed by HermesReviewAssembler while
         making the facade the single place that decides which keys are supported across
         the controller boundary.
+
+        SUPPORT LAYER DEMOTION:
+        - All outputs are stamped with ownership='support_material'
+        - Official grade/verdict/decision fields are explicitly stripped
+        - 008 findings are advisory inputs only — Hermes Assembler owns all final decisions
         """
 
         normalized = dict(result)
@@ -236,6 +252,18 @@ class StructuredReviewCapabilityFacade:
             'reportPrintCss': normalized.get('reportPrintCss', ''),
         }
         normalized['ownership'] = 'support_material'
+
+        # --- SUPPORT LAYER DEMOTION: strip any official decision semantics ---
+        # 008 support layer MUST NOT emit these fields; only Hermes Assembler may.
+        for forbidden_key in ('final_grade', 'verdict', 'official_decision', 'approval_status'):
+            normalized.pop(forbidden_key, None)
+        # Demote any summary-level "overallConclusion" to advisory framing
+        summary = normalized.get('summary')
+        if isinstance(summary, dict) and summary.get('overallConclusion'):
+            summary['_advisory_note'] = (
+                'This conclusion is advisory support material from the 008 structured review engine. '
+                'Official review verdict is determined exclusively by Hermes Assembler.'
+            )
         return normalized
 
     def _annotate_support_issue(self, issue: dict[str, Any]) -> dict[str, Any]:

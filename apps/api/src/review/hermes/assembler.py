@@ -18,6 +18,9 @@ class HermesReviewAssembler:
 
     The assembler owns the external final result protocol exposed by controller/runtime.
     FinalReportMerger is only an internal helper used here for packet fusion.
+    
+    HARD CONSTRAINT: If Hermes main review fails or degrades, this assembler MUST NOT 
+    output a formal FinalReportPacket. It must fail-closed and return degraded/support facts.
     """
 
     def __init__(self):
@@ -26,21 +29,42 @@ class HermesReviewAssembler:
     def assemble(
         self,
         *,
-        brief,
+        brief: ReviewBrief,
         support_packet_008: FactPacket | None,
         hermes_review_packets: list[FactPacket],
         support_result_008: dict[str, Any] | None,
         agent_results: list[dict[str, Any]],
     ) -> tuple[dict[str, Any], FinalReportPacket | None]:
-        if support_packet_008 is None:
-            payload = dict(support_result_008 or {})
+        
+        hermes_ok = bool(hermes_review_packets and not all(p.degraded for p in hermes_review_packets))
+
+        if not hermes_ok:
+            # FAIL-CLOSED: Do not emit a formal formal review report if Hermes is unavailable.
+            payload = dict(support_result_008 or (support_packet_008.raw_result if support_packet_008 else {}) or {})
             payload['hermesController'] = {
                 'enabled': True,
+                'selectedAgents': [result.get('agent_id') for result in agent_results],
                 'agentResults': agent_results,
                 'finalReportReady': False,
+                'supplementalPacketCount': 0,
+                'mainReviewOwnedBy': 'hermes',
+                'decisionOwner': 'hermes',
+                'supportOwner': 'structured_review_capability_facade',
+                'degraded': True,
             }
+            
+            error_reason = hermes_review_packets[0].error if hermes_review_packets and hermes_review_packets[0].error else "主审引擎未返回有效裁决"
+            fallback_markdown = self._render_degraded_markdown(
+                doc_label=_GRADE_LABELS.get(str(brief.review_object_type), str(brief.review_object_type)),
+                support_packet=support_packet_008,
+                error_reason=error_reason
+            )
+            payload['finalReportMarkdown'] = fallback_markdown
+            payload['finalAnswer'] = fallback_markdown
+            payload['traceability'] = []
             return payload, None
-        merged_hermes_main_review = self._merge_hermes_review_outcomes(support_packet_008.review_id, hermes_review_packets)
+
+        merged_hermes_main_review = self._merge_hermes_review_outcomes(support_packet_008.review_id if support_packet_008 else brief.review_id, hermes_review_packets)
         support_packet_008, merged_hermes_main_review = self._apply_support_confidence_adjustments(
             support_packet_008=support_packet_008,
             hermes_review_packet=merged_hermes_main_review,
@@ -51,7 +75,7 @@ class HermesReviewAssembler:
         )
         final_packet = self._build_final_decision_packet(
             brief=brief,
-            support_packet_008=support_packet_008,
+            support_packet_008=support_packet_008,  # type: ignore
             hermes_review_packet=merged_hermes_main_review,
         )
         final_packet.metadata = {
@@ -62,7 +86,8 @@ class HermesReviewAssembler:
             'support_owner': 'structured_review_capability_facade',
             'final_output_entrypoint': 'hermes_review_assembler',
         }
-        payload = dict(support_result_008 or support_packet_008.raw_result or {})
+        
+        payload = dict(support_result_008 or (support_packet_008.raw_result if support_packet_008 else {}) or {})
         payload['hermesController'] = {
             'enabled': True,
             'selectedAgents': [result.get('agent_id') for result in agent_results],
@@ -77,7 +102,26 @@ class HermesReviewAssembler:
         payload['finalReportMarkdown'] = final_packet.report_markdown
         payload['finalReportPacket'] = final_packet.model_dump(mode='json')
         payload['finalAnswer'] = final_packet.report_markdown
+        
         return payload, final_packet
+
+    def _render_degraded_markdown(self, doc_label: str, support_packet: FactPacket | None, error_reason: str) -> str:
+        lines: list[str] = []
+        lines.append(f'# {doc_label} — 预检结果与支撑层数据（非正式审查报告）\n')
+        lines.append(f'> **【系统状态提示】**\n> 审查主控引擎（Hermes）未能完整执行或当前处于不可用状态（原因：{error_reason}）。由于系统启用严格的安全边界限制（Fail-Closed 原则），**本次任务无法生成正式审查裁决报告**。下面列出的内容仅为结构化引擎初步提取的原始支撑证据，不代表最终通过或拒绝的审查结论，请安排人工专项复核。\n')
+        
+        if not support_packet or not support_packet.findings:
+            lines.append('未提取到明确的预检支撑事实或结构化内容丢失。')
+            return '\n'.join(lines)
+            
+        lines.append('## 底层提取异常或风险预警（仅供参考）\n')
+        for finding in support_packet.findings:
+            lines.append(f'- **[{finding.severity.upper()}]** {finding.title}')
+            if finding.summary:
+                lines.append(f'  {finding.summary[:200]}')
+        lines.append('')
+        return '\n'.join(lines)
+
 
     def _merge_hermes_review_outcomes(self, review_id: str, packets: list[FactPacket]) -> FactPacket | None:
         if not packets:
@@ -117,10 +161,10 @@ class HermesReviewAssembler:
     def _apply_support_confidence_adjustments(
         self,
         *,
-        support_packet_008: FactPacket,
+        support_packet_008: FactPacket | None,
         hermes_review_packet: FactPacket | None,
-    ) -> tuple[FactPacket, FactPacket | None]:
-        if hermes_review_packet is None:
+    ) -> tuple[FactPacket | None, FactPacket | None]:
+        if hermes_review_packet is None or support_packet_008 is None:
             return support_packet_008, hermes_review_packet
         adjusted_support = support_packet_008.model_copy(deep=True)
         hermes_titles = {finding.title for finding in hermes_review_packet.findings}
@@ -132,10 +176,10 @@ class HermesReviewAssembler:
     def _resolve_conflicts_and_gaps(
         self,
         *,
-        support_packet_008: FactPacket,
+        support_packet_008: FactPacket | None,
         hermes_review_packet: FactPacket | None,
-    ) -> tuple[FactPacket, FactPacket | None]:
-        if hermes_review_packet is None:
+    ) -> tuple[FactPacket | None, FactPacket | None]:
+        if hermes_review_packet is None or support_packet_008 is None:
             return support_packet_008, hermes_review_packet
         adjusted_hermes = hermes_review_packet.model_copy(deep=True)
         support_titles = {finding.title for finding in support_packet_008.findings}
@@ -223,13 +267,11 @@ class HermesReviewAssembler:
         grade: str,
     ) -> str:
         lines = [
-            f"本次审查由 Hermes 裁决，综合评级：**{_GRADE_LABELS.get(grade, grade)}**。",
-            f"底层结构化引擎提供支持，发现 {metrics.total_findings} 个基础事实（高 {metrics.high_severity}，中 {metrics.medium_severity}，低 {metrics.low_severity}）。",
+            f"本次审查已由专业主审组件裁决完成，总体评级结论为：**{_GRADE_LABELS.get(grade, grade)}**。",
+            f"底层设施提供事实抽提保障，当前命中 {metrics.total_findings} 个预警指标（其中高危项 {metrics.high_severity} 个，中阶 {metrics.medium_severity} 个，浅层瑕疵 {metrics.low_severity} 个）。",
         ]
         if hermes_packet and not hermes_packet.degraded:
-            lines.append(f"Hermes 主控层补充裁定 {supplemental_count} 个独立问题/风险。")
-        elif hermes_packet and hermes_packet.degraded:
-            lines.append(f"Hermes 主控层本次处于降级模式（{hermes_packet.error}），裁决基于降级保障。")
+            lines.append(f"经综合审阅与交叉校验，主审环节额外标注了 {supplemental_count} 个需重点复核的深层风险点。")
         return ' '.join(lines)
 
     def _render_markdown(
@@ -244,10 +286,10 @@ class HermesReviewAssembler:
     ) -> str:
         lines: list[str] = []
         lines.append(f'# {doc_label} — 综合审查报告\n')
-        lines.append(f'## Hermes 最终裁决\n\n{summary}\n')
+        lines.append(f'## 最终合成裁决\n\n{summary}\n')
 
         if top_risks:
-            lines.append('## 重点风险\n')
+            lines.append('## 核心阻断风险\n')
             for finding in top_risks:
                 lines.append(f'- **[{finding.severity.upper()}]** {finding.title}')
                 if finding.summary:
@@ -255,30 +297,29 @@ class HermesReviewAssembler:
             lines.append('')
 
         if key_findings:
-            lines.append('## 支撑问题 (底层提取)\n')
-            lines.append('| 编号 | 严重度 | 来源 | 问题 | 建议 |')
-            lines.append('|------|--------|------|------|------|')
+            lines.append('## 基础审查点 (依据客观项核查)\n')
+            lines.append('| 编号 | 风险程度 | 交叉验证 | 发现的问题 | 改进建议 |')
+            lines.append('|------|----------|----------|------------|----------|')
             for finding in key_findings:
-                source = finding.source_engine or '008'
-                corroborated = ' ✓' if (finding.raw_data or {}).get('corroborated_by_hermes') else ''
+                corroborated = '已复核' if (finding.raw_data or {}).get('corroborated_by_hermes') else '引擎直出'
                 suggestion = (finding.suggestion[:80] + '…') if finding.suggestion and len(finding.suggestion) > 80 else (finding.suggestion or '')
-                lines.append(f'| {finding.id} | {finding.severity} | {source}{corroborated} | {finding.title} | {suggestion} |')
+                lines.append(f'| {finding.id} | {finding.severity} | {corroborated} | {finding.title} | {suggestion} |')
             lines.append('')
 
         if supplemental:
-            lines.append('## 主审独立问题\n')
+            lines.append('## 深度穿透风险 (主审识别)\n')
             for finding in supplemental:
                 lines.append(f'- **[{finding.id}]** [{finding.severity}] {finding.title}')
                 if finding.summary:
-                    lines.append(f'  {finding.summary[:200]}')
+                    lines.append(f'  > {finding.summary[:200]}')
                 if finding.suggestion:
-                    lines.append(f'  建议: {finding.suggestion[:200]}')
+                    lines.append(f'  **整改建议**: {finding.suggestion[:200]}')
             lines.append('')
 
-        lines.append('## 审查引擎信息\n')
-        lines.append(f"- 使用引擎: {', '.join(engines)}")
+        lines.append('## 系统追溯标识\n')
+        lines.append(f"- 核查链路: {', '.join(engines)}")
         for engine, info in degradation.items():
-            lines.append(f"- {engine} 降级: {info.get('reason', 'unknown')}")
+            lines.append(f"- 组件降级通报: {engine} 模块异常 ({info.get('reason', '未知')})")
         lines.append('')
         return '\n'.join(lines)
 

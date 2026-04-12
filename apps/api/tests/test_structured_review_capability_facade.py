@@ -8,7 +8,7 @@ from src.review.pipeline import StructuredReviewExecutor
 from src.review.structured_review_capability_facade import (
     FactExtractOutput,
     ParseVisibilityOutput,
-    PrimaryReviewOutput,
+    PrimarySupportReviewOutput,
     ProfileAndPacksOutput,
     RuleAndEvidenceOutput,
     StructuredReviewCapabilityFacade,
@@ -102,7 +102,7 @@ async def test_structured_review_capability_facade_primary_review_matches_execut
     assert primary['module_id'] == 'primary_support_review'
     assert workspace['structured_support_result_008']['summary'] == direct['summary']
     assert primary['support_packet']['engine'] == '008'
-    assert PrimaryReviewOutput.model_validate(primary).support_result['summary'] == direct['summary']
+    assert PrimarySupportReviewOutput.model_validate(primary).support_result['summary'] == direct['summary']
 
 
 def test_structured_review_capability_facade_exposes_incremental_capabilities(tmp_path: Path):

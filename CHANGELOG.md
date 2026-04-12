@@ -8,16 +8,20 @@
 
 ### Added
 
+- 新增 `template_promotion_policy.py` 实施模板晋升治理，强制执行从 `candidate` 到 `validated` 再到 `promoted_to_seed` 的生命周期检验与归档。
+- 新增 `verify_overlay_manifest()` 于 Launcher 内，用于进行针对运行时挂载资产（技能、记忆、配置、提示词）的 Live Overlay 注入前健康度监测及结构化报告。
 - 新增 `docs/architecture/hermes-fragment-inventory.md`，系统盘点历史 Hermes-Agent 代码，确认当前系统处于未产生源码依赖污染的“干净壳层”状态。
-- 新增 `docs/architecture/hermes-local-kernel-integration.md`，确立 external local kernel 以 Subprocess / Sidecar + Launcher 方式注入的非侵入集成架构。
+- 新增 `docs/architecture/hermes-local-kernel-integration.md`，确立 external local kernel 以 Subprocess / Sidecar + Launcher 方式注入的非侵入集成架构，并补充了 PR3 / PR4 相关的架构文档说明。
 - 新增 `HermesLocalKernelAdapter` 与 `HermesKernelLauncher` 的本地内核挂载骨架，基于 dry-run 机制支持了隔离环境内的诊断路线。
 - 新增 `overlays/hermes-agent/scripts/invoke_kernel.py` 作为 Local Kernel 真实执行时的独立子进程调用垫片（Shim），在物理进程层面与 008 主控面对接原生大模型会话请求。
 - 新增 `apps/api/scripts/run_local_hermes_minimal_review.py`，打通最小真实执行链路（Minimal Real Execution），作为一个只供显式触发的封闭验证入口，保证测试端到端安全且不干预默认运行主链。
-- 新增对于 `verify_hermes_boundary.py` 边界校验脚本的强化，增强对跨文本文件配置版本一致性、Overlay 资源挂载文件齐备与否、以及主链防泄漏隔离的验证。
+- 新增对于 `verify_hermes_boundary.py` 边界校验脚本的强化，增强四大关键检查项：防止跨文本的主链泄漏、防止 Support Layer 生成最终裁决语义(`final_grade`等)、校验 Live Overlay 以及检验 Promotion Governance。
 - 新增 `apps/api/tests/test_hermes_local_kernel_minimal_execution.py` 专门测试 Local Kernel 执行子进程调用的隔离容错与协议处理（覆盖超时捕获、异常退出）。
 
 ### Changed
 
+- 降级 008 原引擎为 Advisory Support Layer（PR3）：限制 `StructuredReviewCapabilityFacade` 和 `FactPacketAdapter`，强制剥离 `final_grade`、`verdict` 等官方裁决字段，确保所有输出携带 `ownership: support_material`，仅由 `HermesReviewAssembler` 执行裁决。
+- 升级 `HermesKernelLauncher` 为 Production Main Chain 生产主链引擎，接管 3 级路由（`local_kernel -> external -> llm`），支持凭 `repo_root` 自动解析并传导挂载。
 - 增补 `config/hermes_upstream.yaml` 以更新 `expected_runtime` 状态、添加 `overlay` 映射路径和明确 `local_kernel` 执行权限设定声明。
 - 更新 `AGENTS.md` 核心声明，补全有关 Local Kernel 作为显式测试选项未进入 `main_dependencies.py` 生产执行主链路的“非默认可用”安全纪律说明。
 - 重写 `HermesKernelLauncher` 的 `invoke()` 机制并接入 `subprocess` 模块，使 008 主控面能够安全调度外部 Hermes 进程运行，屏蔽终端原生乱码噪音并只提取确定性 JSON 输出结果。
@@ -25,6 +29,23 @@
 - 通过 Launcher 把原先在 adapter 内零散维护的 Hermes System Prompt、执行参数拆解归纳至全新 `overlays/hermes-agent/` 文件夹并分层托管。
 - 全栈统一 Local Kernel 状态语义的表述同步：在代码 Docstring、边界脚本文案、配置标识与 AGENTS.md 中废弃 `smoke-only` 写法，正式声明为 `minimal real execution available`，仍坚守不耦合主链的 explicit-only 纪律。
 - 修复 `invoke_kernel.py` 错误兜底中可能引发 NameError 的 `provider` 未定义引用漏洞；加强 `.gitignore` 以拦截 `*local*.yaml` 等环境重写模板防泄漏。
+
+
+## 2026-04-11
+
+> 补充说明：以下内容为 2026-04-12 补写的历史记录，用于补齐 2026-04-11 那一轮 Hermes ownership 小收口；它不是当前仓库在 2026-04-12 的最新代码更新。
+
+### Changed
+
+- 补记一轮围绕 `Hermes 主控 + Hermes 主审 + Hermes 裁决；底座只做支撑` 的小收口：`build_review_task_result()` 进一步转向 decision-first / execution-metadata-first，减少对底座 raw issue/summary 的直接组织依赖，并在结果 metadata 中明确 `result_ownership`、`module_bucketing` 与 `support_material_present`。
+- 补记 support-only annotation 收口：底座 issue 在 facade 归一层被显式标注为 `support_material`，并补充 `supportCapabilities / supportModules`，避免 008 支撑材料继续被误读成 final-decision-owned finding。
+- 补记 Hermes router finding 的 item-level 模块归属传播：`execution_risk_reviewer` 等 Hermes 主审输出不再只停留在 packet-level `review_modules`，而是把 `module_name / review_modules / template_id / ownership` 下沉到 finding 级别，降低模块分桶对启发式逻辑的依赖。
+- 补记一次 3 模块小规模对照验证：`structure_completeness` 当前仍表现为“底座主导，Hermes 重表达”，`legality_compliance` 仍是“混合过渡态”，`execution_continuity` 则已更接近“Hermes 主审 + 底座支撑”。
+
+### Notes
+
+- 这一条 changelog 是历史补记，不代表 2026-04-12 当天的最新开发主线；其作用是把前一轮已经发生的 ownership 收口、模块分桶收口与模块级验证结果补回仓库历史记录。
+- 该轮工作的价值不在新增能力，而在把最终结果 ownership 更明确地收回 Hermes 裁决层，并用小规模模块证据验证“主审 / 支撑 / 裁决”分工是否已经开始落地。
 
 ## 2026-04-09
 
