@@ -93,17 +93,33 @@ class HermesController:
         try:
             selected_templates = self.template_registry.select_templates(brief=brief, hermes_input=hermes_input)
             focus_gaps = self.template_registry.focus_gaps(selected_templates=selected_templates, brief=brief, hermes_input=hermes_input)
+            is_simulation = plan.get("simulation_mode", False)
+            is_learning = plan.get("learning_mode", False)
+            
+            learning_candidates = []
             candidate_template = None
+
             if focus_gaps:
                 candidate_template = await self._generate_candidate_template(
                     brief=brief,
                     hermes_input=hermes_input,
                     focus_gaps=focus_gaps,
                 )
-                selected_templates.append(AgentTemplateMatch(template=candidate_template, score=2, reasons=['candidate_template']))
-                saved_path = self.template_registry.save_runtime_template(candidate_template, task_id=task.id)
-                if emit:
-                    emit('template', 'hermes_controller', 'completed', f'Candidate template generated: {candidate_template.id}', artifact_path=str(saved_path))
+                
+                # In simulation/learning mode, DO NOT save to formal runtime. Add to candidate list instead.
+                if is_simulation:
+                    if is_learning:
+                        learning_candidates.append({
+                            "type": "template_hint",
+                            "content": f"New agent needed for focus gap. Suggested Template ID: {candidate_template.id}. Prompt: {candidate_template.prompt}"
+                        })
+                    # Use it ephemerally for test
+                    selected_templates.append(AgentTemplateMatch(template=candidate_template, score=2, reasons=['candidate_template_ephemeral']))
+                else:
+                    selected_templates.append(AgentTemplateMatch(template=candidate_template, score=2, reasons=['candidate_template']))
+                    saved_path = self.template_registry.save_runtime_template(candidate_template, task_id=task.id)
+                    if emit:
+                        emit('template', 'hermes_controller', 'completed', f'Candidate template generated: {candidate_template.id}', artifact_path=str(saved_path))
 
             agent_results: list[dict[str, Any]] = []
             support_packet_008: FactPacket | None = None
@@ -189,6 +205,9 @@ class HermesController:
 
         if candidate_template is not None:
             enriched.setdefault('hermesController', {})['candidateTemplateId'] = candidate_template.id
+            
+        if learning_candidates:
+            enriched.setdefault('hermesController', {})['learningGeneratedCandidates'] = learning_candidates
 
         if final_packet is not None and getattr(self, 'llm_gateway', None):
             if emit:

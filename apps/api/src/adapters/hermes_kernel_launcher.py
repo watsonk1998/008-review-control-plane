@@ -294,11 +294,16 @@ class HermesKernelLauncher:
         try:
             logger.info("[hermes_launcher] Invoking local kernel subprocess: %s", " ".join(cmd))
             
+            env = os.environ.copy()
+            # Keep self-evolution data (skills, memory, cache) inside the local kernel directory
+            env["HERMES_HOME"] = str(self.kernel_path / ".hermes")
+            
             proc = await asyncio.create_subprocess_exec(
                 *cmd,
                 stdin=asyncio.subprocess.PIPE,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
+                env=env,
             )
 
             payload_bytes = json.dumps(payload).encode("utf-8")

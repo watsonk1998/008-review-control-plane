@@ -9,6 +9,9 @@ from src.domain.governance_schema import (
     PackDTO,
     ProfileMappingDTO,
     RulePackDTO,
+    CandidateArtifactDTO,
+    CreateCandidateRequest,
+    UpdateCandidateRequest,
     SimulationRunRequest,
     SimulationRunResponse,
 )
@@ -38,6 +41,28 @@ async def list_rule_packs():
 async def get_profile_mapping():
     service = get_governance_service()
     return service.get_profile_mapping()
+
+# --- Candidates ---
+
+@router.post("/candidates", response_model=CandidateArtifactDTO)
+async def create_candidate(request: CreateCandidateRequest):
+    service = get_governance_service()
+    return service.create_candidate(request)
+
+@router.get("/candidates", response_model=list[CandidateArtifactDTO])
+async def list_candidates(profile_id: str | None = None, status: str | None = None):
+    service = get_governance_service()
+    return service.list_candidates(profile_id=profile_id, status=status)
+
+@router.patch("/candidates/{candidate_id}", response_model=CandidateArtifactDTO)
+async def update_candidate(candidate_id: str, request: UpdateCandidateRequest):
+    service = get_governance_service()
+    try:
+        return service.update_candidate(candidate_id, request)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except KeyError as e:
+        raise HTTPException(status_code=404, detail=str(e))
 
 from pydantic import BaseModel
 
@@ -117,7 +142,8 @@ async def run_simulation(request: SimulationRunRequest):
         "hermesInput": {
             "focusRequirements": request.rule_pack_ids
         },
-        "simulation_mode": True  # Always forced True regardless of request
+        "simulation_mode": True,  # Always forced True regardless of request
+        "learning_mode": request.learning_mode
     }
     
     # --- SIMULATION ISOLATION GUARDS ---
@@ -144,12 +170,30 @@ async def run_simulation(request: SimulationRunRequest):
         support_packet = decision_inputs.get('support_packet_008')
         hermes_packets = decision_inputs.get('hermes_review_packets', [])
         
+        # Collect and store generated candidates if in learning mode
+        generated_candidates = result.get('hermesController', {}).get('learningGeneratedCandidates', [])
+        saved_candidates = []
+        if request.learning_mode and generated_candidates:
+            gov_service = get_governance_service()
+            from src.domain.governance_schema import CreateCandidateRequest
+            profile_id = request.document_type # mapping hint
+            for cand in generated_candidates:
+                req = CreateCandidateRequest(
+                    profile_id=profile_id,
+                    candidate_type=cand.get("type", "template_hint"),
+                    content=cand.get("content", ""),
+                    source="simulation"
+                )
+                saved = gov_service.create_candidate(req)
+                saved_candidates.append(saved.model_dump())
+
         return SimulationRunResponse(
             result_class="simulation_preview",
             user_visible_title="⚠️ 模拟环境隔离舱结果",
             user_visible_notice="当前运行在独立验证舱，不影响生产数据，不会改变任何持久化事实基线。",
             support_packet=support_packet,
-            hermes_review_packets=hermes_packets
+            hermes_review_packets=hermes_packets,
+            generated_candidates=saved_candidates if saved_candidates else None
         )
     except Exception as e:
         logger.error(f"Simulation failed: {e}", exc_info=True)

@@ -6,7 +6,7 @@ from contextlib import contextmanager
 from datetime import datetime, timezone
 from typing import Any
 
-from src.domain.governance_schema import AuditLogRecord, DraftRecord
+from src.domain.governance_schema import AuditLogRecord, DraftRecord, CandidateArtifact
 
 
 class SQLiteGovernanceStore:
@@ -54,6 +54,91 @@ class SQLiteGovernanceStore:
                 )
                 '''
             )
+            conn.execute(
+                '''
+                CREATE TABLE IF NOT EXISTS governance_candidates (
+                    id TEXT PRIMARY KEY,
+                    profile_id TEXT NOT NULL,
+                    candidate_type TEXT NOT NULL,
+                    content_text TEXT NOT NULL,
+                    source TEXT NOT NULL,
+                    status TEXT NOT NULL,
+                    created_by TEXT NOT NULL,
+                    reviewer_notes TEXT,
+                    created_at TEXT NOT NULL,
+                    updated_at TEXT NOT NULL
+                )
+                '''
+            )
+
+    def create_candidate(self, candidate: CandidateArtifact) -> CandidateArtifact:
+        with self._connect() as conn:
+            conn.execute(
+                '''
+                INSERT INTO governance_candidates (
+                    id, profile_id, candidate_type, content_text,
+                    source, status, created_by, reviewer_notes, created_at, updated_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ''',
+                (
+                    candidate.id,
+                    candidate.profile_id,
+                    candidate.candidate_type,
+                    candidate.content,
+                    candidate.source,
+                    candidate.status,
+                    candidate.created_by,
+                    candidate.reviewer_notes,
+                    candidate.created_at.isoformat(),
+                    candidate.updated_at.isoformat(),
+                ),
+            )
+        return candidate
+
+    def update_candidate(self, candidate_id: str, **fields: Any) -> CandidateArtifact:
+        now = datetime.now(timezone.utc)
+        serialized: dict[str, Any] = {'updated_at': now.isoformat()}
+        mapping = {
+            'status': 'status',
+            'reviewer_notes': 'reviewer_notes',
+        }
+        for key, value in fields.items():
+            column = mapping.get(key, key)
+            if key in ['status', 'reviewer_notes']:
+                serialized[column] = value
+
+        if len(serialized) == 1: # only updated_at
+            raise ValueError("No valid fields to update")
+
+        assignments = ', '.join(f"{column} = ?" for column in serialized.keys())
+        values = list(serialized.values()) + [candidate_id]
+        
+        with self._connect() as conn:
+            conn.execute(f'UPDATE governance_candidates SET {assignments} WHERE id = ?', values)
+            row = conn.execute('SELECT * FROM governance_candidates WHERE id = ?', (candidate_id,)).fetchone()
+            
+        if not row:
+            raise KeyError(f'Candidate not found: {candidate_id}')
+        return self._row_to_candidate(row)
+
+    def list_candidates(self, profile_id: str | None = None, status: str | None = None) -> list[CandidateArtifact]:
+        with self._connect() as conn:
+            query = 'SELECT * FROM governance_candidates'
+            params = []
+            conditions = []
+            if profile_id:
+                conditions.append('profile_id = ?')
+                params.append(profile_id)
+            if status:
+                conditions.append('status = ?')
+                params.append(status)
+            
+            if conditions:
+                query += ' WHERE ' + ' AND '.join(conditions)
+            
+            query += ' ORDER BY created_at DESC'
+            rows = conn.execute(query, tuple(params)).fetchall()
+        return [self._row_to_candidate(row) for row in rows]
 
     def create_draft(self, draft: DraftRecord) -> DraftRecord:
         with self._connect() as conn:
@@ -173,4 +258,18 @@ class SQLiteGovernanceStore:
             changes=json.loads(row['changes_json']),
             created_by=row['created_by'],
             created_at=datetime.fromisoformat(row['created_at']),
+        )
+
+    def _row_to_candidate(self, row: sqlite3.Row) -> CandidateArtifact:
+        return CandidateArtifact(
+            id=row['id'],
+            profile_id=row['profile_id'],
+            candidate_type=row['candidate_type'],
+            content=row['content_text'],
+            source=row['source'],
+            status=row['status'],
+            created_by=row['created_by'],
+            reviewer_notes=row['reviewer_notes'],
+            created_at=datetime.fromisoformat(row['created_at']),
+            updated_at=datetime.fromisoformat(row['updated_at']),
         )

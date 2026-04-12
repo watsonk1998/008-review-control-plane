@@ -6,6 +6,7 @@ export default function SimulationLab() {
   const [docType, setDocType] = useState("construction_org");
   const [result, setResult] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+  const [learningMode, setLearningMode] = useState(false);
 
   const handleRun = async () => {
     setLoading(true);
@@ -19,7 +20,8 @@ export default function SimulationLab() {
           target_file_id: "test-fixture.docx",
           pack_ids: ["review.visibility"], // simple mock data
           rule_pack_ids: [],
-          simulation_mode: true
+          simulation_mode: true,
+          learning_mode: learningMode
         })
       });
       const data = await res.json();
@@ -44,18 +46,42 @@ export default function SimulationLab() {
           <option value="construction_org">施工组织设计 (construction_org)</option>
           <option value="hazardous_special_scheme">危大工程专项方案 (hazardous_special_scheme)</option>
         </select>
+        
+        <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", padding: "0.5rem" }}>
+          <input type="checkbox" checked={learningMode} onChange={e => setLearningMode(e.target.checked)} />
+          启用离线仿真学习 (Learning Mode)
+        </label>
+
         <button onClick={handleRun} disabled={loading} style={{ padding: "0.5rem 1rem", backgroundColor: "var(--primary-color, #007bff)", color: "white", border: "none", borderRadius: "4px", cursor: "pointer" }}>
           {loading ? "运行中..." : "启动模拟审查"}
         </button>
       </div>
 
       {result && (
-        <div style={{ border: "1px solid var(--border)", borderRadius: "8px", padding: "1rem" }}>
-          <h3>测试返回结果 (Snapshot)</h3>
-          {result.user_visible_title && <h4 style={{ color: "#d9534f" }}>{result.user_visible_title}</h4>}
-          <pre style={{ backgroundColor: "#f8f9fa", padding: "1rem", borderRadius: "4px", overflow: "auto", maxHeight: "400px", marginTop: "1rem" }}>
-            {JSON.stringify(result, null, 2)}
-          </pre>
+        <div style={{ display: "flex", flexDirection: "column", gap: "2rem" }}>
+          
+          {result.generated_candidates && result.generated_candidates.length > 0 && (
+            <div style={{ border: "1px solid #17a2b8", borderRadius: "8px", padding: "1rem", backgroundColor: "#e0f7fa" }}>
+              <h3 style={{ color: "#00838f" }}>✨ 发掘到的候选建议 (Learning Extraction)</h3>
+              <p style={{ marginBottom: "1rem" }}>引擎在脱机学习中捕获到以下新启发，已自动落入候选池作为草稿。</p>
+              <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+                {result.generated_candidates.map((cand: any, idx: number) => (
+                  <div key={idx} style={{ backgroundColor: "rgba(255,255,255,0.7)", padding: "1rem", borderRadius: "4px" }}>
+                    <strong>{cand.candidate_type}</strong>
+                    <pre style={{ margin: "0.5rem 0 0 0", whiteSpace: "pre-wrap" }}>{cand.content}</pre>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div style={{ border: "1px solid var(--border)", borderRadius: "8px", padding: "1rem" }}>
+            <h3>测试返回结果 (Snapshot)</h3>
+            {result.user_visible_title && <h4 style={{ color: "#d9534f" }}>{result.user_visible_title}</h4>}
+            <pre style={{ backgroundColor: "#f8f9fa", padding: "1rem", borderRadius: "4px", overflow: "auto", maxHeight: "400px", marginTop: "1rem" }}>
+              {JSON.stringify(result, null, 2)}
+            </pre>
+          </div>
         </div>
       )}
     </div>

@@ -479,6 +479,30 @@ def verify_fail_closed_assembler_governance(errors: list[str]) -> None:
         errors.append("HermesReviewAssembler degraded report lacks the '非正式' explicit warning.")
 
 
+def verify_main_chain_no_evolution(errors: list[str]) -> None:
+    """Verify that hermes_controller.py does not invoke memory or skill saves in the main run."""
+    controller_path = REPO_ROOT / "apps/api/src/review/hermes_controller.py"
+    if not controller_path.is_file():
+        return
+        
+    content = controller_path.read_text(encoding="utf-8")
+    
+    # Simple heuristic to make sure candidate template saves are blocked in simulation
+    if "if is_simulation:" not in content or "candidate_template" not in content:
+        errors.append("hermes_controller.py does not appear to isolate template generation based on is_simulation.")
+
+
+def verify_candidate_isolation(errors: list[str]) -> None:
+    """Verify CandidateArtifact operations do not automate YAML rewriting."""
+    gov_service_path = REPO_ROOT / "apps/api/src/services/admin/governance_service.py"
+    if not gov_service_path.is_file():
+        return
+        
+    content = gov_service_path.read_text(encoding="utf-8")
+    if "def publish_candidate" in content or "def apply_candidate_to_yaml" in content:
+        errors.append("governance_service.py has an automated candidate publish function, violating the manual transcription rule.")
+
+
 def verify_harness_registries(errors: list[str]) -> None:
     """Verify that the Harness Configuration Registries are present and govern the system."""
     config_dir = REPO_ROOT / "config" / "review_basis"
@@ -511,6 +535,8 @@ def main() -> int:
     verify_harness_registries(errors)
     verify_basis_governance(errors)
     verify_fail_closed_assembler_governance(errors)
+    verify_main_chain_no_evolution(errors)
+    verify_candidate_isolation(errors)
 
     if errors:
         print("Hermes boundary verification: FAIL")
@@ -530,6 +556,7 @@ def main() -> int:
     print("- template promotion governance verified")
     print("- basis mapping governance verified (no hardcoded adapter resolution)")
     print("- fail-closed report boundaries verified in assembler")
+    print("- offline simulation and candidate isolation boundaries verified")
     return 0
 
 

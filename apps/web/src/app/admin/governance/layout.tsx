@@ -11,6 +11,7 @@ export default function GovernanceLayout({ children }: { children: ReactNode }) 
           <Link href="/admin/governance/bases">📚 审查依据库 (Bases)</Link>
           <Link href="/admin/governance/packs">📦 审查包 (Packs)</Link>
           <Link href="/admin/governance/profiles">⚙️ 场景映射 (Profiles)</Link>
+          <Link href="/admin/governance/candidates">💡 候选建议 (Candidates)</Link>
           <Link href="/admin/governance/releases">📝 发布审批 (Releases)</Link>
           <Link href="/admin/governance/simulation">🧪 试跑验证舱 (Simulation Lab)</Link>
         </nav>

@@ -19,6 +19,22 @@ class DraftStatus(str, Enum):
     rejected = 'rejected'
     archived = 'archived'
 
+class CandidateStatus(str, Enum):
+    draft = 'draft'
+    pending_review = 'pending_review'
+    approved_for_transcription = 'approved_for_transcription'
+    transcribed = 'transcribed'
+    published = 'published'
+    rejected = 'rejected'
+    archived = 'archived'
+
+class CandidateType(str, Enum):
+    rule_note = 'rule_note'
+    template_hint = 'template_hint'
+    evidence_heuristic = 'evidence_heuristic'
+    disambiguation_hint = 'disambiguation_hint'
+    candidate_skill_note = 'candidate_skill_note'
+
 class AuditAction(str, Enum):
     create = 'create'
     update = 'update'
@@ -34,6 +50,20 @@ class DraftRecord(BaseModel):
     target_entity_id: str
     proposed_changes: dict[str, Any] = Field(default_factory=dict)
     status: DraftStatus = DraftStatus.draft
+    created_by: str = 'system'
+    reviewer_notes: str | None = None
+    created_at: datetime
+    updated_at: datetime
+
+class CandidateArtifact(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+
+    id: str
+    profile_id: str
+    candidate_type: CandidateType
+    content: str
+    source: str = 'manual'
+    status: CandidateStatus = CandidateStatus.draft
     created_by: str = 'system'
     reviewer_notes: str | None = None
     created_at: datetime
@@ -88,6 +118,28 @@ class RulePackDTO(BaseModel):
 class ProfileMappingDTO(BaseModel):
     mappings: dict[str, Any] = Field(default_factory=dict)
 
+class CandidateArtifactDTO(BaseModel):
+    id: str
+    profile_id: str
+    candidate_type: str
+    content: str
+    source: str
+    status: str
+    created_by: str
+    reviewer_notes: str | None = None
+    created_at: datetime
+    updated_at: datetime
+
+class CreateCandidateRequest(BaseModel):
+    profile_id: str
+    candidate_type: str
+    content: str
+    source: str = 'manual'
+
+class UpdateCandidateRequest(BaseModel):
+    status: str | None = None
+    reviewer_notes: str | None = None
+
 class PublishStateDTO(BaseModel):
     has_pending_draft: bool
     draft_id: str | None = None
@@ -99,6 +151,7 @@ class SimulationRunRequest(BaseModel):
     pack_ids: list[str] = Field(default_factory=list)
     rule_pack_ids: list[str] = Field(default_factory=list)
     simulation_mode: bool = True
+    learning_mode: bool = False
 
 class SimulationRunResponse(BaseModel):
     result_class: str
@@ -106,3 +159,4 @@ class SimulationRunResponse(BaseModel):
     user_visible_notice: str
     support_packet: dict[str, Any] | None = None
     hermes_review_packets: list[dict[str, Any]] = Field(default_factory=list)
+    generated_candidates: list[dict[str, Any]] | None = None

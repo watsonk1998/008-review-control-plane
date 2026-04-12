@@ -22,6 +22,11 @@ from src.domain.governance_schema import (
     PackDTO,
     ProfileMappingDTO,
     RulePackDTO,
+    CandidateArtifact,
+    CandidateType,
+    CandidateStatus,
+    CreateCandidateRequest,
+    UpdateCandidateRequest,
 )
 from src.repositories.governance_store import SQLiteGovernanceStore
 
@@ -128,6 +133,38 @@ class GovernanceService:
         data = self._read_yaml("profile_mapping.yaml")
         mappings = data.get("mappings", {})
         return ProfileMappingDTO(mappings=mappings)
+
+    # --- Candidates ---
+
+    def create_candidate(self, request: CreateCandidateRequest, created_by: str = "system") -> CandidateArtifact:
+        now = datetime.now(timezone.utc)
+        candidate = CandidateArtifact(
+            id=str(uuid.uuid4()),
+            profile_id=request.profile_id,
+            candidate_type=CandidateType(request.candidate_type),
+            content=request.content,
+            source=request.source,
+            status=CandidateStatus.draft,
+            created_by=created_by,
+            created_at=now,
+            updated_at=now,
+        )
+        return self.store.create_candidate(candidate)
+
+    def list_candidates(self, profile_id: str | None = None, status: str | None = None) -> list[CandidateArtifact]:
+        return self.store.list_candidates(profile_id=profile_id, status=status)
+
+    def update_candidate(self, candidate_id: str, request: UpdateCandidateRequest) -> CandidateArtifact:
+        update_fields: dict[str, Any] = {}
+        if request.status is not None:
+            update_fields["status"] = CandidateStatus(request.status)
+        if request.reviewer_notes is not None:
+            update_fields["reviewer_notes"] = request.reviewer_notes
+
+        if not update_fields:
+            raise ValueError("No valid fields provided for update")
+
+        return self.store.update_candidate(candidate_id, **update_fields)
 
     # --- Draft & Publish State Machine ---
 
