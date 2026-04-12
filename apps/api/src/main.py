@@ -9,7 +9,7 @@ from src.routes.review_tasks import router as review_tasks_router
 from src.routes.system import router as system_router
 from src.routes.tasks import router as tasks_router
 from src.routes.uploads import router as uploads_router
-
+from src.routes.admin.governance import router as admin_governance_router
 
 app = FastAPI(title='008 Review Control Plane API', version='0.1.0')
 app.add_middleware(
@@ -32,7 +32,7 @@ app.include_router(tasks_router)
 app.include_router(review_tasks_router)
 app.include_router(review_reports_router)
 app.include_router(uploads_router)
-
+app.include_router(admin_governance_router)
 
 @app.get('/')
 async def root():

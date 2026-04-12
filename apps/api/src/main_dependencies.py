@@ -21,7 +21,16 @@ from src.review.task_compiler import TaskCompiler
 from src.services.document_loader import DocumentLoader
 from src.services.fixture_service import FixtureService
 from src.services.task_service import TaskService
+from src.repositories.governance_store import SQLiteGovernanceStore
+from src.services.admin.governance_service import GovernanceService
 
+@lru_cache(maxsize=1)
+def get_governance_store() -> SQLiteGovernanceStore:
+    return SQLiteGovernanceStore(get_settings().database_path)
+
+@lru_cache(maxsize=1)
+def get_governance_service() -> GovernanceService:
+    return GovernanceService(get_governance_store())
 
 @lru_cache(maxsize=1)
 def get_store() -> SQLiteTaskStore:

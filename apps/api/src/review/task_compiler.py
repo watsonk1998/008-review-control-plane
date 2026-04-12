@@ -37,6 +37,7 @@ class TaskCompiler:
         source_document_ref: SourceDocumentRef | None = None,
         source_document_path: str | None = None,
         plan: dict[str, Any] | None = None,
+        **kwargs
     ) -> ReviewBrief:
         """Compile a TaskRecord into a ReviewBrief.
 
@@ -122,6 +123,7 @@ class TaskCompiler:
                 'fixture_id': task.fixtureId,
                 'plan_authority': plan_profile.get('authority'),
                 'hermes_input': hermes_input,
+                'simulation_mode': plan.get('simulation_mode', False) if plan else kwargs.get('simulation_mode', False),
             },
         )
 

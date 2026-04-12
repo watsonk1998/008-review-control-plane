@@ -8,6 +8,9 @@
 
 ### Added
 
+- 新增 `docs/architecture/harness-principles.md`、`profile-pack-mapping.md`、`review-basis-architecture.md`、`official-result-contract.md` 架构文档，强化系统的源头真相与配置依据。
+- 新增 `config/review_basis/rule_pack_registry.yaml` 补充原子级审查指标。
+- 新增 `apps/api/tests/test_hermes_fail_closed_boundary.py`，实现专属测试套件拦截 Fail-Closed 机制退化。
 - 新增 `template_promotion_policy.py` 实施模板晋升治理，强制执行从 `candidate` 到 `validated` 再到 `promoted_to_seed` 的生命周期检验与归档。
 - 新增 `verify_overlay_manifest()` 于 Launcher 内，用于进行针对运行时挂载资产（技能、记忆、配置、提示词）的 Live Overlay 注入前健康度监测及结构化报告。
 - 新增 `docs/architecture/hermes-fragment-inventory.md`，系统盘点历史 Hermes-Agent 代码，确认当前系统处于未产生源码依赖污染的“干净壳层”状态。
@@ -20,7 +23,11 @@
 
 ### Changed
 
-- 降级 008 原引擎为 Advisory Support Layer（PR3）：限制 `StructuredReviewCapabilityFacade` 和 `FactPacketAdapter`，强制剥离 `final_grade`、`verdict` 等官方裁决字段，确保所有输出携带 `ownership: support_material`，仅由 `HermesReviewAssembler` 执行裁决。
+- 彻底落实 Hermes 受治理主链的硬性准则：固定 `TaskCompiler → ProfileResolver → BasisPackResolver → SupportPacketBuilder → Hermes main review → FinalReportAssembler` 为唯一正式审查流。
+- 重构 `config/review_basis/` 下的真相源配置，要求所有审查依据和规则均通过 YAML 加载解析，严禁在代码层硬编码匹配规则。
+- 重构 `HermesReviewAssembler` 执行严格 Fail-Closed 后门封堵：当 Hermes 降级或无响应时，直接返回 `finalReportReady: False` 的纯技术支撑结果并附加显眼降级声明，绝不允许混淆充当正式报告。
+- 强化用户可见层：报告和状态输出文本强约束为正式、得体的中文表述，避免生硬词汇干扰。
+- 扩容 `verify_hermes_boundary.py`：添加针对“Basis 配置独立”和“Fail-Closed 防御拦截”的源码反查逻辑。
 - 升级 `HermesKernelLauncher` 为 Production Main Chain 生产主链引擎，接管 3 级路由（`local_kernel -> external -> llm`），支持凭 `repo_root` 自动解析并传导挂载。
 - 增补 `config/hermes_upstream.yaml` 以更新 `expected_runtime` 状态、添加 `overlay` 映射路径和明确 `local_kernel` 执行权限设定声明。
 - 更新 `AGENTS.md` 核心声明，补全有关 Local Kernel 作为显式测试选项未进入 `main_dependencies.py` 生产执行主链路的“非默认可用”安全纪律说明。
@@ -29,6 +36,10 @@
 - 通过 Launcher 把原先在 adapter 内零散维护的 Hermes System Prompt、执行参数拆解归纳至全新 `overlays/hermes-agent/` 文件夹并分层托管。
 - 全栈统一 Local Kernel 状态语义的表述同步：在代码 Docstring、边界脚本文案、配置标识与 AGENTS.md 中废弃 `smoke-only` 写法，正式声明为 `minimal real execution available`，仍坚守不耦合主链的 explicit-only 纪律。
 - 修复 `invoke_kernel.py` 错误兜底中可能引发 NameError 的 `provider` 未定义引用漏洞；加强 `.gitignore` 以拦截 `*local*.yaml` 等环境重写模板防泄漏。
+
+### Removed
+
+- 根除主树扰乱项：清理历史遗留的 `scratch*.py` 实验代码及废弃脚本，退档入 `archive/experimental/` 保护冷历史数据同时恢复了主结构树纯净。
 
 ### Historical Notes
 
