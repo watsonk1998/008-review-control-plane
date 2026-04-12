@@ -24,7 +24,6 @@ class CandidateStatus(str, Enum):
     pending_review = 'pending_review'
     approved_for_transcription = 'approved_for_transcription'
     transcribed = 'transcribed'
-    published = 'published'
     rejected = 'rejected'
     archived = 'archived'
 

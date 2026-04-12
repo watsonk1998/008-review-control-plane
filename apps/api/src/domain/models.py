@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from enum import Enum
-from typing import Any, Literal
+from typing import Any, Literal, Union
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -97,7 +97,7 @@ class SectionLocator(BaseModel):
     sectionId: str
 
 
-EvidenceLocator = BlockLocator | TableLocator | AttachmentLocator | ClauseLocator | SectionLocator
+EvidenceLocator = Union[BlockLocator, TableLocator, AttachmentLocator, ClauseLocator, SectionLocator]
 
 
 class SourceDocumentRef(BaseModel):

@@ -133,7 +133,7 @@ export default function CandidatesPage() {
                     <option value="pending_review">待审阅 (pending_review)</option>
                     <option value="approved_for_transcription">批准转写 (approved_for_transcription)</option>
                     <option value="transcribed">已转写至YAML (transcribed)</option>
-                    <option value="published">已发布 (published)</option>
+                    <option value="archived">已归档 (archived)</option>
                     <option value="rejected">已拒绝 (rejected)</option>
                   </select>
                 </div>
