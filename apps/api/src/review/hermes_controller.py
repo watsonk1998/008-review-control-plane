@@ -31,6 +31,7 @@ class HermesController:
         support_packet_builder,
         seed_template_dir: Path,
         runtime_template_dir: Path,
+        formal_mode: bool = True,
     ):
         self.task_compiler = task_compiler
         self.fact_packet_adapter = fact_packet_adapter
@@ -39,9 +40,11 @@ class HermesController:
         self.llm_gateway = llm_gateway
         self.basis_pack_resolver = basis_pack_resolver
         self.support_packet_builder = support_packet_builder
+        self.formal_mode = formal_mode
         self.template_registry = HermesTemplateRegistry(
             seed_dir=seed_template_dir,
             runtime_dir=runtime_template_dir,
+            formal_mode=formal_mode,
         )
         self.module_registry = HermesModuleRegistry(capability_facade=capability_facade)
         self.agent_runner = HermesAgentRunner(
@@ -106,20 +109,24 @@ class HermesController:
                     focus_gaps=focus_gaps,
                 )
                 
-                # In simulation/learning mode, DO NOT save to formal runtime. Add to candidate list instead.
-                if is_simulation:
-                    if is_learning:
-                        learning_candidates.append({
-                            "type": "template_hint",
-                            "content": f"New agent needed for focus gap. Suggested Template ID: {candidate_template.id}. Prompt: {candidate_template.prompt}"
-                        })
-                    # Use it ephemerally for test
-                    selected_templates.append(AgentTemplateMatch(template=candidate_template, score=2, reasons=['candidate_template_ephemeral']))
-                else:
-                    selected_templates.append(AgentTemplateMatch(template=candidate_template, score=2, reasons=['candidate_template']))
-                    saved_path = self.template_registry.save_runtime_template(candidate_template, task_id=task.id)
-                    if emit:
-                        emit('template', 'hermes_controller', 'completed', f'Candidate template generated: {candidate_template.id}', artifact_path=str(saved_path))
+                if is_simulation and is_learning:
+                    learning_candidates.append({
+                        "type": "template_hint",
+                        "content": f"New agent needed for focus gap. Suggested Template ID: {candidate_template.id}. Prompt: {candidate_template.prompt}"
+                    })
+
+                # HARD CONSTRAINT: Candidate templates are ALWAYS ephemeral.
+                # In formal mode, they are used for the current run only and
+                # signaled as governance candidate artifacts.  They are NEVER
+                # persisted to the runtime template directory.
+                selected_templates.append(AgentTemplateMatch(
+                    template=candidate_template,
+                    score=2,
+                    reasons=['candidate_template_ephemeral'],
+                ))
+                if emit:
+                    emit('template', 'hermes_controller', 'info',
+                         f'Candidate template generated (ephemeral, not saved to runtime): {candidate_template.id}')
 
             agent_results: list[dict[str, Any]] = []
             support_packet_008: FactPacket | None = None

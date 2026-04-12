@@ -13,13 +13,27 @@ logger = logging.getLogger(__name__)
 
 
 class HermesTemplateRegistry:
-    def __init__(self, *, seed_dir: Path, runtime_dir: Path):
+    """Template registry for Hermes sub-agents.
+
+    - **formal_mode=True** (production main chain): Only loads governed
+      seed templates.  ``save_runtime_template`` is hard-blocked.
+    - **formal_mode=False** (simulation / offline learning): Also scans
+      ``runtime_dir`` for experimentally generated templates.
+    """
+
+    def __init__(self, *, seed_dir: Path, runtime_dir: Path, formal_mode: bool = True):
         self.seed_dir = seed_dir
         self.runtime_dir = runtime_dir
+        self.formal_mode = formal_mode
 
     def load_templates(self) -> list[AgentTemplate]:
         templates: list[AgentTemplate] = []
-        for directory in (self.seed_dir, self.runtime_dir):
+        # In formal_mode, ONLY seed (governed) templates are loaded.
+        # Runtime templates are exclusively for simulation / offline learning.
+        directories = [self.seed_dir]
+        if not self.formal_mode:
+            directories.append(self.runtime_dir)
+        for directory in directories:
             if not directory.exists():
                 continue
             for path in sorted(directory.rglob('*.json')):
@@ -82,6 +96,18 @@ class HermesTemplateRegistry:
         return list(dict.fromkeys(gaps))
 
     def save_runtime_template(self, template: AgentTemplate, *, task_id: str | None = None) -> Path:
+        """Persist a runtime template to disk.
+
+        HARD CONSTRAINT: This is FORBIDDEN in formal_mode.  Runtime
+        templates may only be saved during simulation / offline learning.
+        """
+        if self.formal_mode:
+            raise RuntimeError(
+                "[HermesTemplateRegistry] save_runtime_template is FORBIDDEN "
+                "in formal_mode.  Runtime templates must not pollute the "
+                "production main chain.  Use simulation_mode=True to save "
+                "experimental templates."
+            )
         runtime_dir = self.runtime_dir / task_id if task_id else self.runtime_dir
         runtime_dir.mkdir(parents=True, exist_ok=True)
         path = runtime_dir / f'{template.id}.json'

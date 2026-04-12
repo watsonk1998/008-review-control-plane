@@ -24,6 +24,7 @@
 - 新增 `apps/api/scripts/run_local_hermes_minimal_review.py`，打通最小真实执行链路（Minimal Real Execution），作为一个只供显式触发的封闭验证入口，保证测试端到端安全且不干预默认运行主链。
 - 新增对于 `verify_hermes_boundary.py` 边界校验脚本的强化，增强四大关键检查项：防止跨文本的主链泄漏、防止 Support Layer 生成最终裁决语义(`final_grade`等)、校验 Live Overlay 以及检验 Promotion Governance。
 - 新增 `apps/api/tests/test_hermes_local_kernel_minimal_execution.py` 专门测试 Local Kernel 执行子进程调用的隔离容错与协议处理（覆盖超时捕获、异常退出）。
+- 新增 `apps/web/src/app/admin/governance/candidates/page.tsx` 与相关控制台接口，提供针对探索/学习模式下 LLM 输出的“Candidate 离线隔离检查”，强制要求只有被审核并同意后 (`transcribed`) 才允许人肉转录入正式配置池，封死配置的自动覆盖风险。
 
 ### Changed
 
@@ -40,6 +41,8 @@
 - 通过 Launcher 把原先在 adapter 内零散维护的 Hermes System Prompt、执行参数拆解归纳至全新 `overlays/hermes-agent/` 文件夹并分层托管。
 - 全栈统一 Local Kernel 状态语义的表述同步：在代码 Docstring、边界脚本文案、配置标识与 AGENTS.md 中废弃 `smoke-only` 写法，正式声明为 `minimal real execution available`，仍坚守不耦合主链的 explicit-only 纪律。
 - 修复 `invoke_kernel.py` 错误兜底中可能引发 NameError 的 `provider` 未定义引用漏洞；加强 `.gitignore` 以拦截 `*local*.yaml` 等环境重写模板防泄漏。
+- 收敛 Candidate Artifacts 工作流的生命周期定义并剔除模糊的 `published` 状态，澄清为 `transcribed -> archived`；在所有相关文档及系统层面确保“候选状态不等于规则已上线”。
+- 大幅加强 `verify_hermes_boundary.py`，增补由隔离实验室 (`simulation_mode`) 以及 Formal Truth Source (严禁从库拉取数据，必须由 YAML 生成) 两层硬隔离机制。
 
 ### Removed
 

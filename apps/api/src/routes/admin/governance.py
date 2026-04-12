@@ -84,11 +84,21 @@ async def list_drafts(status: str | None = None):
     service = get_governance_service()
     return service.list_drafts(status)
 
-@router.post("/drafts/{draft_id}/publish", response_model=DraftRecord)
-async def publish_draft(draft_id: str, request: ModifyDraftRequest | None = None):
+@router.post("/drafts/{draft_id}/approve", response_model=DraftRecord)
+async def approve_draft(draft_id: str):
+    """审批通过治理草案（不自动改写 YAML，需管理员人工转写后确认）。"""
     service = get_governance_service()
     try:
-        return service.approve_and_publish_draft(draft_id)
+        return service.approve_draft(draft_id)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.post("/drafts/{draft_id}/mark-transcribed", response_model=DraftRecord)
+async def mark_draft_transcribed(draft_id: str):
+    """管理员完成人工 YAML 转写后调用此接口确认。"""
+    service = get_governance_service()
+    try:
+        return service.mark_draft_transcribed(draft_id)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 

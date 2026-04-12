@@ -148,8 +148,11 @@ class BasisPackResolver:
                 basis_ids=pack_basis_ids,
             ))
 
-        # 3. Resolve rule packs
+        # 3. Resolve rule packs AND pull in their related packs
         resolved_rule_packs: list[ResolvedRulePack] = []
+        resolved_pack_ids_set = set(all_pack_ids)  # Track what's already resolved
+        rule_pack_contributed_pack_ids: list[str] = []
+
         for rp_id in profile_rule_pack_ids:
             if rp_id not in self.rule_pack_registry:
                 degraded = True
@@ -163,17 +166,43 @@ class BasisPackResolver:
                 ))
                 continue
             rp_data = self.rule_pack_registry[rp_id]
+            related_pack_ids = rp_data.get('related_pack_ids', [])
             resolved_rule_packs.append(ResolvedRulePack(
                 rule_pack_id=rp_id,
                 scope=rp_data.get('scope', ''),
-                related_pack_ids=rp_data.get('related_pack_ids', []),
+                related_pack_ids=related_pack_ids,
                 evidence_requirements=rp_data.get('evidence_requirements', []),
             ))
+            # Collect packs referenced by rule_packs that haven't been resolved yet
+            for related_id in related_pack_ids:
+                if related_id not in resolved_pack_ids_set:
+                    rule_pack_contributed_pack_ids.append(related_id)
+                    resolved_pack_ids_set.add(related_id)
 
-        # 4. Deduplicate basis IDs
+        # 3b. Resolve additional packs contributed by rule_packs
+        for pack_id in rule_pack_contributed_pack_ids:
+            if pack_id not in self.pack_registry:
+                degraded = True
+                reasons.append(
+                    f"规则包关联的审查包缺失: {pack_id} (在 pack_registry.yaml 中未注册)"
+                )
+                continue
+            pack_data = self.pack_registry[pack_id]
+            pack_basis_ids = pack_data.get('basis_ids', [])
+            collected_basis_ids.extend(pack_basis_ids)
+            resolved_packs.append(ResolvedPack(
+                pack_id=pack_id,
+                status=pack_data.get('status', 'unknown'),
+                role=pack_data.get('role', 'unknown'),
+                family=pack_data.get('family', 'unknown'),
+                basis_ids=pack_basis_ids,
+            ))
+
+        # 4. Deduplicate basis IDs (order-preserved)
         unique_basis_ids = list(dict.fromkeys(collected_basis_ids))
 
         # 5. Resolve basis documents — ONLY those referenced by resolved packs
+        #    NO full-scan of basis_registry. NO fallback to "give everything".
         resolved_basis: list[ResolvedBasis] = []
         for basis_id in unique_basis_ids:
             if basis_id not in self.basis_registry:
@@ -200,8 +229,15 @@ class BasisPackResolver:
             ))
 
         logger.info(
-            "[basis_pack_resolver] Resolved: profile=%s, packs=%d, rule_packs=%d, basis=%d, degraded=%s",
-            profile_id, len(resolved_packs), len(resolved_rule_packs), len(resolved_basis), degraded,
+            "[basis_pack_resolver] Resolved: profile=%s, packs=%d (direct=%d, rule_pack_contributed=%d), "
+            "rule_packs=%d, basis=%d, degraded=%s",
+            profile_id,
+            len(resolved_packs),
+            len(resolved_packs) - len(rule_pack_contributed_pack_ids),
+            len(rule_pack_contributed_pack_ids),
+            len(resolved_rule_packs),
+            len(resolved_basis),
+            degraded,
         )
 
         return ResolvedBasisProfile(

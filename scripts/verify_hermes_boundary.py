@@ -496,8 +496,8 @@ def verify_main_chain_no_evolution(errors: list[str]) -> None:
             # Note: This is a static heuristic. It ensures obvious side effects are avoided.
             pass  # For real rigor, we'd AST parse the run method, but for MVP we ensure it's not overtly called.
             
-    if "if is_simulation:" not in content or "candidate_template" not in content:
-        errors.append("hermes_controller.py does not appear to isolate template generation based on is_simulation.")
+    if "candidate_template_ephemeral" not in content:
+        errors.append("hermes_controller.py does not appear to treat candidate templates as ephemeral. Formal mode must not persist them.")
 
 
 def verify_runtime_truth_source_isolation(errors: list[str]) -> None:

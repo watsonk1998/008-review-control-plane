@@ -4,12 +4,7 @@ import logging
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Callable
-
-try:
-    from ruamel.yaml import YAML
-except ImportError:
-    pass
+from typing import Any
 
 import yaml
 
@@ -51,28 +46,10 @@ class GovernanceService:
             logger.error(f"Failed to read {file_name}: {exc}")
             return {}
 
-    def _write_yaml(self, file_name: str, modifier_fn: Callable[[dict[str, Any]], None]):
-        path = self.config_dir / file_name
-        
-        # Use ruamel.yaml to preserve comments if available
-        try:
-            yaml_parser = YAML()
-            yaml_parser.preserve_quotes = True
-            yaml_parser.indent(mapping=2, sequence=4, offset=2)
-            with path.open("r", encoding="utf-8") as f:
-                data = yaml_parser.load(f)
-            if data is None:
-                data = {}
-            modifier_fn(data)
-            with path.open("w", encoding="utf-8") as f:
-                yaml_parser.dump(data, f)
-        except NameError:
-            # Fallback to PyYAML if ruamel is not installed yet
-            with path.open("r", encoding="utf-8") as f:
-                data = yaml.safe_load(f) or {}
-            modifier_fn(data)
-            with path.open("w", encoding="utf-8") as f:
-                yaml.dump(data, f, allow_unicode=True, sort_keys=False)
+    # NOTE: _write_yaml has been REMOVED.
+    # Automated YAML rewriting from governance drafts is FORBIDDEN.
+    # Approved drafts/candidates must be manually transcribed to YAML
+    # files by administrators.  This is a hard governance constraint.
 
     def list_bases(self) -> list[BasisDTO]:
         data = self._read_yaml("basis_registry.yaml")
@@ -184,27 +161,66 @@ class GovernanceService:
         )
         return self.store.create_draft(draft)
 
-    def approve_and_publish_draft(self, draft_id: str, user: str = "system") -> DraftRecord:
+    def approve_draft(self, draft_id: str, user: str = "system") -> DraftRecord:
+        """Approve a governance draft.
+
+        HARD CONSTRAINT: This method only transitions the draft to
+        'approved' status.  It does NOT automatically rewrite YAML files.
+        The actual YAML modification must be performed manually by an
+        administrator.  This is the only formally recognized path.
+
+        After manual transcription, an admin should call
+        ``mark_draft_transcribed`` to close the lifecycle.
+        """
         draft = self.store.get_draft(draft_id)
         if not draft:
             raise ValueError(f"Draft not found: {draft_id}")
         if draft.status != DraftStatus.pending_approval:
             raise ValueError(f"Draft is not in pending_approval state (current: {draft.status})")
 
-        # 1. Apply changes to local files
-        self._apply_draft_to_yaml(draft)
+        # Update status to approved (NOT published — no YAML is touched)
+        draft = self.store.update_draft(draft_id, status=DraftStatus.approved)
 
-        # 2. Update status
+        # Audit log
+        now = datetime.now(timezone.utc)
+        audit = AuditLogRecord(
+            id=str(uuid.uuid4()),
+            entity_type=draft.target_entity_type,
+            entity_id=draft.target_entity_id,
+            action=AuditAction.update,
+            changes={**draft.proposed_changes, '_governance_action': 'approved_pending_manual_transcription'},
+            created_by=user,
+            created_at=now,
+        )
+        self.store.create_audit_log(audit)
+
+        return draft
+
+    def mark_draft_transcribed(self, draft_id: str, user: str = "system") -> DraftRecord:
+        """Mark an approved draft as transcribed after manual YAML update.
+
+        This is called by an administrator AFTER they have manually
+        edited the corresponding YAML file.  It transitions the draft
+        to 'published' status for audit completeness.
+        """
+        draft = self.store.get_draft(draft_id)
+        if not draft:
+            raise ValueError(f"Draft not found: {draft_id}")
+        if draft.status != DraftStatus.approved:
+            raise ValueError(
+                f"Draft must be in 'approved' state before marking as transcribed "
+                f"(current: {draft.status}).  Automated publish is forbidden."
+            )
+
         draft = self.store.update_draft(draft_id, status=DraftStatus.published)
 
-        # 3. Create Audit Log
         now = datetime.now(timezone.utc)
         audit = AuditLogRecord(
             id=str(uuid.uuid4()),
             entity_type=draft.target_entity_type,
             entity_id=draft.target_entity_id,
             action=AuditAction.publish,
-            changes=draft.proposed_changes,
+            changes={'_governance_action': 'manual_transcription_confirmed'},
             created_by=user,
             created_at=now,
         )
@@ -221,41 +237,7 @@ class GovernanceService:
     def list_drafts(self, status: str | None = None) -> list[DraftRecord]:
         return self.store.list_drafts(status)
 
-    def _apply_draft_to_yaml(self, draft: DraftRecord):
-        target_type = draft.target_entity_type
-        target_id = draft.target_entity_id
-        changes = draft.proposed_changes
-
-        if target_type == GovernanceEntityType.basis:
-            def mod_basis(data):
-                if target_id not in data:
-                    data[target_id] = {}
-                data[target_id].update(changes)
-            self._write_yaml("basis_registry.yaml", mod_basis)
-
-        elif target_type == GovernanceEntityType.pack:
-            def mod_pack(data):
-                if "packs" not in data:
-                    data["packs"] = {}
-                if target_id not in data["packs"]:
-                    data["packs"][target_id] = {}
-                data["packs"][target_id].update(changes)
-            self._write_yaml("pack_registry.yaml", mod_pack)
-
-        elif target_type == GovernanceEntityType.rule_pack:
-            def mod_rp(data):
-                if "rule_packs" not in data:
-                    data["rule_packs"] = {}
-                if target_id not in data["rule_packs"]:
-                    data["rule_packs"][target_id] = {}
-                data["rule_packs"][target_id].update(changes)
-            self._write_yaml("rule_pack_registry.yaml", mod_rp)
-
-        elif target_type == GovernanceEntityType.profile_mapping:
-            def mod_profile(data):
-                if "mappings" not in data:
-                    data["mappings"] = {}
-                # Profile Mapping might treat target_id differently, 
-                # but typically if target_id is global, changes replace everything
-                data["mappings"].update(changes)
-            self._write_yaml("profile_mapping.yaml", mod_profile)
+    # NOTE: _apply_draft_to_yaml has been REMOVED.
+    # Automated YAML rewriting is FORBIDDEN in the governance pipeline.
+    # All formal YAML changes must be performed manually by administrators
+    # and then confirmed via mark_draft_transcribed().
