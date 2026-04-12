@@ -85,41 +85,48 @@ from src.domain.models import TaskRecord, SourceDocumentRef
 
 @router.post("/simulation/run", response_model=SimulationRunResponse)
 async def run_simulation(request: SimulationRunRequest):
+    """模拟运行：独立隔离舱，不写正式 task store / artifacts / governance state。"""
     import uuid
     from datetime import datetime, timezone
     
     compiler = get_task_compiler()
     controller = get_hermes_controller()
     
-    task_id = f"sim-{uuid.uuid4()}"
+    # Simulation task ID has explicit prefix — never collides with production
+    task_id = f"simulation-{uuid.uuid4()}"
     now = datetime.now(timezone.utc)
     
-    # We construct a mock TaskRecord for simulation
+    # Mock TaskRecord — NOT persisted to SQLite task store
     mock_task = TaskRecord(
         id=task_id,
         taskType="structured_review",
         capabilityMode="auto",
-        query="Simulation Run",
+        query="[SIMULATION] 模拟运行",
         documentType=request.document_type,
         policyPackIds=request.pack_ids,
         createdAt=now,
         updatedAt=now,
-        status="running"
+        status="simulation"
     )
     
-    # Normally we'd use source Document Ref. For simulation, assume the target_file_id is a valid fake path or fixture
-    mock_doc_path = f"/tmp/simulation/{request.target_file_id}"
+    # Simulation uses a temp path — never touches real document storage
+    mock_doc_path = f"/tmp/simulation-sandbox/{task_id}/{request.target_file_id}"
     
     plan = {
         "reviewProfile": {"documentTypeHint": request.document_type},
         "hermesInput": {
             "focusRequirements": request.rule_pack_ids
         },
-        "simulation_mode": request.simulation_mode
+        "simulation_mode": True  # Always forced True regardless of request
     }
     
+    # --- SIMULATION ISOLATION GUARDS ---
+    # All artifact callbacks are no-op: simulation NEVER writes formal artifacts
+    def _noop_json(name, content): pass  # noqa: E704
+    def _noop_text(name, content, ext): pass  # noqa: E704
+    def _noop_binary(name, content, ext): pass  # noqa: E704
+    
     try:
-        # Call controller
         result = await controller.run(
             task=mock_task,
             plan=plan,
@@ -127,12 +134,12 @@ async def run_simulation(request: SimulationRunRequest):
             source_document_path=mock_doc_path,
             fixture=None,
             emit=None,
-            write_json_artifact=lambda name, content: None,
-            write_text_artifact=lambda name, content, ext: None,
-            write_binary_artifact=lambda name, content, ext: None,
+            write_json_artifact=_noop_json,
+            write_text_artifact=_noop_text,
+            write_binary_artifact=_noop_binary,
         )
         
-        # Build response
+        # Build response from decision inputs
         decision_inputs = result.get('hermesController', {}).get('decisionInputs', {})
         support_packet = decision_inputs.get('support_packet_008')
         hermes_packets = decision_inputs.get('hermes_review_packets', [])

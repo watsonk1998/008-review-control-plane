@@ -7,6 +7,10 @@
 ## 2026-04-12
 
 ### Added
+- 实施完成 **管理员治理工作台 MVP** (Admin Governance Workbench MVP)。建立 `/api/admin/governance` 中心化路由，并实现独立于实际审查任务记录表的配置审批状态流（Draft / AuditLogs）。
+- 引入 `ruamel.yaml` 用于执行基线包 (`basis_registry.yaml` / `pack_registry.yaml`) 配置回写，100% 保留系统级注释（Comments）、排版缩进，实现从硬编码匹配转变为可被界面操作流转的配置化管理体系。
+- 创建 `Simulation Lab` 验证舱路由 `POST /simulation/run`，支持注入 `simulation_mode=True` 将沙盒评估信号通过 TaskCompiler 传贯穿底层 `HermesController` 及 `DocumentLoader` 等层级。确保在零写盘污染的前提下完成完整链路拦截和真实异常诊断，并附带了隔离警告。
+- 搭建基础 NextJS 前端骨架，覆盖 `/admin/governance` 大盘及主要依据映射库占位界面，和对应的沙盒模拟表单测试 UI。
 
 - 新增 `docs/architecture/harness-principles.md`、`profile-pack-mapping.md`、`review-basis-architecture.md`、`official-result-contract.md` 架构文档，强化系统的源头真相与配置依据。
 - 新增 `config/review_basis/rule_pack_registry.yaml` 补充原子级审查指标。
