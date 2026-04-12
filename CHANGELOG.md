@@ -30,6 +30,14 @@
 - 全栈统一 Local Kernel 状态语义的表述同步：在代码 Docstring、边界脚本文案、配置标识与 AGENTS.md 中废弃 `smoke-only` 写法，正式声明为 `minimal real execution available`，仍坚守不耦合主链的 explicit-only 纪律。
 - 修复 `invoke_kernel.py` 错误兜底中可能引发 NameError 的 `provider` 未定义引用漏洞；加强 `.gitignore` 以拦截 `*local*.yaml` 等环境重写模板防泄漏。
 
+### Historical Notes
+
+> 补充说明：以下内容同样属于 2026-04-12 的历史补记，不代表当前仓库今天的最新改动顺序；它记录的是本轮对话中已经讨论并随后在仓库中落地的一组 Hermes external-kernel 边界收紧动作。
+
+- 补记 `方案 B` external kernel 收尾：`external/hermes-agent` 已从 planned boundary 真正落地为 git submodule，`.gitmodules`、submodule pointer 与 machine-readable upstream pin 已对齐。
+- 补记 submodule 一致性收紧：`config/hermes_upstream.yaml`、`external/README.md`、`docs/architecture/hermes-upstream-contract.md` 与 `scripts/verify_hermes_boundary.py` 已从迁移期口径切换到“必须是真实 submodule”的最终态约束。
+- 补记 workflow 入口收口：`make verify-hermes-boundary` 已作为显式边界校验入口存在，后续不应再把 fallback / planned_submodule 视为可接受状态。
+
 
 ## 2026-04-11
 
