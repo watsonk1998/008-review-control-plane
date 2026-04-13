@@ -7,9 +7,11 @@
 ## 2026-04-13
 
 ### Changed
+- 执行全局 Cloud-Native Naming Migration 架构脱壳：在 Harness Engineering 的管控原则下，废除早期 Obsidian 遗留的 00x 数字前缀命名法。完成 `008-review-control-plane` ➜ `hermes-review-agent` 从 Repo 名、Git Remote、到物理文件夹名的全场更名与状态闭环，实现“Domain-Driven” 命名的彻底切换。
 - 全局解封大模型上下文限制阀值 (Context Window Limits)：基于 Qwen3.6-Plus 的实际运转能力验证，将底座架构中的输入字符天花板与输出 Token 锁死强行突破原生短板约束。其中：008子Agent 与表达分类 Agent 截断提升至 `200k Input / 20k Output`，Hermes主控 Agent 参数跃升至 `500k Input / 20k Output`。这一硬核调整彻底解决了大型分部工程长篇文书审核时，尾部规程被截断以及“由于 JSON 生成长度腰斩产生的严重遗漏”的系统级痛点报告干瘪问题。
 - 实施配置驱动安全的 12-Factor 原则化重构：彻底清退源码中所有关于 `~/runtime/obsidian-sync/AI/config/` 以及早期 `~/tools/from-obsidian/` 的开发者本地物理路径硬编码挂载依赖。
 - 重构 API 身份与凭证系统：确立 `~/control/secrets/api-keys/` 为大语言模型及 FastGPT 代理的统一密钥挂载源；为 `llm.py` 与 `fastgpt.py` 补充生产级的防御性熔断机制（Fail-fast），当监测到外部环境变量（如 `LLM_API_KEY`）被不完整注入时实施硬拦截抛错，彻底根除 Docker/线上部署时错误穿越读取本地 Json 引发的运维隐患。
+- 执行线上密钥物理脱敏：强制销毁 WeKnora 宿主机全挂载点的遗留明文 JSON（`century.json` / `gbcs-fast.json` 等）彻底斩断物理残留；同步打通并改造 `docker-compose.yml` 引入 `env_file: .env` 的内存环境变量注入机制，闭环保障主干审查与深导等模块在生产环境零文件驻留式的动态赋权。
 - 彻底完成 Admin Governance Workbench 前端界面的真实化脱壳：将审查包 (`/packs`)、依据库 (`/bases`)、场景映射 (`/profiles`)、候选建议 (`/candidates`) 以及 发布草案 (`/drafts`) 表单彻底对接真实的后端 FastAPI 路由。
 - 强制落实只读治理边界：将前端大盘上的越权编辑按钮（如新建基准、直接录入等）替换为防御性系统提示，强制要求核心标准维护退回到底层 YAML 物理系统与离线候选流中。
 - 大盘统计的真实接管：移除预留的 Dashboard Mock 指标，重构并直连后端资源总表长度用于计算全局治理健康度。
