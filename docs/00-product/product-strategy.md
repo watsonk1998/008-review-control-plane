@@ -18,7 +18,7 @@
 
 # 《产品思路与路线图》
 
-以下文本按仓库当前 `README`、`docs/20-design/architecture.md`、`docs/10-governance/formal-review.md`、`fixtures/review_eval/README.md`、`fixtures/research_inputs/README.md`、`latest-eval-summary`，以及 `fixtures/任务书/` 中的上游研究、边界、差距裁决与双样本监督材料综合起草。仓库当前在 `fixtures/任务书/` 下同时存在成文稿与 prompt 形态文件；本文只吸收其中已经稳定的产品边界、治理约束与路线判断，不把这些材料混写成实施任务书。 ([GitHub][1])
+以下文本按仓库当前 `README`、`docs/20-design/architecture.md`、`docs/10-governance/formal-review.md`、`fixtures/review_eval/README.md`、`fixtures/research_inputs/README.md`、`latest-eval-summary`，以及被归档在 `archive/docs_history/任务书/` 中的上游研究、边界、差距裁决与双样本监督材料综合起草。历史状态中同时存在成文稿与 prompt 形态文件（现已分流至 `archive/prompts/任务书/`）；本文只吸收其中已经稳定的产品边界、治理约束与路线判断，不把这些历史材料混写成实施任务书。 ([GitHub][1])
 
 ## 0. 文档定位
 

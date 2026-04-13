@@ -80,6 +80,7 @@ class HermesLocalKernelAdapter(HermesReviewEngine):
         fact_packet_008: FactPacket | None = None,
         *,
         document_preview: str = '',
+        governed_support_packet: dict[str, Any] | None = None,
     ) -> FactPacket:
         """
         Execute review against the locally launched kernel.
@@ -131,6 +132,10 @@ class HermesLocalKernelAdapter(HermesReviewEngine):
                 f"Please review the following document excerpt and provide a JSON response:\n"
                 f"{context_excerpt[:2000] if context_excerpt else 'No excerpt available.'}"
             )
+            
+            if governed_support_packet:
+                prompt += f"\n\nGoverned Support Packet Context:\nBasis Summary:\n{json.dumps(governed_support_packet.get('basis_summary', []), ensure_ascii=False, indent=2)[:2000]}"
+                prompt += f"\nRule Pack Summary:\n{json.dumps(governed_support_packet.get('rule_pack_summary', []), ensure_ascii=False, indent=2)[:2000]}"
 
             payload = {
                 "review_id": brief.review_id,

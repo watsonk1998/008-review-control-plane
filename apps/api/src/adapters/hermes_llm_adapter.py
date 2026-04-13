@@ -115,6 +115,7 @@ class HermesLLMAdapter(HermesReviewEngine):
         fact_packet_008: FactPacket | None = None,
         *,
         document_preview: str = '',
+        governed_support_packet: dict[str, Any] | None = None,
     ) -> FactPacket:
         """Execute Hermes second-path review.
 
@@ -127,7 +128,7 @@ class HermesLLMAdapter(HermesReviewEngine):
 
         try:
             logger.info('[hermes] Starting review for %s', brief.review_id)
-            user_prompt = self._build_prompt(brief, fact_packet_008, document_preview)
+            user_prompt = self._build_prompt(brief, fact_packet_008, document_preview, governed_support_packet)
 
             response = await self._llm.chat(
                 [
@@ -159,6 +160,7 @@ class HermesLLMAdapter(HermesReviewEngine):
         brief: ReviewBrief,
         packet_008: FactPacket | None,
         document_preview: str,
+        governed_support_packet: dict[str, Any] | None = None,
     ) -> str:
         parts: list[str] = []
 
@@ -187,6 +189,12 @@ class HermesLLMAdapter(HermesReviewEngine):
                 parts.append(f'- [{f.id}] [{f.severity}] {f.title}')
                 if f.summary:
                     parts.append(f'  {f.summary[:200]}')
+            parts.append('')
+
+        if governed_support_packet:
+            parts.append('## 审查治理包 (Governed Support Packet)')
+            parts.append(json.dumps(governed_support_packet.get('basis_summary', []), ensure_ascii=False, indent=2)[:5000])
+            parts.append(json.dumps(governed_support_packet.get('rule_pack_summary', []), ensure_ascii=False, indent=2)[:5000])
             parts.append('')
 
         parts.append('请根据以上信息进行独立审查，输出结构化 JSON。')

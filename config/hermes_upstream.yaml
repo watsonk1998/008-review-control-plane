@@ -48,8 +48,8 @@ local_kernel:
   local_kernel_minimal_execution_available: true
   smoke_script_path: "apps/api/scripts/run_local_hermes_smoke.py"
   minimal_review_script_path: "apps/api/scripts/run_local_hermes_minimal_review.py"
-  adapter_status: "production_main_chain_default"
+  adapter_status: "isolated_standby"
 
 expected_runtime:
-  runtime_kernel_mode: "local_kernel_enabled"
+  runtime_kernel_mode: "standby"
 

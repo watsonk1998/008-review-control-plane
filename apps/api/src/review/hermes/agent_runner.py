@@ -38,6 +38,7 @@ class HermesAgentRunner:
                 brief=brief,
                 fact_packet_008=workspace.get('support_packet_008'),
                 document_preview=doc_text,
+                governed_support_packet=workspace.get('governed_support_packet'),
             )
             for finding in packet.findings:
                 self._annotate_finding_ownership(template, finding)

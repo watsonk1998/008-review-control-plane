@@ -109,8 +109,8 @@ def resolve_review_profile(
                 version='0.0.0',
                 docTypes=[],
                 label=pack_id,
-                role=pack_entry.get('role', 'unknown') if pack_entry else 'unknown',
-                readiness='missing',
+                role=pack_entry.get('role', 'base') if pack_entry else 'base',
+                readiness='placeholder',
                 description=f'Pack {pack_id} is referenced but not found in pack_registry.yaml.',
             ))
             continue

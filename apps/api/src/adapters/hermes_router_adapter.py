@@ -75,6 +75,7 @@ class HermesRouterAdapter(HermesReviewEngine):
         fact_packet_008: FactPacket | None = None,
         *,
         document_preview: str = '',
+        governed_support_packet: dict[str, Any] | None = None,
     ) -> FactPacket:
         """Route to local_kernel if healthy, fallback to external, then fallback to LLM."""
         
@@ -82,7 +83,8 @@ class HermesRouterAdapter(HermesReviewEngine):
         if self._local_kernel and self._local_kernel.available:
             logger.info('[hermes_router] Routing to local_kernel adapter')
             packet = await self._local_kernel.review(
-                brief, fact_packet_008, document_preview=document_preview
+                brief=brief, fact_packet_008=fact_packet_008, document_preview=document_preview,
+                governed_support_packet=governed_support_packet
             )
             if not packet.degraded:
                 return packet
@@ -94,7 +96,8 @@ class HermesRouterAdapter(HermesReviewEngine):
             if ext_health.get('available'):
                 logger.info('[hermes_router] Routing to external Hermes adapter')
                 packet = await self._external.review(
-                    brief, fact_packet_008, document_preview=document_preview
+                    brief=brief, fact_packet_008=fact_packet_008, document_preview=document_preview,
+                    governed_support_packet=governed_support_packet
                 )
                 if not packet.degraded:
                     return packet
@@ -103,10 +106,13 @@ class HermesRouterAdapter(HermesReviewEngine):
                 logger.warning('[hermes_router] External adapter unhealthy. Falling back.')
                 
         # 3. LLM Fallback
-        if self._llm and self._llm.available:
+        if adapter := self._llm:
             logger.info('[hermes_router] Routing to LLM fallback adapter')
-            return await self._llm.review(
-                brief, fact_packet_008, document_preview=document_preview
+            return await adapter.review(
+                brief=brief,
+                fact_packet_008=fact_packet_008,
+                document_preview=document_preview,
+                governed_support_packet=governed_support_packet,
             )
             
         # If neither is available or both failed

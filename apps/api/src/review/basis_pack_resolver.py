@@ -21,7 +21,7 @@ from pathlib import Path
 from pydantic import BaseModel
 from typing import Any
 
-from src.review.schema import ResolvedReviewProfile
+from src.review.schema import ResolvedReviewProfile, ExtractedFacts
 
 logger = logging.getLogger(__name__)
 
@@ -101,7 +101,13 @@ class BasisPackResolver:
             logger.error("[basis_pack_resolver] Failed to load %s: %s", path, exc)
             return {}
 
-    def resolve(self, profile: ResolvedReviewProfile) -> ResolvedBasisProfile:
+    def resolve(
+        self,
+        profile: ResolvedReviewProfile,
+        task_context: dict[str, Any] | None = None,
+        facts: ExtractedFacts | None = None,
+        overrides: dict[str, Any] | None = None,
+    ) -> ResolvedBasisProfile:
         doc_type = profile.documentType
         requested_packs = profile.policyPackIds or []
 

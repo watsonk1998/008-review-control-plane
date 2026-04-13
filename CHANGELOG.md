@@ -2,7 +2,14 @@
 
 本文件记录仓库层面的重要更新，重点保留对产品定位、正式审查契约、文档治理和交付入口有影响的变更。
 
-> 说明：本次按 2026-03 至 2026-04 的时间窗进行了核查。当前仓库可确认的主线变更集中在 `2026-04-02` 至 `2026-04-08`；若无对应 repo 事实，不为 3 月单独虚构条目。
+> 说明：本次按 2026-03 至 2026-04 的时间窗进行了核查。当前仓库可确认的主线变更集中在 `2026-04-02` 至 `2026-04-13`；若无对应 repo 事实，不为 3 月单独虚构条目。
+
+## 2026-04-13
+
+### Changed
+- 彻底封堵 Hermes Formal Pipeline 边界：将 `TaskCompiler → ProfileResolver → BasisPackResolver → SupportPacketBuilder` 治理链硬接线并入 `HermesController.run()`，确保所有下游 Hermes 引擎适配器强制消费统一构建的 `governed_support_packet`。
+- 物理隔离 Candidate Agent 评估池：在仿真学习激活 `focus_gaps` 并生成新候选模板时，模板仅进入独立的 `learning_candidates` 进行信号追踪，不再 `append` 至原生的 `selected_templates` 中，剥离运行时动态模版污染主链的风险。
+- 同步且纠正 Local Kernel 基础配置与断言断点事实：将 `config/hermes_upstream.yaml` 状态强制重置为 `isolated_standby / standby`，严格对齐 `main_dependencies.py` 孤立设定；重构 `verify_hermes_boundary.py`，确保其在回归测试中对 Local Kernel 的判断回正至 “备用状态 / Standby”。
 
 ## 2026-04-12
 

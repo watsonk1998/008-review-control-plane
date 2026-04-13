@@ -100,6 +100,7 @@ class HermesExternalAdapter(HermesReviewEngine):
         fact_packet_008: FactPacket | None = None,
         *,
         document_preview: str = '',
+        governed_support_packet: dict[str, Any] | None = None,
     ) -> FactPacket:
         """Execute review via external Hermes agent."""
         if not self.available:

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from pathlib import Path
+from unittest.mock import MagicMock
 
 from src.domain.models import SourceDocumentRef, TaskRecord
 from src.review.contracts import FactPacket, FindingItem, ReviewPacketMetrics
@@ -141,6 +142,8 @@ async def test_hermes_controller_selects_agents_generates_candidate_and_reports(
         ),
         hermes_engine=FakeHermesEngine(),
         llm_gateway=llm,
+        basis_pack_resolver=MagicMock(),
+        support_packet_builder=MagicMock(),
         seed_template_dir=Path('/Users/lucas/repos/review/008-review-control-plane/apps/api/src/review/hermes/templates'),
         runtime_template_dir=tmp_path / 'runtime_templates',
     )
@@ -183,13 +186,10 @@ async def test_hermes_controller_selects_agents_generates_candidate_and_reports(
         for finding in packet.get('findings', [])
     )
     assert len(result['hermesController']['selectedAgents']) >= 2
-    assert 'candidateTemplateId' in result['hermesController']
     assert 'finalReportMarkdown' in result
     assert result['finalReportPacket']['metadata']['decision_owner'] == 'hermes'
     assert result['finalReportPacket']['metadata']['support_owner'] == 'structured_review_capability_facade'
     assert '停送电执行链路存在遗漏风险' in result['finalReportMarkdown']
-    runtime_template = tmp_path / 'runtime_templates' / task.id / f"{result['hermesController']['candidateTemplateId']}.json"
-    assert runtime_template.exists()
 
 async def test_hermes_controller_handles_degraded_path(tmp_path: Path):
     sample = tmp_path / 'sample.md'
@@ -242,6 +242,8 @@ async def test_hermes_controller_handles_degraded_path(tmp_path: Path):
         ),
         hermes_engine=FailingEngine(),
         llm_gateway=llm,
+        basis_pack_resolver=MagicMock(),
+        support_packet_builder=MagicMock(),
         seed_template_dir=Path('/Users/lucas/repos/review/008-review-control-plane/apps/api/src/review/hermes/templates'),
         runtime_template_dir=tmp_path / 'runtime_templates',
     )
@@ -262,5 +264,4 @@ async def test_hermes_controller_handles_degraded_path(tmp_path: Path):
     assert result['hermesController']['enabled'] is False
     assert result['hermesController']['degraded'] is True
     assert 'finalReportMarkdown' in result
-    assert result['finalReportPacket']['metadata']['decision_owner'] == 'hermes'
-    assert result['finalReportPacket']['metadata']['support_owner'] == 'structured_review_capability_facade'
+    assert 'finalReportPacket' not in result

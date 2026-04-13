@@ -12,6 +12,7 @@ from src.review.hermes.assembler import HermesReviewAssembler
 from src.review.hermes.constants import is_primary_template_id
 from src.review.hermes.decision_models import HermesReviewDecisionInputs
 from src.review.hermes.module_registry import HermesModuleRegistry
+from src.review.hermes.presentation_agent import HermesPresentationAgent
 from src.review.hermes.template_models import AgentTemplate, AgentTemplateMatch
 from src.review.hermes.template_registry import HermesTemplateRegistry
 
@@ -52,6 +53,7 @@ class HermesController:
             module_registry=self.module_registry,
         )
         self.assembler = HermesReviewAssembler()
+        self.presentation_agent = HermesPresentationAgent(llm_gateway=self.llm_gateway)
 
     async def run(
         self,
@@ -93,40 +95,63 @@ class HermesController:
             'fact_packet_adapter': self.fact_packet_adapter,
         }
 
+        # --- GOVERNANCE CHAIN PRE-ASSEMBLY ---
+        # 1. Ensure we have early facts for resolution (SupportPacketBuilder consumes facts)
+        self.capability_facade.fact_extract(workspace=workspace, context=context)
+        
+        # 2. Resolve Review Profile (Task Context + Facts)
+        self.capability_facade.profile_and_packs(workspace=workspace, context=context)
+        resolved_profile = workspace.get('resolved_profile')
+        facts = workspace.get('facts')
+        structured_task = workspace.get('structured_task')
+        
+        # 3. Resolve Basis Packs (Strict YAML Governance)
+        resolved_basis = None
+        if hasattr(self, 'basis_pack_resolver') and self.basis_pack_resolver:
+            # We explicitly pass context, facts, overrides per user guidelines
+            resolved_basis = self.basis_pack_resolver.resolve(
+                profile=resolved_profile,
+                task_context=context,
+                facts=facts,
+                overrides=None,
+            )
+            # Store it for downstream hermes main review context
+            workspace['resolved_basis_profile'] = resolved_basis
+
+        # 4. Build Governed Support Packet
+        if hasattr(self, 'support_packet_builder') and self.support_packet_builder and resolved_basis:
+            governed_support_packet = self.support_packet_builder.build_packet(
+                review_record=structured_task,
+                profile=resolved_profile,
+                basis_profile=resolved_basis,
+                facts=facts,
+            )
+            workspace['governed_support_packet'] = governed_support_packet
+        # --- END GOVERNANCE CHAIN PRE-ASSEMBLY ---
+
         try:
             selected_templates = self.template_registry.select_templates(brief=brief, hermes_input=hermes_input)
             focus_gaps = self.template_registry.focus_gaps(selected_templates=selected_templates, brief=brief, hermes_input=hermes_input)
             is_simulation = plan.get("simulation_mode", False)
             is_learning = plan.get("learning_mode", False)
-            
+
             learning_candidates = []
             candidate_template = None
 
-            if focus_gaps:
+            if focus_gaps and is_simulation and is_learning:
                 candidate_template = await self._generate_candidate_template(
                     brief=brief,
                     hermes_input=hermes_input,
                     focus_gaps=focus_gaps,
                 )
                 
-                if is_simulation and is_learning:
-                    learning_candidates.append({
-                        "type": "template_hint",
-                        "content": f"New agent needed for focus gap. Suggested Template ID: {candidate_template.id}. Prompt: {candidate_template.prompt}"
-                    })
-
-                # HARD CONSTRAINT: Candidate templates are ALWAYS ephemeral.
-                # In formal mode, they are used for the current run only and
-                # signaled as governance candidate artifacts.  They are NEVER
-                # persisted to the runtime template directory.
-                selected_templates.append(AgentTemplateMatch(
-                    template=candidate_template,
-                    score=2,
-                    reasons=['candidate_template_ephemeral'],
-                ))
+                learning_candidates.append({
+                    "type": "template_hint",
+                    "content": f"New agent needed for focus gap. Suggested Template ID: {candidate_template.id}. Prompt: {candidate_template.prompt}"
+                })
                 if emit:
                     emit('template', 'hermes_controller', 'info',
-                         f'Candidate template generated (ephemeral, not saved to runtime): {candidate_template.id}')
+                         f'Candidate template generated for simulation/learning (not injected into formal run): {candidate_template.id}')
 
             agent_results: list[dict[str, Any]] = []
             support_packet_008: FactPacket | None = None
@@ -186,6 +211,7 @@ class HermesController:
             agent_results = []
             hermes_review_packets = []
             candidate_template = None
+            learning_candidates = []
 
             decision_inputs = HermesReviewDecisionInputs(
                 support_packet_008=support_packet_008.model_dump(mode='json') if support_packet_008 else None,
@@ -218,54 +244,30 @@ class HermesController:
 
         if final_packet is not None and getattr(self, 'llm_gateway', None):
             if emit:
-                emit('hermes_controller', 'hermes_controller', 'info', '派出最终审查报告汇总子agent...')
-            synthesized_markdown = await self._synthesize_final_report(final_packet.report_markdown)
-            final_packet.report_markdown = synthesized_markdown
-            enriched['finalReportMarkdown'] = synthesized_markdown
-            enriched['finalAnswer'] = synthesized_markdown
+                emit('hermes_controller', 'hermes_controller', 'info', '派出最终审查报告表达层子agent...', debug={"status": "presentation_pass_started"})
+            presentation_result = await self.presentation_agent.generate_presentation(final_packet)
+            
+            # The presentation result does NOT overwrite the formal authoritative final_packet.
+            # We strictly expose it parallel to the authoritative output.
+            enriched['finalReportMarkdown'] = presentation_result.presentation_markdown
+            enriched['finalAnswer'] = presentation_result.presentation_markdown
+            enriched.setdefault('hermesController', {})['presentationResult'] = presentation_result.model_dump(mode='json')
+            
+            if write_json_artifact:
+                write_json_artifact('hermes-controller-presentation-result', presentation_result.model_dump(mode='json'))
 
         if write_json_artifact:
             write_json_artifact('hermes-controller-agent-results', agent_results)
             if final_packet is not None:
                 write_json_artifact('hermes-controller-final-report-packet', final_packet.model_dump(mode='json'))
         if write_text_artifact and final_packet is not None:
+            # We must ALWAYS output the authoritative formal report as a text artifact,
+            # ensuring that the system of record defaults to the assembler's deterministic output.
             write_text_artifact('hermes-controller-final-report', final_packet.report_markdown, '.md')
 
         return enriched
 
-    async def _synthesize_final_report(self, report_markdown: str) -> str:
-        prompt = f"""
-你是一个专业的资深工程安全审查总监（Hermes Final Synthesizer）。
-请依据下方的原始审查报告内容，对其进行“人类习惯语言”的润色、转换和汇总。
 
-必须要严格遵守以下 5 个章节展开叙述：
-1. 章节完整性
-2. 参数一致性
-3. 合法合规性
-4. 工序连贯性
-5. 证据验证
-
-要求：
-- 严格忠于原始审查结论（原报告里指出的问题，包含风险等级、严重程度等必须保留，绝对不可遗漏）。
-- 忠于原始报告的引用依据。
-- 如果某章节在原报告中没有被指出对应的问题，请客观地说明“暂未发现明显问题”或概述现有的合规情况。
-- 适当组织语言使其更加连贯、专业且易读，去除冷冰冰的系统生成痕迹。
-- 最终输出必须是纯 Markdown 格式。
-
-【原始审查报告如下】：
-{report_markdown}
-"""
-        try:
-            content = await self.llm_gateway.chat([
-                {'role': 'system', 'content': '你是高级审查结论综合撰写专家。请输出专业、结构清晰的报告。'},
-                {'role': 'user', 'content': prompt}
-            ], temperature=0.3, max_tokens=2500)
-            text = content.get('content', '')
-            if text:
-                return text
-        except Exception as exc:
-            logger.warning('[hermes_controller] Final report synthesis failed: %s', exc)
-        return report_markdown
 
     async def _generate_candidate_template(
         self,

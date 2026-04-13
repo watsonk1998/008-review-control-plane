@@ -47,6 +47,7 @@ class HermesReviewEngine(abc.ABC):
         fact_packet_008: FactPacket | None = None,
         *,
         document_preview: str = '',
+        governed_support_packet: dict[str, Any] | None = None,
     ) -> FactPacket:
         """Execute Hermes second-path review.
 

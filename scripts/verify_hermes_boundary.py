@@ -351,11 +351,11 @@ def verify_local_kernel_non_default(errors: list[str]) -> None:
         r'^\s*runtime_kernel_mode:\s*"?(?P<mode>[^"\s]+)"?\s*$', raw, flags=re.M
     )
     if mode_match and mode_match.group("mode") not in (
-        "local_kernel_enabled",
+        "standby",
     ):
         errors.append(
             f"config/hermes_upstream.yaml runtime_kernel_mode is "
-            f"'{mode_match.group('mode')}' — expected 'local_kernel_enabled'"
+            f"'{mode_match.group('mode')}' — expected 'standby'"
         )
 
     # Check adapter_status
@@ -363,11 +363,11 @@ def verify_local_kernel_non_default(errors: list[str]) -> None:
         r'^\s*adapter_status:\s*"?(?P<status>[^"\s]+)"?\s*$', raw, flags=re.M
     )
     if status_match and status_match.group("status") not in (
-        "production_main_chain_default",
+        "isolated_standby",
     ):
         errors.append(
             f"config/hermes_upstream.yaml adapter_status is "
-            f"'{status_match.group('status')}' — expected 'production_main_chain_default'"
+            f"'{status_match.group('status')}' — expected 'isolated_standby'"
         )
 
 
@@ -496,8 +496,8 @@ def verify_main_chain_no_evolution(errors: list[str]) -> None:
             # Note: This is a static heuristic. It ensures obvious side effects are avoided.
             pass  # For real rigor, we'd AST parse the run method, but for MVP we ensure it's not overtly called.
             
-    if "candidate_template_ephemeral" not in content:
-        errors.append("hermes_controller.py does not appear to treat candidate templates as ephemeral. Formal mode must not persist them.")
+    if "learning_candidates.append(" not in content:
+        errors.append("hermes_controller.py does not appear to isolate candidate templates. Formal mode must not persist them.")
 
 
 def verify_runtime_truth_source_isolation(errors: list[str]) -> None:
@@ -586,7 +586,7 @@ def main() -> int:
     print("- governance/config documents present")
     print("- no forbidden upstream import/path coupling detected")
     print("- overlay structure verified")
-    print("- production main chain default confirmed (local kernel)")
+    print("- local kernel standby isolation confirmed")
     print("- support layer demotion enforced (no official grade/verdict in 008 layer)")
     print("- live overlay governance verified (key assets present)")
     print("- template promotion governance verified")
