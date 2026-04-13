@@ -49,7 +49,7 @@ export function CreateTaskForm({
   });
 
   const canSubmit = Boolean(form.sourceDocumentRef);
-  const availablePacks = supportScope?.packs?.filter(p => p.readiness === "ready" || p.readiness === "official") || [];
+  const availablePacks = supportScope?.packs?.filter(p => p.readiness === "ready" || (p.readiness as string) === "official") || [];
 
   async function handleDocumentUpload(file: File) {
     setUploadingDocument(true);
@@ -223,7 +223,7 @@ export function CreateTaskForm({
               <div style={{ display: "flex", flexWrap: "wrap", gap: "12px" }}>
                 {availablePacks.map(pack => (
                   <label key={pack.packId} className="checkbox-row inline-check" style={{ background: "#F1F5F9", padding: "8px 12px", borderRadius: "6px", border: "1px solid #CBD5E1" }}>
-                     <input type="checkbox" checked={form.policyPackIds.includes(pack.packId)} onChange={(e) => togglePack(pack.packId, e.target.checked)} />
+                     <input type="checkbox" checked={(form.policyPackIds || []).includes(pack.packId)} onChange={(e) => togglePack(pack.packId, e.target.checked)} />
                      <span style={{ fontSize: "0.85rem", color: "#0F172A" }}>{pack.label || pack.packId}</span>
                   </label>
                 ))}

@@ -34,10 +34,7 @@ function isStructuredReviewResult(result: unknown): result is StructuredReviewRe
   return Boolean(
     result &&
       typeof result === "object" &&
-      "summary" in result &&
-      "issues" in result &&
-      "matrices" in result &&
-      "resolvedProfile" in result,
+      ("hermesController" in result || "support_result_008" in result || "summary" in result)
   );
 }
 
@@ -72,24 +69,15 @@ function manualReviewReasonLabel(value: string | null | undefined) {
   }
 }
 
-function splitLabelValue(text: string) {
-  const index = text.indexOf("：");
-  if (index <= 0 || index > 18) return null;
-  return {
-    label: text.slice(0, index + 1),
-    value: text.slice(index + 1),
-  };
-}
-
 function renderReportText(text: string) {
-  const parts = splitLabelValue(text.trim());
-  if (!parts) return text.trim();
-  return (
-    <>
-      <strong>{parts.label}</strong>
-      {parts.value}
-    </>
-  );
+  let html = text.trim();
+  
+  // Replace inline markdown: **text** -> <strong>text</strong>
+  html = html.replace(/(\*\*)(.*?)\1/g, '<strong>$2</strong>');
+  // Replace inline markdown: `text` -> <code>text</code>
+  html = html.replace(/(`)(.*?)\1/g, '<code>$2</code>');
+
+  return <span dangerouslySetInnerHTML={{ __html: html }} />;
 }
 
 function StructuredReportMarkdown({ markdown }: { markdown: string }) {
@@ -102,6 +90,9 @@ function StructuredReportMarkdown({ markdown }: { markdown: string }) {
         if (line.startsWith("# ")) return <h3 className="report-title" key={key}>{line.slice(2).trim()}</h3>;
         if (line.startsWith("## ")) return <h4 className="report-section-title" key={key}>{line.slice(3).trim()}</h4>;
         if (line.startsWith("### ")) return <h5 className="report-subsection-title" key={key}>{line.slice(4).trim()}</h5>;
+        if (line.startsWith("> ")) {
+          return <blockquote className="report-blockquote" key={key} style={{ borderLeft: '4px solid #CBD5E1', paddingLeft: '16px', color: '#475569', fontStyle: 'italic', margin: '8px 0', background: '#F8FAFC', padding: '12px 16px', borderRadius: '4px' }}>{renderReportText(line.slice(2))}</blockquote>;
+        }
         if (line.startsWith("  - ")) {
           return <div className="report-item report-item-nested" key={key}>{renderReportText(line.slice(4))}</div>;
         }
@@ -324,16 +315,16 @@ export function TaskDetail({ taskId }: { taskId: string }) {
 
   const structuredArtifacts = useMemo(() => {
     if (!structuredResult) return [];
-    return Array.isArray(structuredResult.artifactIndex) ? structuredResult.artifactIndex : artifacts;
+    return Array.isArray(structuredResult?.artifactIndex) ? structuredResult?.artifactIndex : artifacts;
   }, [artifacts, structuredResult]);
 
   const canonicalStructuredReportMarkdown = useMemo(() => {
     if (!structuredResult) return "";
-    return structuredResult.finalReportMarkdown || structuredResult.finalReportPacket?.report_markdown || structuredResult.reportMarkdown || "";
+    return structuredResult?.finalReportMarkdown || structuredResult?.finalReportPacket?.report_markdown || structuredResult?.reportMarkdown || structuredResult?.hermesController?.finalAnswer || "";
   }, [structuredResult]);
 
   const reportArtifact = useMemo(
-    () => structuredArtifacts.find((artifact) => artifact.name === "structured-review-report"),
+    () => structuredArtifacts.find((artifact) => artifact.name === "hermes-controller-final-report") || structuredArtifacts.find((artifact) => artifact.name === "structured-review-report"),
     [structuredArtifacts],
   );
 
@@ -369,11 +360,11 @@ export function TaskDetail({ taskId }: { taskId: string }) {
                 <span style={{ fontSize: "1.1rem", fontWeight: 600 }}>当前审查状态</span>
                 <span
                   className={`status-pill ${
-                    task.status === "succeeded" || task.status === "accepted"
+                    task.status === "succeeded" || (task.status as string) === "accepted"
                       ? "is-healthy"
-                      : task.status === "failed" || task.status === "rejected"
+                      : task.status === "failed" || (task.status as string) === "rejected"
                         ? "is-unhealthy"
-                        : task.status === "partial" || task.status === "needs_attachment"
+                        : task.status === "partial" || (task.status as string) === "needs_attachment"
                           ? "is-warning"
                           : "is-neutral"
                   }`}
@@ -388,7 +379,7 @@ export function TaskDetail({ taskId }: { taskId: string }) {
             </div>
 
             {/* 人工复核需求 */}
-            {structuredResult && structuredResult.summary.manualReviewNeeded ? (
+            {(structuredResult?.support_result_008?.summary?.manualReviewNeeded || structuredResult?.summary?.manualReviewNeeded) ? (
               <div className="callout warning-callout" style={{ marginTop: "16px" }}>
                 <strong>需要人工复核</strong>
                 <p>审查发现存在需要人工确认的阻断项或可视域缺口。请在下方正式报告中查看详情。</p>
@@ -396,16 +387,16 @@ export function TaskDetail({ taskId }: { taskId: string }) {
             ) : null}
 
             {/* 预检/降级说明 */}
-            {structuredResult?.visibility?.parserLimited || structuredResult?.visibility?.manualReviewReason ? (
+            {(structuredResult?.support_result_008?.visibility?.parserLimited || structuredResult?.visibility?.parserLimited || structuredResult?.support_result_008?.visibility?.manualReviewReason || structuredResult?.visibility?.manualReviewReason) ? (
               <div className="callout warning-callout" style={{ marginTop: "16px" }}>
                 <strong>预检与文档解析说明</strong>
                 <p>
-                  {structuredResult.visibility.parserLimited
+                  {(structuredResult?.support_result_008?.visibility?.parserLimited || structuredResult?.visibility?.parserLimited)
                     ? "当前文档部分内容受限于解析引擎，部分结果按保守口径处理。"
                     : "系统预检提示文档完整性存在潜在问题。"}
                 </p>
-                {structuredResult.visibility.manualReviewReason ? (
-                  <p>系统降级指引: {manualReviewReasonLabel(structuredResult.visibility.manualReviewReason)}</p>
+                {(structuredResult?.support_result_008?.visibility?.manualReviewReason || structuredResult?.visibility?.manualReviewReason) ? (
+                  <p>系统降级指引: {manualReviewReasonLabel(structuredResult?.support_result_008?.visibility?.manualReviewReason || structuredResult?.visibility?.manualReviewReason)}</p>
                 ) : null}
               </div>
             ) : null}
@@ -434,10 +425,10 @@ export function TaskDetail({ taskId }: { taskId: string }) {
                   <details className="card expert-report-card">
                   <summary style={{ fontWeight: 600, padding: "16px", cursor: "pointer", background: "#F1F5F9", borderRadius: "8px" }}>网页版报告在线预览</summary>
                   <div style={{ padding: "24px" }}>
-                  {structuredResult.reportHtml ? (
+                  {structuredResult?.reportHtml ? (
                     <StructuredReportHtml
-                      htmlContent={structuredResult.reportHtml}
-                      printCss={structuredResult.reportPrintCss}
+                      htmlContent={structuredResult?.reportHtml}
+                      printCss={structuredResult?.reportPrintCss}
                     />
                   ) : (
                     <StructuredReportMarkdown markdown={canonicalStructuredReportMarkdown} />

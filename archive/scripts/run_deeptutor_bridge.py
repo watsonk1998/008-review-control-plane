@@ -15,7 +15,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_LLM_CONFIG_PATH = (
-    Path.home() / "tools" / "from-obsidian" / "AI" / "config" / "century.json"
+    Path.home() / "control" / "secrets" / "api-keys" / "century.json"
 )
 DEFAULT_LLM_PROFILE = "dashscope"
 DEFAULT_LLM_MODEL = "qwen3.5-plus"

@@ -25,7 +25,7 @@ class LLMGateway:
             'config': self.config.sanitized(),
         }
 
-    async def chat(self, messages: list[dict[str, str]], temperature: float = 0.2, max_tokens: int = 1200) -> dict[str, Any]:
+    async def chat(self, messages: list[dict[str, str]], temperature: float = 0.2, max_tokens: int = 20000) -> dict[str, Any]:
         url = self.config.base_url.rstrip('/') + '/chat/completions'
         payload = {
             'model': self.config.model,
@@ -33,7 +33,7 @@ class LLMGateway:
             'temperature': temperature,
             'max_tokens': max_tokens,
         }
-        async with httpx.AsyncClient(timeout=90) as client:
+        async with httpx.AsyncClient(timeout=600.0) as client:
             response = await client.post(
                 url,
                 json=payload,
@@ -97,10 +97,10 @@ class LLMGateway:
                         'role': 'system',
                         'content': '你是正式审查结果整理器。只能基于候选问题 JSON 整理 title/summary/recommendation，不得新增事实或法规依据。返回 JSON 数组。',
                     },
-                    {'role': 'user', 'content': prompt[:12000]},
+                    {'role': 'user', 'content': prompt[:200000]},
                 ],
                 temperature=0.1,
-                max_tokens=1800,
+                max_tokens=20000,
             )
             parsed = self._load_json_array(response.get('content', ''))
             if not parsed:

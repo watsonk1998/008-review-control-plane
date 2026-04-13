@@ -269,21 +269,23 @@ export interface FinalReportPacket {
 }
 
 export interface StructuredReviewResult {
-  summary: StructuredReviewSummary;
-  visibility: VisibilityAssessment;
-  resolvedProfile: ResolvedReviewProfile;
-  issues: ReviewIssue[];
-  matrices: StructuredReviewMatrices;
-  artifactIndex: TaskArtifact[];
+  summary?: StructuredReviewSummary;
+  visibility?: VisibilityAssessment;
+  resolvedProfile?: ResolvedReviewProfile;
+  issues?: ReviewIssue[];
+  matrices?: StructuredReviewMatrices;
+  artifactIndex?: TaskArtifact[];
   // Canonical final-report field for external/UI consumption.
   finalReportMarkdown?: string;
   finalReportPacket?: FinalReportPacket | null;
-  traceability?: Array<Record<string, unknown>>;
-  // Deprecated fallback for older task payloads; do not treat as canonical.
   reportMarkdown?: string;
+  traceability?: Array<Record<string, unknown>>;
+  
+  support_result_008?: any;
+  hermesController?: any;
   reportHtml?: string;
   reportPrintCss?: string;
-  artifacts: string[];
+  artifacts?: string[];
   unresolvedFacts: Array<{
     code: string;
     factKey: string;

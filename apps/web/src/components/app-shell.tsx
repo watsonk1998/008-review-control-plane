@@ -61,8 +61,11 @@ export function AppShell({ children }: AppShellProps) {
                 <Link href="/admin/governance/candidates" className={`nav-item ${pathname.includes("/candidates") ? "active" : ""}`}>
                   <span className="nav-icon">💡</span> 候选建议
                 </Link>
-                <Link href="/admin/governance/releases" className={`nav-item ${pathname.includes("/releases") ? "active" : ""}`}>
-                  <span className="nav-icon">📝</span> 发布审批
+                <Link href="/admin/governance/rule-packs" className={`nav-item ${pathname.includes("/rule-packs") ? "active" : ""}`}>
+                  <span className="nav-icon">🧩</span> 规则包
+                </Link>
+                <Link href="/admin/governance/history" className={`nav-item ${pathname.includes("/history") ? "active" : ""}`}>
+                  <span className="nav-icon">🕒</span> 变更与回滚
                 </Link>
                 <div className="nav-group-title mt-4">实验与测试</div>
                 <Link href="/admin/governance/simulation" className={`nav-item ${pathname.includes("/simulation") ? "active" : ""}`}>

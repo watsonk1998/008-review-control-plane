@@ -9,7 +9,7 @@ sys.path.insert(0, str(repo_root / 'apps' / 'api'))
 
 # Set the LLM Config so it uses century.json
 os.environ['LLM_MODEL'] = 'qwen3.6-plus'
-os.environ['LLM_CONFIG_PATH'] = '/Users/lucas/tools/from-obsidian/AI/config/century.json'
+os.environ['LLM_CONFIG_PATH'] = '/Users/lucas/control/secrets/api-keys/century.json'
 try:
     with open(os.environ['LLM_CONFIG_PATH']) as f:
         cfg = json.load(f)

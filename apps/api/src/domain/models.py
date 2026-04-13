@@ -101,7 +101,7 @@ EvidenceLocator = Union[BlockLocator, TableLocator, AttachmentLocator, ClauseLoc
 
 
 class SourceDocumentRef(BaseModel):
-    model_config = ConfigDict(extra='forbid')
+    model_config = ConfigDict(extra='ignore')
 
     refId: str
     sourceType: SourceDocumentType

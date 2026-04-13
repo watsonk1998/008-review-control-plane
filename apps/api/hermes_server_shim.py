@@ -67,7 +67,7 @@ def chat(request: ChatRequest):
     os.environ["NO_PROXY"] = "*"
 
     # Auto-load century.json
-    config_path = os.path.expanduser('~/tools/from-obsidian/AI/config/century.json')
+    config_path = os.path.expanduser('~/control/secrets/api-keys/century.json')
     base_url = ""
     if os.path.exists(config_path):
         try:

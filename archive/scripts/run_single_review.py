@@ -8,7 +8,7 @@ apps_api = repo_root / 'apps' / 'api'
 sys.path.insert(0, str(apps_api))
 
 os.environ['LLM_MODEL'] = 'qwen3.6-plus-2026-04-02'
-os.environ['LLM_CONFIG_PATH'] = '/Users/lucas/tools/from-obsidian/AI/config/century.json'
+os.environ['LLM_CONFIG_PATH'] = '/Users/lucas/control/secrets/api-keys/century.json'
 # We fallback to common profiles if default dashscope fails
 try:
     with open(os.environ['LLM_CONFIG_PATH']) as f:

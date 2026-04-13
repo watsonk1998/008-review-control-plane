@@ -60,7 +60,7 @@ HERMES_SYSTEM_PROMPT = """\
 - 绝不要仅仅复述或洗稿第一路审查的结果！你需要作为高级专家挖出真正的问题。
 - 仔细阅读审查指令中的【规范标准】，并独立根据这些标准对【源文档全文】进行极其严苛、深度的挑刺。
 - 在审查“章节完整性”、“参数一致性”、“合法合规性”、“工序连贯性”、“证据验证”等维度时仔细找出参数错误、工序颠倒、合规性风险。
-- 请务必提供不少于 4 条针对性极强的重要风险问题。每一条都要明确指出源文档的哪一部分违反了给定规范的哪一部分。
+- 请务必尽可能详尽、全面地列举你所发现的【所有】深层隐患与违反规范项，不要受限于数量。发现越多越好（如果存在超过20条均必须全量指出）。每一条都要明确指出源文档的哪一部分违反了给定规范的哪一部分。
 
 输出格式（严格 JSON，不要包含额外的 markdown 标记或代码块符）：
 {
@@ -71,7 +71,7 @@ HERMES_SYSTEM_PROMPT = """\
       "id": "H-001",
       "severity": "high",
       "title": "（全新发现）具体违反的条款和现象",
-      "category": "compliance",
+      "category": "chapter_completeness | parameter_consistency | compliance | process_coherence | evidence_verification",
       "summary": "重述或描述发现的具体不符点",
       "suggestion": "指出具体违反哪条规范并给出修正动作",
       "evidence_status": "grounded"
@@ -133,10 +133,10 @@ class HermesLLMAdapter(HermesReviewEngine):
             response = await self._llm.chat(
                 [
                     {'role': 'system', 'content': HERMES_SYSTEM_PROMPT},
-                    {'role': 'user', 'content': user_prompt[:80000]},
+                    {'role': 'user', 'content': user_prompt[:500000]},
                 ],
                 temperature=0.15,
-                max_tokens=3000,
+                max_tokens=20000,
             )
 
             parsed = self._parse_json(response.get('content', ''))
@@ -176,7 +176,7 @@ class HermesLLMAdapter(HermesReviewEngine):
         # Document preview
         if document_preview:
             parts.append('## 文档内容预览')
-            parts.append(document_preview[:25000])
+            parts.append(document_preview[:500000])
             parts.append('')
 
         # 008 results
@@ -185,16 +185,16 @@ class HermesLLMAdapter(HermesReviewEngine):
             parts.append('## 第一路审查（008引擎）结果')
             parts.append(f'总问题数: {m.total_findings}  高: {m.high_severity}  中: {m.medium_severity}')
             parts.append('')
-            for f in packet_008.findings[:20]:
+            for f in packet_008.findings[:200]:
                 parts.append(f'- [{f.id}] [{f.severity}] {f.title}')
                 if f.summary:
-                    parts.append(f'  {f.summary[:200]}')
+                    parts.append(f'  {f.summary[:1000]}')
             parts.append('')
 
         if governed_support_packet:
             parts.append('## 审查治理包 (Governed Support Packet)')
-            parts.append(json.dumps(governed_support_packet.get('basis_summary', []), ensure_ascii=False, indent=2)[:5000])
-            parts.append(json.dumps(governed_support_packet.get('rule_pack_summary', []), ensure_ascii=False, indent=2)[:5000])
+            parts.append(json.dumps(getattr(governed_support_packet, 'basis_summary', []), ensure_ascii=False, indent=2)[:50000])
+            parts.append(json.dumps(getattr(governed_support_packet, 'rule_pack_summary', []), ensure_ascii=False, indent=2)[:50000])
             parts.append('')
 
         parts.append('请根据以上信息进行独立审查，输出结构化 JSON。')

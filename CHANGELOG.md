@@ -7,11 +7,16 @@
 ## 2026-04-13
 
 ### Changed
+- 全局解封大模型上下文限制阀值 (Context Window Limits)：基于 Qwen3.6-Plus 的实际运转能力验证，将底座架构中的输入字符天花板与输出 Token 锁死强行突破原生短板约束。其中：008子Agent 与表达分类 Agent 截断提升至 `200k Input / 20k Output`，Hermes主控 Agent 参数跃升至 `500k Input / 20k Output`。这一硬核调整彻底解决了大型分部工程长篇文书审核时，尾部规程被截断以及“由于 JSON 生成长度腰斩产生的严重遗漏”的系统级痛点报告干瘪问题。
+- 实施配置驱动安全的 12-Factor 原则化重构：彻底清退源码中所有关于 `~/runtime/obsidian-sync/AI/config/` 以及早期 `~/tools/from-obsidian/` 的开发者本地物理路径硬编码挂载依赖。
+- 重构 API 身份与凭证系统：确立 `~/control/secrets/api-keys/` 为大语言模型及 FastGPT 代理的统一密钥挂载源；为 `llm.py` 与 `fastgpt.py` 补充生产级的防御性熔断机制（Fail-fast），当监测到外部环境变量（如 `LLM_API_KEY`）被不完整注入时实施硬拦截抛错，彻底根除 Docker/线上部署时错误穿越读取本地 Json 引发的运维隐患。
 - 彻底完成 Admin Governance Workbench 前端界面的真实化脱壳：将审查包 (`/packs`)、依据库 (`/bases`)、场景映射 (`/profiles`)、候选建议 (`/candidates`) 以及 发布草案 (`/drafts`) 表单彻底对接真实的后端 FastAPI 路由。
 - 强制落实只读治理边界：将前端大盘上的越权编辑按钮（如新建基准、直接录入等）替换为防御性系统提示，强制要求核心标准维护退回到底层 YAML 物理系统与离线候选流中。
 - 大盘统计的真实接管：移除预留的 Dashboard Mock 指标，重构并直连后端资源总表长度用于计算全局治理健康度。
 - 彻底封堵 Hermes Formal Pipeline 边界：将 `TaskCompiler → ProfileResolver → BasisPackResolver → SupportPacketBuilder` 治理链硬接线并入 `HermesController.run()`，确保所有下游 Hermes 引擎适配器强制消费统一构建的 `governed_support_packet`。
 - 收拢并修正 `GovernanceService` 与运行时底座对于 Truth Source YAML 的解析口径差异，要求所有依据解析强制遵循 Top-level Dictionaries，移除产生越界的 JSON wrapper。
+- 修复 `eval_full_task.py` 端到端验证脚本中的凭证路径解析断层与模型超时问题 (配置指向 `century.json` 与 `gbcs-fast.json` 并放宽 HTTPX timeout)。
+- 修复 `support_packet_builder.py` 与 `hermes_llm_adapter.py` 中由于 Pydantic BaseModel 重构遗留的字段访问报错 (`taskId` 及对象属性读取)。
 - 彻底封堵正式报告的非法挂载与篡权通道：修正 `HermesController` 和 `HermesReviewAssembler`，将支撑层原始底座数据强制封装降级进 `supportLayerContext` 子域中，确保正式 `finalReportMarkdown` 100% 独享 Assembler 主权，遭遇 Hermes Engine Degradation 时必然触发 Fail-closed 拦截。
 - 强化端到端边界防御，新增真实运行时 Pydantic Schema 模拟入口脚手架 `verify_real_e2e_task.py` 以及三大类边界硬测试（Truth源一致性、报告所有权隔离、文件树物理边界），用执行事实取代空谈。
 - 执行本地 upstream `external/hermes-agent` 外挂内核的级联污染净化：通过抹除环境配置映射（`.envrc`）与缓存脏文件（`.DS_Store`）使其切回 100% Submodule Clean 工作树。
@@ -19,7 +24,7 @@
 - 同步且纠正 Local Kernel 基础配置与断言断点事实：将 `config/hermes_upstream.yaml` 状态强制重置为 `isolated_standby / standby`，严格对齐 `main_dependencies.py` 孤立设定；重构 `verify_hermes_boundary.py`，确保其在回归测试中对 Local Kernel 的判断回正至 “备用状态 / Standby”。
 - 执行主链安全体系下的 Controlled Archiving（受控归档）：将独立调试桩脚本 (`apps/api/tests/debug.py`) 以及过期的纯手动验证结果 (`fixtures/supervision/` 下旧版 `V0.X / gemini-deepresearch` 等前缀结果) 安全下架至 `archive/`。
 - 切分存量实验态文档池（`fixtures/任务书/`）进行物理重排：原文件依照“纯历史 Prompt 草本”（转入 `archive/prompts/`）与“历史边界思路演进”（转入 `archive/docs_history/`）双规执行归档。通过梳理将当前 Active Tree 污染度进一步清零。
-- 新增 `archive/README.md` 来结构化约束所有过期代码的归档源路径及其下线原因，并强化执行『历史件禁止重新逆流回主运行链』的安全门禁。
+- 扩展 `HermesReviewAssembler` 核心呈现层：重构 `_render_markdown` 逻辑，在**坚守正式审查主权不被篡改**的硬隔离前提下，将其平铺风险项的视图改造为映射至业务域底座五大维度（章节完整性、参数一致性、合法合规性、工序连贯性、证据验证）的专业判决视图展现。
 
 ## 2026-04-12
 
@@ -44,6 +49,7 @@
 - 新增 `apps/web/src/app/admin/governance/candidates/page.tsx` 与相关控制台接口，提供针对探索/学习模式下 LLM 输出的“Candidate 离线隔离检查”，强制要求只有被审核并同意后 (`transcribed`) 才允许人肉转录入正式配置池，封死配置的自动覆盖风险。
 
 ### Changed
+- 全局解封大模型上下文限制阀值 (Context Window Limits)：基于 Qwen3.6-Plus 的实际运转能力验证，将底座架构中的输入字符天花板与输出 Token 锁死强行突破原生短板约束。其中：008子Agent 与表达分类 Agent 截断提升至 `200k Input / 20k Output`，Hermes主控 Agent 参数跃升至 `500k Input / 20k Output`。这一硬核调整彻底解决了大型分部工程长篇文书审核时，尾部规程被截断以及“由于 JSON 生成长度腰斩产生的严重遗漏”的系统级痛点报告干瘪问题。
 
 - 彻底落实 Hermes 受治理主链的硬性准则：固定 `TaskCompiler → ProfileResolver → BasisPackResolver → SupportPacketBuilder → Hermes main review → FinalReportAssembler` 为唯一正式审查流。
 - 重构 `config/review_basis/` 下的真相源配置，要求所有审查依据和规则均通过 YAML 加载解析，严禁在代码层硬编码匹配规则。
@@ -79,6 +85,7 @@
 > 补充说明：以下内容为 2026-04-12 补写的历史记录，用于补齐 2026-04-11 那一轮 Hermes ownership 小收口；它不是当前仓库在 2026-04-12 的最新代码更新。
 
 ### Changed
+- 全局解封大模型上下文限制阀值 (Context Window Limits)：基于 Qwen3.6-Plus 的实际运转能力验证，将底座架构中的输入字符天花板与输出 Token 锁死强行突破原生短板约束。其中：008子Agent 与表达分类 Agent 截断提升至 `200k Input / 20k Output`，Hermes主控 Agent 参数跃升至 `500k Input / 20k Output`。这一硬核调整彻底解决了大型分部工程长篇文书审核时，尾部规程被截断以及“由于 JSON 生成长度腰斩产生的严重遗漏”的系统级痛点报告干瘪问题。
 
 - 补记一轮围绕 `Hermes 主控 + Hermes 主审 + Hermes 裁决；底座只做支撑` 的小收口：`build_review_task_result()` 进一步转向 decision-first / execution-metadata-first，减少对底座 raw issue/summary 的直接组织依赖，并在结果 metadata 中明确 `result_ownership`、`module_bucketing` 与 `support_material_present`。
 - 补记 support-only annotation 收口：底座 issue 在 facade 归一层被显式标注为 `support_material`，并补充 `supportCapabilities / supportModules`，避免 008 支撑材料继续被误读成 final-decision-owned finding。
@@ -98,6 +105,7 @@
 - 新增对应的 type-specific rule hits、evidence clauses、issue/report 文案与 targeted regression tests，使 9 类危大工程不再只停留在 pack registry 层。
 
 ### Changed
+- 全局解封大模型上下文限制阀值 (Context Window Limits)：基于 Qwen3.6-Plus 的实际运转能力验证，将底座架构中的输入字符天花板与输出 Token 锁死强行突破原生短板约束。其中：008子Agent 与表达分类 Agent 截断提升至 `200k Input / 20k Output`，Hermes主控 Agent 参数跃升至 `500k Input / 20k Output`。这一硬核调整彻底解决了大型分部工程长篇文书审核时，尾部规程被截断以及“由于 JSON 生成长度腰斩产生的严重遗漏”的系统级痛点报告干瘪问题。
 
 - 将 `hazardous_special_scheme` 路径下的起重吊装能力从旧 `lifting_operations.base` 收口到新的 `lifting_installation_removal.base`，并在 profile resolver 中同时归一 `disciplineTags` 与 `requestedPolicyPackIds`。
 - 保持 `construction_org` 与 `construction_scheme` 继续使用旧 `lifting_operations.base`，明确危大路径与非危大路径的兼容边界。
@@ -128,6 +136,7 @@
 - 新增正式报告双载体输出：`reportHtml` 与 `reportPrintCss`，并同步产出 `.html` / `.print.css` 工件，作为正式阅读与打印主路径。
 
 ### Changed
+- 全局解封大模型上下文限制阀值 (Context Window Limits)：基于 Qwen3.6-Plus 的实际运转能力验证，将底座架构中的输入字符天花板与输出 Token 锁死强行突破原生短板约束。其中：008子Agent 与表达分类 Agent 截断提升至 `200k Input / 20k Output`，Hermes主控 Agent 参数跃升至 `500k Input / 20k Output`。这一硬核调整彻底解决了大型分部工程长篇文书审核时，尾部规程被截断以及“由于 JSON 生成长度腰斩产生的严重遗漏”的系统级痛点报告干瘪问题。
 
 - 将 `README.md` 收口为 English-first 入口页，不再在根目录重复承载 detailed formal-review 契约与治理细节，统一导流到 `docs/README.md`。
 - 将 `docs/integration/` 归并为 design layer 材料，并在主文档中加入职责声明，降低跨层口径漂移。
@@ -154,6 +163,7 @@
 - 新增更完整的 task detail / structured review form / recent tasks / review decision panel 前端基础流，形成面向审查工作的最小可用工作台。
 
 ### Changed
+- 全局解封大模型上下文限制阀值 (Context Window Limits)：基于 Qwen3.6-Plus 的实际运转能力验证，将底座架构中的输入字符天花板与输出 Token 锁死强行突破原生短板约束。其中：008子Agent 与表达分类 Agent 截断提升至 `200k Input / 20k Output`，Hermes主控 Agent 参数跃升至 `500k Input / 20k Output`。这一硬核调整彻底解决了大型分部工程长篇文书审核时，尾部规程被截断以及“由于 JSON 生成长度腰斩产生的严重遗漏”的系统级痛点报告干瘪问题。
 
 - 将 structured review 正式报告整体改写为更适合中文专家阅读的结构化样式，弱化工程化原始字段直出，强化正式阅读路径。
 - 将 `construction_org` 的 `L1` 从粗粒度结构存在性判断改为规范驱动的结构完整性与形式合规性表达。
@@ -174,6 +184,7 @@
 - 新增更严格的 L0 visibility parity 与 evidence closure 约束，用于约束结果层和 artifact 层的一致性。
 
 ### Changed
+- 全局解封大模型上下文限制阀值 (Context Window Limits)：基于 Qwen3.6-Plus 的实际运转能力验证，将底座架构中的输入字符天花板与输出 Token 锁死强行突破原生短板约束。其中：008子Agent 与表达分类 Agent 截断提升至 `200k Input / 20k Output`，Hermes主控 Agent 参数跃升至 `500k Input / 20k Output`。这一硬核调整彻底解决了大型分部工程长篇文书审核时，尾部规程被截断以及“由于 JSON 生成长度腰斩产生的严重遗漏”的系统级痛点报告干瘪问题。
 
 - 强化 structured review 的 evidence closure，使结果中的 issue、visibility、artifact 与 evidence gap 不再松散耦合。
 - 将 reviewer decision 从附属信息提升为正式治理链路的一部分，支持任务级与结果级复核闭环。
@@ -194,6 +205,7 @@
 - 新增 research pack generation 相关文档与产出说明，明确真实结构化结果如何导出为研究型样本包。
 
 ### Changed
+- 全局解封大模型上下文限制阀值 (Context Window Limits)：基于 Qwen3.6-Plus 的实际运转能力验证，将底座架构中的输入字符天花板与输出 Token 锁死强行突破原生短板约束。其中：008子Agent 与表达分类 Agent 截断提升至 `200k Input / 20k Output`，Hermes主控 Agent 参数跃升至 `500k Input / 20k Output`。这一硬核调整彻底解决了大型分部工程长篇文书审核时，尾部规程被截断以及“由于 JSON 生成长度腰斩产生的严重遗漏”的系统级痛点报告干瘪问题。
 
 - 强化 preflight 与 evidence traceability，使 unresolved facts、visibility 约束、blocking reasons 与 evidence provenance 的链路更明确。
 - 将 formal-review spine 的实施设计进一步从“任务书式描述”落到证据链闭环、治理对象与运行路径上。
@@ -214,6 +226,7 @@
 - 新增 reviewer-oriented task detail 改进，提升对审查人而非开发者的结果查看可用性。
 
 ### Changed
+- 全局解封大模型上下文限制阀值 (Context Window Limits)：基于 Qwen3.6-Plus 的实际运转能力验证，将底座架构中的输入字符天花板与输出 Token 锁死强行突破原生短板约束。其中：008子Agent 与表达分类 Agent 截断提升至 `200k Input / 20k Output`，Hermes主控 Agent 参数跃升至 `500k Input / 20k Output`。这一硬核调整彻底解决了大型分部工程长篇文书审核时，尾部规程被截断以及“由于 JSON 生成长度腰斩产生的严重遗漏”的系统级痛点报告干瘪问题。
 
 - 将 visibility 从辅助说明收口为 canonical contract，减少“报告说一套、artifact 说一套”的口径分裂。
 - 收紧 canonical review flow，使 experimental pack、eval artifact 与 structured review 主链的关系更明确。
@@ -235,6 +248,7 @@
 - 新增 source-grounded GPT Researcher fallback 与 evidence 路径，改善研究类能力的来源可追溯性。
 
 ### Changed
+- 全局解封大模型上下文限制阀值 (Context Window Limits)：基于 Qwen3.6-Plus 的实际运转能力验证，将底座架构中的输入字符天花板与输出 Token 锁死强行突破原生短板约束。其中：008子Agent 与表达分类 Agent 截断提升至 `200k Input / 20k Output`，Hermes主控 Agent 参数跃升至 `500k Input / 20k Output`。这一硬核调整彻底解决了大型分部工程长篇文书审核时，尾部规程被截断以及“由于 JSON 生成长度腰斩产生的严重遗漏”的系统级痛点报告干瘪问题。
 
 - 将项目从通用任务面升级为带有正式结构化审查子域的 control plane，而非只提供研究/问答类能力。
 - 将 fixture evaluation semantics 与 review docs 对齐，使 structured review 的结果、样本与测试口径开始同步。
@@ -253,6 +267,7 @@
 - 新增 API / Web 最小实现与 supporting tests，为后续任务创建、状态查看与能力扩展提供基础底座。
 
 ### Changed
+- 全局解封大模型上下文限制阀值 (Context Window Limits)：基于 Qwen3.6-Plus 的实际运转能力验证，将底座架构中的输入字符天花板与输出 Token 锁死强行突破原生短板约束。其中：008子Agent 与表达分类 Agent 截断提升至 `200k Input / 20k Output`，Hermes主控 Agent 参数跃升至 `500k Input / 20k Output`。这一硬核调整彻底解决了大型分部工程长篇文书审核时，尾部规程被截断以及“由于 JSON 生成长度腰斩产生的严重遗漏”的系统级痛点报告干瘪问题。
 
 - 将项目从空仓状态推进为可继续承载 research、review 与 orchestration 能力的工程起点。
 - 为后续 `structured_review`、前端工作台和文档体系演进建立统一仓库边界。

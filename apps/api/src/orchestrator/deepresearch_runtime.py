@@ -200,8 +200,8 @@ class DeepResearchRuntime:
         }
         summary = await self.llm_gateway.chat([
             {'role': 'system', 'content': '你是审查辅助总控。输出“辅助审查要点”，并明确写出“非正式审查结论”。'},
-            {'role': 'user', 'content': json.dumps(synthesis_input, ensure_ascii=False)[:15000]},
-        ], max_tokens=1800)
+            {'role': 'user', 'content': json.dumps(synthesis_input, ensure_ascii=False)[:200000]},
+        ], max_tokens=20000)
         capabilities.append('llm_gateway')
         summary_artifact = self._write_task_artifact(task.id, 'review-summary', summary)
         artifacts = [chunks_artifact, summary_artifact]

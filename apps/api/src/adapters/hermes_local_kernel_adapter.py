@@ -107,7 +107,7 @@ class HermesLocalKernelAdapter(HermesReviewEngine):
             # Read Dashscope API key securely from local registry in compliance with global rules
             api_key = os.environ.get("DASHSCOPE_API_KEY", "")
             if not api_key:
-                config_path = os.path.expanduser("~/tools/from-obsidian/AI/config/century.json")
+                config_path = os.path.expanduser("~/control/secrets/api-keys/century.json")
                 try:
                     if os.path.exists(config_path):
                         with open(config_path, "r", encoding="utf-8") as f:

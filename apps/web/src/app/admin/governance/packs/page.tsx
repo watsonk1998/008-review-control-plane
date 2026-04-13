@@ -1,14 +1,44 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { AdminPageHeader, AdminFilterBar, StatusBadge, AdminDrawer, SectionTitle, KeyValueRow } from "@/components/admin/admin-components";
+import { AdminPageHeader, AdminFilterBar, StatusBadge, AdminDrawer, SectionTitle, KeyValueRow, JsonConfigEditor } from "@/components/admin/admin-components";
 
 export default function PacksAdminPage() {
   const [selectedPack, setSelectedPack] = useState<any>(null);
   const [packs, setPacks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  
+  // For single-operator visual YAML editor
+  const [editorOpen, setEditorOpen] = useState(false);
+  const [editorData, setEditorData] = useState<any>(null);
+
+  const handleEditAll = () => {
+    // Transform arrays back to dict for the backend expectation
+    const payload: any = {};
+    packs.forEach((p: any) => {
+      payload[p.pack_id] = p;
+    });
+    setEditorData(payload);
+    setEditorOpen(true);
+  };
+
+  const handleSave = async (newData: any) => {
+    const res = await fetch("/api/admin/governance/packs", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(newData)
+    });
+    if (!res.ok) {
+      const err = await res.text();
+      throw new Error(err);
+    }
+    // Refresh
+    const r = await fetch("/api/admin/governance/packs");
+    const d = await r.json();
+    setPacks(d);
+  };
+useEffect(() => {
     fetch("/api/admin/governance/packs")
       .then(res => res.json())
       .then(data => {
@@ -27,7 +57,7 @@ export default function PacksAdminPage() {
         title="审查包配置" 
         description="基于底层依据库衍生出的应用层容器。将多项零散的合规强条（Rule Packs）组合为面向特定领域（如模板工程、脚手架工程）的实战可打分包。"
       >
-        <button className="primary-button" onClick={() => alert("【系统架构限制】\n\n创建新的 Pack 审查包需要绑定核心大模型流转 Prompt 和 Rule ID。\n请在代码库 `config/packs/` 维护 YAML 并走流转，前端管理台不开放直接创建能力。")}>新建审查包</button>
+        <button className="primary-button" onClick={handleEditAll}>可视化全量编辑审查包</button>
       </AdminPageHeader>
 
       <AdminFilterBar>
@@ -129,6 +159,15 @@ export default function PacksAdminPage() {
           </div>
         )}
       </AdminDrawer>
+
+      <JsonConfigEditor
+        title="审查包配置编辑 (Pack Registry)"
+        open={editorOpen}
+        onClose={() => setEditorOpen(false)}
+        initialData={editorData}
+        onSave={handleSave}
+      />
     </div>
   );
 }
+

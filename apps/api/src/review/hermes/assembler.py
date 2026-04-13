@@ -227,9 +227,7 @@ class HermesReviewAssembler:
         report_markdown = self._render_markdown(
             doc_label=material['doc_label'],
             summary=executive_summary,
-            top_risks=top_risks,
-            key_findings=key_findings,
-            supplemental=supplemental_findings,
+            all_findings=all_findings,
             engines=material['engines_used'],
             degradation=material['degradation_info'],
         )
@@ -285,9 +283,7 @@ class HermesReviewAssembler:
         self,
         doc_label: str,
         summary: str,
-        top_risks: list[FindingItem],
-        key_findings: list[FindingItem],
-        supplemental: list[FindingItem],
+        all_findings: list[FindingItem],
         engines: list[str],
         degradation: dict[str, Any],
     ) -> str:
@@ -295,32 +291,52 @@ class HermesReviewAssembler:
         lines.append(f'# {doc_label} — 综合审查报告\n')
         lines.append(f'## 最终合成裁决\n\n{summary}\n')
 
-        if top_risks:
-            lines.append('## 核心阻断风险\n')
-            for finding in top_risks:
-                lines.append(f'- **[{finding.severity.upper()}]** {finding.title}')
-                if finding.summary:
-                    lines.append(f'  {finding.summary[:200]}')
-            lines.append('')
+        dimension_map = {
+            'chapter_completeness': '一、 章节完整性',
+            'visibility': '一、 章节完整性',
+            'parameter_consistency': '二、 参数一致性',
+            'compliance': '三、 合法合规性',
+            'rule_hits': '三、 合法合规性',
+            'process_coherence': '四、 工序连贯性',
+            'evidence_verification': '五、 证据验证',
+            'facts': '五、 证据验证',
+        }
 
-        if key_findings:
-            lines.append('## 基础审查点 (依据客观项核查)\n')
-            lines.append('| 编号 | 风险程度 | 交叉验证 | 发现的问题 | 改进建议 |')
-            lines.append('|------|----------|----------|------------|----------|')
-            for finding in key_findings:
-                corroborated = '已复核' if (finding.raw_data or {}).get('corroborated_by_hermes') else '引擎直出'
-                suggestion = (finding.suggestion[:80] + '…') if finding.suggestion and len(finding.suggestion) > 80 else (finding.suggestion or '')
-                lines.append(f'| {finding.id} | {finding.severity} | {corroborated} | {finding.title} | {suggestion} |')
-            lines.append('')
+        grouped_findings: dict[str, list[FindingItem]] = {
+            '一、 章节完整性': [],
+            '二、 参数一致性': [],
+            '三、 合法合规性': [],
+            '四、 工序连贯性': [],
+            '五、 证据验证': [],
+            '六、 其他审查发现': [],
+        }
 
-        if supplemental:
-            lines.append('## 深度穿透风险 (主审识别)\n')
-            for finding in supplemental:
-                lines.append(f'- **[{finding.id}]** [{finding.severity}] {finding.title}')
+        # Deduplicate to prevent overlapping items
+        seen_ids = set()
+        deduped_findings = []
+        for finding in all_findings:
+            if finding.id not in seen_ids:
+                seen_ids.add(finding.id)
+                deduped_findings.append(finding)
+
+        for finding in deduped_findings:
+            dim = dimension_map.get(finding.category, '六、 其他审查发现')
+            grouped_findings[dim].append(finding)
+
+        severity_order = {'high': 0, 'medium': 1, 'low': 2, 'info': 3}
+        for dim_title, items in grouped_findings.items():
+            if not items:
+                continue
+            lines.append(f'## {dim_title}\n')
+            items.sort(key=lambda x: severity_order.get(x.severity, 99))
+            
+            for finding in items:
+                corroborated_mark = " *(已通过主审交叉复核)*" if (finding.raw_data or {}).get('hermes_decision_signal') == 'corroborated' else ""
+                lines.append(f'- **[{finding.id}]** [{finding.severity.upper()}]{corroborated_mark} {finding.title}')
                 if finding.summary:
-                    lines.append(f'  > {finding.summary[:200]}')
+                    lines.append(f'  > {finding.summary.strip()}')
                 if finding.suggestion:
-                    lines.append(f'  **整改建议**: {finding.suggestion[:200]}')
+                    lines.append(f'  **整改建议**: {finding.suggestion.strip()}')
             lines.append('')
 
         lines.append('## 系统追溯标识\n')

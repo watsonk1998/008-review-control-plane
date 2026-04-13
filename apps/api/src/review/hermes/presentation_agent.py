@@ -108,7 +108,7 @@ class HermesPresentationAgent:
             content = await self.llm_gateway.chat([
                 {'role': 'system', 'content': '你是只读的正式报告中文表达层。只优化表达，绝不篡改事实、等级、原编号ID或强制提示。'},
                 {'role': 'user', 'content': prompt}
-            ], temperature=0.1, max_tokens=2500)
+            ], temperature=0.1, max_tokens=20000)
             
             generated_md = content.get('content', '').strip()
             if not generated_md:

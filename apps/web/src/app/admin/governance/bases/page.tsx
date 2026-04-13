@@ -1,14 +1,44 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { AdminPageHeader, AdminFilterBar, StatusBadge, AdminDrawer, SectionTitle, KeyValueRow } from "@/components/admin/admin-components";
+import { AdminPageHeader, AdminFilterBar, StatusBadge, AdminDrawer, SectionTitle, KeyValueRow, JsonConfigEditor } from "@/components/admin/admin-components";
 
 export default function BasesAdminPage() {
   const [selectedBasis, setSelectedBasis] = useState<any>(null);
   const [bases, setBases] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  
+  // For single-operator visual YAML editor
+  const [editorOpen, setEditorOpen] = useState(false);
+  const [editorData, setEditorData] = useState<any>(null);
+
+  const handleEditAll = () => {
+    // Transform arrays back to dict for the backend expectation
+    const payload: any = {};
+    bases.forEach((b: any) => {
+      payload[b.basis_id] = b;
+    });
+    setEditorData(payload);
+    setEditorOpen(true);
+  };
+
+  const handleSave = async (newData: any) => {
+    const res = await fetch("/api/admin/governance/bases", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(newData)
+    });
+    if (!res.ok) {
+      const err = await res.text();
+      throw new Error(err);
+    }
+    // Refresh
+    const r = await fetch("/api/admin/governance/bases");
+    const d = await r.json();
+    setBases(d);
+  };
+useEffect(() => {
     fetch("/api/admin/governance/bases")
       .then(res => res.json())
       .then(data => {
@@ -27,8 +57,8 @@ export default function BasesAdminPage() {
         title="依据标准库" 
         description="系统中所有机器可读指令集与审查规则的唯一事实来源。提供各行业规范、法律法规及企业专属强条的溯源入口与版本控制。"
       >
-        <button className="primary-button" onClick={() => alert("【系统安全限制】\n\n当前禁止从前端直接上传或修改底层审查依据！\n请严格遵守配置即代码规范，前往 external/ 目录通过 YAML 注册新标准。")}>上传规范原文</button>
-        <button className="secondary-button" onClick={() => alert("【系统安全限制】\n\n依据库只读保护中。\n所有的手工录入必须走标准审核流并落地为 YAML，暂不开放界面侧的旁路修改。")}>手动录入依据</button>
+        
+        <button className="primary-button" onClick={handleEditAll}>可视化全量编辑依据库</button>
       </AdminPageHeader>
 
       <AdminFilterBar>
@@ -125,6 +155,15 @@ export default function BasesAdminPage() {
           </div>
         )}
       </AdminDrawer>
+
+      <JsonConfigEditor
+        title="依据标准库编辑 (Basis Registry)"
+        open={editorOpen}
+        onClose={() => setEditorOpen(false)}
+        initialData={editorData}
+        onSave={handleSave}
+      />
     </div>
   );
 }
+

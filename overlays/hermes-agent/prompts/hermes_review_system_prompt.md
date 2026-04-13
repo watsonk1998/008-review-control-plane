@@ -27,7 +27,7 @@
       "id": "H-001",
       "title": "问题标题",
       "severity": "high | medium | low | info",
-      "category": "structure | compliance | safety | completeness | consistency",
+      "category": "chapter_completeness | parameter_consistency | compliance | process_coherence | evidence_verification",
       "summary": "问题概述",
       "suggestion": "改进建议",
       "confidence": "high | medium | low",

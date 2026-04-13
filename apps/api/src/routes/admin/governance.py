@@ -42,6 +42,39 @@ async def get_profile_mapping():
     service = get_governance_service()
     return service.get_profile_mapping()
 
+
+@router.post("/bases")
+async def save_bases(data: dict[str, Any]):
+    service = get_governance_service()
+    service.save_bases(data)
+    return {"status": "success"}
+
+@router.post("/packs")
+async def save_packs(data: dict[str, Any]):
+    service = get_governance_service()
+    service.save_packs(data)
+    return {"status": "success"}
+
+@router.post("/rule-packs")
+async def save_rule_packs(data: dict[str, Any]):
+    service = get_governance_service()
+    service.save_rule_packs(data)
+    return {"status": "success"}
+
+@router.post("/profiles")
+async def save_profiles(data: dict[str, Any]):
+    service = get_governance_service()
+    service.save_profile_mapping(data)
+    return {"status": "success"}
+
+
+from src.domain.governance_schema import AuditLogRecord
+
+@router.get("/history", response_model=list[AuditLogRecord])
+async def get_history():
+    service = get_governance_service()
+    return service.store.list_audit_logs()
+
 # --- Candidates ---
 
 @router.post("/candidates", response_model=CandidateArtifactDTO)

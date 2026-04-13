@@ -1,14 +1,47 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { AdminPageHeader, AdminFilterBar, StatusBadge, AdminDrawer, SectionTitle, KeyValueRow } from "@/components/admin/admin-components";
+import { AdminPageHeader, AdminFilterBar, StatusBadge, AdminDrawer, SectionTitle, KeyValueRow, JsonConfigEditor } from "@/components/admin/admin-components";
 
 export default function ProfilesAdminPage() {
   const [selectedProfile, setSelectedProfile] = useState<any>(null);
   const [profiles, setProfiles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  
+  // For single-operator visual YAML editor
+  const [editorOpen, setEditorOpen] = useState(false);
+  const [editorData, setEditorData] = useState<any>(null);
+
+  const handleEditAll = () => {
+    // profiles format is already a dictionary according to ProfileMappingDTO
+    const payload: any = {};
+    profiles.forEach((p: any) => {
+      payload[p.profile_id] = {
+        packs: p.packs,
+        rule_packs: p.rule_packs
+      };
+    });
+    setEditorData(payload);
+    setEditorOpen(true);
+  };
+
+  const handleSave = async (newData: any) => {
+    const res = await fetch("/api/admin/governance/profiles", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(newData)
+    });
+    if (!res.ok) {
+      const err = await res.text();
+      throw new Error(err);
+    }
+    // Refresh
+    const r = await fetch("/api/admin/governance/profiles");
+    const d = await r.json();
+    setProfiles(Object.keys(d.mappings || {}).map(k => ({ profile_id: k, ...d.mappings[k] })));
+  };
+useEffect(() => {
     fetch("/api/admin/governance/profiles")
       .then(res => res.json())
       .then(data => {
@@ -40,7 +73,7 @@ export default function ProfilesAdminPage() {
         title="场景映射" 
         description="承接前端级联方案分类，将具体的工程三级细项强绑定至底层的审查包 (Packs) 和规则集 (Rule Packs)。"
       >
-        <button className="primary-button" onClick={() => alert("【架构硬限制】\n\n此处禁止脱机生成映射节点。\n需要维护映射字典，请联系系统管理员修改 `config/review_basis/profile_mappings.yaml`。")}>新增映射绑定</button>
+        <button className="primary-button" onClick={handleEditAll}>全文本可视化编排场景映射</button>
       </AdminPageHeader>
 
       <AdminFilterBar>
@@ -146,6 +179,15 @@ export default function ProfilesAdminPage() {
           </div>
         )}
       </AdminDrawer>
+
+      <JsonConfigEditor
+        title="场景映射编辑 (Profile Mappings)"
+        open={editorOpen}
+        onClose={() => setEditorOpen(false)}
+        initialData={editorData}
+        onSave={handleSave}
+      />
     </div>
   );
 }
+

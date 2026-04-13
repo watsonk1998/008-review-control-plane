@@ -8,7 +8,8 @@ repo_root = Path('/Users/lucas/repos/review/008-review-control-plane')
 sys.path.insert(0, str(repo_root / 'apps' / 'api'))
 
 os.environ['LLM_MODEL'] = 'qwen3.6-plus'
-os.environ['LLM_CONFIG_PATH'] = '/Users/lucas/tools/from-obsidian/AI/config/century.json'
+os.environ['LLM_CONFIG_PATH'] = '/Users/lucas/control/secrets/api-keys/century.json'
+os.environ['FASTGPT_CONFIG_PATH'] = '/Users/lucas/control/secrets/api-keys/gbcs-fast.json'
 try:
     with open(os.environ['LLM_CONFIG_PATH']) as f:
         cfg = json.load(f)
@@ -20,7 +21,7 @@ except Exception:
 import httpx
 original_init = httpx.AsyncClient.__init__
 def patched_init(self, *args, **kwargs):
-    kwargs['timeout'] = 300.0
+    kwargs['timeout'] = 600.0
     original_init(self, *args, **kwargs)
 httpx.AsyncClient.__init__ = patched_init
 
@@ -41,7 +42,7 @@ async def main():
     for std in standards:
         path = repo_root / std
         if path.exists():
-            policies_text += f"\n--- {path.name} ---\n{path.read_text(encoding='utf-8')[:8000]}\n"
+            policies_text += f"\n--- {path.name} ---\n{path.read_text(encoding='utf-8')}\n"
             
     query = (
         "请按以下五个维度对该《停电施工方案》进行严格的审查：\n"
@@ -100,6 +101,9 @@ async def main():
     task = service.get_task(task.id)
     if not task or not task.result:
         print("No result found in task!")
+        if task:
+            print(f"Task status: {task.status}")
+            print(f"Task error: {getattr(task, 'error', getattr(task, 'errorMessage', ''))}")
         sys.exit(1)
         
     report = task.result.get('finalReportMarkdown') or task.result.get('reportMarkdown', '')

@@ -80,7 +80,7 @@ class SupportPacketBuilder:
         ]
 
         return SupportPacket(
-            task_id=review_record.id,
+            task_id=getattr(review_record, 'id', getattr(review_record, 'taskId', '')),
             document_type=profile.documentType,
             profile=basis_profile.model_dump(mode='json'),
             facts=facts.model_dump(mode='json'),
