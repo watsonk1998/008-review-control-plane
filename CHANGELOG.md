@@ -8,6 +8,10 @@
 
 ### Changed
 - 彻底封堵 Hermes Formal Pipeline 边界：将 `TaskCompiler → ProfileResolver → BasisPackResolver → SupportPacketBuilder` 治理链硬接线并入 `HermesController.run()`，确保所有下游 Hermes 引擎适配器强制消费统一构建的 `governed_support_packet`。
+- 收拢并修正 `GovernanceService` 与运行时底座对于 Truth Source YAML 的解析口径差异，要求所有依据解析强制遵循 Top-level Dictionaries，移除产生越界的 JSON wrapper。
+- 彻底封堵正式报告的非法挂载与篡权通道：修正 `HermesController` 和 `HermesReviewAssembler`，将支撑层原始底座数据强制封装降级进 `supportLayerContext` 子域中，确保正式 `finalReportMarkdown` 100% 独享 Assembler 主权，遭遇 Hermes Engine Degradation 时必然触发 Fail-closed 拦截。
+- 强化端到端边界防御，新增真实运行时 Pydantic Schema 模拟入口脚手架 `verify_real_e2e_task.py` 以及三大类边界硬测试（Truth源一致性、报告所有权隔离、文件树物理边界），用执行事实取代空谈。
+- 执行本地 upstream `external/hermes-agent` 外挂内核的级联污染净化：通过抹除环境配置映射（`.envrc`）与缓存脏文件（`.DS_Store`）使其切回 100% Submodule Clean 工作树。
 - 物理隔离 Candidate Agent 评估池：在仿真学习激活 `focus_gaps` 并生成新候选模板时，模板仅进入独立的 `learning_candidates` 进行信号追踪，不再 `append` 至原生的 `selected_templates` 中，剥离运行时动态模版污染主链的风险。
 - 同步且纠正 Local Kernel 基础配置与断言断点事实：将 `config/hermes_upstream.yaml` 状态强制重置为 `isolated_standby / standby`，严格对齐 `main_dependencies.py` 孤立设定；重构 `verify_hermes_boundary.py`，确保其在回归测试中对 Local Kernel 的判断回正至 “备用状态 / Standby”。
 - 执行主链安全体系下的 Controlled Archiving（受控归档）：将独立调试桩脚本 (`apps/api/tests/debug.py`) 以及过期的纯手动验证结果 (`fixtures/supervision/` 下旧版 `V0.X / gemini-deepresearch` 等前缀结果) 安全下架至 `archive/`。
