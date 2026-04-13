@@ -109,9 +109,16 @@ class GovernanceService:
         return results
 
     def get_profile_mapping(self) -> ProfileMappingDTO:
+        """Read profile_mapping.yaml — the ONLY truth source for profile resolution.
+
+        The YAML is a top-level dict of profile keys (no 'mappings' wrapper).
+        This must stay aligned with the runtime read paths in
+        profile_resolver._load_profile_mapping() and BasisPackResolver.__init__().
+        """
         data = self._read_yaml("profile_mapping.yaml")
-        mappings = data.get("mappings", {})
-        return ProfileMappingDTO(mappings=mappings)
+        # The YAML structure is top-level keyed (e.g. hazardous_special_scheme: {...}).
+        # Do NOT wrap with data.get("mappings") — that key does not exist.
+        return ProfileMappingDTO(mappings=data)
 
     # --- Candidates ---
 

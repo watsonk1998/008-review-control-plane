@@ -87,7 +87,10 @@ class HermesReviewAssembler:
             'final_output_entrypoint': 'hermes_review_assembler',
         }
         
-        payload = dict(support_result_008 or (support_packet_008.raw_result if support_packet_008 else {}) or {})
+        # SUCCESS PATH: Build payload from assembler contract — NOT from support_result_008.
+        # Support layer data is placed into an explicit sub-key, preventing it from
+        # becoming the implicit root of the formal payload.
+        payload: dict[str, Any] = {}
         payload['hermesController'] = {
             'enabled': True,
             'selectedAgents': [result.get('agent_id') for result in agent_results],
@@ -98,10 +101,14 @@ class HermesReviewAssembler:
             'decisionOwner': 'hermes',
             'supportOwner': 'structured_review_capability_facade',
         }
+        # Authoritative formal report fields — assembler owns these exclusively.
         payload['traceability'] = final_packet.traceability
         payload['finalReportMarkdown'] = final_packet.report_markdown
         payload['finalReportPacket'] = final_packet.model_dump(mode='json')
         payload['finalAnswer'] = final_packet.report_markdown
+        # Support layer context placed in a dedicated sub-key (not at root level).
+        if support_result_008:
+            payload['supportLayerContext'] = support_result_008
         
         return payload, final_packet
 

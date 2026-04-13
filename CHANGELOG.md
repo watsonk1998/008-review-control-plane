@@ -10,6 +10,9 @@
 - 彻底封堵 Hermes Formal Pipeline 边界：将 `TaskCompiler → ProfileResolver → BasisPackResolver → SupportPacketBuilder` 治理链硬接线并入 `HermesController.run()`，确保所有下游 Hermes 引擎适配器强制消费统一构建的 `governed_support_packet`。
 - 物理隔离 Candidate Agent 评估池：在仿真学习激活 `focus_gaps` 并生成新候选模板时，模板仅进入独立的 `learning_candidates` 进行信号追踪，不再 `append` 至原生的 `selected_templates` 中，剥离运行时动态模版污染主链的风险。
 - 同步且纠正 Local Kernel 基础配置与断言断点事实：将 `config/hermes_upstream.yaml` 状态强制重置为 `isolated_standby / standby`，严格对齐 `main_dependencies.py` 孤立设定；重构 `verify_hermes_boundary.py`，确保其在回归测试中对 Local Kernel 的判断回正至 “备用状态 / Standby”。
+- 执行主链安全体系下的 Controlled Archiving（受控归档）：将独立调试桩脚本 (`apps/api/tests/debug.py`) 以及过期的纯手动验证结果 (`fixtures/supervision/` 下旧版 `V0.X / gemini-deepresearch` 等前缀结果) 安全下架至 `archive/`。
+- 切分存量实验态文档池（`fixtures/任务书/`）进行物理重排：原文件依照“纯历史 Prompt 草本”（转入 `archive/prompts/`）与“历史边界思路演进”（转入 `archive/docs_history/`）双规执行归档。通过梳理将当前 Active Tree 污染度进一步清零。
+- 新增 `archive/README.md` 来结构化约束所有过期代码的归档源路径及其下线原因，并强化执行『历史件禁止重新逆流回主运行链』的安全门禁。
 
 ## 2026-04-12
 

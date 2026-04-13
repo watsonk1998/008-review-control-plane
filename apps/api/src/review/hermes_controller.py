@@ -247,10 +247,11 @@ class HermesController:
                 emit('hermes_controller', 'hermes_controller', 'info', '派出最终审查报告表达层子agent...', debug={"status": "presentation_pass_started"})
             presentation_result = await self.presentation_agent.generate_presentation(final_packet)
             
-            # The presentation result does NOT overwrite the formal authoritative final_packet.
-            # We strictly expose it parallel to the authoritative output.
-            enriched['finalReportMarkdown'] = presentation_result.presentation_markdown
-            enriched['finalAnswer'] = presentation_result.presentation_markdown
+            # HARD CONSTRAINT: Presentation output MUST NOT overwrite the assembler's
+            # authoritative finalReportMarkdown / finalAnswer.  It is strictly a
+            # supplementary display-layer artifact stored in separate fields.
+            enriched['presentationMarkdown'] = presentation_result.presentation_markdown
+            enriched['presentationSummary'] = presentation_result.presentation_markdown
             enriched.setdefault('hermesController', {})['presentationResult'] = presentation_result.model_dump(mode='json')
             
             if write_json_artifact:
