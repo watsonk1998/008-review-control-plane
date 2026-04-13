@@ -1,35 +1,17 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { StructuredReviewForm } from "./structured-review-form";
 import { createTask, uploadDocument } from "@/lib/api";
 import type {
-  CapabilityMode,
   CreateTaskRequest,
   FixtureRecord,
   SupportScopeResponse,
-  TaskType,
 } from "@/types/control-plane";
 
-const TASK_OPTIONS: Array<{ value: TaskType; label: string; hint: string }> = [
-  { value: "structured_review", label: "正式审查", hint: "执行正式结构化主链审查" },
-  { value: "review_assist", label: "审查辅助", hint: "仅总结要点，无审查结论" },
-  { value: "knowledge_qa", label: "知识问答", hint: "调用 DeepTutor 问答" },
-  { value: "document_research", label: "文档研究", hint: "提取事实特征与研判" },
-  { value: "deep_research", label: "深度研究", hint: "GPT Researcher 产出报告" },
-];
-
-const CAPABILITY_OPTIONS: Array<{ value: CapabilityMode; label: string; hint: string }> = [
-  { value: "auto", label: "自动编排", hint: "由系统智能决策执行链路。" },
-  { value: "deeptutor", label: "专业问答引擎", hint: "基于行业规范体系提供精准解释。" },
-  { value: "gpt_researcher", label: "深度研究引擎", hint: "自动归纳证据链并产出分析报告。" },
-  { value: "fast", label: "检索增强框架", hint: "切片检索与轻量化匹配。" },
-  { value: "llm_only", label: "纯净推理模型", hint: "不依赖外部网关，仅用于内部验证。" },
-];
-
 export function CreateTaskForm({
-  fixtures,
   supportScope,
 }: {
   fixtures: FixtureRecord[];
@@ -39,20 +21,26 @@ export function CreateTaskForm({
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [uploadingDocument, setUploadingDocument] = useState(false);
-  const [showAdvanced, setShowAdvanced] = useState(false);
-  const [sourceUrlInput, setSourceUrlInput] = useState("");
-  const [policyPackInput, setPolicyPackInput] = useState("");
+
+  // Mocks for modular functions
+  const [moduleFuncs, setModuleFuncs] = useState({
+    docIntegrity: true,
+    paramConsistency: true,
+    compliance: true,
+    flowContinuity: false,
+    evidenceVerification: false,
+  });
 
   const [form, setForm] = useState<CreateTaskRequest>({
     taskType: "structured_review",
     capabilityMode: "auto",
-    query: "请对该施工组织设计执行正式结构化审查，并输出问题清单、证据定位与整改建议。",
+    query: "",
     fixtureId: "",
     sourceDocumentRef: undefined,
     datasetId: "",
     collectionId: "",
     useWeb: false,
-    debug: true,
+    debug: false,
     sourceUrls: [],
     documentType: "construction_org",
     disciplineTags: [],
@@ -60,25 +48,8 @@ export function CreateTaskForm({
     policyPackIds: [],
   });
 
-  const groupedFixtures = useMemo(() => {
-    return fixtures.reduce<Record<string, FixtureRecord[]>>((acc, item) => {
-      acc[item.domain] = acc[item.domain] || [];
-      acc[item.domain].push(item);
-      return acc;
-    }, {});
-  }, [fixtures]);
-
-  const selectedTask = useMemo(
-    () => TASK_OPTIONS.find((item) => item.value === form.taskType) ?? TASK_OPTIONS[0],
-    [form.taskType]
-  );
-
-  const selectedCapability = useMemo(
-    () => CAPABILITY_OPTIONS.find((item) => item.value === form.capabilityMode) ?? CAPABILITY_OPTIONS[0],
-    [form.capabilityMode]
-  );
-
-  const canSubmit = Boolean(form.query.trim()) && (form.taskType !== "structured_review" || Boolean(form.fixtureId || form.sourceDocumentRef));
+  const canSubmit = Boolean(form.sourceDocumentRef);
+  const availablePacks = supportScope?.packs?.filter(p => p.readiness === "ready" || p.readiness === "official") || [];
 
   async function handleDocumentUpload(file: File) {
     setUploadingDocument(true);
@@ -97,184 +68,229 @@ export function CreateTaskForm({
     }
   }
 
+  function handleMockPlaceholderUpload() {
+    alert("该延展项目资料槽位功能（辅助证据上传）正在接入底层接口，目前已预留槽位但暂未激活。");
+  }
+
+  function togglePack(packId: string, checked: boolean) {
+    setForm(curr => {
+      const set = new Set(curr.policyPackIds);
+      if (checked) set.add(packId);
+      else set.delete(packId);
+      return { ...curr, policyPackIds: Array.from(set) };
+    });
+  }
+
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSubmitting(true);
     setError(null);
     try {
-      const structuredPolicyPackIds = policyPackInput.split(/[\n,]+/).map((item) => item.trim()).filter(Boolean);
+      // 模块设置不写入实际 policy 阵列（避免污染 backend strict policy pack array）
+      // 实际上仅在描述 query 处注入作为提示说明
+      let finalQuery = form.query;
+      const activedModules = [
+        moduleFuncs.docIntegrity ? "章节完整性" : "",
+        moduleFuncs.paramConsistency ? "参数一致性" : "",
+        moduleFuncs.compliance ? "合法合规性" : "",
+        moduleFuncs.flowContinuity ? "工序连贯性" : "",
+        moduleFuncs.evidenceVerification ? "证据验证" : ""
+      ].filter(Boolean);
+      
+      if (activedModules.length > 0) {
+        finalQuery = `【期望检查动作】: ${activedModules.join(", ")}\n\n${finalQuery}`;
+      }
 
       const task = await createTask({
         ...form,
-        fixtureId: form.taskType === "structured_review" && form.sourceDocumentRef ? undefined : form.fixtureId || undefined,
-        sourceDocumentRef: form.taskType === "structured_review" && form.sourceDocumentRef ? form.sourceDocumentRef : undefined,
-        datasetId: form.datasetId || undefined,
-        collectionId: form.collectionId || undefined,
-        sourceUrls: sourceUrlInput.split(/\n+/).map((item) => item.trim()).filter(Boolean),
-        documentType: form.taskType === "structured_review" ? form.documentType || "construction_org" : undefined,
-        disciplineTags: form.taskType === "structured_review" ? form.disciplineTags || [] : undefined,
-        strictMode: form.taskType === "structured_review" ? form.strictMode ?? true : undefined,
-        policyPackIds: form.taskType === "structured_review" ? structuredPolicyPackIds : undefined,
+        query: finalQuery,
+        fixtureId: undefined,
+        sourceDocumentRef: form.sourceDocumentRef,
       });
 
       router.push(`/tasks/${task.id}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "任务创建失败");
+      setError(err instanceof Error ? err.message : "任务发起失败，请重试");
     } finally {
       setSubmitting(false);
     }
   }
 
   return (
-    <div className="glass-panel stack-lg">
-      <div className="section-heading compact">
-        <div>
-          <p className="eyebrow">任务编排与调度</p>
-          <h2 className="section-title">发起核查任务</h2>
-        </div>
-        <p className="muted small">{selectedTask.hint}</p>
-      </div>
+    <div className="glass-panel stack-lg" style={{ border: "none", boxShadow: "0 1px 3px rgba(0,0,0,0.05)", borderRadius: "12px", background: "#FFFFFF", padding: "32px", width: "100%" }}>
+      <form className="task-form stack-lg" onSubmit={handleSubmit} style={{ gap: "32px", display: "flex", flexDirection: "column" }}>
 
-      <div className="task-type-toggle" role="tablist">
-        {TASK_OPTIONS.map((item) => (
-          <button
-            key={item.value}
-            type="button"
-            role="tab"
-            aria-selected={form.taskType === item.value}
-            className={`task-type-chip ${form.taskType === item.value ? "is-active" : ""}`}
-            onClick={() => setForm((current) => ({ ...current, taskType: item.value, capabilityMode: item.value === "structured_review" ? "auto" : current.capabilityMode }))}
-          >
-            {item.label}
-          </button>
-        ))}
-      </div>
+        {/* 1. 确定待审文件（选择方案类型） */}
+        <section>
+          <header style={{ marginBottom: "16px", borderBottom: "1px solid #E2E8F0", paddingBottom: "12px" }}>
+            <h3 style={{ fontSize: "1.1rem", color: "#1E293B", fontWeight: 600 }}>1. 确定待审文件（选择方案类型）</h3>
+            <p style={{ fontSize: "0.85rem", color: "#64748B", marginTop: "4px" }}>级联分类选择目标审查域，系统将据此拉取基础规则</p>
+          </header>
+          <StructuredReviewForm form={form} setForm={setForm} supportScope={supportScope} />
+        </section>
 
-      <form className="task-form stack-lg" onSubmit={handleSubmit}>
-        {form.taskType !== "structured_review" && (
-          <label className="field">
-            <span>能力编排引擎</span>
-            <select
-              value={form.capabilityMode}
-              onChange={(e) => setForm((curr) => ({ ...curr, capabilityMode: e.target.value as CapabilityMode }))}
-            >
-              {CAPABILITY_OPTIONS.map((item) => (
-                <option key={item.value} value={item.value}>{item.label}</option>
-              ))}
-            </select>
-            <small>{selectedCapability.hint}</small>
-          </label>
-        )}
-
-        <label className="field">
-          <span>{form.taskType === "structured_review" ? "结构化审查指令" : "查询 / 任务描述"}</span>
-          <textarea
-            rows={form.taskType === "structured_review" ? 4 : 5}
-            value={form.query}
-            onChange={(e) => setForm((curr) => ({ ...curr, query: e.target.value }))}
-          />
-        </label>
-
-        <label className="field">
-          <span>选择基准样本</span>
-          <select
-            value={form.fixtureId || ""}
-            onChange={(e) => setForm((curr) => ({ ...curr, fixtureId: e.target.value, sourceDocumentRef: e.target.value ? undefined : curr.sourceDocumentRef }))}
-          >
-            <option value="">上传自定义文档</option>
-            {Object.entries(groupedFixtures).map(([domain, items]) => (
-              <optgroup key={domain} label={domain}>
-                {items.map((fixture) => (
-                  <option key={fixture.id} value={fixture.id}>{fixture.title}</option>
-                ))}
-              </optgroup>
-            ))}
-          </select>
-        </label>
-
-        {form.taskType === "structured_review" && !form.fixtureId && (
-          <div className="field">
-            <span>目标审查文档</span>
-            {form.sourceDocumentRef ? (
-              <div className="doc-ready-card">
-                <svg fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                </svg>
-                <div className="doc-ready-info">
-                  <strong>文档已安全上传并在系统中就绪</strong>
-                  <span>{form.sourceDocumentRef.displayName || form.sourceDocumentRef.fileName}</span>
-                </div>
-                <button type="button" className="ghost-button doc-ready-undo" onClick={() => setForm(c => ({...c, sourceDocumentRef: undefined}))}>撤销</button>
+        {/* 2. 上传资料结构化阵列 */}
+        <section>
+          <header style={{ marginBottom: "16px", borderBottom: "1px solid #E2E8F0", paddingBottom: "12px" }}>
+            <h3 style={{ fontSize: "1.1rem", color: "#1E293B", fontWeight: 600 }}>2. 上传资料结构化阵列</h3>
+          </header>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "24px" }}>
+            {/* 待审主要文件对象 */}
+            <div style={{ background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: "8px", padding: "20px" }}>
+              <div style={{ marginBottom: "16px" }}>
+                <span style={{ fontSize: "0.95rem", fontWeight: 600, color: "#0F172A", display: "block" }}>待审主要文件对象 (必须提供)</span>
+                <span style={{ fontSize: "0.8rem", color: "#64748B" }}>承载本次审查核验目标的主体文件（方案报告本身）</span>
               </div>
-            ) : (
-              <label className={`upload-zone ${uploadingDocument ? "is-uploading" : ""}`}>
-                {uploadingDocument ? (
-                  <>
-                    <div className="spinner" />
-                    <div className="upload-text">
-                      <strong>正在通过加密通道上传并启动解析引擎</strong>
-                      <span>请稍候，网络传输可能需要十几秒...</span>
+              
+              {form.sourceDocumentRef ? (
+                <div className="doc-ready-card" style={{ background: "#F0FDF4", border: "1px solid #BBF7D0", color: "#15803D", padding: "16px", borderRadius: "6px", display: "flex", gap: "12px", alignItems: "center" }}>
+                  <svg fill="currentColor" viewBox="0 0 20 20" style={{ width: 24, flexShrink: 0 }}>
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                  <div className="doc-ready-info" style={{ flex: 1, minWidth: 0 }}>
+                     <div style={{ fontSize: "0.9rem", fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                       {form.sourceDocumentRef.displayName || form.sourceDocumentRef.fileName}
+                     </div>
+                  </div>
+                  <button type="button" className="ghost-button" onClick={() => setForm(c => ({...c, sourceDocumentRef: undefined}))} style={{ padding: "4px 8px", fontSize: "0.85rem" }}>更换</button>
+                </div>
+              ) : (
+                <label className={`upload-zone ${uploadingDocument ? "is-uploading" : ""}`} style={{ background: "#FFFFFF", border: "1px dashed #CBD5E1", padding: "24px", textAlign: "center", display: "block", borderRadius: "6px", cursor: "pointer" }}>
+                  {uploadingDocument ? (
+                    <div style={{ display: "flex", flexDirection: "column", gap: "8px", alignItems: "center" }}>
+                      <div className="spinner" style={{ borderColor: "rgba(15, 23, 42, 0.1)", borderTopColor: "#0F172A", width: "24px", height: "24px" }} />
+                      <span style={{ color: "#0F172A", fontSize: "0.9rem" }}>解析并上传中...</span>
                     </div>
-                  </>
-                ) : (
-                  <>
-                    <div className="upload-icon">
-                      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                      </svg>
-                    </div>
-                    <div className="upload-text">
-                      <strong>点击选择或拖拽文件到这里上传</strong>
-                      <span>强制要求 .docx 或 .pdf 格式。端到端直传</span>
-                    </div>
-                  </>
-                )}
-                <input
-                  type="file"
-                  accept=".docx,.pdf,.md,.txt"
-                  disabled={uploadingDocument}
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) { handleDocumentUpload(file); e.currentTarget.value = ""; }
-                  }}
-                />
-              </label>
-            )}
+                  ) : (
+                     <div style={{ display: "flex", flexDirection: "column", gap: "8px", alignItems: "center" }}>
+                        <div style={{ color: "#475569" }}>
+                          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" width="24" height="24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                          </svg>
+                        </div>
+                        <strong style={{ color: "#334155", fontSize: "0.9rem" }}>上传 PDF 或 DOCX 文件</strong>
+                     </div>
+                  )}
+                  <input
+                    type="file"
+                    accept=".docx,.pdf,.md,.txt"
+                    disabled={uploadingDocument}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) { handleDocumentUpload(file); e.currentTarget.value = ""; }
+                    }}
+                    style={{ display: "none" }}
+                  />
+                </label>
+              )}
+            </div>
+
+            {/* 随附延展项目资料 */}
+            <div style={{ background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: "8px", padding: "20px" }}>
+               <div style={{ marginBottom: "16px" }}>
+                 <span style={{ fontSize: "0.95rem", fontWeight: 600, color: "#0F172A", display: "block" }}>随附延展项目资料 (供参项)</span>
+                 <span style={{ fontSize: "0.8rem", color: "#64748B" }}>接口预置槽位 (仅做占位展示，供后续验证使用)</span>
+               </div>
+               
+               <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                  {["项目主建合同", "施工执行图纸", "地质勘测详报"].map((label) => (
+                     <div key={label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#FFFFFF", padding: "10px 16px", borderRadius: "6px", border: "1px solid #E2E8F0" }}>
+                       <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                         <span style={{ fontSize: "0.9rem", color: "#475569" }}>{label}</span>
+                       </div>
+                       <button type="button" onClick={handleMockPlaceholderUpload} style={{ background: "none", border: "none", fontSize: "0.85rem", color: "#2563EB", cursor: "pointer", fontWeight: 500 }}>
+                         + 上传
+                       </button>
+                     </div>
+                  ))}
+               </div>
+            </div>
           </div>
-        )}
+        </section>
 
-        <StructuredReviewForm form={form} setForm={setForm} supportScope={supportScope} />
+        {/* 3. 风控审查规则框圈约束 */}
+        <section>
+          <header style={{ marginBottom: "16px", borderBottom: "1px solid #E2E8F0", paddingBottom: "12px" }}>
+            <h3 style={{ fontSize: "1.1rem", color: "#1E293B", fontWeight: 600 }}>3. 风控审查规则框圈约束</h3>
+          </header>
+          
+          <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+            
+            {/* 标准审查依据库 */}
+            <div>
+              <strong style={{ fontSize: "0.95rem", color: "#334155", display: "block", marginBottom: "12px" }}>标准审查依据库（智能联配、支持扩增）</strong>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "12px" }}>
+                {availablePacks.map(pack => (
+                  <label key={pack.packId} className="checkbox-row inline-check" style={{ background: "#F1F5F9", padding: "8px 12px", borderRadius: "6px", border: "1px solid #CBD5E1" }}>
+                     <input type="checkbox" checked={form.policyPackIds.includes(pack.packId)} onChange={(e) => togglePack(pack.packId, e.target.checked)} />
+                     <span style={{ fontSize: "0.85rem", color: "#0F172A" }}>{pack.label || pack.packId}</span>
+                  </label>
+                ))}
+                
+                <label className="checkbox-row inline-check" style={{ background: "#F8FAFC", padding: "8px 12px", borderRadius: "6px", border: "1px dashed #CBD5E1", cursor: "pointer", opacity: 0.7 }}>
+                     <span style={{ fontSize: "0.85rem", color: "#64748B" }}>+ 本地标准附加拉起（预留入口）...</span>
+                </label>
+              </div>
+            </div>
 
-        <div className="toggle-row">
-          <button type="button" className="ghost-button" onClick={() => setShowAdvanced((v) => !v)}>
-            {showAdvanced ? "- 收起专家配置" : "+ 展开专家配置"}
-          </button>
-        </div>
+            {/* 审查动作模块集 */}
+            <div>
+              <strong style={{ fontSize: "0.95rem", color: "#334155", display: "block", marginBottom: "12px" }}>审查动作模块集 (五大功能开关)</strong>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "16px", alignItems: "center" }}>
+                 <label className="checkbox-row inline-check">
+                   <input type="checkbox" checked={moduleFuncs.docIntegrity} onChange={(e) => setModuleFuncs(c => ({...c, docIntegrity: e.target.checked}))}/>
+                   <span>章节完整性</span>
+                 </label>
+                 <label className="checkbox-row inline-check">
+                   <input type="checkbox" checked={moduleFuncs.paramConsistency} onChange={(e) => setModuleFuncs(c => ({...c, paramConsistency: e.target.checked}))}/>
+                   <span>参数一致性</span>
+                 </label>
+                 <label className="checkbox-row inline-check">
+                   <input type="checkbox" checked={moduleFuncs.compliance} onChange={(e) => setModuleFuncs(c => ({...c, compliance: e.target.checked}))}/>
+                   <span>合法合规性</span>
+                 </label>
+                 <label className="checkbox-row inline-check">
+                   <input type="checkbox" checked={moduleFuncs.flowContinuity} onChange={(e) => setModuleFuncs(c => ({...c, flowContinuity: e.target.checked}))}/>
+                   <span>工序连贯性</span>
+                 </label>
+                 <label className="checkbox-row inline-check">
+                   <input type="checkbox" checked={moduleFuncs.evidenceVerification} onChange={(e) => setModuleFuncs(c => ({...c, evidenceVerification: e.target.checked}))}/>
+                   <span>证据验证</span>
+                 </label>
+                 <span style={{ fontSize: "0.85rem", color: "#16A34A", display: "inline-flex", alignItems: "center", gap: "4px", marginLeft: "8px" }}>
+                   ✅ 最终报告将严格依据此骨架生成
+                 </span>
+              </div>
+            </div>
 
-        {showAdvanced && (
-          <div className="advanced-panel stack-lg">
-             <label className="field">
-               <span>审查模块策略覆盖</span>
-               <textarea rows={2} value={policyPackInput} onChange={(e) => setPolicyPackInput(e.target.value)} placeholder="留空为系统自动匹配最优模块组合" />
-             </label>
-             <label className="checkbox-row inline-check">
-               <input type="checkbox" checked={form.useWeb} onChange={(e) => setForm((c) => ({ ...c, useWeb: e.target.checked }))} />
-               <span>开放外部互联网抓取能力 (适用研究模式)</span>
-             </label>
-             <label className="checkbox-row inline-check">
-               <input type="checkbox" checked={form.debug} onChange={(e) => setForm((c) => ({ ...c, debug: e.target.checked }))} />
-               <span>启用底层排障追溯 (保留执行轨迹与快照)</span>
-             </label>
+            {/* 用户重点要求指派区 */}
+            <div>
+               <strong style={{ fontSize: "0.95rem", color: "#334155", display: "block", marginBottom: "8px" }}>用户重点要求指派区 (聚焦单次特异性意图偏好)</strong>
+               <textarea 
+                  rows={3} 
+                  value={form.query} 
+                  onChange={(e) => setForm(c => ({...c, query: e.target.value}))} 
+                  placeholder="用户重点任务/检查指向说明（非必填）：&#10;1. 比如：本次工程注意不能突破三区规定的绿化红线要求..." 
+                  style={{ width: "100%", padding: "12px", borderRadius: "6px", border: "1px solid #CBD5E1", fontSize: "0.95rem", color: "#0F172A", background: "#F8FAFC", resize: "vertical" }}
+               />
+            </div>
           </div>
-        )}
+        </section>
 
-        {error && <p className="error-text">{error}</p>}
-        <div className="form-footer">
-          <button type="submit" className="primary-button" disabled={submitting || !canSubmit}>
-            {submitting ? "系统调度中..." : "启动审查引擎 [Enter]"}
+        {error && <div style={{ background: "#FEF2F2", color: "#B91C1C", padding: "12px", borderRadius: "6px", fontSize: "0.95rem" }}>{error}</div>}
+        
+        {/* 4. 提交动作区 */}
+        <div className="form-footer" style={{ borderTop: "1px solid #E2E8F0", paddingTop: "24px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div>
+             <Link href="/tasks" style={{ fontSize: "0.9rem", color: "#2563EB", textDecoration: "none" }}>查看最近任务记录及状态 →</Link>
+          </div>
+          <button type="submit" className="primary-button" disabled={submitting || !canSubmit} style={{ minWidth: "180px", padding: "14px 32px", fontSize: "1.05rem", background: "#0B192C", borderRadius: "6px", cursor: canSubmit ? "pointer" : "not-allowed" }}>
+            {submitting ? "编译并提交..." : "编译并提交任务"}
           </button>
         </div>
       </form>
     </div>
   );
 }
+
