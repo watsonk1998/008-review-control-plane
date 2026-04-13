@@ -7,6 +7,9 @@
 ## 2026-04-13
 
 ### Changed
+- 彻底完成 Admin Governance Workbench 前端界面的真实化脱壳：将审查包 (`/packs`)、依据库 (`/bases`)、场景映射 (`/profiles`)、候选建议 (`/candidates`) 以及 发布草案 (`/drafts`) 表单彻底对接真实的后端 FastAPI 路由。
+- 强制落实只读治理边界：将前端大盘上的越权编辑按钮（如新建基准、直接录入等）替换为防御性系统提示，强制要求核心标准维护退回到底层 YAML 物理系统与离线候选流中。
+- 大盘统计的真实接管：移除预留的 Dashboard Mock 指标，重构并直连后端资源总表长度用于计算全局治理健康度。
 - 彻底封堵 Hermes Formal Pipeline 边界：将 `TaskCompiler → ProfileResolver → BasisPackResolver → SupportPacketBuilder` 治理链硬接线并入 `HermesController.run()`，确保所有下游 Hermes 引擎适配器强制消费统一构建的 `governed_support_packet`。
 - 收拢并修正 `GovernanceService` 与运行时底座对于 Truth Source YAML 的解析口径差异，要求所有依据解析强制遵循 Top-level Dictionaries，移除产生越界的 JSON wrapper。
 - 彻底封堵正式报告的非法挂载与篡权通道：修正 `HermesController` 和 `HermesReviewAssembler`，将支撑层原始底座数据强制封装降级进 `supportLayerContext` 子域中，确保正式 `finalReportMarkdown` 100% 独享 Assembler 主权，遭遇 Hermes Engine Degradation 时必然触发 Fail-closed 拦截。
