@@ -324,6 +324,7 @@ class HermesReviewAssembler:
             grouped_findings[dim].append(finding)
 
         severity_order = {'high': 0, 'medium': 1, 'low': 2, 'info': 3}
+        severity_zh_map = {'high': '高风险', 'medium': '中等风险', 'low': '低风险', 'info': '提示'}
         for dim_title, items in grouped_findings.items():
             if not items:
                 continue
@@ -331,8 +332,9 @@ class HermesReviewAssembler:
             items.sort(key=lambda x: severity_order.get(x.severity, 99))
             
             for finding in items:
+                severity_zh = severity_zh_map.get(finding.severity.lower(), finding.severity.upper())
                 corroborated_mark = " *(已通过主审交叉复核)*" if (finding.raw_data or {}).get('hermes_decision_signal') == 'corroborated' else ""
-                lines.append(f'- **[{finding.id}]** [{finding.severity.upper()}]{corroborated_mark} {finding.title}')
+                lines.append(f'- **[{severity_zh}]**{corroborated_mark} {finding.title}')
                 if finding.summary:
                     lines.append(f'  > {finding.summary.strip()}')
                 if finding.suggestion:

@@ -219,18 +219,10 @@ export function CreateTaskForm({
             
             {/* 标准审查依据库 */}
             <div>
-              <strong style={{ fontSize: "0.95rem", color: "#334155", display: "block", marginBottom: "12px" }}>标准审查依据库（智能联配、支持扩增）</strong>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "12px" }}>
-                {availablePacks.map(pack => (
-                  <label key={pack.packId} className="checkbox-row inline-check" style={{ background: "#F1F5F9", padding: "8px 12px", borderRadius: "6px", border: "1px solid #CBD5E1" }}>
-                     <input type="checkbox" checked={(form.policyPackIds || []).includes(pack.packId)} onChange={(e) => togglePack(pack.packId, e.target.checked)} />
-                     <span style={{ fontSize: "0.85rem", color: "#0F172A" }}>{pack.label || pack.packId}</span>
-                  </label>
-                ))}
-                
-                <label className="checkbox-row inline-check" style={{ background: "#F8FAFC", padding: "8px 12px", borderRadius: "6px", border: "1px dashed #CBD5E1", cursor: "pointer", opacity: 0.7 }}>
-                     <span style={{ fontSize: "0.85rem", color: "#64748B" }}>+ 本地标准附加拉起（预留入口）...</span>
-                </label>
+              <strong style={{ fontSize: "0.95rem", color: "#334155", display: "block", marginBottom: "12px" }}>标准审查依据库（根据方案类型自动内置）</strong>
+              <div style={{ background: "#F0FDF4", border: "1px solid #BBF7D0", padding: "12px 16px", borderRadius: "6px", display: "flex", alignItems: "center", gap: "12px" }}>
+                <span style={{ fontSize: "1.2rem" }}>🛡️</span>
+                <span style={{ fontSize: "0.85rem", color: "#15803D" }}>系统已根据您定义的方案分类（Profile）自动匹配并加载关联强制基线依据集，无需人工分配确认。</span>
               </div>
             </div>
 

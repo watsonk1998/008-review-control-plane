@@ -1,6 +1,6 @@
-# 008 Review Control Plane
+# hermes-review-agent
 
-008 is a review control plane for engineering document review.
+hermes-review-agent is a review control plane for engineering document review.
 Its current primary track is `structured_review`: a formal-review pipeline that turns review inputs into **structured, reviewable draft outputs** rather than final signed conclusions.
 
 > For the full documentation map and source-of-truth guide, start from [`docs/README.md`](docs/README.md).
@@ -10,7 +10,7 @@ Its current primary track is `structured_review`: a formal-review pipeline that 
 The repository is currently centered on:
 
 - HermesController-first `structured_review` as the runtime live path
-- 008 `StructuredReviewExecutor` as the structured review capability foundation
+- hermes-review-agent `StructuredReviewExecutor` as the structured review capability foundation
 - reviewable structured issues, evidence, and visibility-aware outputs
 - governance-aware capability evolution (`official` / `ready` / `experimental`)
 
@@ -28,7 +28,7 @@ The active structured review path is:
 
 Within that path:
 
-- `StructuredReviewExecutor` is the 008 capability foundation
+- `StructuredReviewExecutor` is the hermes-review-agent capability foundation
 - `StructuredReviewCapabilityFacade` is the module boundary exposed to Hermes-side callers
 - `HermesReviewAssembler` is the only official final output entrypoint
 
@@ -45,7 +45,7 @@ When these files remain in the repository, they are retained for migration, comp
 ### Legacy or internal-only layers
 
 - `FinalReportMerger` is an assembler-internal helper, not an independent runtime entrypoint
-- `reportMarkdown` remains an internal 008 result field; external final protocol uses `finalReportMarkdown / finalReportPacket`
+- `reportMarkdown` remains an internal hermes-review-agent result field; external final protocol uses `finalReportMarkdown / finalReportPacket`
 - historical compiled docs under `docs/90-archive/` are retained for reference, not as day-to-day source of truth
 
 ## Repository Guide

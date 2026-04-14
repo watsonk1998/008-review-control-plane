@@ -11,7 +11,7 @@ from src.routes.tasks import router as tasks_router
 from src.routes.uploads import router as uploads_router
 from src.routes.admin.governance import router as admin_governance_router
 
-app = FastAPI(title='008 Review Control Plane API', version='0.1.0')
+app = FastAPI(title='hermes-review-agent API', version='0.1.0')
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -37,7 +37,7 @@ app.include_router(admin_governance_router)
 @app.get('/')
 async def root():
     return {
-        'name': '008 Review Control Plane API',
+        'name': 'hermes-review-agent API',
         'role': 'DeepResearchAgent-compatible orchestration layer',
         'docs': '/docs',
     }

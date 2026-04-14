@@ -14,12 +14,12 @@ export function AppShell({ children }: AppShellProps) {
 
   return (
     <div className="platform-layout">
-      {/* 1. Top Nav (全局平台顶栏) */}
-      <header className="platform-topnav">
+      {/* 1. Top Nav (全局平台顶栏) - 已按要求隐藏 */}
+      <header className="platform-topnav" style={{ display: "none" }}>
         <div className="topnav-brand">
           <Link href="/" className="brand-logo">
-            <span className="brand-icon">008</span>
-            <span className="brand-name">建果AI审查平台</span>
+            <span className="brand-icon">hermes-review-agent</span>
+            <span className="brand-name">自动化审查</span>
           </Link>
           <div className="brand-divider"></div>
           <span className="platform-subtitle">

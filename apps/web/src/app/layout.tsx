@@ -6,7 +6,7 @@ import "./theme.css";
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
 export const metadata: Metadata = {
-  title: "008 Review Control Plane",
+  title: "hermes-review-agent",
   description: "Formal Review Control Plane and Execution Engine",
 };
 

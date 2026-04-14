@@ -1,8 +1,8 @@
-# 008 Review Control Plane — Repository AGENTS
+# hermes-review-agent — Repository AGENTS
 
 ## Repository Mission
 
-This repository is the **008 review control plane / shell**.
+This repository is the **hermes-review-agent control plane / shell**.
 
 Its job is to integrate, govern, and expose a stable review system around Hermes-driven review execution without absorbing the Hermes upstream kernel into local business code.
 
@@ -51,7 +51,7 @@ The formal basis for any review (laws, standards, enterprise rules) is strictly 
 ## Result Protocol & Final Report Ownership
 
 - **Final Report Ownership**: The formal review report can ONLY be output by the shell-side `FinalReportAssembler`.
-- **Support-Layer Prohibition**: `support_result_008` and pre-check findings are strictly supporting evidence/pointers. They MUST NEVER be presented as the main body of the formal review report if Hermes fails.
+- **Support-Layer Prohibition**: `support_result_hermes_review_agent` and pre-check findings are strictly supporting evidence/pointers. They MUST NEVER be presented as the main body of the formal review report if Hermes fails.
 - **Fail-Closed Policy**: If `hermes_review_packets` is empty, Hermes controller is degraded, the backend is unavailable, or Hermes main review did not complete successfully:
   - The system MUST fail-closed.
   - NO formal review report shall be emitted.
