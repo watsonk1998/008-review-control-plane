@@ -10,7 +10,7 @@
   jurisdiction: "National"
   file_refs:
     - "knowledge/review_basis/national_standards/gb_t_50502_2009.md"
-  applicability_tags: ["construction_org", "base"]
+  applicability_tags: ["construction_org", "base", "distribution_network_special_scheme"]
   owner: "MOHURD"
   freshness_rule: "yearly"
 
@@ -23,7 +23,7 @@
   jurisdiction: "National"
   file_refs:
     - "knowledge/review_basis/national_standards/gb_t_50319.md"
-  applicability_tags: ["supervision_plan", "base"]
+  applicability_tags: ["supervision_plan", "base", "distribution_network_special_scheme"]
   owner: "MOHURD"
   freshness_rule: "yearly"
 
@@ -36,7 +36,7 @@
   jurisdiction: "National"
   file_refs:
     - "knowledge/review_basis/industry_standards/mohurd_2021_48.md"
-  applicability_tags: ["hazardous_special_scheme", "base"]
+  applicability_tags: ["hazardous_special_scheme", "base", "distribution_network_special_scheme"]
   owner: "MOHURD"
   freshness_rule: "yearly"
 
@@ -49,7 +49,7 @@
   jurisdiction: "National"
   file_refs:
     - "knowledge/review_basis/laws/safety_management_regulation.md"
-  applicability_tags: ["all"]
+  applicability_tags: ["all", "distribution_network_special_scheme"]
   owner: "State Council"
   freshness_rule: "yearly"
 

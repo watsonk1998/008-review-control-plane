@@ -88,6 +88,12 @@ class BasisPackResolver:
         self.pack_registry: dict[str, Any] = self._load_yaml("pack_registry.yaml").get('packs', {})
         self.rule_pack_registry: dict[str, Any] = self._load_yaml("rule_pack_registry.yaml").get('rule_packs', {})
         self.basis_registry: dict[str, Any] = self._load_yaml("basis_registry.yaml")
+        
+        # Build tag index to avoid full scanning resolving basis per request
+        self._tag_to_basis_ids: dict[str, list[str]] = {}
+        for b_id, b_data in self.basis_registry.items():
+            for tag in b_data.get('applicability_tags', []):
+                self._tag_to_basis_ids.setdefault(tag, []).append(b_id)
 
     def _load_yaml(self, filename: str) -> dict[str, Any]:
         path = CONFIG_DIR / filename
@@ -204,11 +210,23 @@ class BasisPackResolver:
                 basis_ids=pack_basis_ids,
             ))
 
+        # Auto-discover bases matching the active context (profile, level tags, pack families)
+        tags_to_match = {profile_id, doc_type, classification.get("level1"), "all"}
+        for p in resolved_packs:
+            tags_to_match.add(p.pack_id)
+            tags_to_match.add(p.family)
+            
+        tags_to_match.discard(None)  # Remove empty values if any
+
+        for tag in tags_to_match:
+            if tag in self._tag_to_basis_ids:
+                collected_basis_ids.extend(self._tag_to_basis_ids[tag])
+
         # 4. Deduplicate basis IDs (order-preserved)
         unique_basis_ids = list(dict.fromkeys(collected_basis_ids))
 
         # 5. Resolve basis documents — ONLY those referenced by resolved packs
-        #    NO full-scan of basis_registry. NO fallback to "give everything".
+        #    Full-scan is avoided via the pre-built _tag_to_basis_ids index mappings.
         resolved_basis: list[ResolvedBasis] = []
         for basis_id in unique_basis_ids:
             if basis_id not in self.basis_registry:

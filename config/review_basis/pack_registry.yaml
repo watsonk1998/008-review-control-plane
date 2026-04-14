@@ -65,11 +65,7 @@ packs:
   "distribution_network_special_scheme.base":
     pack_id: "distribution_network_special_scheme.base"
     display_name: "配网工程专项方案包"
-    basis_ids:
-      - "construction-《建筑施工组织设计规范》GB/T 50502-2009"
-      - "construction-《建设工程安全生产管理条例》"
-      - "construction-《危险性较大的分部分项工程专项施工方案编制指南》（建办质〔2021〕48号）"
-      - "construction-《建设工程监理规范》GB/T 50319"
+    basis_ids: []
     status: "active"
     default_profiles: ["distribution_network_special_scheme"]
     priority: "high"
