@@ -110,16 +110,27 @@ class HermesAgentRunner:
                 return None
             visibility = parse_result.visibility
             findings: list[FindingItem] = []
+            
+            reason_zh_map = {
+                "reference_detected_without_attachment_body": "正文引用了附件或图纸，但系统未能扫描到其实质内容。",
+                "pdf_contains_images": "文档由于包含纯图片或未识别节点，部分内页可能未能完全提取。",
+                "attachment_file_too_large": "部分附件或图纸超出了自动挂载体积限制。",
+                "unsupported_attachment_format": "部分图纸格式暂不支持完全结构化阅读。",
+            }
+            
             if visibility.manualReviewNeeded:
+                raw_reason = visibility.manualReviewReason or ""
+                mapped_reason = reason_zh_map.get(raw_reason, raw_reason) if raw_reason else '存在未解析的附件、图纸或系统提取限制。'
+                
                 findings.append(FindingItem(
                     id='H-VIS-001',
-                    title='文档存在可视域或附件复核要求',
+                    title='附件及图纸解析受限，请结合原件复核',
                     severity='medium',
                     category='visibility',
                     finding_type='visibility_gap',
                     evidence_status='visibility_gap',
-                    summary=visibility.manualReviewReason or '存在未解析附件、图纸或 PDF 可视域限制。',
-                    suggestion='补充可解析附件原件或人工复核图纸/附件。',
+                    summary=mapped_reason,
+                    suggestion='提取盲区不影响核心指标评级。请根据提示，自行确认图纸或附件内容是否无误。',
                     source_engine='hermes',
                     raw_data={'attachment_count': visibility.attachmentCount},
                 ))
