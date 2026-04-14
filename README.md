@@ -118,6 +118,12 @@ This project follows the **Harness Engineering** governance model. All technical
 
 ---
 
+## License
+
+MIT © 2026 [watsonctl](https://github.com/watsonctl)
+
+---
+
 <p align="center">
   <sub>Publish the framework, govern the memory, trust the evidence.</sub>
 </p>
