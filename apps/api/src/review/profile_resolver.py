@@ -16,7 +16,7 @@ from pathlib import Path
 from typing import Any
 
 from src.review.schema import ExtractedFacts, PolicyPack, ResolvedReviewProfile, StructuredReviewTask
-from src.review.rules.packs import get_policy_pack_registry
+from src.review.rules.packs import get_policy_pack_registry, _SCENARIO_TAGS
 
 logger = logging.getLogger(__name__)
 
@@ -90,9 +90,15 @@ def resolve_review_profile(
     # Normalize requested pack IDs
     requested_policy_pack_ids = _normalize_requested_pack_ids(document_type, requested_policy_pack_ids)
 
+    # Map discipline tags to scenario pack IDs
+    scenario_pack_ids = []
+    for tag in discipline_tags:
+        if tag in _SCENARIO_TAGS:
+            scenario_pack_ids.append(_SCENARIO_TAGS[tag])
+
     # Merge all pack IDs (deduplicated, order-preserved)
     all_pack_ids = list(dict.fromkeys(
-        default_pack_ids + required_pack_ids + requested_policy_pack_ids
+        default_pack_ids + required_pack_ids + requested_policy_pack_ids + scenario_pack_ids
     ))
 
     # 6. Build PolicyPack objects from pack_registry YAML data
@@ -103,20 +109,24 @@ def resolve_review_profile(
     for pack_id in all_pack_ids:
         pack_entry = pack_registry.get(pack_id)
         if pack_entry is None:
-            logger.warning(
-                "[profile_resolver] Pack '%s' referenced in profile '%s' but missing from pack_registry.yaml",
-                pack_id, profile_id,
-            )
-            # Still include as a degraded/placeholder pack
-            selected_packs.append(PolicyPack(
-                id=pack_id,
-                version='0.0.0',
-                docTypes=[],
-                label=pack_id,
-                role=pack_entry.get('role', 'base') if pack_entry else 'base',
-                readiness='placeholder',
-                description=f'Pack {pack_id} is referenced but not found in pack_registry.yaml.',
-            ))
+            python_pack = python_registry.get(pack_id)
+            if python_pack:
+                selected_packs.append(python_pack)
+            else:
+                logger.warning(
+                    "[profile_resolver] Pack '%s' referenced in profile '%s' but missing from pack_registry.yaml",
+                    pack_id, profile_id,
+                )
+                # Still include as a degraded/placeholder pack
+                selected_packs.append(PolicyPack(
+                    id=pack_id,
+                    version='0.0.0',
+                    docTypes=[],
+                    label=pack_id,
+                    role='base',
+                    readiness='placeholder',
+                    description=f'Pack {pack_id} is referenced but not found in pack_registry.yaml.',
+                ))
             continue
 
         python_pack = python_registry.get(pack_id)
