@@ -65,12 +65,32 @@ packs:
   "distribution_network_special_scheme.base":
     pack_id: "distribution_network_special_scheme.base"
     display_name: "配网工程专项方案包"
-    basis_ids: []
+    basis_ids:
+      - "power-grid-《电网工程建设施工安全基准风险指南》（2012年版）"
+      - "power-grid-《工程建设标准强制性条文 电力工程部分》（2016年版）"
+      - "power-grid-《中国南方电网公司电网建设工程专项施工方案管理工作指引》（2022）"
+      - "power-grid-《中国南方电网基建施工方案全流程管控工作指引》"
+      - "construction-《建设工程安全生产管理条例》"
     status: "active"
     default_profiles: ["distribution_network_special_scheme"]
     priority: "high"
     promotion_state: "official"
     role: "base"
+    family: "distribution_network_special_scheme"
+
+  "power_outage_work.base":
+    pack_id: "power_outage_work.base"
+    display_name: "停电施工作业专项包"
+    basis_ids:
+      - "power-grid-《电网工程建设施工安全基准风险指南》（2012年版）"
+      - "power-grid-《工程建设标准强制性条文 电力工程部分》（2016年版）"
+      - "power-grid-《中国南方电网公司电网建设工程专项施工方案管理工作指引》（2022）"
+      - "power-grid-《中国南方电网基建施工方案全流程管控工作指引》"
+    status: "active"
+    default_profiles: ["distribution_network_special_scheme"]
+    priority: "high"
+    promotion_state: "official"
+    role: "third_level"
     family: "distribution_network_special_scheme"
     
   "supervision_plan.base":

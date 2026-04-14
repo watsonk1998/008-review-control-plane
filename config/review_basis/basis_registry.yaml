@@ -53,6 +53,58 @@
   owner: "State Council"
   freshness_rule: "yearly"
 
+"power-grid-《电网工程建设施工安全基准风险指南》（2012年版）":
+  basis_id: "power-grid-《电网工程建设施工安全基准风险指南》（2012年版）"
+  title: "《电网工程建设施工安全基准风险指南》"
+  source_type: "industry_standard"
+  version: "2012年版"
+  effective_status: "active"
+  jurisdiction: "Southern Grid / Electric Power"
+  file_refs:
+    - "knowledge/review_basis/industry_standards/csg_power_grid_construction_safety_risk_guideline_2012.md"
+  applicability_tags: ["distribution_network_special_scheme", "power_outage_work", "base"]
+  owner: "CSG"
+  freshness_rule: "yearly"
+
+"power-grid-《工程建设标准强制性条文 电力工程部分》（2016年版）":
+  basis_id: "power-grid-《工程建设标准强制性条文 电力工程部分》（2016年版）"
+  title: "《工程建设标准强制性条文 电力工程部分》"
+  source_type: "industry_standard"
+  version: "2016年版"
+  effective_status: "active"
+  jurisdiction: "Electric Power"
+  file_refs:
+    - "knowledge/review_basis/industry_standards/power_engineering_mandatory_provisions_2016.md"
+  applicability_tags: ["distribution_network_special_scheme", "power_outage_work", "base"]
+  owner: "CEC"
+  freshness_rule: "yearly"
+
+"power-grid-《中国南方电网公司电网建设工程专项施工方案管理工作指引》（2022）":
+  basis_id: "power-grid-《中国南方电网公司电网建设工程专项施工方案管理工作指引》（2022）"
+  title: "《中国南方电网公司电网建设工程专项施工方案管理工作指引》"
+  source_type: "enterprise"
+  version: "2022"
+  effective_status: "active"
+  jurisdiction: "Southern Grid"
+  file_refs:
+    - "knowledge/review_basis/local_standards/csg_special_scheme_management_guideline_2022.md"
+  applicability_tags: ["distribution_network_special_scheme", "power_outage_work", "base"]
+  owner: "CSG"
+  freshness_rule: "on_demand"
+
+"power-grid-《中国南方电网基建施工方案全流程管控工作指引》":
+  basis_id: "power-grid-《中国南方电网基建施工方案全流程管控工作指引》"
+  title: "《中国南方电网基建施工方案全流程管控工作指引》"
+  source_type: "enterprise"
+  version: "试行"
+  effective_status: "active"
+  jurisdiction: "Southern Grid"
+  file_refs:
+    - "knowledge/review_basis/local_standards/csg_scheme_full_process_control_guideline.md"
+  applicability_tags: ["distribution_network_special_scheme", "power_outage_work", "base"]
+  owner: "CSG"
+  freshness_rule: "on_demand"
+
 "review-control-plane-special-scheme-structure-policy":
   basis_id: "review-control-plane-special-scheme-structure-policy"
   title: "review-control-plane-special-scheme-structure-policy"

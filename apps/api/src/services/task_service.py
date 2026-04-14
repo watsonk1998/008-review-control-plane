@@ -55,6 +55,7 @@ class TaskService:
             disciplineTags=request.disciplineTags or [],
             strictMode=strict_mode,
             policyPackIds=request.policyPackIds or [],
+            rulePackIds=request.rulePackIds or [],
             status='created',
             createdAt=now,
             updatedAt=now,

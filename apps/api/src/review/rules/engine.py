@@ -16,7 +16,7 @@ class ReviewRuleEngine:
         hits.extend(self._construction_org_hits(facts, pack_by_rule))
         hits.extend(self._construction_scheme_hits(facts, pack_by_rule))
         hits.extend(self._hazardous_special_scheme_hits(facts, pack_by_rule))
-        hits.extend(self._distribution_network_special_scheme_hits(facts, pack_by_rule))
+        hits.extend(self._distribution_network_special_scheme_hits(facts, pack_by_rule, parse_result))
         hits.extend(self._supervision_plan_hits(facts, pack_by_rule))
         hits.extend(self._review_support_material_hits(facts, pack_by_rule))
         hits.extend(self._lifting_operations_hits(facts, pack_by_rule, selected_pack_ids))
@@ -29,7 +29,7 @@ class ReviewRuleEngine:
         hits.extend(self._curtain_wall_installation_hits(facts, pack_by_rule, selected_pack_ids))
         hits.extend(self._manual_bored_pile_hits(facts, pack_by_rule, selected_pack_ids))
         hits.extend(self._steel_structure_installation_hits(facts, pack_by_rule, selected_pack_ids))
-        hits.extend(self._power_outage_work_hits(facts, pack_by_rule, selected_pack_ids))
+        hits.extend(self._power_outage_work_hits(facts, pack_by_rule, selected_pack_ids, parse_result))
         hits.extend(self._temporary_power_hits(facts, pack_by_rule, selected_pack_ids))
         hits.extend(self._hot_work_hits(facts, pack_by_rule, selected_pack_ids))
         hits.extend(self._gas_area_ops_hits(facts, pack_by_rule, selected_pack_ids))
@@ -415,9 +415,16 @@ class ReviewRuleEngine:
         )
         return hits
 
-    def _distribution_network_special_scheme_hits(self, facts: ExtractedFacts, pack_by_rule: dict[str, tuple[str, str]]) -> list[RuleHit]:
+    def _distribution_network_special_scheme_hits(
+        self,
+        facts: ExtractedFacts,
+        pack_by_rule: dict[str, tuple[str, str]],
+        parse_result,
+    ) -> list[RuleHit]:
         if not any(pack_id == 'distribution_network_special_scheme.base' for pack_id, _ in pack_by_rule.values()):
             return []
+        hits: list[RuleHit] = []
+        section_presence = facts.projectFacts.get('sectionPresence') or {}
         structure_rows = facts.projectFacts.get('structureCompleteness') or []
         common_rows = [row for row in structure_rows if row.get('scope') == 'common']
         deficient_rows = [row for row in common_rows if row.get('status') in {'missing', 'partial'}]
@@ -429,7 +436,7 @@ class ReviewRuleEngine:
             'distribution_network_special_scheme_structure_completeness',
             ('distribution_network_special_scheme.base', 'ready'),
         )
-        return [
+        hits.append(
             RuleHit(
                 ruleId='distribution_network_special_scheme_structure_completeness',
                 packId=pack_id,
@@ -442,7 +449,69 @@ class ReviewRuleEngine:
                 evidenceRefs=['policy:distribution_network_special_scheme_structure'],
                 rationale='配网工程专项施工方案在具体三级专项之外，仍应满足专项施工方案通用目录要求。',
             )
-        ]
+        )
+
+        risk_pack_id, risk_pack_readiness = pack_by_rule.get(
+            'distribution_network_special_scheme_risk_identification',
+            ('distribution_network_special_scheme.base', 'ready'),
+        )
+        hits.append(
+            RuleHit(
+                ruleId='distribution_network_special_scheme_risk_identification',
+                packId=risk_pack_id,
+                packReadiness=risk_pack_readiness,
+                matchType='direct_hit',
+                status='pass' if section_presence.get('riskIdentification') else 'hit',
+                layerHint=ReviewLayer.L2,
+                severityHint='medium',
+                factRefs=['project.sectionPresence.riskIdentification'],
+                evidenceRefs=['policy:distribution_network_special_scheme_risk_identification'],
+                rationale='配网专项方案应明确风险辨识、分级与作业边界内的主要危险源。',
+            )
+        )
+
+        drawing_present = bool(section_presence.get('drawingSet'))
+        boundary_present = bool(section_presence.get('siteLayout') or section_presence.get('surroundingConditions'))
+        drawing_pack_id, drawing_pack_readiness = pack_by_rule.get(
+            'distribution_network_special_scheme_drawings_and_boundary',
+            ('distribution_network_special_scheme.base', 'ready'),
+        )
+        hits.append(
+            RuleHit(
+                ruleId='distribution_network_special_scheme_drawings_and_boundary',
+                packId=drawing_pack_id,
+                packReadiness=drawing_pack_readiness,
+                matchType='visibility_gap' if not drawing_present else 'direct_hit',
+                status='manual_review_needed' if not drawing_present else ('hit' if not boundary_present else 'pass'),
+                layerHint=ReviewLayer.L2,
+                severityHint='medium',
+                factRefs=['project.sectionPresence.drawingSet', 'project.sectionPresence.siteLayout', 'project.sectionPresence.surroundingConditions', 'attachments.visibility'],
+                evidenceRefs=['policy:distribution_network_special_scheme_drawings'],
+                rationale='配网专项方案应具备图纸、平面布置或周边环境条件，以界定施工边界和影响对象。',
+            )
+        )
+
+        targeted_titles = facts.emergencyFacts.get('planTitles') or []
+        has_targeted_title = self._contains_keywords(targeted_titles, ('触电', '停电', '停送电', '配网', '送电'))
+        emergency_pack_id, emergency_pack_readiness = pack_by_rule.get(
+            'distribution_network_special_scheme_emergency_targeted',
+            ('distribution_network_special_scheme.base', 'ready'),
+        )
+        hits.append(
+            RuleHit(
+                ruleId='distribution_network_special_scheme_emergency_targeted',
+                packId=emergency_pack_id,
+                packReadiness=emergency_pack_readiness,
+                matchType='direct_hit',
+                status='pass' if has_targeted_title else 'hit',
+                layerHint=ReviewLayer.L2,
+                severityHint='medium',
+                factRefs=['emergency.planTitles', 'hazard.temporaryPower'],
+                evidenceRefs=['policy:distribution_network_special_scheme_emergency', 'policy:emergency_plan_targeted'],
+                rationale='配网停电专项应围绕触电、误送电等主要风险建立针对性应急安排。',
+            )
+        )
+        return hits
 
     def _foundation_pit_hits(
         self,
@@ -1100,10 +1169,13 @@ class ReviewRuleEngine:
         facts: ExtractedFacts,
         pack_by_rule: dict[str, tuple[str, str]],
         selected_pack_ids: set[str],
+        parse_result,
     ) -> list[RuleHit]:
         if 'power_outage_work.base' not in selected_pack_ids:
             return []
+        hits: list[RuleHit] = []
         structure_rows = facts.projectFacts.get('structureCompleteness') or []
+        section_presence = facts.projectFacts.get('sectionPresence') or {}
         special_rows = [row for row in structure_rows if row.get('scope') == 'special']
         deficient_rows = [row for row in special_rows if row.get('status') in {'missing', 'partial'}]
         blocked_rows = [row for row in special_rows if row.get('status') == 'blocked_by_visibility']
@@ -1114,7 +1186,7 @@ class ReviewRuleEngine:
             'power_outage_work_structure_completeness',
             ('power_outage_work.base', 'ready'),
         )
-        return [
+        hits.append(
             RuleHit(
                 ruleId='power_outage_work_structure_completeness',
                 packId=pack_id,
@@ -1127,7 +1199,55 @@ class ReviewRuleEngine:
                 evidenceRefs=['policy:power_outage_work_structure'],
                 rationale='停电施工作业专项施工方案除通用要求外，还应覆盖停电范围、作业内容、主要风险、人员、机具、材料、安全/质量管控与应急措施。',
             )
-        ]
+        )
+
+        controls_pack_id, controls_pack_readiness = pack_by_rule.get(
+            'power_outage_work_safety_and_quality_controls',
+            ('power_outage_work.base', 'ready'),
+        )
+        missing_control_refs = []
+        if not any(self._matches_structure_item(row, 'powerOutageSafetyControl') for row in special_rows):
+            missing_control_refs.append('project.structureCompleteness.powerOutageSafetyControl')
+        if not any(self._matches_structure_item(row, 'powerOutageQualityControl') for row in special_rows):
+            missing_control_refs.append('project.structureCompleteness.powerOutageQualityControl')
+        if not section_presence.get('acceptanceRequirements'):
+            missing_control_refs.append('project.sectionPresence.acceptanceRequirements')
+        hits.append(
+            RuleHit(
+                ruleId='power_outage_work_safety_and_quality_controls',
+                packId=controls_pack_id,
+                packReadiness=controls_pack_readiness,
+                matchType='direct_hit',
+                status='hit' if missing_control_refs else 'pass',
+                layerHint=ReviewLayer.L2,
+                severityHint='medium',
+                factRefs=missing_control_refs or ['project.structureCompleteness.powerOutageSafetyControl'],
+                evidenceRefs=['policy:power_outage_work_controls'],
+                rationale='停电施工作业专项应将安全管控、质量管控和验收要求串成稳定的执行控制链。',
+            )
+        )
+
+        normalized_text = str(getattr(parse_result, 'normalizedText', '') or '')
+        grounding_ready = any(keyword in normalized_text for keyword in ('接地线', '接地装置', '验电', '工作票', '操作票'))
+        ticket_pack_id, ticket_pack_readiness = pack_by_rule.get(
+            'power_outage_work_ticket_grounding_traceability',
+            ('power_outage_work.base', 'ready'),
+        )
+        hits.append(
+            RuleHit(
+                ruleId='power_outage_work_ticket_grounding_traceability',
+                packId=ticket_pack_id,
+                packReadiness=ticket_pack_readiness,
+                matchType='inferred_risk',
+                status='pass' if grounding_ready else 'hit',
+                layerHint=ReviewLayer.L3,
+                severityHint='high',
+                factRefs=['project.structureCompleteness.powerOutageScope', 'project.sectionPresence.processMethod'],
+                evidenceRefs=['policy:power_outage_work_ticket_grounding'],
+                rationale='停电施工作业应对工作票/操作票、验电和接地线等关键执行证据链形成可追溯表达。',
+            )
+        )
+        return hits
 
     def _supervision_plan_hits(self, facts: ExtractedFacts, pack_by_rule: dict[str, tuple[str, str]]) -> list[RuleHit]:
         if not any(pack_id == 'supervision_plan.base' for pack_id, _ in pack_by_rule.values()):
@@ -1325,7 +1445,7 @@ class ReviewRuleEngine:
         pack_by_rule: dict[str, tuple[str, str]],
         selected_pack_ids: set[str],
     ) -> list[RuleHit]:
-        if 'hot_work.base' not in selected_pack_ids or not ({'construction_org.base', 'construction_scheme.base'} & selected_pack_ids):
+        if 'hot_work.base' not in selected_pack_ids or not ({'construction_org.base', 'construction_scheme.base', 'distribution_network_special_scheme.base'} & selected_pack_ids):
             return []
         if not facts.hazardFacts.get('hotWork'):
             return []
@@ -1381,3 +1501,6 @@ class ReviewRuleEngine:
 
     def _contains_keywords(self, values: list[str], keywords: tuple[str, ...]) -> bool:
         return any(any(keyword in str(value) for keyword in keywords) for value in values)
+
+    def _matches_structure_item(self, row: dict, item_key: str) -> bool:
+        return row.get('itemKey') == item_key and row.get('status') in {'matched', 'partial'}

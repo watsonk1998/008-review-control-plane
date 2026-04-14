@@ -84,6 +84,7 @@ distribution_network_special_scheme:
     level1: "配网工程专项施工方案"
   default_pack_ids:
     - "distribution_network_special_scheme.base"
+    - "power_outage_work.base"
     - "review.visibility"
     - "review.emergency"
   required_pack_ids: []
@@ -91,6 +92,9 @@ distribution_network_special_scheme:
   enterprise_pack_ids: []
   rule_pack_ids:
     - "distribution_network.core.v1"
+    - "distribution_network.structure.v1"
+    - "distribution_network.safety_closure.v1"
+    - "distribution_network.power_outage.v1"
 
 supervision_plan:
   profile_id: supervision_plan

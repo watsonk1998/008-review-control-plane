@@ -151,11 +151,16 @@ def _fallback_recommendations(candidate: IssueCandidate) -> list[str]:
             if structure_labels
             else '补齐配网工程专项施工方案通用目录要求中的缺项内容。'
         ],
+        'distribution_network_special_scheme_risk_identification': ['补齐配网停电作业的风险辨识、风险分级及对应控制措施，覆盖触电、误送电和交叉作业。'],
+        'distribution_network_special_scheme_drawings_and_boundary': ['补齐图纸、平面布置和周边环境条件，明确停电范围、作业边界及相邻影响对象。'],
+        'distribution_network_special_scheme_emergency_targeted': ['围绕触电、误送电、倒送电等场景补齐针对性应急预案标题、联络链路和现场处置动作。'],
         'power_outage_work_structure_completeness': [
             f'补齐停电施工作业专项要求中的以下内容：{"、".join(structure_labels)}。'
             if structure_labels
             else '补齐停电施工作业专项要求中的缺项内容。'
         ],
+        'power_outage_work_safety_and_quality_controls': ['补齐停电施工作业的安全控制、质量控制和关键验收点，形成一致的执行与验收闭环。'],
+        'power_outage_work_ticket_grounding_traceability': ['明确工作票/操作票、验电、接地线装拆、许可与终结等关键动作及其证据来源。'],
         'lifting_operations_special_scheme_linkage': ['在起重吊装相关章节明确专项方案、专项技术措施或附录挂接位置，并标注适用作业面。'],
         'lifting_operations_calculation_traceability': ['补齐吊装设备参数、计算起重量或验算书来源，并在正文中建立可追溯引用。'],
         'temporary_power_control_linkage': ['将临时用电/停送电作业的控制措施、监测要求和触电类应急处置串成同一条执行链。'],
@@ -355,11 +360,21 @@ def _build_summary(candidate: IssueCandidate) -> str:
         if structure_labels:
             return f'配网工程专项施工方案通用目录要求中，以下内容存在缺项或仅部分识别：{"、".join(structure_labels)}。'
         return '配网工程专项施工方案通用目录要求未完全闭合。'
+    if candidate.candidateId == 'distribution_network_special_scheme_risk_identification':
+        return '配网工程专项缺少稳定的风险辨识与分级表达，难以将停电边界、误送电和触电风险落实到控制措施。'
+    if candidate.candidateId == 'distribution_network_special_scheme_drawings_and_boundary':
+        return '配网工程专项的图纸、平面布置或周边环境条件不足，作业边界与相邻影响对象不够清晰。'
+    if candidate.candidateId == 'distribution_network_special_scheme_emergency_targeted':
+        return '配网工程专项尚未形成针对触电、误送电或倒送电等场景的稳定应急安排。'
     if candidate.candidateId == 'power_outage_work_structure_completeness':
         structure_labels = _structure_item_labels(candidate)
         if structure_labels:
             return f'停电施工作业专项要求中，以下内容存在缺项或仅部分识别：{"、".join(structure_labels)}。'
         return '停电施工作业专项结构要求未完全闭合。'
+    if candidate.candidateId == 'power_outage_work_safety_and_quality_controls':
+        return '停电施工作业的安全控制、质量控制或关键验收点表达不足，执行闭环不稳定。'
+    if candidate.candidateId == 'power_outage_work_ticket_grounding_traceability':
+        return '停电施工作业未形成工作票/操作票、验电和接地装拆等关键动作的可追溯证据链。'
     if candidate.candidateId == 'lifting_operations_special_scheme_linkage':
         return '已识别起重吊装场景，但当前专项方案/专项技术措施挂接位置仍不稳定或需人工确认。'
     if candidate.candidateId == 'lifting_operations_calculation_traceability':

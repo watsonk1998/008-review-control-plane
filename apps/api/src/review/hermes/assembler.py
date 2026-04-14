@@ -293,9 +293,11 @@ class HermesReviewAssembler:
 
         dimension_map = {
             'chapter_completeness': '一、 章节完整性',
+            'structure': '一、 章节完整性',
             'visibility': '一、 章节完整性',
             'parameter_consistency': '二、 参数一致性',
             'compliance': '三、 合法合规性',
+            'safety': '三、 合法合规性',
             'rule_hits': '三、 合法合规性',
             'process_coherence': '四、 工序连贯性',
             'evidence_verification': '五、 证据验证',
@@ -313,10 +315,13 @@ class HermesReviewAssembler:
 
         # Deduplicate to prevent overlapping items
         seen_ids = set()
+        seen_titles = set()
         deduped_findings = []
         for finding in all_findings:
-            if finding.id not in seen_ids:
+            title_key = finding.title.lower().strip()
+            if finding.id not in seen_ids and title_key not in seen_titles:
                 seen_ids.add(finding.id)
+                seen_titles.add(title_key)
                 deduped_findings.append(finding)
 
         for finding in deduped_findings:

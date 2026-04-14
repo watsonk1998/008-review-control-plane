@@ -56,6 +56,7 @@ def resolve_review_profile(
     plan_profile = dict((plan or {}).get('reviewProfile') or {})
     requested_discipline_tags = list(structured_task.disciplineTags or [])
     requested_policy_pack_ids = list(structured_task.policyPackIds or [])
+    requested_rule_pack_ids = list(structured_task.rulePackIds or [])
 
     # 1. Determine document type
     document_type = _resolve_document_type(structured_task, facts, plan_profile)
@@ -66,6 +67,11 @@ def resolve_review_profile(
             [
                 *requested_discipline_tags,
                 *_infer_discipline_tags(facts),
+                *(
+                    facts.projectFacts.get('hazardousSchemeTypeHints') or []
+                    if document_type in {'hazardous_special_scheme', 'distribution_network_special_scheme'}
+                    else []
+                ),
                 *(plan_profile.get('disciplineTagHints') or []),
             ]
         )
@@ -86,6 +92,8 @@ def resolve_review_profile(
     optional_pack_ids = list(mapping.get('optional_pack_ids') or [])
     enterprise_pack_ids = list(mapping.get('enterprise_pack_ids') or [])
     rule_pack_ids = list(mapping.get('rule_pack_ids') or [])
+    explicit_rule_pack_ids = list(plan_profile.get('requestedRulePackIds') or [])
+    merged_rule_pack_ids = list(dict.fromkeys(rule_pack_ids + requested_rule_pack_ids + explicit_rule_pack_ids))
 
     # Normalize requested pack IDs
     requested_policy_pack_ids = _normalize_requested_pack_ids(document_type, requested_policy_pack_ids)
@@ -151,9 +159,11 @@ def resolve_review_profile(
         requestedDocumentType=plan_profile.get('requestedDocumentType') or structured_task.documentType,
         requestedDisciplineTags=requested_discipline_tags,
         requestedPolicyPackIds=requested_policy_pack_ids,
+        requestedRulePackIds=requested_rule_pack_ids,
         documentType=document_type,
         disciplineTags=discipline_tags,
         policyPackIds=[pack.id for pack in executable_packs],
+        rulePackIds=merged_rule_pack_ids,
         strictMode=structured_task.strictMode,
     )
 
@@ -161,7 +171,7 @@ def resolve_review_profile(
         "[profile_resolver] Resolved: profile=%s, doc_type=%s, packs=%s, rule_packs=%s",
         profile_id, document_type,
         [p.id for p in executable_packs],
-        rule_pack_ids,
+        merged_rule_pack_ids,
     )
 
     return resolved_profile, selected_packs, executable_packs
@@ -194,9 +204,6 @@ def _infer_discipline_tags(facts: ExtractedFacts) -> list[str]:
         tags.append('special_equipment')
     if 'working_at_height' in (facts.hazardFacts.get('highRiskCategories') or []):
         tags.append('working_at_height')
-    for tag in facts.projectFacts.get('hazardousSchemeTypeHints') or []:
-        if tag not in tags:
-            tags.append(tag)
     return tags
 
 

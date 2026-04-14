@@ -139,19 +139,36 @@ class HermesAgentRunner:
         if template.id == 'policy_compliance_reviewer':
             candidates = workspace.get('candidates') or []
             findings: list[FindingItem] = []
-            for idx, candidate in enumerate(candidates[:3], start=1):
+            for idx, candidate in enumerate(candidates, start=1):
+                rule_ids = [hit.ruleId for hit in candidate.ruleHits]
+                rule_str = ' '.join(rule_ids)
+                if 'structure_completeness' in rule_str:
+                    category = 'chapter_completeness'
+                elif 'parameter' in rule_str or 'calculation' in rule_str or 'drawing' in rule_str:
+                    category = 'parameter_consistency'
+                elif 'sequence' in rule_str or 'process' in rule_str or 'control' in rule_str:
+                    category = 'process_coherence'
+                elif 'traceability' in rule_str or 'evidence' in rule_str:
+                    category = 'evidence_verification'
+                else:
+                    category = 'compliance'
+
                 findings.append(FindingItem(
                     id=f'H-POL-{idx:03d}',
                     title=candidate.title,
                     severity=candidate.severityHint,
-                    category='compliance',
+                    category=category,
                     layer=str(candidate.layerHint),
                     evidence_status='grounded' if candidate.policyEvidence else 'evidence_gap',
                     basis_refs=[getattr(span.locator, 'clauseId', '') for span in candidate.policyEvidence if getattr(span, 'locator', None)],
                     summary='; '.join(hit.rationale for hit in candidate.ruleHits if hit.rationale)[:300],
                     suggestion='结合命中规则与规范条款进一步补齐正文。',
                     source_engine='hermes',
-                    raw_data={'rule_ids': [hit.ruleId for hit in candidate.ruleHits]},
+                    finding_type=candidate.findingType.value,
+                    raw_data={
+                        'rule_ids': rule_ids,
+                        'corroborates_008_finding': candidate.candidateId,
+                    },
                 ))
                 self._annotate_finding_ownership(template, findings[-1])
             return self._build_packet(template, findings, overall='规范命中与证据线索已整理。')

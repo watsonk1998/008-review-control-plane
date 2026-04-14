@@ -24,6 +24,7 @@ from src.review.basis_pack_resolver import BasisPackResolver
 
 YAML_DIR = Path(__file__).resolve().parents[3] / "config" / "review_basis"
 PROFILE_MAPPING_PATH = YAML_DIR / "profile_mapping.yaml"
+BASIS_REGISTRY_PATH = YAML_DIR / "basis_registry.yaml"
 
 
 @pytest.fixture
@@ -33,6 +34,15 @@ def real_yaml_data():
         f"profile_mapping.yaml not found at {PROFILE_MAPPING_PATH}"
     )
     with open(PROFILE_MAPPING_PATH, "r", encoding="utf-8") as f:
+        return yaml.safe_load(f) or {}
+
+
+@pytest.fixture
+def basis_registry_data():
+    assert BASIS_REGISTRY_PATH.exists(), (
+        f"basis_registry.yaml not found at {BASIS_REGISTRY_PATH}"
+    )
+    with open(BASIS_REGISTRY_PATH, "r", encoding="utf-8") as f:
         return yaml.safe_load(f) or {}
 
 
@@ -149,3 +159,23 @@ def test_governance_store_is_not_runtime_truth_source(gov_service, real_yaml_dat
     assert "FAKE_PACK_INJECTED_BY_GOVERNANCE" not in gov_hazardous.get("default_pack_ids", []), (
         "Governance get_profile_mapping() reads from store instead of YAML"
     )
+
+
+def test_distribution_network_governed_basis_files_are_registered(basis_registry_data):
+    expected_basis_ids = {
+        "power-grid-《电网工程建设施工安全基准风险指南》（2012年版）",
+        "power-grid-《工程建设标准强制性条文 电力工程部分》（2016年版）",
+        "power-grid-《中国南方电网公司电网建设工程专项施工方案管理工作指引》（2022）",
+        "power-grid-《中国南方电网基建施工方案全流程管控工作指引》",
+    }
+    for basis_id in expected_basis_ids:
+        assert basis_id in basis_registry_data, f"missing governed basis: {basis_id}"
+        entry = basis_registry_data[basis_id]
+        refs = entry.get("file_refs", [])
+        assert refs and all(str(ref).startswith("knowledge/review_basis/") for ref in refs), (
+            f"{basis_id} still points outside knowledge/review_basis"
+        )
+        tags = set(entry.get("applicability_tags", []))
+        assert {"distribution_network_special_scheme", "power_outage_work"} <= tags, (
+            f"{basis_id} missing distribution-network applicability tags"
+        )

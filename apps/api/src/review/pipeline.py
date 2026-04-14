@@ -322,6 +322,7 @@ class StructuredReviewExecutor:
             documentType=document_type or plan_profile.get('requestedDocumentType') or 'construction_org',
             disciplineTags=list(discipline_tags or plan_profile.get('requestedDisciplineTags') or []),
             policyPackIds=list(policy_pack_ids or plan_profile.get('requestedPolicyPackIds') or []),
+            rulePackIds=list(plan_profile.get('requestedRulePackIds') or []),
             strictMode=True if strict_mode is None else strict_mode,
             sourceDocumentRef=resolved_source_document_ref,
             sourceDocumentPath=source_document_path,

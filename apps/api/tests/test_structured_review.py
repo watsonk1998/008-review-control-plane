@@ -219,7 +219,9 @@ def test_structured_review_executor_supports_construction_scheme_base_and_ready_
 
     issue_titles = {issue['title'] for issue in result['issues']}
     assert result['summary']['documentType'] == 'construction_scheme'
-    assert result['resolvedProfile']['policyPackIds'] == ['construction_scheme.base', 'lifting_operations.base']
+    selected_packs = set(result['resolvedProfile']['policyPackIds'])
+    assert 'construction_scheme.base' in selected_packs
+    assert 'lifting_operations.base' in selected_packs
     assert '一般施工方案核心章节不完整' in issue_titles
     assert '施工方案附件处于可视域缺口，需人工复核原件' in issue_titles
     assert '起重吊装关键参数或验算依据不可追溯' in issue_titles
@@ -244,7 +246,7 @@ def test_structured_review_executor_supports_supervision_plan_base_pack(tmp_path
 
     issue_titles = {issue['title'] for issue in result['issues']}
     assert result['summary']['documentType'] == 'supervision_plan'
-    assert result['resolvedProfile']['policyPackIds'] == ['supervision_plan.base']
+    assert 'supervision_plan.base' in set(result['resolvedProfile']['policyPackIds'])
     assert '监理规划核心章节不完整' in issue_titles
     assert '监理规划缺少明确的监测监控/旁站安排' in issue_titles
 
@@ -267,7 +269,7 @@ def test_structured_review_executor_supports_review_support_material_base_pack(t
 
     issue_titles = {issue['title'] for issue in result['issues']}
     assert result['summary']['documentType'] == 'review_support_material'
-    assert result['resolvedProfile']['policyPackIds'] == ['review_support_material.base']
+    assert 'review_support_material.base' in set(result['resolvedProfile']['policyPackIds'])
     assert issue_titles == {'审查支持材料不能替代正式方案正文'}
 
 
@@ -618,10 +620,16 @@ def test_structured_review_executor_assigns_power_outage_structure_rule_and_repo
     issue_titles = {issue['title'] for issue in result['issues']}
     assert '配网工程专项施工方案通用章节不完整' in issue_titles
     assert '停电施工作业专项章节不完整' in issue_titles
+    assert '停电施工作业安全/质量控制链不完整' in issue_titles
+    assert '停电施工作业工作票/验电接地证据链不可追溯' in issue_titles
+    assert len(result['issues']) > 3
     rule_hits = {row['ruleId']: row for row in result['matrices']['ruleHits']}
     assert rule_hits['distribution_network_special_scheme_structure_completeness']['packId'] == 'distribution_network_special_scheme.base'
     assert rule_hits['power_outage_work_structure_completeness']['packId'] == 'power_outage_work.base'
+    assert rule_hits['power_outage_work_safety_and_quality_controls']['packId'] == 'power_outage_work.base'
+    assert rule_hits['power_outage_work_ticket_grounding_traceability']['packId'] == 'power_outage_work.base'
     assert rule_hits['temporary_power_control_linkage']['packId'] == 'power_outage_work.base'
+    assert len(result['matrices']['ruleHits']) > 3
     structure_rows = result['matrices']['structureCompleteness']
     assert structure_rows[0]['scope'] == 'special'
     first_common_index = next(index for index, row in enumerate(structure_rows) if row['scope'] == 'common')

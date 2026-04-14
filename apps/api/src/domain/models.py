@@ -131,6 +131,7 @@ class CreateTaskRequest(BaseModel):
     disciplineTags: list[str] | None = None
     strictMode: bool | None = None
     policyPackIds: list[str] | None = None
+    rulePackIds: list[str] | None = None
 
     @model_validator(mode='after')
     def _validate_structured_review_source(self):
@@ -308,6 +309,7 @@ class TaskRecord(BaseModel):
     disciplineTags: list[str] = Field(default_factory=list)
     strictMode: bool | None = None  # compatibility field still persisted and propagated into profile/result shaping; not an independent runtime branch switch
     policyPackIds: list[str] = Field(default_factory=list)
+    rulePackIds: list[str] = Field(default_factory=list)
     status: TaskStatus = 'created'
     plan: dict[str, Any] | None = None
     result: dict[str, Any] | None = None
@@ -362,6 +364,7 @@ class ReviewTaskBuiltinAssetSelections(BaseModel):
 
     standard_ids: list[str] = Field(default_factory=list)
     template_ids: list[str] = Field(default_factory=list)
+    policy_pack_ids: list[str] = Field(default_factory=list)
     rule_pack_ids: list[str] = Field(default_factory=list)
 
 

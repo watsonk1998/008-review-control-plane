@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+import logging
 from pathlib import Path
 from typing import Any
 
@@ -26,6 +27,7 @@ from src.domain.models import (
 from src.review.hermes.module_bindings import module_template_ids, module_titles, template_review_modules
 
 MODULE_TITLES = module_titles()
+logger = logging.getLogger(__name__)
 
 RISK_ORDER = {'info': 0, 'low': 1, 'medium': 2, 'high': 3}
 
@@ -94,6 +96,14 @@ def compile_create_task_request(request: CreateReviewTaskRequest) -> tuple[Creat
         _module_names_to_template_ids(request.review_intent.disabled_modules)
     )
 
+    requested_policy_pack_ids = list(request.builtin_asset_selections.policy_pack_ids)
+    requested_rule_pack_ids = list(request.builtin_asset_selections.rule_pack_ids)
+    if requested_rule_pack_ids and not requested_policy_pack_ids:
+        logger.warning(
+            "[review_task_contracts] Legacy frontend contract detected: rule_pack_ids provided without policy_pack_ids; "
+            "keeping policyPackIds empty and passing rulePackIds separately."
+        )
+
     internal_request = CreateTaskRequest(
         taskType='structured_review',
         capabilityMode='auto',
@@ -105,7 +115,8 @@ def compile_create_task_request(request: CreateReviewTaskRequest) -> tuple[Creat
         documentType=request.classification.l2,
         disciplineTags=list(request.classification.l3),
         strictMode=True,
-        policyPackIds=list(request.builtin_asset_selections.rule_pack_ids),
+        policyPackIds=requested_policy_pack_ids,
+        rulePackIds=requested_rule_pack_ids,
     )
 
     plan_seed = {
@@ -113,7 +124,9 @@ def compile_create_task_request(request: CreateReviewTaskRequest) -> tuple[Creat
             'authority': 'frontend_contract_freeze',
             'documentTypeHint': request.classification.l2,
             'disciplineTagHints': list(request.classification.l3),
-            'policyPackHints': list(request.builtin_asset_selections.rule_pack_ids),
+            'policyPackHints': requested_policy_pack_ids,
+            'rulePackHints': requested_rule_pack_ids,
+            'requestedRulePackIds': requested_rule_pack_ids,
         },
         'hermesInput': {
             'basisFiles': [_ref_to_bridge_file(ref) for ref in basis_refs],

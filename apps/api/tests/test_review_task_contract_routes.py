@@ -42,7 +42,8 @@ def test_compile_review_task_request_maps_frontend_contract_to_internal_request(
             'builtin_asset_selections': {
                 'standard_ids': ['gb50016'],
                 'template_ids': ['structured_review_primary_worker'],
-                'rule_pack_ids': ['power_outage_work.base'],
+                'policy_pack_ids': ['power_outage_work.base'],
+                'rule_pack_ids': ['distribution_network.power_outage.v1'],
             },
             'review_intent': {
                 'enabled_modules': ['structure_completeness', 'execution_continuity'],
@@ -58,6 +59,7 @@ def test_compile_review_task_request_maps_frontend_contract_to_internal_request(
     assert internal_request.sourceDocumentRef.refId == 'target-1'
     assert internal_request.sourceDocumentRef.storagePath == str(target_path)
     assert internal_request.policyPackIds == ['power_outage_work.base']
+    assert internal_request.rulePackIds == ['distribution_network.power_outage.v1']
     assert internal_request.documentType == 'distribution_network_special_scheme'
     assert internal_request.disciplineTags == ['temporary_power', 'execution_continuity']
     assert '停送电链路闭环' in internal_request.query
@@ -135,7 +137,12 @@ def test_review_task_create_route_returns_frozen_contract(monkeypatch, tmp_path:
         json={
             'classification': {'l1': 'special_scheme_review', 'l2': 'distribution_network_special_scheme', 'l3': ['temporary_power']},
             'documents': {'target_file_ids': ['target-1'], 'basis_file_ids': [], 'project_context_file_ids': []},
-            'builtin_asset_selections': {'standard_ids': [], 'template_ids': [], 'rule_pack_ids': ['power_outage_work.base']},
+            'builtin_asset_selections': {
+                'standard_ids': [],
+                'template_ids': [],
+                'policy_pack_ids': ['power_outage_work.base'],
+                'rule_pack_ids': ['distribution_network.power_outage.v1'],
+            },
             'review_intent': {'enabled_modules': ['structure_completeness'], 'disabled_modules': [], 'focus_requirements': ['重点检查闭环']},
             'metadata': {'source': 'mock-frontend', 'debug': False},
         },
@@ -150,6 +157,39 @@ def test_review_task_create_route_returns_frozen_contract(monkeypatch, tmp_path:
     assert fake_service.created.documentType == 'distribution_network_special_scheme'
     assert fake_service.scheduled == 'task-frontend-1'
     assert fake_service.store.plan['hermesInput']['frontendSelections']['metadata']['source'] == 'mock-frontend'
+
+
+def test_compile_review_task_request_keeps_legacy_rule_pack_only_contract_without_silent_pack_alias(monkeypatch, tmp_path: Path):
+    _make_upload(tmp_path, 'target-legacy')
+    monkeypatch.setattr(review_task_contracts, 'get_settings', lambda: SimpleNamespace(uploads_dir=tmp_path))
+
+    request = review_task_contracts.CreateReviewTaskRequest.model_validate(
+        {
+            'classification': {
+                'l1': 'special_scheme_review',
+                'l2': 'distribution_network_special_scheme',
+                'l3': ['temporary_power'],
+            },
+            'documents': {
+                'target_file_ids': ['target-legacy'],
+                'basis_file_ids': [],
+                'project_context_file_ids': [],
+            },
+            'builtin_asset_selections': {
+                'standard_ids': [],
+                'template_ids': [],
+                'rule_pack_ids': ['distribution_network.power_outage.v1'],
+            },
+            'review_intent': {'enabled_modules': [], 'disabled_modules': [], 'focus_requirements': []},
+            'metadata': {'source': 'legacy', 'debug': False},
+        }
+    )
+
+    internal_request, plan_seed = review_task_contracts.compile_create_task_request(request)
+    assert internal_request.policyPackIds == []
+    assert internal_request.rulePackIds == ['distribution_network.power_outage.v1']
+    assert plan_seed['reviewProfile']['policyPackHints'] == []
+    assert plan_seed['reviewProfile']['rulePackHints'] == ['distribution_network.power_outage.v1']
 
 
 def test_review_task_status_and_result_routes_map_internal_state(monkeypatch):

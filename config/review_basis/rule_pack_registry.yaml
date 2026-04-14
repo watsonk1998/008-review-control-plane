@@ -69,6 +69,51 @@ rule_packs:
       - "electric_shock_risk"
     false_positive_risk: "high"
 
+  "distribution_network.structure.v1":
+    rule_pack_id: "distribution_network.structure.v1"
+    related_pack_ids:
+      - "distribution_network_special_scheme.base"
+    scope: "配网专项通用结构要求"
+    evidence_requirements:
+      - require_general_scheme_structure
+      - require_drawings_and_boundary
+      - require_risk_identification
+    output_issue_types:
+      - "structure_missing"
+      - "boundary_unclear"
+      - "drawing_visibility_gap"
+    false_positive_risk: "medium"
+
+  "distribution_network.safety_closure.v1":
+    rule_pack_id: "distribution_network.safety_closure.v1"
+    related_pack_ids:
+      - "distribution_network_special_scheme.base"
+    scope: "配网专项风险与安全闭环"
+    evidence_requirements:
+      - require_risk_measure_linkage
+      - require_emergency_targeted
+      - require_acceptance_traceability
+    output_issue_types:
+      - "risk_control_gap"
+      - "emergency_gap"
+      - "acceptance_gap"
+    false_positive_risk: "medium"
+
+  "distribution_network.power_outage.v1":
+    rule_pack_id: "distribution_network.power_outage.v1"
+    related_pack_ids:
+      - "power_outage_work.base"
+    scope: "停电施工作业专项要求"
+    evidence_requirements:
+      - require_outage_scope
+      - require_operation_chain
+      - require_quality_and_safety_controls
+    output_issue_types:
+      - "power_outage_structure_gap"
+      - "control_linkage_gap"
+      - "ticket_grounding_gap"
+    false_positive_risk: "medium"
+
   "supervision.core.v1":
     rule_pack_id: "supervision.core.v1"
     related_pack_ids: 

@@ -133,7 +133,7 @@ class BasisPackResolver:
         classification = mapping.get('classification', {})
         profile_id = mapping.get('profile_id', doc_type)
         default_pack_ids = mapping.get('default_pack_ids', [])
-        profile_rule_pack_ids = mapping.get('rule_pack_ids', [])
+        profile_rule_pack_ids = list(dict.fromkeys((mapping.get('rule_pack_ids', []) or []) + (profile.rulePackIds or [])))
 
         # 1. Merge requested packs with defaults (deduplicated, order-preserved)
         all_pack_ids = list(dict.fromkeys(default_pack_ids + requested_packs))

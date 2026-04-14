@@ -92,6 +92,11 @@ class TaskCompiler:
                 or plan_profile.get('policyPackHints')
                 or []
             ),
+            'rule_pack_ids': list(
+                task.rulePackIds
+                or plan_profile.get('rulePackHints')
+                or []
+            ),
             'focus_requirements': list(hermes_input.get('focusRequirements') or []),
             'enabled_agents': list(hermes_input.get('enabledAgents') or []),
             'disabled_agents': list(hermes_input.get('disabledAgents') or []),
