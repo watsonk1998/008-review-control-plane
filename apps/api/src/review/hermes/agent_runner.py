@@ -51,6 +51,8 @@ class HermesAgentRunner:
                 'module_ids': list(template.module_bindings),
                 'review_modules': self._template_review_modules(template),
                 'ownership': 'hermes_main_review',
+                'input_token_limit': template.input_token_limit,
+                'output_token_limit': template.output_token_limit,
             }
         else:
             packet = self._module_output_to_packet(template=template, workspace=workspace)
@@ -101,6 +103,8 @@ class HermesAgentRunner:
                 'module_ids': list(template.module_bindings),
                 'review_modules': self._template_review_modules(template),
                 'ownership': 'support_material',
+                'input_token_limit': template.input_token_limit,
+                'output_token_limit': template.output_token_limit,
             }
             for finding in packet.findings:
                 self._annotate_finding_ownership(template, finding)
@@ -192,7 +196,8 @@ class HermesAgentRunner:
         if not focus_lines:
             return brief
         merged_query = '\n'.join([brief.query.strip(), *focus_lines]).strip()
-        return brief.model_copy(update={'query': merged_query, 'metadata': {**brief.metadata, 'template_id': template.id}})
+        return brief.model_copy(update={'query': merged_query, 'metadata': {**brief.metadata, 'template_id': template.id, 'input_token_limit': template.input_token_limit, 'output_token_limit': template.output_token_limit}})
+
     def _build_packet(self, template: AgentTemplate, findings: list[FindingItem], *, overall: str) -> FactPacket:
         findings = [self._annotate_finding_ownership(template, finding) for finding in findings]
         metrics = ReviewPacketMetrics(
@@ -219,5 +224,7 @@ class HermesAgentRunner:
                 'module_ids': list(template.module_bindings),
                 'review_modules': self._template_review_modules(template),
                 'ownership': template.metadata.get('ownership', 'hermes_main_review' if template.execution_mode == 'hermes_router' else 'support_material'),
+                'input_token_limit': template.input_token_limit,
+                'output_token_limit': template.output_token_limit,
             },
         )

@@ -319,11 +319,9 @@ export function ReviewAcceptancePage() {
               ))}
             </div>
             <div className="stack-sm">
-              <h3>导出链接</h3>
+              <h3>导出文件</h3>
               <ul>
-                {result.export_links.markdown ? <li><a href={resolveApiUrl(result.export_links.markdown)} target="_blank">Markdown</a></li> : null}
-                {result.export_links.pdf ? <li><a href={resolveApiUrl(result.export_links.pdf)} target="_blank">PDF</a></li> : null}
-                {result.export_links.html ? <li><a href={resolveApiUrl(result.export_links.html)} target="_blank">HTML</a></li> : null}
+                {result.export_links.pdf ? <li><a href={resolveApiUrl(result.export_links.pdf)} target="_blank">正式排版 PDF</a></li> : <li className="muted small">正式 PDF 尚未生成</li>}
               </ul>
             </div>
             <div className="stack-sm">

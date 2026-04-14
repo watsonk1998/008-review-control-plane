@@ -54,6 +54,14 @@ The formal basis for any review (laws, standards, enterprise rules) is strictly 
   - Hardcoded mappings like `documentType -> basis file path` or large prompt injections of raw specifications are strictly prohibited.
   - **Dynamic Mapping Constraint**: Review basis assignment (especially for tier-3 scheme additions) MUST be handled via dynamic `applicability_tags` mapping in `basis_registry.yaml`. Developers MUST NOT directly modify Python code or hardcode `basis_ids` arrays in `pack_registry.yaml` every time a new standard is introduced. Data binding must remain isolated in the configuration layer.
 
+## Frontend Governance Harness
+
+- The frontend MUST NOT become a shadow governance layer.
+- Classification trees, basis lists, pack/rule-pack visibility, module states, progress states, and export options MUST be projected from backend frozen contracts or governed payloads.
+- Frontend hardcoded taxonomy/basis/rule mappings are forbidden except for narrow, schema-aligned fallback rendering when the backend contract is unavailable.
+- If a product requirement cannot be expressed by the current backend contract, extend the backend contract first and then update the frontend projection.
+- Harness principle: keep a **single source of truth** for governance data; do not duplicate review governance in the web shell.
+
 ## Result Protocol & Final Report Ownership
 
 - **Final Report Ownership**: The formal review report can ONLY be output by the shell-side `FinalReportAssembler`.

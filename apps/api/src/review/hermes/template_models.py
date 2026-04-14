@@ -24,6 +24,8 @@ class AgentTemplate(BaseModel):
     template_version: str = '1.0.0'
     compatibility: dict[str, Any] = Field(default_factory=dict)
     metadata: dict[str, Any] = Field(default_factory=dict)
+    input_token_limit: int = 200000
+    output_token_limit: int = 200000
 
 
 class AgentTemplateMatch(BaseModel):
@@ -40,3 +42,5 @@ class AgentRunResult(BaseModel):
     module_outputs: dict[str, Any] = Field(default_factory=dict)
     notes: list[str] = Field(default_factory=list)
     metadata: dict[str, Any] = Field(default_factory=dict)
+    input_token_limit: int = 200000
+    output_token_limit: int = 200000

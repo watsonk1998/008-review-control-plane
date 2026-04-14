@@ -945,6 +945,7 @@ class StructuredReviewReportBuilder:
     def _render_issue_cards_html(self, issues) -> list[str]:
         parts: list[str] = []
         for index, issue in enumerate(issues, start=1):
+            evidence_parts = self._render_policy_requirements_html(issue)
             parts.extend([
                 '<article class="structured-report__issue-card">',
                 f'<h3 class="structured-report__issue-card-title">{index}. {html.escape(issue.title)}</h3>',
@@ -952,42 +953,35 @@ class StructuredReviewReportBuilder:
                 '<div class="structured-report__issue-card-section-title">问题描述</div>',
                 f'<p class="structured-report__issue-card-text">{html.escape(self._clean_report_text(issue.summary))}</p>',
                 '</section>',
-                '<section class="structured-report__issue-card-section">',
-                '<div class="structured-report__issue-card-section-title">条文依据</div>',
-                '<ul class="structured-report__issue-card-law-list">',
-                *self._render_policy_requirements_html(issue),
-                '</ul>',
-                '</section>',
-                '</article>',
             ])
+            if evidence_parts:
+                parts.extend([
+                    '<section class="structured-report__issue-card-section">',
+                    '<div class="structured-report__issue-card-section-title">审查依据</div>',
+                    '<ul class="structured-report__issue-card-law-list">',
+                    *evidence_parts,
+                    '</ul>',
+                    '</section>',
+                ])
+            parts.append('</article>')
         return parts
 
     def _render_policy_requirements_html(self, issue) -> list[str]:
         seen: set[str] = set()
         parts: list[str] = []
         for span in issue.policyEvidence:
-            source_label, _ = self._normalize_policy_source(span.sourceId)
-            excerpt = self._clean_report_text(span.excerpt.strip().replace('\n', ' '))
-            clause_title = self._clean_report_text(span.clauseTitle or '相关条文要求')
-            content = excerpt or f'{clause_title}提出相关要求。'
-            dedupe_key = f'{source_label}|{content}'
+            if self._is_expert_review_point_source(span.sourceId):
+                continue
+            citation = self._format_normative_citation(span.sourceId, span.clauseTitle)
+            dedupe_key = citation
             if dedupe_key in seen:
                 continue
             seen.add(dedupe_key)
             parts.extend([
                 '<li class="structured-report__issue-card-law-item">',
-                f'<div class="structured-report__issue-card-law-title">{html.escape(source_label)}</div>',
+                f'<div class="structured-report__issue-card-law-title">{html.escape(citation)}</div>',
                 '<ul class="structured-report__issue-card-law-requirements">',
-                f'<li class="structured-report__issue-card-law-requirement">要求：{html.escape(content)}</li>',
-                '</ul>',
-                '</li>',
-            ])
-        if not parts:
-            parts.extend([
-                '<li class="structured-report__issue-card-law-item">',
-                '<div class="structured-report__issue-card-law-title">当前未单独提取到明确条文来源</div>',
-                '<ul class="structured-report__issue-card-law-requirements">',
-                '<li class="structured-report__issue-card-law-requirement">要求：建议结合本次命中的规范、法规和原文附件继续复核。</li>',
+                '<li class="structured-report__issue-card-law-requirement">要求：请结合上述规范条文及原文内容复核本项问题。</li>',
                 '</ul>',
                 '</li>',
             ])
@@ -1028,6 +1022,16 @@ class StructuredReviewReportBuilder:
         if '《' in source_id:
             return source_id[source_id.index('《'):], True
         return source_id, not source_id.startswith('review-control-plane-')
+
+    def _is_expert_review_point_source(self, source_id: str) -> bool:
+        return '监理工程师对停电施工方案的审核规则及要点' in source_id
+
+    def _format_normative_citation(self, source_id: str, clause_title: str | None) -> str:
+        source_label, _ = self._normalize_policy_source(source_id)
+        clause = self._clean_report_text(clause_title or '').strip()
+        if clause:
+            return f'审查依据：引用自{source_label} {clause}'
+        return f'审查依据：引用自{source_label}'
 
     def _collect_basis_files(self, selected_packs: list[str], issues) -> dict[str, list[str]]:
         primary: list[str] = []
@@ -1937,9 +1941,9 @@ class StructuredReviewReportBuilder:
         sources: list[str] = []
         seen: set[str] = set()
         for span in issue.policyEvidence:
-            source_label, _ = self._normalize_policy_source(span.sourceId)
-            clause_title = span.clauseTitle or '相关条文要求'
-            text = f'{source_label}：{self._clean_report_text(clause_title)}'
+            if self._is_expert_review_point_source(span.sourceId):
+                continue
+            text = self._format_normative_citation(span.sourceId, span.clauseTitle)
             if text in seen:
                 continue
             seen.add(text)
@@ -1952,31 +1956,28 @@ class StructuredReviewReportBuilder:
             f'### {index}. {issue.title}',
             '问题描述',
             f'- {self._clean_report_text(issue.summary)}',
-            *policy_lines,
+            *(policy_lines or []),
             '',
         ]
         return lines
 
     def _render_policy_requirements(self, issue) -> list[str]:
-        lines = ['条文依据']
+        lines: list[str] = []
         seen: set[str] = set()
-        items: list[tuple[str, str]] = []
+        items: list[str] = []
         for span in issue.policyEvidence:
-            source_label, _ = self._normalize_policy_source(span.sourceId)
-            excerpt = self._clean_report_text(span.excerpt.strip().replace('\n', ' '))
-            clause_title = span.clauseTitle or '相关条文要求'
-            clause_title = self._clean_report_text(clause_title)
-            content = excerpt or f'{clause_title}提出相关要求。'
-            dedupe_key = f'{source_label}|{content}'
+            if self._is_expert_review_point_source(span.sourceId):
+                continue
+            dedupe_key = self._format_normative_citation(span.sourceId, span.clauseTitle)
             if dedupe_key in seen:
                 continue
             seen.add(dedupe_key)
-            items.append((source_label, content))
+            items.append(dedupe_key)
         if not items:
-            items.append(('当前未单独提取到明确条文来源', '建议结合本次命中的规范、法规和原文附件继续复核。'))
-        for source_label, content in items:
-            lines.append(f'- {source_label}')
-            lines.append(f'  - 要求：{content}')
+            return lines
+        lines.append('审查依据')
+        for citation in items:
+            lines.append(f'- {citation}')
         return lines
 
     def _render_issue_risk_lines(self, issue) -> list[str]:

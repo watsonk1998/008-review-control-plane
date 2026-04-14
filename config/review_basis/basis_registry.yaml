@@ -118,6 +118,45 @@
   owner: "Project Supervision"
   freshness_rule: "on_demand"
 
+"power-grid-《电力安全工作规程 发电厂和变电站电气部分》GB 26860-2011":
+  basis_id: "power-grid-《电力安全工作规程 发电厂和变电站电气部分》GB 26860-2011"
+  title: "电力安全工作规程 发电厂和变电站电气部分"
+  source_type: "industry_standard"
+  version: "GB 26860-2011"
+  effective_status: "active"
+  jurisdiction: "PRC / Electric Power"
+  file_refs:
+    - "knowledge/review_basis/industry_standards/power_safety_code_generation_substation_26860_2011.md"
+  applicability_tags: ["distribution_network_special_scheme", "power_outage_work", "base"]
+  owner: "National Standard"
+  freshness_rule: "on_demand"
+
+"power-grid-《电力安全工作规程 高压试验室部分》GB 26861-2011":
+  basis_id: "power-grid-《电力安全工作规程 高压试验室部分》GB 26861-2011"
+  title: "电力安全工作规程 高压试验室部分"
+  source_type: "industry_standard"
+  version: "GB 26861-2011"
+  effective_status: "active"
+  jurisdiction: "PRC / Electric Power"
+  file_refs:
+    - "knowledge/review_basis/industry_standards/power_safety_code_high_voltage_lab_26861_2011.md"
+  applicability_tags: ["power_outage_high_voltage_test"]
+  owner: "National Standard"
+  freshness_rule: "on_demand"
+
+"power-grid-《电气装置安装工程低压电器施工及验收规范》GB 50254-2014":
+  basis_id: "power-grid-《电气装置安装工程低压电器施工及验收规范》GB 50254-2014"
+  title: "电气装置安装工程低压电器施工及验收规范"
+  source_type: "industry_standard"
+  version: "GB 50254-2014"
+  effective_status: "active"
+  jurisdiction: "PRC / Electric Power"
+  file_refs:
+    - "knowledge/review_basis/industry_standards/low_voltage_apparatus_installation_acceptance_50254_2014.md"
+  applicability_tags: ["power_outage_work", "base"]
+  owner: "National Standard"
+  freshness_rule: "on_demand"
+
 "review-control-plane-special-scheme-structure-policy":
   basis_id: "review-control-plane-special-scheme-structure-policy"
   title: "review-control-plane-special-scheme-structure-policy"

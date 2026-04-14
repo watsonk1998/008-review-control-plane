@@ -172,8 +172,12 @@ def map_internal_stage(task: TaskRecord, events: list[TaskEvent]) -> str:
         return 'review_brief_compiling'
     if stage == 'dispatch':
         return 'assets_loading'
-    if stage in {'parse', 'extract', 'rules', 'evidence', 'explain', 'report', 'hermes_controller'}:
+    if stage in {'parse', 'extract', 'rules', 'evidence', 'explain'}:
         return 'modules_running'
+    if stage in {'agent_select', 'agent_running', 'agent_done', 'hermes_controller'}:
+        return 'agents_running'
+    if stage == 'report':
+        return 'report_assembling'
     if stage == 'finalize':
         return 'report_assembling'
     if stage in {'document', 'retrieval', 'analysis', 'research'}:
@@ -223,6 +227,8 @@ def map_task_event_to_sse(task: TaskRecord, event: TaskEvent) -> ReviewTaskSseEv
             'capability': event.capability,
             'internal_stage': event.stage,
             'internal_status': event.status,
+            'debug': event.debug or {},
+            'artifact_path': event.artifactPath,
         },
     )
 
@@ -269,12 +275,8 @@ def _build_export_links(task: TaskRecord, artifacts: list[TaskArtifact]) -> Revi
     links = ReviewTaskExportLinks()
     for artifact in artifacts:
         name = artifact.fileName.lower()
-        if name.endswith('.md') and links.markdown is None:
-            links.markdown = artifact.downloadUrl
-        elif name.endswith('.pdf') and links.pdf is None:
+        if name.endswith('.pdf') and links.pdf is None:
             links.pdf = artifact.downloadUrl
-        elif name.endswith('.html') and links.html is None:
-            links.html = artifact.downloadUrl
     return links
 
 

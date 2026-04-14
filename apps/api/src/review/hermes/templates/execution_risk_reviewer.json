@@ -4,17 +4,46 @@
   "agent_purpose": "通过Hermes worker补充实施风险、系统性遗漏、逻辑链路问题",
   "agent_scope": "execution_risk",
   "execution_mode": "hermes_router",
-  "module_bindings": ["fact_extract"],
+  "module_bindings": [
+    "fact_extract"
+  ],
   "supported_document_types": [],
-  "focus_keywords": ["风险", "实施", "逻辑", "链路", "一致性", "停送电"],
-  "required_context_types": ["target_document", "focus_requirements"],
-  "input_contract": {"type": "review_brief"},
-  "output_contract": {"type": "fact_packet", "role": "supplemental"},
+  "focus_keywords": [
+    "风险",
+    "实施",
+    "逻辑",
+    "链路",
+    "一致性",
+    "停送电"
+  ],
+  "required_context_types": [
+    "target_document",
+    "focus_requirements"
+  ],
+  "input_contract": {
+    "type": "review_brief"
+  },
+  "output_contract": {
+    "type": "fact_packet",
+    "role": "supplemental"
+  },
   "instructions": "关注系统性风险、执行链路、资源协调和遗漏问题。",
   "prompt": "请补充识别实施风险和逻辑链路问题。",
   "default_enabled": true,
-  "save_policy": {"seed": true},
+  "save_policy": {
+    "seed": true
+  },
   "template_version": "1.0.0",
-  "compatibility": {"controller": "hermes_v0"},
-  "metadata": {"review_modules": ["parameter_consistency", "execution_continuity"], "ownership": "hermes_main_review"}
+  "compatibility": {
+    "controller": "hermes_v0"
+  },
+  "metadata": {
+    "review_modules": [
+      "parameter_consistency",
+      "execution_continuity"
+    ],
+    "ownership": "hermes_main_review"
+  },
+  "input_token_limit": 200000,
+  "output_token_limit": 200000
 }

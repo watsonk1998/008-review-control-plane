@@ -29,6 +29,20 @@ const TASK_STATUS_MAP: Record<string, string> = {
 
 const TERMINAL_STATES = new Set(["succeeded", "failed", "partial", "accepted", "rejected", "needs_attachment"]);
 const STREAM_RECONNECT_DELAY_MS = 4_000;
+const STAGE_LABELS: Record<string, string> = {
+  planning: "资料接收中",
+  dispatch: "文档解析中",
+  parse: "文档解析中",
+  extract: "依据与规则映射中",
+  rules: "结构化审查中",
+  evidence: "结构化审查中",
+  agent_select: "专项子审查并行运行中",
+  agent_running: "专项子审查并行运行中",
+  agent_done: "专项子审查并行运行中",
+  hermes_controller: "主审综合裁决中",
+  report: "报告生成中",
+  finalize: "已完成",
+};
 
 function isStructuredReviewResult(result: unknown): result is StructuredReviewResult {
   return Boolean(
@@ -324,9 +338,45 @@ export function TaskDetail({ taskId }: { taskId: string }) {
   }, [structuredResult]);
 
   const reportArtifact = useMemo(
-    () => structuredArtifacts.find((artifact) => artifact.name === "hermes-controller-final-report") || structuredArtifacts.find((artifact) => artifact.name === "structured-review-report"),
+    () =>
+      structuredArtifacts.find((artifact) => artifact.fileName.toLowerCase().endsWith(".pdf")) ||
+      structuredArtifacts.find((artifact) => artifact.name === "hermes-controller-final-report") ||
+      structuredArtifacts.find((artifact) => artifact.name === "structured-review-report"),
     [structuredArtifacts],
   );
+
+  const progressSummary = useMemo(() => {
+    const latestEvent = events[events.length - 1];
+    const activeAgentIds = Array.from(
+      new Set(
+        events
+          .filter((event) => event.stage === "agent_select")
+          .map((event) => {
+            const explicitId = event.debug?.templateId;
+            if (typeof explicitId === "string" && explicitId.trim()) {
+              return explicitId.trim();
+            }
+            return event.message.replace("Selected agent: ", "").trim();
+          })
+          .filter(Boolean),
+      ),
+    );
+    const completedAgentEvents = events.filter((event) => event.stage === "agent_done");
+    const debugTotalAgents = latestEvent?.debug?.totalAgents;
+    const debugCompletedAgents = latestEvent?.debug?.completedAgents;
+    const totalAgents = typeof debugTotalAgents === "number"
+      ? debugTotalAgents
+      : activeAgentIds.length || structuredResult?.hermesController?.selectedAgents?.length || 0;
+    const completedAgents = typeof debugCompletedAgents === "number"
+      ? debugCompletedAgents
+      : completedAgentEvents.length;
+    return {
+      latestEvent,
+      currentStage: STAGE_LABELS[latestEvent?.stage || ""] || "审查执行中",
+      totalAgents,
+      completedAgents,
+    };
+  }, [events, structuredResult]);
 
   return (
     <main className="home-dashboard stack-lg" style={{ maxWidth: "900px", margin: "0 auto", padding: "40px 0" }}>
@@ -378,6 +428,30 @@ export function TaskDetail({ taskId }: { taskId: string }) {
               </div>
             </div>
 
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: "12px", marginBottom: "20px" }}>
+              <div style={{ background: "#F8FAFC", borderRadius: "8px", padding: "16px" }}>
+                <div className="muted small">当前阶段</div>
+                <div style={{ fontWeight: 600, color: "#0F172A" }}>{progressSummary.currentStage}</div>
+              </div>
+              <div style={{ background: "#F8FAFC", borderRadius: "8px", padding: "16px" }}>
+                <div className="muted small">长连接状态</div>
+                <div style={{ fontWeight: 600, color: "#0F172A" }}>{transportMode === "sse" ? "实时同步中" : transportMode === "polling" ? "轮询补偿中" : "连接建立中"}</div>
+              </div>
+              <div style={{ background: "#F8FAFC", borderRadius: "8px", padding: "16px" }}>
+                <div className="muted small">专项审查器进度</div>
+                <div style={{ fontWeight: 600, color: "#0F172A" }}>
+                  {progressSummary.totalAgents ? `${Math.min(progressSummary.completedAgents, progressSummary.totalAgents)} / ${progressSummary.totalAgents}` : "等待主审选择"}
+                </div>
+              </div>
+            </div>
+
+            {progressSummary.latestEvent ? (
+              <div style={{ background: "#FFF7ED", color: "#9A3412", border: "1px solid #FED7AA", borderRadius: "8px", padding: "14px 16px", marginBottom: "20px" }}>
+                <strong>最近进度：</strong>
+                <span>{progressSummary.latestEvent.message}</span>
+              </div>
+            ) : null}
+
             {/* 人工复核需求 */}
             {(structuredResult?.support_result_008?.summary?.manualReviewNeeded || structuredResult?.summary?.manualReviewNeeded) ? (
               <div className="callout warning-callout" style={{ marginTop: "16px" }}>
@@ -412,7 +486,7 @@ export function TaskDetail({ taskId }: { taskId: string }) {
                   </div>
                   {reportArtifact ? (
                     <a className="primary-button" href={resolveApiUrl(reportArtifact.downloadUrl)} rel="noreferrer" target="_blank" style={{ textDecoration: "none" }}>
-                      下载完整报告(PDF/MD)
+                      导出正式排版 PDF
                     </a>
                   ) : null}
                 </div>
@@ -436,6 +510,23 @@ export function TaskDetail({ taskId }: { taskId: string }) {
                   </div>
                   </details>
                 </div>
+            )}
+          </section>
+
+          <section className="glass-panel" style={{ background: "#FFFFFF", padding: "24px 32px", borderRadius: "12px", border: "1px solid #E2E8F0" }}>
+            <h3 style={{ fontSize: "1.05rem", fontWeight: 600, marginBottom: "16px" }}>执行时间线</h3>
+            {events.length ? (
+              <div className="stack-sm">
+                {events.slice(-12).reverse().map((event, index) => (
+                  <div key={`${event.timestamp}-${index}`} style={{ borderLeft: "3px solid #CBD5E1", paddingLeft: "12px" }}>
+                    <div style={{ fontWeight: 500, color: "#0F172A" }}>{STAGE_LABELS[event.stage] || event.stage}</div>
+                    <div style={{ color: "#334155" }}>{event.message}</div>
+                    <div className="muted small">{new Date(event.timestamp).toLocaleString()}</div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="muted small">任务已创建，等待后台返回进度事件。</p>
             )}
           </section>
         </div>

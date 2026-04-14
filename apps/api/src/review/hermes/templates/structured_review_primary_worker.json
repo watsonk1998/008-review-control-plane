@@ -4,20 +4,46 @@
   "agent_purpose": "复用 008 结构化审查主链，为 Hermes 主审提供结构完整性支撑材料",
   "agent_scope": "primary_support_material",
   "execution_mode": "module_only",
-  "module_bindings": ["primary_support_review"],
+  "module_bindings": [
+    "primary_support_review"
+  ],
   "supported_document_types": [],
-  "focus_keywords": ["完整性", "章节", "结构", "专项"],
-  "required_context_types": ["target_document"],
-  "input_contract": {"type": "review_brief"},
-  "output_contract": {"type": "fact_packet", "role": "support_material"},
+  "focus_keywords": [
+    "完整性",
+    "章节",
+    "结构",
+    "专项"
+  ],
+  "required_context_types": [
+    "target_document"
+  ],
+  "input_contract": {
+    "type": "review_brief"
+  },
+  "output_contract": {
+    "type": "fact_packet",
+    "role": "support_material"
+  },
   "instructions": "调用 008 structured review capability facade 的 primary_support_review 能力，为 Hermes 主审和裁决层提供结构化支撑包与报告材料。",
   "prompt": "",
   "default_enabled": true,
-  "save_policy": {"seed": true},
+  "save_policy": {
+    "seed": true
+  },
   "template_version": "1.1.0",
   "compatibility": {
     "controller": "hermes_v0",
-    "legacy_template_ids": ["structure_completeness_reviewer"]
+    "legacy_template_ids": [
+      "structure_completeness_reviewer"
+    ]
   },
-  "metadata": {"preferred_pack_ids": [], "review_modules": ["structure_completeness"], "ownership": "support_material"}
+  "metadata": {
+    "preferred_pack_ids": [],
+    "review_modules": [
+      "structure_completeness"
+    ],
+    "ownership": "support_material"
+  },
+  "input_token_limit": 200000,
+  "output_token_limit": 200000
 }

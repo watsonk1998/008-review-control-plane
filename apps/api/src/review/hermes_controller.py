@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 import re
@@ -160,31 +161,95 @@ class HermesController:
             support_packet_008: FactPacket | None = None
             support_result_008: dict[str, Any] | None = None
             hermes_review_packets: list[FactPacket] = []
+            total_agents = len(selected_templates)
+            completed_agents = 0
+
+            def _emit_agent_event(stage: str, message: str, *, template_id: str | None = None, reasons: list[str] | None = None, failed: bool = False):
+                if not emit:
+                    return
+                debug_payload = {
+                    'templateId': template_id,
+                    'completedAgents': completed_agents,
+                    'totalAgents': total_agents,
+                }
+                if reasons:
+                    debug_payload['reasons'] = reasons
+                emit(stage, 'hermes_controller', 'failed' if failed else 'info', message, debug=debug_payload)
+
+            sequential_matches = [match for match in selected_templates if match.template.execution_mode != 'hermes_router']
+            parallel_matches = [match for match in selected_templates if match.template.execution_mode == 'hermes_router']
 
             for match in selected_templates:
+                _emit_agent_event('agent_select', f'Selected agent: {match.template.id}', template_id=match.template.id, reasons=match.reasons)
+
+            def _consume_run_result(template: AgentTemplate, result_payload: dict[str, Any]) -> None:
+                nonlocal support_packet_008, support_result_008, completed_agents
+                agent_results.append(result_payload)
+                packet_payload = result_payload.get('packet')
+                if packet_payload:
+                    packet = FactPacket.model_validate(packet_payload)
+                    if is_primary_template_id(template.id) and packet.engine == '008':
+                        support_packet_008 = packet
+                        support_result_008 = workspace.get('structured_support_result_008')
+                    else:
+                        packet.review_id = brief.review_id
+                        packet.metadata = {**packet.metadata, 'template_id': template.id, 'agent_id': template.id}
+                        hermes_review_packets.append(packet)
+                completed_agents += 1
+                _emit_agent_event('agent_done', f'专项审查器已完成：{template.id}', template_id=template.id)
+
+            for match in sequential_matches:
                 template = match.template
-                if emit:
-                    emit('agent_select', 'hermes_controller', 'info', f'Selected agent: {template.id}', debug={'reasons': match.reasons})
                 run_result = await self.agent_runner.run_template(
                     template,
                     brief=brief,
                     workspace=workspace,
                     context=context,
                 )
-                result_payload = run_result.model_dump(mode='json')
-                agent_results.append(result_payload)
-                packet_payload = result_payload.get('packet')
-                if not packet_payload:
-                    continue
-                packet = FactPacket.model_validate(packet_payload)
-                if is_primary_template_id(template.id) and packet.engine == '008':
-                    support_packet_008 = packet
-                    # Controller consumes the facade-owned normalized support contract only.
-                    support_result_008 = workspace.get('structured_support_result_008')
-                else:
-                    packet.review_id = brief.review_id
-                    packet.metadata = {**packet.metadata, 'template_id': template.id, 'agent_id': template.id}
-                    hermes_review_packets.append(packet)
+                _consume_run_result(template, run_result.model_dump(mode='json'))
+
+            async def _run_parallel_template(match: AgentTemplateMatch):
+                template = match.template
+                if emit:
+                    emit(
+                        'agent_running',
+                        'hermes_controller',
+                        'info',
+                        f'专项审查器并行运行中：{template.id}',
+                        debug={'templateId': template.id, 'completedAgents': completed_agents, 'totalAgents': total_agents},
+                    )
+                try:
+                    run_result = await self.agent_runner.run_template(
+                        template,
+                        brief=brief,
+                        workspace=workspace,
+                        context=context,
+                    )
+                    return match, run_result.model_dump(mode='json'), None
+                except Exception as exc:  # pragma: no cover - defensive runtime guard
+                    return match, None, exc
+
+            if parallel_matches:
+                if emit:
+                    emit(
+                        'agent_running',
+                        'hermes_controller',
+                        'info',
+                        f'专项子审查并行运行中（共 {len(parallel_matches)} 个）',
+                        debug={'parallelAgents': [match.template.id for match in parallel_matches], 'totalAgents': total_agents, 'completedAgents': completed_agents},
+                    )
+                parallel_results = await asyncio.gather(*[_run_parallel_template(match) for match in parallel_matches], return_exceptions=False)
+                for match, result_payload, exc in parallel_results:
+                    template = match.template
+                    if exc is not None:
+                        completed_agents += 1
+                        _emit_agent_event('agent_done', f'专项审查器执行失败：{template.id}（已跳过）', template_id=template.id, failed=True)
+                        continue
+                    if result_payload is None:
+                        completed_agents += 1
+                        _emit_agent_event('agent_done', f'专项审查器未产出结果：{template.id}', template_id=template.id)
+                        continue
+                    _consume_run_result(template, result_payload)
 
             decision_inputs = HermesReviewDecisionInputs(
                 support_packet_008=support_packet_008.model_dump(mode='json') if support_packet_008 else None,

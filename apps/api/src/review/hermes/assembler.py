@@ -338,8 +338,7 @@ class HermesReviewAssembler:
             
             for finding in items:
                 severity_zh = severity_zh_map.get(finding.severity.lower(), finding.severity.upper())
-                corroborated_mark = " *(已通过主审交叉复核)*" if (finding.raw_data or {}).get('hermes_decision_signal') == 'corroborated' else ""
-                lines.append(f'- **[{severity_zh}]**{corroborated_mark} {finding.title}')
+                lines.append(f'- **[{severity_zh}]** {finding.title}')
                 if finding.summary:
                     lines.append(f'  > {finding.summary.strip()}')
                 if finding.suggestion:
