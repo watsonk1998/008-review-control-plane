@@ -563,6 +563,7 @@ export interface SupportScopeResponse {
       promotionCriteria: Record<string, boolean>;
     }>;
   }>;
+  basisMapping?: Record<string, string[]>;
 }
 
 export type ReviewModuleName =

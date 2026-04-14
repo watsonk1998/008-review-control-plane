@@ -149,9 +149,25 @@ def get_special_scheme_capability_tree() -> list[dict[str, object]]:
     ]
 
 
+def get_basis_mapping() -> dict[str, list[str]]:
+    from src.review.basis_pack_resolver import BasisPackResolver
+    from src.review.schema import ResolvedReviewProfile
+    resolver = BasisPackResolver()
+    
+    mapping = {}
+    for dt in ['construction_org', 'construction_scheme', 'hazardous_special_scheme', 'distribution_network_special_scheme', 'supervision_plan', 'review_support_material']:
+        profile = ResolvedReviewProfile(documentType=dt, policyPackIds=[], disciplineTags=[], strictMode=False)
+        resolved = resolver.resolve(profile)
+        # Filter out internal engine policies to only show actual regulations/standards to users
+        docs = [b.title for b in resolved.basis_documents if not b.basis_id.startswith('review-control-plane')]
+        mapping[dt] = docs
+    return mapping
+
+
 def get_support_scope_payload() -> dict[str, object]:
     return {
         'documentTypes': get_document_type_support_scope(),
         'packs': get_pack_support_scope(),
         'capabilityTree': get_special_scheme_capability_tree(),
+        'basisMapping': get_basis_mapping(),
     }

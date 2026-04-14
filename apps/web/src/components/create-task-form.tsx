@@ -220,10 +220,25 @@ export function CreateTaskForm({
             {/* 标准审查依据库 */}
             <div>
               <strong style={{ fontSize: "0.95rem", color: "#334155", display: "block", marginBottom: "12px" }}>标准审查依据库（根据方案类型自动内置）</strong>
-              <div style={{ background: "#F0FDF4", border: "1px solid #BBF7D0", padding: "12px 16px", borderRadius: "6px", display: "flex", alignItems: "center", gap: "12px" }}>
-                <span style={{ fontSize: "1.2rem" }}>🛡️</span>
-                <span style={{ fontSize: "0.85rem", color: "#15803D" }}>系统已根据您定义的方案分类（Profile）自动匹配并加载关联强制基线依据集，无需人工分配确认。</span>
-              </div>
+              
+              {supportScope?.basisMapping && form.documentType && Array.isArray(supportScope.basisMapping[form.documentType]) && supportScope.basisMapping[form.documentType].length > 0 ? (
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+                  {supportScope.basisMapping[form.documentType].map((basisTitle) => (
+                    <div key={basisTitle} style={{ background: "#F0FDF4", border: "1px solid #BBF7D0", color: "#15803D", padding: "6px 12px", borderRadius: "4px", fontSize: "0.85rem", display: "flex", alignItems: "center", gap: "6px" }}>
+                      <span>✔️</span>
+                      <span style={{ fontWeight: 500 }}>{basisTitle}</span>
+                    </div>
+                  ))}
+                  <div style={{ background: "#F8FAFC", border: "1px solid #E2E8F0", color: "#64748B", padding: "6px 12px", borderRadius: "4px", fontSize: "0.85rem", display: "flex", alignItems: "center", gap: "6px" }}>
+                    <span>系统已自动匹配，无需人工挂载</span>
+                  </div>
+                </div>
+              ) : (
+                <div style={{ background: "#F0FDF4", border: "1px solid #BBF7D0", padding: "12px 16px", borderRadius: "6px", display: "flex", alignItems: "center", gap: "12px" }}>
+                  <span style={{ fontSize: "1.2rem" }}>🛡️</span>
+                  <span style={{ fontSize: "0.85rem", color: "#15803D" }}>系统已根据您定义的方案分类（Profile）自动匹配并加载关联强制基线依据集，无需人工分配确认。</span>
+                </div>
+              )}
             </div>
 
             {/* 审查动作模块集 */}
