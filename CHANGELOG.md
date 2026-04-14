@@ -12,6 +12,19 @@
 - **引入停电专项评估模板**：新增针对涉网类的专属模板组合：`power_outage_normative_reviewer`（规范强制项审查）、`power_outage_operation_chain_reviewer`（操作链条逻辑连贯性审查）以及 `power_outage_restoration_closure_reviewer`（恢复送电及闭环管理审查）。
 - **同步更新注册表及基线依据**：新增 `supervision_power_outage_review_points.md` 涉网方案审查管控清单，并在 `basis_registry.yaml` 与 `rule_pack_registry.yaml` 中完成全套关联映射下发。
 
+### Changed
+- 修复 `HermesReviewAssembler` 五章分类法（章节完整性/参数一致性/合法合规性/工序连贯性/证据验证）的 findings 去重缺陷与合规性条目错误映射，重构 `agent_runner.py` 与 `assembler.py` 的分类逻辑和跨引擎去重算法，确保 008 底座输出与 Hermes 主审输出不产生冗余条目。
+- 增强 `final_report_merger.py` 交叉复核反哺机制：当 Hermes 端 finding 通过 `corroborates_008_finding` 命中 008 端 finding 时，自动将 Hermes 端更丰富的 `summary` 与 `suggestion` 补全至 008 端贫描述条目，提升正式报告条目的信息密度。
+- 修复 `CreateTaskRequest` Pydantic 422 验证错误：`query` 字段被前端作为空字符串提交触发 `string_too_short` 校验失败，修正前后端校验逻辑确保非空约束在 UI 层即时拦截。
+- 加固 Weknora 部署流程：文档化 `docker compose restart`（不重读 `.env`）与 `docker compose up -d`（重建容器并重新加载环境变量）的行为差异，更新 `hermes-agent-deployment-sop.md` 增加环境变量持久化陷阱警告，防止因 `.env` 配置漂移导致 FastGPT `KeyError` 和 API 500 错误。
+- 规划 DOCX 语义解析策略：为 RAG 管线架构基于 IBM Docling / Unstructured.io 的 layout-aware 结构化解析方案，目标取代朴素文本分块，保留工程文档的标题/表格/章节层级以实现元数据增强的语义索引。
+- 更新且校准 `fixtures/construction/` 目录下的两大核心国标依据源文档（`GB 26861-2011 电力安全工作规程 高压试验室部分` 和 `GB 50254-2014 电气装置安装工程低压电器施工及验收规范`），替换了历史错位或过期的内容，保障离线基准测试和文档依据的物理层纯净度。
+
+### Notes
+- 本日下半场的核心不是扩能力，而是加固已有管线的防御性闭环：部署层（`.env` 漂移止血）、API 层（Pydantic 校验前移）、报告层（去重与分类修正）。
+- DOCX 语义解析处于策略论证阶段，IBM Docling 对中文工程文档的实际表现尚需 PoC 验证。
+- 晚间完成一次增量部署闭环：本地 push 至 GitHub 后，通过 `rsync` 同步至 Weknora `/root/hermes-review-agent`，并执行 `docker compose up -d --build` 重建 `api`、`web`、`deeptutor-bridge` 容器，确保生产环境与 GitHub `hermes-review-clean` 分支代码对齐。
+
 ## 2026-04-13
 
 ### Changed
