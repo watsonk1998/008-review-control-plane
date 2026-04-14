@@ -4,6 +4,14 @@
 
 > 说明：本次按 2026-03 至 2026-04 的时间窗进行了核查。当前仓库可确认的主线变更集中在 `2026-04-02` 至 `2026-04-13`；若无对应 repo 事实，不为 3 月单独虚构条目。
 
+## 2026-04-14
+
+### Added
+- **增强 Hermes 审查引擎**：新增 `SupportPacketBuilder` 以及扩圈的辅助审查范围(`support scope`)机制，为外部 Hermes 大模型引擎提供高收敛度的事实包支撑。
+- **强化规则体系引擎**：正式将规则包 (`rule packs`) 与基线依据包解析器 (`basis pack resolver`) 串联入底座 Rule Engine，使基于动态工程配置文件执行的跨域审查能力进一步闭环。
+- **引入停电专项评估模板**：新增针对涉网类的专属模板组合：`power_outage_normative_reviewer`（规范强制项审查）、`power_outage_operation_chain_reviewer`（操作链条逻辑连贯性审查）以及 `power_outage_restoration_closure_reviewer`（恢复送电及闭环管理审查）。
+- **同步更新注册表及基线依据**：新增 `supervision_power_outage_review_points.md` 涉网方案审查管控清单，并在 `basis_registry.yaml` 与 `rule_pack_registry.yaml` 中完成全套关联映射下发。
+
 ## 2026-04-13
 
 ### Changed
