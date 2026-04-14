@@ -200,6 +200,7 @@ class HermesController:
 
             for match in sequential_matches:
                 template = match.template
+                _emit_agent_event('agent_running', f'主审引擎处理中：{template.id}', template_id=template.id)
                 run_result = await self.agent_runner.run_template(
                     template,
                     brief=brief,
