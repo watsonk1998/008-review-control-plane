@@ -104,6 +104,9 @@ class HermesController:
         resolved_profile = workspace.get('resolved_profile')
         facts = workspace.get('facts')
         structured_task = workspace.get('structured_task')
+
+        # 2.5 Ensure local rules evaluate the facts to provide compliance candidates
+        self.capability_facade.rule_and_evidence(workspace=workspace, context=context)
         
         # 3. Resolve Basis Packs (Strict YAML Governance)
         resolved_basis = None
