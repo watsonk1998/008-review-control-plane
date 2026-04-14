@@ -344,9 +344,6 @@ class HermesReviewAssembler:
                 if finding.suggestion:
                     lines.append(f'  **整改建议**: {finding.suggestion.strip()}')
             lines.append('')
-
-        lines.append('## 系统追溯标识\n')
-        lines.append(f"- 核查链路: {', '.join(engines)}")
         for engine, info in degradation.items():
             lines.append(f"- 组件降级通报: {engine} 模块异常 ({info.get('reason', '未知')})")
         lines.append('')

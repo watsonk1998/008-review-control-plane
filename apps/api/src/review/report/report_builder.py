@@ -601,6 +601,7 @@ class StructuredReviewReportBuilder:
         basis_files = self._collect_visible_basis_files(summary.selectedPacks or resolved_profile.policyPackIds, issues)
         module_order = self._resolve_enabled_modules(enabled_modules)
         grouped_issues = self._group_issues_by_module(issues)
+        visible_issue_count = self._visible_issue_count(grouped_issues, module_order, matrices)
         lines = [
             f'# {document_label}形式审查报告',
             '',
@@ -610,7 +611,7 @@ class StructuredReviewReportBuilder:
             f'- 审查结论：{summary.overallConclusion}',
             f'- 文档类型：{document_label}',
             f'- 是否需人工复核：{"是" if summary.manualReviewNeeded else "否"}',
-            f'- 当前识别问题总数：{summary.issueCount} 项',
+            f'- 当前识别问题总数：{visible_issue_count} 项',
             '',
             '### 2. 审查依据文件',
         ]
@@ -621,7 +622,6 @@ class StructuredReviewReportBuilder:
         note_lines = self._render_first_section_notes(parse_result.visibility)
         if note_lines:
             lines.extend(['', *note_lines])
-
         for section_index, module_name in enumerate(module_order, start=2):
             lines.extend(['', f'## {self._section_label(section_index)}部分：{self._module_title(module_name)}', ''])
             lines.extend(self._render_markdown_module_section(module_name, grouped_issues.get(module_name, []), matrices))
@@ -643,6 +643,7 @@ class StructuredReviewReportBuilder:
         basis_files = self._collect_visible_basis_files(summary.selectedPacks or resolved_profile.policyPackIds, issues)
         module_order = self._resolve_enabled_modules(enabled_modules)
         grouped_issues = self._group_issues_by_module(issues)
+        visible_issue_count = self._visible_issue_count(grouped_issues, module_order, matrices)
         html_parts = [
             '<article class="structured-report">',
             f'<h1 class="structured-report__title">{html.escape(document_label)}形式审查报告</h1>',
@@ -654,7 +655,7 @@ class StructuredReviewReportBuilder:
             f'<li>审查结论：{html.escape(summary.overallConclusion)}</li>',
             f'<li>文档类型：{html.escape(document_label)}</li>',
             f'<li>是否需人工复核：{"是" if summary.manualReviewNeeded else "否"}</li>',
-            f'<li>当前识别问题总数：{summary.issueCount} 项</li>',
+            f'<li>当前识别问题总数：{visible_issue_count} 项</li>',
             '</ul>',
             '</div>',
             '<div class="structured-report__subsection">',
@@ -685,8 +686,6 @@ class StructuredReviewReportBuilder:
     def _render_first_section_notes(self, visibility) -> list[str]:
         lines = []
         lines.extend(self._render_pdf_limit_notice(visibility))
-        if visibility.manualReviewNeeded and visibility.manualReviewReason:
-            lines.append(f'- 复核提示：{self._manual_review_reason_text(visibility.manualReviewReason)}')
         if lines:
             lines.append('')
         return lines
@@ -706,21 +705,13 @@ class StructuredReviewReportBuilder:
             '</div>',
             '<div class="structured-report__subsection">',
             '<h3 class="structured-report__subsection-title">2. 审查依据文件</h3>',
+            '<ul class="structured-report__basis-list">',
         ]
         if basis_files['primary']:
-            parts.extend(['<h4 class="structured-report__subsection-title">主要审查依据文件</h4>', '<ul class="structured-report__basis-list">'])
             parts.extend(f'<li>{html.escape(item)}</li>' for item in basis_files['primary'])
-            parts.append('</ul>')
-        if basis_files['supplemental']:
-            parts.extend(['<h4 class="structured-report__subsection-title">补充说明依据</h4>', '<ul class="structured-report__basis-list">'])
-            parts.extend(f'<li>{html.escape(item)}</li>' for item in basis_files['supplemental'])
-            parts.append('</ul>')
-        note_lines = self._render_first_section_notes(visibility)
-        if note_lines:
-            parts.append('<ul class="structured-report__bullet-list">')
-            parts.extend(f'<li>{html.escape(line.removeprefix("- ").strip())}</li>' for line in note_lines if line.strip())
-            parts.append('</ul>')
-        parts.append('</div>')
+        else:
+            parts.append('<li>本次未提取到可直接展示的正式规范或法规依据。</li>')
+        parts.extend(['</ul>', '</div>'])
         if matrices.structureCompleteness:
             overview_issue_map, _ = self._build_structure_related_issue_map(matrices.structureCompleteness, issues, compact=True)
             parts.extend(self._render_first_section_overview_html(summary.documentType, matrices.structureCompleteness, overview_issue_map))
@@ -900,14 +891,32 @@ class StructuredReviewReportBuilder:
         parts: list[str] = []
         for index, issue in enumerate(issues, start=1):
             evidence_parts = self._render_policy_requirements_html(issue)
+            position_text = self._issue_position_text(issue, [])
+            recommendation_text = self._issue_recommendation_text(issue)
             parts.extend([
                 '<article class="structured-report__issue-card">',
                 f'<h3 class="structured-report__issue-card-title">{index}. {html.escape(issue.title)}</h3>',
+            ])
+            if position_text:
+                parts.extend([
+                    '<section class="structured-report__issue-card-section">',
+                    '<div class="structured-report__issue-card-section-title">问题定位</div>',
+                    f'<p class="structured-report__issue-card-text">{html.escape(position_text)}</p>',
+                    '</section>',
+                ])
+            parts.extend([
                 '<section class="structured-report__issue-card-section">',
                 '<div class="structured-report__issue-card-section-title">问题描述</div>',
                 f'<p class="structured-report__issue-card-text">{html.escape(self._clean_report_text(issue.summary))}</p>',
                 '</section>',
             ])
+            if recommendation_text:
+                parts.extend([
+                    '<section class="structured-report__issue-card-section">',
+                    '<div class="structured-report__issue-card-section-title">整改建议</div>',
+                    f'<p class="structured-report__issue-card-text">{html.escape(recommendation_text)}</p>',
+                    '</section>',
+                ])
             if evidence_parts:
                 parts.extend([
                     '<section class="structured-report__issue-card-section">',
@@ -934,9 +943,6 @@ class StructuredReviewReportBuilder:
             parts.extend([
                 '<li class="structured-report__issue-card-law-item">',
                 f'<div class="structured-report__issue-card-law-title">{html.escape(citation)}</div>',
-                '<ul class="structured-report__issue-card-law-requirements">',
-                '<li class="structured-report__issue-card-law-requirement">要求：请结合上述规范条文及原文内容复核本项问题。</li>',
-                '</ul>',
                 '</li>',
             ])
         return parts
@@ -997,6 +1003,13 @@ class StructuredReviewReportBuilder:
     def _module_title(self, module_name: str) -> str:
         return self._REPORT_MODULE_LABELS.get(module_name, self._clean_report_text(module_name))
 
+
+    def _visible_issue_count(self, grouped_issues: dict[str, list], module_order: list[str], matrices: StructuredReviewMatrices) -> int:
+        total = sum(len(grouped_issues.get(module, [])) for module in module_order)
+        if 'structure_completeness' in module_order and matrices.structureCompleteness:
+            total += sum(1 for row in matrices.structureCompleteness if row.status in {'missing', 'partial', 'blocked_by_visibility'})
+        return total
+
     def _collect_visible_basis_files(self, selected_packs: list[str], issues) -> list[str]:
         basis: list[str] = []
         seen: set[str] = set()
@@ -1038,6 +1051,9 @@ class StructuredReviewReportBuilder:
         if module_name == 'structure_completeness' and matrices.structureCompleteness:
             lines.append(f'- 总体结论：{self._structure_completeness_conclusion(matrices.structureCompleteness)}')
             lines.append('')
+            lines.append('### 章节完整性矩阵')
+            lines.extend(self._render_structure_completeness_table_markdown(matrices.structureCompleteness))
+            lines.append('')
             lines.append('### 重点缺项与补齐建议')
             lines.extend(
                 self._render_structure_followups_grouped(matrices.structureCompleteness)
@@ -1058,10 +1074,17 @@ class StructuredReviewReportBuilder:
             f'<h2 class="structured-report__section-title">{html.escape(self._section_label(section_index))}部分：{html.escape(self._module_title(module_name))}</h2>',
         ]
         if module_name == 'structure_completeness' and matrices.structureCompleteness:
+            related_issue_map, _ = self._build_structure_related_issue_map(matrices.structureCompleteness, module_issues, compact=False)
             parts.extend([
                 '<div class="structured-report__subsection">',
-                '<h3 class="structured-report__subsection-title">重点缺项与补齐建议</h3>',
+                '<h3 class="structured-report__subsection-title">章节完整性矩阵</h3>',
                 f'<p class="structured-report__subsection-intro">总体结论：{html.escape(self._structure_completeness_conclusion(matrices.structureCompleteness))}</p>',
+                '<div class="structured-report__table-wrap">',
+                self._render_structure_completeness_table_html(matrices.structureCompleteness, related_issue_map),
+                '</div>',
+                '</div>',
+                '<div class="structured-report__subsection">',
+                '<h3 class="structured-report__subsection-title">重点缺项与补齐建议</h3>',
             ])
             parts.extend(
                 self._render_structure_followups_grouped_html(matrices.structureCompleteness)
@@ -1983,13 +2006,18 @@ class StructuredReviewReportBuilder:
 
     def _render_issue(self, index: int, issue) -> list[str]:
         policy_lines = self._render_policy_requirements(issue)
-        lines = [
-            f'### {index}. {issue.title}',
+        position_text = self._issue_position_text(issue, [])
+        recommendation_text = self._issue_recommendation_text(issue)
+        lines = [f'### {index}. {issue.title}']
+        if position_text:
+            lines.extend(['问题定位', f'- {position_text}'])
+        lines.extend([
             '问题描述',
             f'- {self._clean_report_text(issue.summary)}',
-            *(policy_lines or []),
-            '',
-        ]
+        ])
+        if recommendation_text:
+            lines.extend(['整改建议', f'- {recommendation_text}'])
+        lines.extend([*(policy_lines or []), ''])
         return lines
 
     def _render_policy_requirements(self, issue) -> list[str]:
@@ -2009,6 +2037,21 @@ class StructuredReviewReportBuilder:
         lines.append('审查依据')
         for citation in items:
             lines.append(f'- {citation}')
+        return lines
+
+    def _issue_recommendation_text(self, issue) -> str:
+        recommendations = [self._clean_report_text(item) for item in getattr(issue, 'recommendation', []) if self._clean_report_text(item)]
+        return '；'.join(recommendations)
+
+    def _render_structure_completeness_table_markdown(self, rows) -> list[str]:
+        lines = [
+            '| 序号 | 规范要求 | 文档对应章节 | 结构判定 |',
+            '| --- | --- | --- | --- |',
+        ]
+        for index, row in enumerate(rows, start=1):
+            lines.append(
+                f'| {index} | {self._clean_report_text(row.requirementLabel)} | {self._matched_sections_text(row.matchedSections)} | {self._STRUCTURE_STATUS_LABELS.get(row.status, row.status)} |'
+            )
         return lines
 
     def _render_issue_risk_lines(self, issue) -> list[str]:

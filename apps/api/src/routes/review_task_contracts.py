@@ -191,7 +191,7 @@ def build_review_task_status(task: TaskRecord, events: list[TaskEvent]) -> Revie
     report_id = task.id if task.status in {'succeeded', 'partial'} and isinstance(task.result, dict) else None
     error = None
     if task.error:
-        error = ReviewTaskError(code='task_failed', message=str(task.error.get('message') or 'Task failed'))
+        error = ReviewTaskError(code='task_failed', message=str(task.error.get('message') or '任务执行失败'))
     return ReviewTaskStatusResponse(
         task_id=task.id,
         status=status,
@@ -238,7 +238,7 @@ def build_task_created_event(task: TaskRecord) -> ReviewTaskSseEvent:
         event='task_created',
         task_id=task.id,
         stage='review_brief_compiling',
-        message='Review task created',
+        message='审查任务已创建',
         timestamp=task.createdAt,
         status='created',
         payload={'report_id': None},
@@ -250,7 +250,7 @@ def build_artifact_ready_event(task: TaskRecord, artifact: TaskArtifact) -> Revi
         event='artifact_ready',
         task_id=task.id,
         stage=map_internal_stage(task, []),
-        message=f'Artifact ready: {artifact.fileName}',
+        message=f'报告文件已生成：{artifact.fileName}',
         timestamp=datetime.now(timezone.utc),
         status=map_internal_status(task),
         artifact=_artifact_payload(artifact),
@@ -264,7 +264,7 @@ def build_terminal_event(task: TaskRecord) -> ReviewTaskSseEvent:
         event='failed' if is_failed else 'completed',
         task_id=task.id,
         stage='done',
-        message='Task failed' if is_failed else 'Task completed',
+        message='任务执行失败' if is_failed else '任务已完成',
         timestamp=task.updatedAt,
         status=status,
         payload={'degraded': status == 'degraded', 'report_id': task.id if status in {'completed', 'degraded'} else None},

@@ -49,6 +49,9 @@ const EVENT_MESSAGE_TRANSLATIONS: Record<string, string> = {
   "Structured facts extracted": "关键事实提取完成",
   "Rule engine finished": "规则匹配完成",
   "Evidence candidates assembled": "证据线索整理完成",
+  "Task completed": "任务已完成",
+  "Task failed": "任务执行失败",
+  "Review task created": "审查任务已创建",
 };
 
 function formatEventMessage(message: string | undefined) {
@@ -62,9 +65,39 @@ function formatEventMessage(message: string | undefined) {
     .replace(/^No output from agent:\s*/i, "专项审查器未返回有效结果：");
 }
 
-function formatModuleProgress(total: number, completed: number) {
-  if (!total) return 8;
-  return Math.max(8, Math.min(100, Math.round((Math.min(completed, total) / total) * 100)));
+function estimateReviewProgress({
+  totalAgents,
+  completedAgents,
+  stage,
+  status,
+}: {
+  totalAgents: number;
+  completedAgents: number;
+  stage?: string;
+  status?: string;
+}) {
+  const normalizedStatus = (status || "").trim().toLowerCase();
+  if (TERMINAL_STATES.has(normalizedStatus)) return 100;
+  if (stage === "report" || stage === "finalize") return 96;
+  if (stage === "hermes_controller") return 90;
+  if (["agent_select", "agent_running", "agent_done"].includes(stage || "")) {
+    if (!totalAgents) return 74;
+    return Math.max(60, Math.min(92, Math.round(60 + (Math.min(completedAgents, totalAgents) / totalAgents) * 30)));
+  }
+  if (stage === "rules" || stage === "evidence") return 48;
+  if (stage === "extract") return 30;
+  if (stage === "dispatch" || stage === "parse") return 16;
+  if (stage === "planning") return 8;
+  return 12;
+}
+
+function formatElapsed(seconds: number) {
+  const safe = Math.max(0, Math.floor(seconds));
+  const hours = Math.floor(safe / 3600);
+  const minutes = Math.floor((safe % 3600) / 60);
+  const secs = safe % 60;
+  if (hours > 0) return `${hours}时${String(minutes).padStart(2, "0")}分${String(secs).padStart(2, "0")}秒`;
+  return `${minutes}分${String(secs).padStart(2, "0")}秒`;
 }
 
 function isStructuredReviewResult(result: unknown): result is StructuredReviewResult {
@@ -158,6 +191,7 @@ export function TaskDetail({ taskId }: { taskId: string }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [transportMode, setTransportMode] = useState<"connecting" | "sse" | "polling">("connecting");
+  const [now, setNow] = useState(() => Date.now());
 
   const eventSourceRef = useRef<EventSource | null>(null);
   const pollingTimerRef = useRef<number | null>(null);
@@ -345,6 +379,12 @@ export function TaskDetail({ taskId }: { taskId: string }) {
     };
   }, [clearPolling, clearReconnect, closeStream, connectStream, loadTaskSnapshot]);
 
+  useEffect(() => {
+    if (!task || TERMINAL_STATES.has((task.status || "").trim().toLowerCase())) return;
+    const timer = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(timer);
+  }, [task]);
+
   const structuredResult = useMemo(() => {
     if (!task?.result || !isStructuredReviewResult(task.result)) return null;
     return task.result;
@@ -370,43 +410,44 @@ export function TaskDetail({ taskId }: { taskId: string }) {
 
   const progressSummary = useMemo(() => {
     const latestEvent = events[events.length - 1];
-    const activeAgentIds = Array.from(
-      new Set(
-        events
-          .filter((event) => event.stage === "agent_select")
-          .map((event) => {
-            const formatted = formatEventMessage(event.message);
-            return formatted.replace("已选择专项审查器：", "").trim();
-          })
-          .filter(Boolean),
-      ),
-    );
     const completedAgentEvents = events.filter((event) => event.stage === "agent_done");
     const debugTotalAgents = latestEvent?.debug?.totalAgents;
     const debugCompletedAgents = latestEvent?.debug?.completedAgents;
     const totalAgents = typeof debugTotalAgents === "number"
       ? debugTotalAgents
-      : activeAgentIds.length || structuredResult?.hermesController?.selectedAgents?.length || 0;
+      : structuredResult?.hermesController?.selectedAgents?.length || 0;
     const completedAgents = typeof debugCompletedAgents === "number"
       ? debugCompletedAgents
       : completedAgentEvents.length;
-    const activeAgents = activeAgentIds
-      .filter((name): name is string => Boolean(name))
-      .filter((name) => !completedAgentEvents.some((event) => formatEventMessage(event.message).includes(name)));
+    const stage = latestEvent?.stage || "";
     return {
       latestEvent,
-      currentStage: STAGE_LABELS[latestEvent?.stage || ""] || "审查执行中",
+      currentStage: STAGE_LABELS[stage] || "审查执行中",
       totalAgents,
       completedAgents,
-      activeAgents,
+      progressPercent: estimateReviewProgress({
+        totalAgents,
+        completedAgents,
+        stage,
+        status: task?.status,
+      }),
     };
-  }, [events, structuredResult]);
+  }, [events, structuredResult, task?.status]);
+
+  const reviewElapsedSeconds = useMemo(() => {
+    if (!task) return 0;
+    const startAt = events[0]?.timestamp || task.createdAt;
+    const endAt = TERMINAL_STATES.has((task.status || "").trim().toLowerCase()) ? task.updatedAt : new Date(now).toISOString();
+    const startTime = new Date(startAt).getTime();
+    const endTime = new Date(endAt).getTime();
+    if (Number.isNaN(startTime) || Number.isNaN(endTime)) return 0;
+    return Math.max(0, Math.floor((endTime - startTime) / 1000));
+  }, [events, now, task]);
 
   return (
     <main className="home-dashboard stack-lg" style={{ maxWidth: "1040px", margin: "0 auto", padding: "40px 0 64px" }}>
       <header className="hero-simple" style={{ marginBottom: "24px" }}>
         <h1 style={{ fontSize: "1.75rem", fontWeight: 700, color: "#172033", marginBottom: "8px" }}>任务详情</h1>
-        <p style={{ fontSize: "0.95rem", color: "#7A7A7A" }}>任务编号：{taskId}</p>
         <Link className="secondary-button" style={{ marginTop: "16px", display: "inline-flex" }} href="/">
           返回首页
         </Link>
@@ -452,50 +493,29 @@ export function TaskDetail({ taskId }: { taskId: string }) {
               </div>
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: "14px", marginBottom: "20px" }}>
-              <div style={{ background: "#F8F5EF", borderRadius: "18px", padding: "18px", border: "1px solid #ECE7DF" }}>
-                <div className="muted small">当前阶段</div>
-                <div style={{ fontWeight: 600, color: "#0F172A" }}>{progressSummary.currentStage}</div>
-              </div>
-              <div style={{ background: "#F8F5EF", borderRadius: "18px", padding: "18px", border: "1px solid #ECE7DF" }}>
-                <div className="muted small">长连接状态</div>
-                <div style={{ fontWeight: 600, color: "#0F172A" }}>{transportMode === "sse" ? "实时同步中" : transportMode === "polling" ? "轮询补偿中" : "连接建立中"}</div>
-              </div>
-              <div style={{ background: "#F8F5EF", borderRadius: "18px", padding: "18px", border: "1px solid #ECE7DF" }}>
-                <div className="muted small">专项审查器进度</div>
-                <div style={{ fontWeight: 600, color: "#0F172A" }}>
-                  {progressSummary.totalAgents ? `${Math.min(progressSummary.completedAgents, progressSummary.totalAgents)} / ${progressSummary.totalAgents}` : "等待主审选择"}
+            <div style={{ display: "flex", alignItems: "center", gap: "14px", marginBottom: "20px", padding: "18px 20px", borderRadius: "20px", background: "#F8F5EF", border: "1px solid #ECE7DF" }}>
+              {TERMINAL_STATES.has((task.status || "").trim().toLowerCase()) ? (
+                <span style={{ width: "26px", height: "26px", borderRadius: "999px", background: "#172033", opacity: 0.12, display: "inline-block", flexShrink: 0 }} />
+              ) : (
+                <div className="spinner" style={{ width: "26px", height: "26px", borderWidth: "3px", borderColor: "rgba(23, 32, 51, 0.14)", borderTopColor: "#172033", flexShrink: 0 }} />
+              )}
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: 600, color: "#172033", marginBottom: "4px" }}>
+                  {TERMINAL_STATES.has((task.status || "").trim().toLowerCase()) ? "审查已完成" : "系统正在持续审查中，请稍候"}
                 </div>
+                <div style={{ color: "#6B7280", fontSize: "0.92rem" }}>审查时间：{formatElapsed(reviewElapsedSeconds)}</div>
               </div>
             </div>
-
-            {progressSummary.latestEvent ? (
-              <div style={{ background: "#FFF7ED", color: "#9A3412", border: "1px solid #FED7AA", borderRadius: "16px", padding: "14px 16px", marginBottom: "18px" }}>
-                <strong>最近进度：</strong>
-                <span>{formatEventMessage(progressSummary.latestEvent.message)}</span>
-              </div>
-            ) : null}
 
             <div style={{ marginBottom: "18px" }}>
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px", fontSize: "0.88rem", color: "#7A7A7A" }}>
-                <span>系统执行进度</span>
-                <span>{formatModuleProgress(progressSummary.totalAgents, progressSummary.completedAgents)}%</span>
+                <span>审查进度</span>
+                <span>{progressSummary.progressPercent}%</span>
               </div>
               <div style={{ width: "100%", height: "10px", background: "#F1ECE4", borderRadius: "999px", overflow: "hidden" }}>
-                <div style={{ width: `${formatModuleProgress(progressSummary.totalAgents, progressSummary.completedAgents)}%`, height: "100%", background: "linear-gradient(90deg, #172033 0%, #43506A 100%)", borderRadius: "999px", transition: "width 0.3s ease" }} />
+                <div style={{ width: `${progressSummary.progressPercent}%`, height: "100%", background: "linear-gradient(90deg, #172033 0%, #43506A 100%)", borderRadius: "999px", transition: "width 0.3s ease" }} />
               </div>
             </div>
-
-            {progressSummary.activeAgents.length ? (
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "10px", marginBottom: "20px" }}>
-                {progressSummary.activeAgents.slice(0, 6).map((agentName) => (
-                  <span key={agentName} style={{ display: "inline-flex", alignItems: "center", gap: "8px", padding: "8px 12px", borderRadius: "999px", background: "#F4F1EB", color: "#172033", fontSize: "0.84rem", fontWeight: 600 }}>
-                    <span style={{ width: 8, height: 8, borderRadius: 4, background: "#172033", display: "inline-block", animation: "pulse 1.4s ease-in-out infinite" }} />
-                    {agentName}
-                  </span>
-                ))}
-              </div>
-            ) : null}
 
             {/* 人工复核需求 */}
             {(structuredResult?.support_result_008?.summary?.manualReviewNeeded || structuredResult?.summary?.manualReviewNeeded) ? (
@@ -558,22 +578,6 @@ export function TaskDetail({ taskId }: { taskId: string }) {
             )}
           </section>
 
-          <section className="glass-panel" style={{ background: "#FFFFFF", padding: "24px 32px", borderRadius: "24px", border: "1px solid #ECE7DF", boxShadow: "0 12px 30px rgba(15,23,42,0.04)" }}>
-            <h3 style={{ fontSize: "1.05rem", fontWeight: 600, marginBottom: "16px" }}>执行时间线</h3>
-            {events.length ? (
-              <div className="stack-sm" style={{ gap: "14px" }}>
-                {events.slice(-12).reverse().map((event, index) => (
-                  <div key={`${event.timestamp}-${index}`} style={{ borderLeft: "3px solid #D9D1C3", paddingLeft: "14px", paddingBottom: "4px" }}>
-                    <div style={{ fontWeight: 500, color: "#0F172A" }}>{STAGE_LABELS[event.stage] || "审查执行中"}</div>
-                    <div style={{ color: "#334155", lineHeight: 1.7 }}>{formatEventMessage(event.message)}</div>
-                    <div className="muted small">{new Date(event.timestamp).toLocaleString()}</div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="muted small">任务已创建，系统正在准备实时进度信息。</p>
-            )}
-          </section>
         </div>
       ) : null}
     </main>

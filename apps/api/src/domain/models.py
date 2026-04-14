@@ -126,7 +126,7 @@ class CreateTaskRequest(BaseModel):
 
     taskType: TaskType
     capabilityMode: CapabilityMode = 'auto'
-    query: str = Field(min_length=1)
+    query: str = ""
     datasetId: str | None = None
     collectionId: str | None = None
     fixtureId: str | None = None

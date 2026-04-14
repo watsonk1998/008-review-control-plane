@@ -76,10 +76,10 @@ export function AppShell({ children }: AppShellProps) {
               <>
                 <div className="nav-group-title">工作台</div>
                 <Link href="/" className={`nav-item ${pathname === "/" ? "active" : ""}`}>
-                  <span className="nav-icon">🚀</span> 发起审查
+                  发起审查
                 </Link>
                 <Link href="/tasks" className={`nav-item ${pathname.startsWith("/tasks") ? "active" : ""}`}>
-                  <span className="nav-icon">📋</span> 我的任务
+                  审查任务
                 </Link>
               </>
             )}

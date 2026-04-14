@@ -51,20 +51,25 @@ export default function TasksPage() {
     };
   }, []);
 
+  const reviewTasks = useMemo(
+    () => tasks.filter((task) => (task.taskType || "structured_review") === "structured_review" && Boolean(task.sourceDocumentRef)),
+    [tasks],
+  );
+
   const filteredTasks = useMemo(() => {
-    if (filter === "all") return tasks;
-    return tasks.filter((task) => task.status === filter);
-  }, [filter, tasks]);
+    if (filter === "all") return reviewTasks;
+    return reviewTasks.filter((task) => task.status === filter);
+  }, [filter, reviewTasks]);
 
   return (
     <main className="home-dashboard stack-lg" style={{ maxWidth: "980px", margin: "0 auto", padding: "40px 0" }}>
       <header className="hero-simple" style={{ marginBottom: "24px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div>
-          <h1 style={{ fontSize: "1.5rem", fontWeight: 600, color: "var(--foreground)", marginBottom: "8px" }}>我的任务</h1>
+          <h1 style={{ fontSize: "1.5rem", fontWeight: 600, color: "var(--foreground)", marginBottom: "8px" }}>审查任务</h1>
           <p style={{ fontSize: "0.95rem", color: "var(--muted)" }}>查看历史审查记录、当前执行状态与正式报告回看入口。</p>
         </div>
         <Link className="primary-button" href="/">
-          发起新审查
+          建果AI方案审查
         </Link>
       </header>
 
