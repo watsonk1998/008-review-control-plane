@@ -56,6 +56,7 @@ class TaskService:
             strictMode=strict_mode,
             policyPackIds=request.policyPackIds or [],
             rulePackIds=request.rulePackIds or [],
+            externalContext=request.externalContext,
             status='created',
             createdAt=now,
             updatedAt=now,

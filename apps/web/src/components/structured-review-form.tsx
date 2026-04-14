@@ -200,11 +200,11 @@ export function StructuredReviewForm({ form, setForm, supportScope }: Structured
     <div className="stack-lg">
       <div className="form-grid review-profile-grid">
         <label className="field">
-          <span style={{ fontWeight: 600, color: "#334155" }}>【单选】业务领域与一级分类</span>
+          <span style={{ fontWeight: 600, color: "#334155" }}>业务领域与一级分类</span>
           <select
             value={selection.group.l1Key}
             onChange={(e) => handleL1Change(e.target.value)}
-            style={{ padding: "10px", borderColor: "#CBD5E1", borderRadius: "6px" }}
+            style={{ padding: "16px 14px", borderColor: "#CBD5E1", borderRadius: "18px" }}
           >
             {taxonomy.map((group) => (
               <option key={group.l1Key} value={group.l1Key}>
@@ -218,16 +218,16 @@ export function StructuredReviewForm({ form, setForm, supportScope }: Structured
       <div className="field">
         <div className="stack-md">
           <div className="stack-sm">
-            <strong style={{ display: "block", marginBottom: "8px", color: "#475569" }}>【单选】方案大类</strong>
+            <strong style={{ display: "block", marginBottom: "8px", color: "#475569" }}>方案大类</strong>
             <div className="review-discipline-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
               {selection.group.families.map((family) => (
                 <label
                   className="checkbox-row inline-check"
                   key={family.documentType}
                   style={{
-                    background: "#F1F5F9",
-                    padding: "12px",
-                    borderRadius: "6px",
+                    background: "#F7F5F0",
+                    padding: "18px 16px",
+                    borderRadius: "18px",
                     border: selection.family.documentType === family.documentType ? "1px solid #0B192C" : "1px solid transparent",
                     cursor: "pointer",
                   }}
@@ -248,17 +248,17 @@ export function StructuredReviewForm({ form, setForm, supportScope }: Structured
 
           {selection.family.tags.length > 0 && (
             <div className="stack-sm" style={{ marginTop: "16px" }}>
-              <strong style={{ display: "block", marginBottom: "8px", color: "#475569" }}>【多选】附加细分专项（按需叠加）</strong>
+              <strong style={{ display: "block", marginBottom: "8px", color: "#475569" }}>附加细分专项</strong>
               <div className="review-discipline-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
                 {selection.family.tags.map((tag) => (
                   <label
                     className="checkbox-row inline-check"
                     key={tag.tag}
                     style={{
-                      background: selectedTags.has(tag.tag) ? "#F0F9FF" : "#F8FAFC",
-                      padding: "10px",
-                      borderRadius: "6px",
-                      border: selectedTags.has(tag.tag) ? "1px solid #7DD3FC" : "1px solid #E2E8F0",
+                      background: selectedTags.has(tag.tag) ? "#FFFFFF" : "#F8F5EF",
+                      padding: "16px 14px",
+                      borderRadius: "18px",
+                      border: selectedTags.has(tag.tag) ? "1px solid #D7D1C6" : "1px solid #ECE7DF",
                       cursor: "pointer",
                     }}
                   >

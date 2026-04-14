@@ -321,6 +321,15 @@ class StructuredReviewReportBuilder:
         'enhancement': '优化建议',
     }
     _SEVERITY_LABELS = {'high': '高', 'medium': '中', 'low': '低', 'info': '提示'}
+    _REPORT_MODULE_ORDER = ['structure_completeness', 'parameter_consistency', 'legality_compliance', 'execution_continuity', 'evidence_validation']
+    _REPORT_MODULE_LABELS = {
+        'structure_completeness': '章节完整性',
+        'parameter_consistency': '参数一致性',
+        'legality_compliance': '合法合规性',
+        'execution_continuity': '工序连贯性',
+        'evidence_validation': '证据验证',
+    }
+    _SECTION_INDEX_LABELS = {1: '第一', 2: '第二', 3: '第三', 4: '第四', 5: '第五', 6: '第六', 7: '第七', 8: '第八'}
     _GROUPED_SPECIAL_SCHEME_DOCUMENT_TYPES = {'hazardous_special_scheme', 'distribution_network_special_scheme'}
     _SPECIAL_SCHEME_STRUCTURE_POLICY_LABEL = '专项施工方案结构审查规则'
     _APPLICABILITY_LABELS = {
@@ -586,14 +595,12 @@ class StructuredReviewReportBuilder:
         matrices: StructuredReviewMatrices,
         parse_result,
         unresolved_facts,
+        enabled_modules: list[str] | None = None,
     ) -> str:
         document_label = self._document_type_label(summary.documentType)
-        basis_files = self._collect_basis_files(summary.selectedPacks or resolved_profile.policyPackIds, issues)
-        layer_sections = {
-            'L1': '第二部分：L1 审查发现——合法合规与结构完整性',
-            'L2': '第三部分：L2 审查发现——核心参数与规则实质性验证',
-            'L3': '第四部分：L3 审查发现——工程逻辑与实施风险预判',
-        }
+        basis_files = self._collect_visible_basis_files(summary.selectedPacks or resolved_profile.policyPackIds, issues)
+        module_order = self._resolve_enabled_modules(enabled_modules)
+        grouped_issues = self._group_issues_by_module(issues)
         lines = [
             f'# {document_label}形式审查报告',
             '',
@@ -607,96 +614,18 @@ class StructuredReviewReportBuilder:
             '',
             '### 2. 审查依据文件',
         ]
-        if basis_files['primary']:
-            lines.extend(['#### 主要审查依据文件', *[f'- {item}' for item in basis_files['primary']]])
+        if basis_files:
+            lines.extend(f'- {item}' for item in basis_files)
         else:
-            lines.append('#### 主要审查依据文件')
-            lines.append('- 本次未提取到可直接展示的外部规范或法规条文来源。')
-        if basis_files['supplemental']:
-            lines.extend(['', '#### 补充说明依据', *[f'- {item}' for item in basis_files['supplemental']]])
-        lines.append('')
-        lines.extend(self._render_first_section_notes(parse_result.visibility))
-        if matrices.structureCompleteness:
-            overview_issue_map, _ = self._build_structure_related_issue_map(
-                matrices.structureCompleteness,
-                issues,
-                compact=True,
-            )
-            lines.extend(self._render_first_section_overview_markdown(summary.documentType, matrices.structureCompleteness, overview_issue_map))
+            lines.append('- 本次未提取到可直接展示的正式规范或法规依据。')
+        note_lines = self._render_first_section_notes(parse_result.visibility)
+        if note_lines:
+            lines.extend(['', *note_lines])
 
-        lines.extend(['## ' + layer_sections['L1'], ''])
-        if summary.documentType == 'construction_org' and matrices.structureCompleteness:
-            l1_structure_issues = [
-                issue
-                for issue in issues
-                if issue.layer.value == 'L1' and issue.title in self._L1_STRUCTURE_TITLES
-            ]
-            l1_compliance_issues = [
-                issue
-                for issue in issues
-                if issue.layer.value == 'L1' and issue.title not in self._L1_STRUCTURE_TITLES | self._L1_PREFLIGHT_TITLES
-            ]
-            lines.extend(self._render_construction_org_l1_section(matrices, l1_structure_issues, l1_compliance_issues, issues))
-        elif matrices.structureCompleteness:
-            l1_structure_issues = [
-                issue for issue in issues if issue.layer.value == 'L1' and issue.title in self._L1_STRUCTURE_TITLES
-            ]
-            l1_compliance_issues = [
-                issue for issue in issues if issue.layer.value == 'L1' and issue.title not in self._L1_STRUCTURE_TITLES | self._L1_PREFLIGHT_TITLES
-            ]
-            lines.extend(self._render_generic_structure_l1_section_markdown(matrices, l1_structure_issues, l1_compliance_issues, issues))
-        else:
-            l1_issues = sorted(
-                [issue for issue in issues if issue.layer.value == 'L1'],
-                key=lambda issue: (self._SEVERITY_ORDER.get(issue.severity, 99), issue.title),
-            )
-            if l1_issues:
-                basis_lines = self._render_layer_basis(l1_issues)
-                if basis_lines:
-                    lines.extend(['### 主要审查依据', *basis_lines, ''])
-            if not l1_issues:
-                lines.extend(['- 本层未发现需要单独提示的问题。', ''])
-            else:
-                for index, issue in enumerate(l1_issues, start=1):
-                    lines.extend(self._render_issue(index, issue))
+        for section_index, module_name in enumerate(module_order, start=2):
+            lines.extend(['', f'## {self._section_label(section_index)}部分：{self._module_title(module_name)}', ''])
+            lines.extend(self._render_markdown_module_section(module_name, grouped_issues.get(module_name, []), matrices))
 
-        for layer in ['L2', 'L3']:
-            lines.extend(['## ' + layer_sections[layer], ''])
-            layer_issues = sorted(
-                [issue for issue in issues if issue.layer.value == layer],
-                key=lambda issue: (self._SEVERITY_ORDER.get(issue.severity, 99), issue.title),
-            )
-            if layer_issues:
-                basis_lines = self._render_layer_basis(layer_issues)
-                if basis_lines:
-                    lines.extend(['### 主要审查依据', *basis_lines, ''])
-            if not layer_issues:
-                lines.extend(['- 本层未发现需要单独提示的问题。', ''])
-                continue
-            for index, issue in enumerate(layer_issues, start=1):
-                lines.extend(self._render_issue(index, issue))
-
-        lines.extend(
-            [
-                '## 第五部分：关键数据识别汇总',
-                '',
-                '### 1. 危大工程识别情况',
-                *self._render_hazard_summary(matrices.hazardIdentification.values),
-                '',
-                '## 第六部分：解析说明与复核提示',
-                '',
-                '### 6.1 文档解析状态与预检结果',
-                *self._render_visibility_section(parse_result.visibility),
-                '',
-                '### 6.2 附件解析与关联情况',
-                *self._render_attachment_gaps(matrices.attachmentVisibility),
-                '',
-                '### 6.3 待人工确认事项',
-                *self._render_unresolved_facts(unresolved_facts, parse_result.visibility),
-                '',
-                '说明：完整结构化结果、矩阵明细及可追溯工件已保留在系统结果与附件中，供复核和留档使用。',
-            ]
-        )
         return '\n'.join(lines)
 
     def render_html(
@@ -708,20 +637,46 @@ class StructuredReviewReportBuilder:
         matrices: StructuredReviewMatrices,
         parse_result,
         unresolved_facts,
+        enabled_modules: list[str] | None = None,
     ) -> str:
         document_label = self._document_type_label(summary.documentType)
-        basis_files = self._collect_basis_files(summary.selectedPacks or resolved_profile.policyPackIds, issues)
+        basis_files = self._collect_visible_basis_files(summary.selectedPacks or resolved_profile.policyPackIds, issues)
+        module_order = self._resolve_enabled_modules(enabled_modules)
+        grouped_issues = self._group_issues_by_module(issues)
         html_parts = [
             '<article class="structured-report">',
             f'<h1 class="structured-report__title">{html.escape(document_label)}形式审查报告</h1>',
-            *self._render_html_first_section(summary, basis_files, parse_result.visibility, matrices, issues),
-            *self._render_html_l1_section(summary, matrices, issues),
-            *self._render_html_layer_section("第三部分：L2 审查发现——核心参数与规则实质性验证", [issue for issue in issues if issue.layer.value == "L2"]),
-            *self._render_html_layer_section("第四部分：L3 审查发现——工程逻辑与实施风险预判", [issue for issue in issues if issue.layer.value == "L3"]),
-            *self._render_html_data_summary_section(matrices),
-            *self._render_html_parse_notice_section(parse_result.visibility, matrices, unresolved_facts),
-            '</article>',
+            '<section class="structured-report__section">',
+            '<h2 class="structured-report__section-title">第一部分：审查结论与审查依据</h2>',
+            '<div class="structured-report__subsection">',
+            '<h3 class="structured-report__subsection-title">1. 总体审查结论</h3>',
+            '<ul class="structured-report__bullet-list">',
+            f'<li>审查结论：{html.escape(summary.overallConclusion)}</li>',
+            f'<li>文档类型：{html.escape(document_label)}</li>',
+            f'<li>是否需人工复核：{"是" if summary.manualReviewNeeded else "否"}</li>',
+            f'<li>当前识别问题总数：{summary.issueCount} 项</li>',
+            '</ul>',
+            '</div>',
+            '<div class="structured-report__subsection">',
+            '<h3 class="structured-report__subsection-title">2. 审查依据文件</h3>',
+            '<ul class="structured-report__basis-list">',
         ]
+        if basis_files:
+            html_parts.extend(f'<li>{html.escape(item)}</li>' for item in basis_files)
+        else:
+            html_parts.append('<li>本次未提取到可直接展示的正式规范或法规依据。</li>')
+        html_parts.extend(['</ul>'])
+        note_lines = self._render_first_section_notes(parse_result.visibility)
+        if note_lines:
+            html_parts.append('<ul class="structured-report__bullet-list">')
+            html_parts.extend(f'<li>{html.escape(line.removeprefix("- ").strip())}</li>' for line in note_lines if line.strip())
+            html_parts.append('</ul>')
+        html_parts.extend(['</div>', '</section>'])
+
+        for section_index, module_name in enumerate(module_order, start=2):
+            html_parts.extend(self._render_html_module_section(section_index, module_name, grouped_issues.get(module_name, []), matrices))
+
+        html_parts.append('</article>')
         return ''.join(html_parts)
 
     def render_print_css(self) -> str:
@@ -791,7 +746,6 @@ class StructuredReviewReportBuilder:
             '<div class="structured-report__subsection">',
             '<h3 class="structured-report__subsection-title">2.1 结构完整性与形式合规性</h3>',
             '<ul class="structured-report__bullet-list">',
-            '<li>审查依据：本节仅依据《建筑施工组织设计规范》GB/T 50502-2009 进行结构完整性与形式合规性审查。</li>',
             f'<li>总体结论：{html.escape(self._structure_completeness_conclusion(matrices.structureCompleteness))}</li>',
             '</ul>',
             '<div class="structured-report__table-wrap">',
@@ -1033,20 +987,98 @@ class StructuredReviewReportBuilder:
             return f'审查依据：引用自{source_label} {clause}'
         return f'审查依据：引用自{source_label}'
 
-    def _collect_basis_files(self, selected_packs: list[str], issues) -> dict[str, list[str]]:
-        primary: list[str] = []
-        supplemental: list[str] = []
+    def _resolve_enabled_modules(self, enabled_modules: list[str] | None) -> list[str]:
+        requested = [module for module in (enabled_modules or []) if module in self._REPORT_MODULE_ORDER]
+        return requested or list(self._REPORT_MODULE_ORDER)
+
+    def _section_label(self, index: int) -> str:
+        return self._SECTION_INDEX_LABELS.get(index, f'第{index}')
+
+    def _module_title(self, module_name: str) -> str:
+        return self._REPORT_MODULE_LABELS.get(module_name, self._clean_report_text(module_name))
+
+    def _collect_visible_basis_files(self, selected_packs: list[str], issues) -> list[str]:
+        basis: list[str] = []
         seen: set[str] = set()
         for source_id in self._iter_policy_source_ids(selected_packs, issues):
+            if self._is_expert_review_point_source(source_id):
+                continue
             label, is_external = self._normalize_policy_source(source_id)
-            if label in seen:
+            if not is_external or label in seen:
                 continue
             seen.add(label)
-            if is_external:
-                primary.append(label)
-            else:
-                supplemental.append(label)
-        return {'primary': primary, 'supplemental': supplemental}
+            basis.append(label)
+        return basis
+
+    def _issue_module_name(self, issue) -> str:
+        layer = getattr(getattr(issue, 'layer', None), 'value', '')
+        text = self._clean_report_text(f"{getattr(issue, 'title', '')} {getattr(issue, 'summary', '')}")
+        if getattr(issue, 'title', '') in self._L1_STRUCTURE_TITLES or any(keyword in text for keyword in ['章节', '目录', '编制依据', '结构', '完整性']):
+            return 'structure_completeness'
+        if getattr(issue, 'issueKind', '') in {'visibility_gap', 'evidence_gap'} or any(keyword in text for keyword in ['附件', '附图', '图纸', '照片', '记录', '证据', '工作票', '操作票', '勘察', '旁站']):
+            return 'evidence_validation'
+        if any(keyword in text for keyword in ['参数', '验算', '计算', '数值', '容量', '荷载', '长度', '起止时间', '时间', '范围']):
+            return 'parameter_consistency'
+        if any(keyword in text for keyword in ['工序', '流程', '停电', '送电', '恢复', '链路', '步骤', '闭环', '验电', '接地', '挂牌', '遮栏', '反送电']):
+            return 'execution_continuity'
+        if layer == 'L3':
+            return 'execution_continuity'
+        if layer == 'L2':
+            return 'legality_compliance'
+        return 'legality_compliance'
+
+    def _group_issues_by_module(self, issues) -> dict[str, list]:
+        grouped = {module: [] for module in self._REPORT_MODULE_ORDER}
+        for issue in sorted(issues, key=lambda item: (self._SEVERITY_ORDER.get(item.severity, 99), item.title)):
+            grouped[self._issue_module_name(issue)].append(issue)
+        return grouped
+
+    def _render_markdown_module_section(self, module_name: str, module_issues, matrices: StructuredReviewMatrices) -> list[str]:
+        lines: list[str] = []
+        if module_name == 'structure_completeness' and matrices.structureCompleteness:
+            lines.append(f'- 总体结论：{self._structure_completeness_conclusion(matrices.structureCompleteness)}')
+            lines.append('')
+            lines.append('### 重点缺项与补齐建议')
+            lines.extend(
+                self._render_structure_followups_grouped(matrices.structureCompleteness)
+                if any(row.scope == 'special' for row in matrices.structureCompleteness)
+                else self._render_structure_followups(matrices.structureCompleteness)
+            )
+            lines.append('')
+        if not module_issues:
+            lines.extend(['- 本模块未发现需要单独提示的问题。', ''])
+            return lines
+        for index, issue in enumerate(module_issues, start=1):
+            lines.extend(self._render_issue(index, issue))
+        return lines
+
+    def _render_html_module_section(self, section_index: int, module_name: str, module_issues, matrices: StructuredReviewMatrices) -> list[str]:
+        parts = [
+            '<section class="structured-report__section">',
+            f'<h2 class="structured-report__section-title">{html.escape(self._section_label(section_index))}部分：{html.escape(self._module_title(module_name))}</h2>',
+        ]
+        if module_name == 'structure_completeness' and matrices.structureCompleteness:
+            parts.extend([
+                '<div class="structured-report__subsection">',
+                '<h3 class="structured-report__subsection-title">重点缺项与补齐建议</h3>',
+                f'<p class="structured-report__subsection-intro">总体结论：{html.escape(self._structure_completeness_conclusion(matrices.structureCompleteness))}</p>',
+            ])
+            parts.extend(
+                self._render_structure_followups_grouped_html(matrices.structureCompleteness)
+                if any(row.scope == 'special' for row in matrices.structureCompleteness)
+                else self._render_structure_followups_html(matrices.structureCompleteness)
+            )
+            parts.append('</div>')
+        if module_issues:
+            parts.extend(self._render_issue_cards_html(module_issues))
+        else:
+            parts.append('<p class="structured-report__muted">本模块未发现需要单独提示的问题。</p>')
+        parts.append('</section>')
+        return parts
+
+    def _collect_basis_files(self, selected_packs: list[str], issues) -> dict[str, list[str]]:
+        primary = self._collect_visible_basis_files(selected_packs, issues)
+        return {'primary': primary, 'supplemental': []}
 
     def _iter_policy_source_ids(self, selected_packs: list[str], issues):
         for issue in issues:
@@ -1148,7 +1180,6 @@ class StructuredReviewReportBuilder:
         ]
         lines = [
             '### 2.1 结构完整性与形式合规性',
-            '- 审查依据：本节仅依据《建筑施工组织设计规范》GB/T 50502-2009 进行结构完整性与形式合规性审查。',
             f'- 总体结论：{self._structure_completeness_conclusion(matrices.structureCompleteness)}',
             '',
             self._render_structure_completeness_table_html(matrices.structureCompleteness, related_issue_map),

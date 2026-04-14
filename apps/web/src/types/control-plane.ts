@@ -514,6 +514,11 @@ export interface CreateTaskRequest {
   disciplineTags?: string[];
   strictMode?: boolean;
   policyPackIds?: string[];
+  reviewIntent?: {
+    enabled_modules: ReviewModuleName[];
+    disabled_modules: ReviewModuleName[];
+    focus_requirements: string[];
+  };
   externalContext?: ExternalIntegrationContext | null;
 }
 

@@ -44,6 +44,29 @@ const STAGE_LABELS: Record<string, string> = {
   finalize: "已完成",
 };
 
+const EVENT_MESSAGE_TRANSLATIONS: Record<string, string> = {
+  "Document parsed for structured review": "文档解析完成",
+  "Structured facts extracted": "关键事实提取完成",
+  "Rule engine finished": "规则匹配完成",
+  "Evidence candidates assembled": "证据线索整理完成",
+};
+
+function formatEventMessage(message: string | undefined) {
+  const raw = (message || "").trim();
+  if (!raw) return "系统正在有序处理中";
+  return EVENT_MESSAGE_TRANSLATIONS[raw] || raw
+    .replace(/^Selected agent:\s*/i, "已选择专项审查器：")
+    .replace(/^Running agent:\s*/i, "专项审查器运行中：")
+    .replace(/^Completed agent:\s*/i, "专项审查器已完成：")
+    .replace(/^Failed agent:\s*/i, "专项审查器执行失败：")
+    .replace(/^No output from agent:\s*/i, "专项审查器未返回有效结果：");
+}
+
+function formatModuleProgress(total: number, completed: number) {
+  if (!total) return 8;
+  return Math.max(8, Math.min(100, Math.round((Math.min(completed, total) / total) * 100)));
+}
+
 function isStructuredReviewResult(result: unknown): result is StructuredReviewResult {
   return Boolean(
     result &&
@@ -55,7 +78,7 @@ function isStructuredReviewResult(result: unknown): result is StructuredReviewRe
 function manualReviewReasonLabel(value: string | null | undefined) {
   switch (value) {
     case "parser_limited_pdf_requires_manual_review":
-      return "PDF 当前仅 text-only 可视域，需按 parser-limited 路径人工复核";
+      return "PDF 当前仅完成基础文本识别，需结合原件人工复核";
     case "explicit_missing_marker":
       return "附件被正文显式标记为缺失/后补";
     case "title_detected_but_body_not_reliably_parsed":
@@ -75,7 +98,7 @@ function manualReviewReasonLabel(value: string | null | undefined) {
     case "visibility_unknown":
       return "当前可视域无法确定";
     case "weak_section_structure_signal":
-      return "关键章节或附件边界标题重复，canonical section extraction 不稳定";
+      return "关键章节或附件边界标题重复，章节定位结果不稳定";
     case "manual_confirmation_required":
       return "需要人工确认";
     default:
@@ -352,11 +375,8 @@ export function TaskDetail({ taskId }: { taskId: string }) {
         events
           .filter((event) => event.stage === "agent_select")
           .map((event) => {
-            const explicitId = event.debug?.templateId;
-            if (typeof explicitId === "string" && explicitId.trim()) {
-              return explicitId.trim();
-            }
-            return event.message.replace("Selected agent: ", "").trim();
+            const formatted = formatEventMessage(event.message);
+            return formatted.replace("已选择专项审查器：", "").trim();
           })
           .filter(Boolean),
       ),
@@ -370,19 +390,23 @@ export function TaskDetail({ taskId }: { taskId: string }) {
     const completedAgents = typeof debugCompletedAgents === "number"
       ? debugCompletedAgents
       : completedAgentEvents.length;
+    const activeAgents = activeAgentIds
+      .filter((name): name is string => Boolean(name))
+      .filter((name) => !completedAgentEvents.some((event) => formatEventMessage(event.message).includes(name)));
     return {
       latestEvent,
       currentStage: STAGE_LABELS[latestEvent?.stage || ""] || "审查执行中",
       totalAgents,
       completedAgents,
+      activeAgents,
     };
   }, [events, structuredResult]);
 
   return (
-    <main className="home-dashboard stack-lg" style={{ maxWidth: "900px", margin: "0 auto", padding: "40px 0" }}>
+    <main className="home-dashboard stack-lg" style={{ maxWidth: "1040px", margin: "0 auto", padding: "40px 0 64px" }}>
       <header className="hero-simple" style={{ marginBottom: "24px" }}>
-        <h1 style={{ fontSize: "1.5rem", fontWeight: 600, color: "var(--foreground)", marginBottom: "8px" }}>任务详情</h1>
-        <p style={{ fontSize: "0.95rem", color: "var(--muted)" }}>任务编号: {taskId}</p>
+        <h1 style={{ fontSize: "1.75rem", fontWeight: 700, color: "#172033", marginBottom: "8px" }}>任务详情</h1>
+        <p style={{ fontSize: "0.95rem", color: "#7A7A7A" }}>任务编号：{taskId}</p>
         <Link className="secondary-button" style={{ marginTop: "16px", display: "inline-flex" }} href="/">
           返回首页
         </Link>
@@ -404,7 +428,7 @@ export function TaskDetail({ taskId }: { taskId: string }) {
       {task && !loading && !error ? (
         <div className="stack-lg">
           {/* 状态总览卡片 */}
-          <section className="glass-panel" style={{ background: "#FFFFFF", padding: "32px", borderRadius: "12px", border: "1px solid #E2E8F0" }}>
+          <section className="glass-panel" style={{ background: "#FFFFFF", padding: "32px", borderRadius: "24px", border: "1px solid #ECE7DF", boxShadow: "0 18px 40px rgba(15,23,42,0.05)" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
               <div style={{ display: "flex", gap: "16px", alignItems: "center" }}>
                 <span style={{ fontSize: "1.1rem", fontWeight: 600 }}>当前审查状态</span>
@@ -420,24 +444,24 @@ export function TaskDetail({ taskId }: { taskId: string }) {
                   }`}
                   style={{ fontSize: "1rem", padding: "6px 16px" }}
                 >
-                  {TASK_STATUS_MAP[(task.status || "").trim().toLowerCase()] || task.status.toUpperCase()}
+                  {TASK_STATUS_MAP[(task.status || "").trim().toLowerCase()] || task.status}
                 </span>
               </div>
               <div style={{ color: "#64748B", fontSize: "0.9rem" }}>
-                创建时间: {new Date(task.createdAt).toLocaleString()}
+                创建时间：{new Date(task.createdAt).toLocaleString()}
               </div>
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: "12px", marginBottom: "20px" }}>
-              <div style={{ background: "#F8FAFC", borderRadius: "8px", padding: "16px" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: "14px", marginBottom: "20px" }}>
+              <div style={{ background: "#F8F5EF", borderRadius: "18px", padding: "18px", border: "1px solid #ECE7DF" }}>
                 <div className="muted small">当前阶段</div>
                 <div style={{ fontWeight: 600, color: "#0F172A" }}>{progressSummary.currentStage}</div>
               </div>
-              <div style={{ background: "#F8FAFC", borderRadius: "8px", padding: "16px" }}>
+              <div style={{ background: "#F8F5EF", borderRadius: "18px", padding: "18px", border: "1px solid #ECE7DF" }}>
                 <div className="muted small">长连接状态</div>
                 <div style={{ fontWeight: 600, color: "#0F172A" }}>{transportMode === "sse" ? "实时同步中" : transportMode === "polling" ? "轮询补偿中" : "连接建立中"}</div>
               </div>
-              <div style={{ background: "#F8FAFC", borderRadius: "8px", padding: "16px" }}>
+              <div style={{ background: "#F8F5EF", borderRadius: "18px", padding: "18px", border: "1px solid #ECE7DF" }}>
                 <div className="muted small">专项审查器进度</div>
                 <div style={{ fontWeight: 600, color: "#0F172A" }}>
                   {progressSummary.totalAgents ? `${Math.min(progressSummary.completedAgents, progressSummary.totalAgents)} / ${progressSummary.totalAgents}` : "等待主审选择"}
@@ -446,9 +470,30 @@ export function TaskDetail({ taskId }: { taskId: string }) {
             </div>
 
             {progressSummary.latestEvent ? (
-              <div style={{ background: "#FFF7ED", color: "#9A3412", border: "1px solid #FED7AA", borderRadius: "8px", padding: "14px 16px", marginBottom: "20px" }}>
+              <div style={{ background: "#FFF7ED", color: "#9A3412", border: "1px solid #FED7AA", borderRadius: "16px", padding: "14px 16px", marginBottom: "18px" }}>
                 <strong>最近进度：</strong>
-                <span>{progressSummary.latestEvent.message}</span>
+                <span>{formatEventMessage(progressSummary.latestEvent.message)}</span>
+              </div>
+            ) : null}
+
+            <div style={{ marginBottom: "18px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px", fontSize: "0.88rem", color: "#7A7A7A" }}>
+                <span>系统执行进度</span>
+                <span>{formatModuleProgress(progressSummary.totalAgents, progressSummary.completedAgents)}%</span>
+              </div>
+              <div style={{ width: "100%", height: "10px", background: "#F1ECE4", borderRadius: "999px", overflow: "hidden" }}>
+                <div style={{ width: `${formatModuleProgress(progressSummary.totalAgents, progressSummary.completedAgents)}%`, height: "100%", background: "linear-gradient(90deg, #172033 0%, #43506A 100%)", borderRadius: "999px", transition: "width 0.3s ease" }} />
+              </div>
+            </div>
+
+            {progressSummary.activeAgents.length ? (
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "10px", marginBottom: "20px" }}>
+                {progressSummary.activeAgents.slice(0, 6).map((agentName) => (
+                  <span key={agentName} style={{ display: "inline-flex", alignItems: "center", gap: "8px", padding: "8px 12px", borderRadius: "999px", background: "#F4F1EB", color: "#172033", fontSize: "0.84rem", fontWeight: 600 }}>
+                    <span style={{ width: 8, height: 8, borderRadius: 4, background: "#172033", display: "inline-block", animation: "pulse 1.4s ease-in-out infinite" }} />
+                    {agentName}
+                  </span>
+                ))}
               </div>
             ) : null}
 
@@ -470,7 +515,7 @@ export function TaskDetail({ taskId }: { taskId: string }) {
                     : "系统预检提示文档完整性存在潜在问题。"}
                 </p>
                 {(structuredResult?.support_result_008?.visibility?.manualReviewReason || structuredResult?.visibility?.manualReviewReason) ? (
-                  <p>系统降级指引: {manualReviewReasonLabel(structuredResult?.support_result_008?.visibility?.manualReviewReason || structuredResult?.visibility?.manualReviewReason)}</p>
+                  <p>系统降级指引：{manualReviewReasonLabel(structuredResult?.support_result_008?.visibility?.manualReviewReason || structuredResult?.visibility?.manualReviewReason)}</p>
                 ) : null}
               </div>
             ) : null}
@@ -513,20 +558,20 @@ export function TaskDetail({ taskId }: { taskId: string }) {
             )}
           </section>
 
-          <section className="glass-panel" style={{ background: "#FFFFFF", padding: "24px 32px", borderRadius: "12px", border: "1px solid #E2E8F0" }}>
+          <section className="glass-panel" style={{ background: "#FFFFFF", padding: "24px 32px", borderRadius: "24px", border: "1px solid #ECE7DF", boxShadow: "0 12px 30px rgba(15,23,42,0.04)" }}>
             <h3 style={{ fontSize: "1.05rem", fontWeight: 600, marginBottom: "16px" }}>执行时间线</h3>
             {events.length ? (
-              <div className="stack-sm">
+              <div className="stack-sm" style={{ gap: "14px" }}>
                 {events.slice(-12).reverse().map((event, index) => (
-                  <div key={`${event.timestamp}-${index}`} style={{ borderLeft: "3px solid #CBD5E1", paddingLeft: "12px" }}>
-                    <div style={{ fontWeight: 500, color: "#0F172A" }}>{STAGE_LABELS[event.stage] || event.stage}</div>
-                    <div style={{ color: "#334155" }}>{event.message}</div>
+                  <div key={`${event.timestamp}-${index}`} style={{ borderLeft: "3px solid #D9D1C3", paddingLeft: "14px", paddingBottom: "4px" }}>
+                    <div style={{ fontWeight: 500, color: "#0F172A" }}>{STAGE_LABELS[event.stage] || "审查执行中"}</div>
+                    <div style={{ color: "#334155", lineHeight: 1.7 }}>{formatEventMessage(event.message)}</div>
                     <div className="muted small">{new Date(event.timestamp).toLocaleString()}</div>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="muted small">任务已创建，等待后台返回进度事件。</p>
+              <p className="muted small">任务已创建，系统正在准备实时进度信息。</p>
             )}
           </section>
         </div>

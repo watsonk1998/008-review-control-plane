@@ -139,6 +139,7 @@ class CreateTaskRequest(BaseModel):
     strictMode: bool | None = None
     policyPackIds: list[str] | None = None
     rulePackIds: list[str] | None = None
+    reviewIntent: 'ReviewTaskIntent | None' = None
     externalContext: ExternalIntegrationContext | None = None
 
     @model_validator(mode='after')

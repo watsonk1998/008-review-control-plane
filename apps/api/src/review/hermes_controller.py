@@ -155,7 +155,7 @@ class HermesController:
                 })
                 if emit:
                     emit('template', 'hermes_controller', 'info',
-                         f'Candidate template generated for simulation/learning (not injected into formal run): {candidate_template.id}')
+                         f'已生成候选审查器（仅用于学习/模拟，不进入正式链路）：{candidate_template.id}')
 
             agent_results: list[dict[str, Any]] = []
             support_packet_008: FactPacket | None = None
@@ -180,7 +180,7 @@ class HermesController:
             parallel_matches = [match for match in selected_templates if match.template.execution_mode == 'hermes_router']
 
             for match in selected_templates:
-                _emit_agent_event('agent_select', f'Selected agent: {match.template.id}', template_id=match.template.id, reasons=match.reasons)
+                _emit_agent_event('agent_select', f'已选择专项审查器：{match.template.agent_name}', template_id=match.template.id, reasons=match.reasons)
 
             def _consume_run_result(template: AgentTemplate, result_payload: dict[str, Any]) -> None:
                 nonlocal support_packet_008, support_result_008, completed_agents
@@ -196,11 +196,11 @@ class HermesController:
                         packet.metadata = {**packet.metadata, 'template_id': template.id, 'agent_id': template.id}
                         hermes_review_packets.append(packet)
                 completed_agents += 1
-                _emit_agent_event('agent_done', f'专项审查器已完成：{template.id}', template_id=template.id)
+                _emit_agent_event('agent_done', f'专项审查器已完成：{template.agent_name}', template_id=template.id)
 
             for match in sequential_matches:
                 template = match.template
-                _emit_agent_event('agent_running', f'主审引擎处理中：{template.id}', template_id=template.id)
+                _emit_agent_event('agent_running', f'专项审查器运行中：{template.agent_name}', template_id=template.id)
                 run_result = await self.agent_runner.run_template(
                     template,
                     brief=brief,
@@ -216,7 +216,7 @@ class HermesController:
                         'agent_running',
                         'hermes_controller',
                         'info',
-                        f'专项审查器并行运行中：{template.id}',
+                        f'专项审查器并行运行中：{template.agent_name}',
                         debug={'templateId': template.id, 'completedAgents': completed_agents, 'totalAgents': total_agents},
                     )
                 try:
@@ -244,11 +244,11 @@ class HermesController:
                     template = match.template
                     if exc is not None:
                         completed_agents += 1
-                        _emit_agent_event('agent_done', f'专项审查器执行失败：{template.id}（已跳过）', template_id=template.id, failed=True)
+                        _emit_agent_event('agent_done', f'专项审查器执行失败：{template.agent_name}（已跳过）', template_id=template.id, failed=True)
                         continue
                     if result_payload is None:
                         completed_agents += 1
-                        _emit_agent_event('agent_done', f'专项审查器未产出结果：{template.id}', template_id=template.id)
+                        _emit_agent_event('agent_done', f'专项审查器未产出结果：{template.agent_name}', template_id=template.id)
                         continue
                     _consume_run_result(template, result_payload)
 
@@ -269,7 +269,7 @@ class HermesController:
             enriched.setdefault('hermesController', {})['enabled'] = True
         except Exception as exc:
             if emit:
-                emit('hermes_controller', 'hermes_controller', 'failed', f'Hermes controller failed, falling back to degraded mode: {exc}')
+                emit('hermes_controller', 'hermes_controller', 'failed', f'Hermes 主审异常，已切换为降级路径：{exc}')
 
             # Execute degraded path by running support review directly
             support_output = await self.capability_facade.primary_support_review(workspace=workspace, context=context)
@@ -313,7 +313,7 @@ class HermesController:
 
         if final_packet is not None and getattr(self, 'llm_gateway', None):
             if emit:
-                emit('hermes_controller', 'hermes_controller', 'info', '派出最终审查报告表达层子agent...', debug={"status": "presentation_pass_started"})
+                emit('hermes_controller', 'hermes_controller', 'info', '正在生成最终正式报告...', debug={"status": "presentation_pass_started"})
             presentation_result = await self.presentation_agent.generate_presentation(final_packet)
             
             # HARD CONSTRAINT: Presentation output MUST NOT overwrite the assembler's

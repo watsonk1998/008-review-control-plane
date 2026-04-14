@@ -105,7 +105,7 @@ class StructuredReviewExecutor:
         ) if write_json_artifact else None
         self._record_artifact(artifact_records, l0_artifact, category='parse', stage='parse')
         if emit:
-            emit('parse', 'structured_review', 'completed', 'Document parsed for structured review', artifact_path=parse_artifact)
+            emit('parse', 'structured_review', 'completed', '文档解析完成', artifact_path=parse_artifact)
 
         facts = self._extract_facts(parse_result)
 
@@ -129,7 +129,7 @@ class StructuredReviewExecutor:
         facts_artifact = write_json_artifact('structured-review-facts', facts.model_dump(mode='json')) if write_json_artifact else None
         self._record_artifact(artifact_records, facts_artifact, category='facts', stage='extract')
         if emit:
-            emit('extract', 'structured_review', 'completed', 'Structured facts extracted', artifact_path=facts_artifact)
+            emit('extract', 'structured_review', 'completed', '关键事实提取完成', artifact_path=facts_artifact)
         rules_artifact = write_json_artifact('structured-review-rule-hits', [hit.model_dump(mode='json') for hit in rule_hits]) if write_json_artifact else None
         self._record_artifact(artifact_records, rules_artifact, category='rule_hits', stage='rules')
         if emit:
@@ -137,7 +137,7 @@ class StructuredReviewExecutor:
                 'rules',
                 'structured_review',
                 'completed',
-                'Rule engine finished',
+                '规则匹配完成',
                 artifact_path=rules_artifact,
                 debug={
                     'selectedPacks': [pack.id for pack in executable_packs],
@@ -149,13 +149,14 @@ class StructuredReviewExecutor:
         evidence_artifact = write_json_artifact('structured-review-candidates', [candidate.model_dump(mode='json') for candidate in candidates]) if write_json_artifact else None
         self._record_artifact(artifact_records, evidence_artifact, category='candidates', stage='evidence')
         if emit:
-            emit('evidence', 'structured_review', 'completed', 'Evidence candidates assembled', artifact_path=evidence_artifact)
+            emit('evidence', 'structured_review', 'completed', '证据线索整理完成', artifact_path=evidence_artifact)
 
         llm_gateway = None if options.get('disable_llm_explanation') else self.llm_gateway
         final_issues = await finalize_issues(candidates, llm_gateway=llm_gateway)
         final_issues = self._link_issues_to_unresolved_facts(final_issues, facts.unresolvedFacts)
         facts.unresolvedFacts = self._link_unresolved_facts_to_issues(facts.unresolvedFacts, final_issues)
         matrices = build_review_matrices(parse_result, facts, rule_hits, final_issues)
+        enabled_modules = self._resolve_enabled_modules_from_plan(plan)
         summary = self.report_builder.build_summary(
             document_type=resolved_profile.documentType,
             selected_packs=resolved_profile.policyPackIds,
@@ -172,6 +173,7 @@ class StructuredReviewExecutor:
             matrices=matrices,
             parse_result=parse_result,
             unresolved_facts=facts.unresolvedFacts,
+            enabled_modules=enabled_modules,
         )
         report_html = self.report_builder.render_html(
             summary=summary,
@@ -180,10 +182,11 @@ class StructuredReviewExecutor:
             matrices=matrices,
             parse_result=parse_result,
             unresolved_facts=facts.unresolvedFacts,
+            enabled_modules=enabled_modules,
         )
         report_print_css = self.report_builder.render_print_css()
         if emit:
-            emit('report', 'structured_review', 'completed', 'Structured review report assembled')
+            emit('report', 'structured_review', 'completed', '正式报告生成完成')
 
         report_artifacts: list[str] = []
         report_files: list[str] = []
@@ -290,6 +293,13 @@ class StructuredReviewExecutor:
                 write_binary_artifact=write_binary_artifact,
             )
         )
+
+    def _resolve_enabled_modules_from_plan(self, plan: dict[str, Any] | None) -> list[str] | None:
+        hermes_input = dict((plan or {}).get('hermesInput') or {})
+        selections = dict(hermes_input.get('frontendSelections') or {})
+        review_intent = dict(selections.get('review_intent') or {})
+        enabled_modules = [module for module in review_intent.get('enabled_modules') or [] if isinstance(module, str)]
+        return enabled_modules or None
 
     def _build_task(
         self,

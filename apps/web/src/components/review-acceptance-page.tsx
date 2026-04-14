@@ -27,8 +27,8 @@ const MODULE_OPTIONS: Array<{ value: ReviewModuleName; label: string }> = [
   { value: "structure_completeness", label: "结构完整性" },
   { value: "parameter_consistency", label: "参数一致性" },
   { value: "legality_compliance", label: "合法合规性" },
-  { value: "execution_continuity", label: "执行连续性" },
-  { value: "evidence_validation", label: "证据校验" },
+  { value: "execution_continuity", label: "工序连贯性" },
+  { value: "evidence_validation", label: "证据验证" },
 ];
 
 function splitLines(value: string) {
@@ -40,6 +40,14 @@ function splitLines(value: string) {
 
 function prettyJson(value: unknown) {
   return JSON.stringify(value, null, 2);
+}
+
+function riskLabel(value: string) {
+  return ({ high: "高风险", medium: "中等风险", low: "低风险", unknown: "未判定" } as Record<string, string>)[value] || value;
+}
+
+function moduleStatusLabel(value: string) {
+  return ({ available: "已生成", partial: "部分覆盖", not_applicable: "未启用" } as Record<string, string>)[value] || value;
 }
 
 export function ReviewAcceptancePage() {
@@ -184,7 +192,7 @@ export function ReviewAcceptancePage() {
       <section className="hero-card stack-md">
         <p className="eyebrow">审查 Agent 前后端冻结验收</p>
         <h1 className="page-title">最小前端验收闭环</h1>
-        <p className="muted">该页面只验证上传 → 创建任务 → 状态 / SSE → 最终结果 → 反馈，不承担正式产品 UI 职责。</p>
+        <p className="muted">该页面用于冻结契约验收，验证上传、任务创建、实时进度、结果回看与反馈闭环。</p>
       </section>
 
       <section className="glass-panel stack-lg">
@@ -200,7 +208,7 @@ export function ReviewAcceptancePage() {
             <small>{targetFile ? `${targetFile.file_name} (${targetFile.file_id})` : "尚未上传"}</small>
           </label>
           <label className="field">
-            <span>Basis 文件</span>
+            <span>审查依据文件</span>
             <input type="file" accept=".docx,.pdf,.md,.txt" disabled={uploading === "basis"} onChange={(event) => {
               const file = event.target.files?.[0];
               if (file) void handleUpload("basis", file);
@@ -209,7 +217,7 @@ export function ReviewAcceptancePage() {
             <small>{basisFiles.length ? basisFiles.map((item) => item.file_name).join("、") : "可选"}</small>
           </label>
           <label className="field">
-            <span>Context 文件</span>
+            <span>上下文资料</span>
             <input type="file" accept=".docx,.pdf,.md,.txt" disabled={uploading === "context"} onChange={(event) => {
               const file = event.target.files?.[0];
               if (file) void handleUpload("context", file);
@@ -237,7 +245,7 @@ export function ReviewAcceptancePage() {
 
         <div className="stack-md">
           <div>
-            <strong>enabled_modules</strong>
+            <strong>启用模块</strong>
             <div className="task-type-toggle" role="group" aria-label="enabled-modules">
               {MODULE_OPTIONS.map((module) => (
                 <button
@@ -252,7 +260,7 @@ export function ReviewAcceptancePage() {
             </div>
           </div>
           <div>
-            <strong>disabled_modules</strong>
+            <strong>关闭模块</strong>
             <div className="task-type-toggle" role="group" aria-label="disabled-modules">
               {MODULE_OPTIONS.map((module) => (
                 <button
@@ -267,7 +275,7 @@ export function ReviewAcceptancePage() {
             </div>
           </div>
           <label className="field">
-            <span>focus_requirements（每行一个）</span>
+            <span>自定义规则（每行一条）</span>
             <textarea rows={4} value={focusRequirements} onChange={(e) => setFocusRequirements(e.target.value)} />
           </label>
         </div>
@@ -286,17 +294,17 @@ export function ReviewAcceptancePage() {
       </section>
 
       <section className="glass-panel stack-lg">
-        <h2>4. 任务状态 / SSE</h2>
+        <h2>4. 任务状态与实时事件</h2>
         {task ? <pre className="code-block">{prettyJson(task)}</pre> : <p className="muted">尚未创建任务</p>}
         <div className="stack-sm">
-          <h3>SSE 时间线</h3>
+          <h3>实时事件时间线</h3>
           {events.length ? events.map((event, index) => (
             <div key={`${event.timestamp}-${index}`} className="callout">
               <strong>{event.event}</strong> · {event.stage} · {event.status}
               <div className="muted small">{event.message}</div>
-              {event.artifact ? <div className="muted small">artifact: {event.artifact.file_name}</div> : null}
+              {event.artifact ? <div className="muted small">工件：{event.artifact.file_name}</div> : null}
             </div>
-          )) : <p className="muted">尚未收到 SSE 事件</p>}
+          )) : <p className="muted">尚未收到 实时 事件</p>}
         </div>
       </section>
 
@@ -306,14 +314,14 @@ export function ReviewAcceptancePage() {
           <>
             <div className="callout">
               <strong>{result.summary.overall_conclusion}</strong>
-              <div className="muted small">risk: {result.summary.risk_level} · report_id: {result.report_id}</div>
+              <div className="muted small">风险等级：{riskLabel(result.summary.risk_level)} · 报告编号：{result.report_id}</div>
             </div>
             <div className="form-grid review-profile-grid">
               {Object.entries(result.modules).map(([key, module]) => (
                 <div key={key} className="glass-panel stack-sm">
                   <strong>{module.title}</strong>
-                  <div className="muted small">status: {module.status}</div>
-                  <div className="muted small">findings: {module.findings.length}</div>
+                  <div className="muted small">状态：{moduleStatusLabel(module.status)}</div>
+                  <div className="muted small">发现项：{module.findings.length}</div>
                   <pre className="code-block">{prettyJson(module.severity_summary)}</pre>
                 </div>
               ))}

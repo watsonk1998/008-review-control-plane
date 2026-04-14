@@ -51,7 +51,7 @@ REVIEW_MODULE_BINDINGS: dict[str, ReviewModuleBinding] = {
     ),
     'execution_continuity': ReviewModuleBinding(
         module_name='execution_continuity',
-        title='执行连续性',
+        title='工序连贯性',
         hermes_templates=['execution_risk_reviewer', 'power_outage_operation_chain_reviewer'],
         support_capabilities=['fact_extract', 'rule_and_evidence'],
         decision_policy='prefer_conservative_sequence_expression',
@@ -59,7 +59,7 @@ REVIEW_MODULE_BINDINGS: dict[str, ReviewModuleBinding] = {
     ),
     'evidence_validation': ReviewModuleBinding(
         module_name='evidence_validation',
-        title='证据校验',
+        title='证据验证',
         hermes_templates=['visibility_gap_reviewer'],
         support_capabilities=['parse_visibility', 'rule_and_evidence'],
         decision_policy='degrade_when_evidence_is_insufficient',
