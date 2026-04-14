@@ -13,13 +13,21 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /app
 
-# We mount volume at runtime, but we copy the files here for the initial pip install
-COPY apps/api /app/apps/api
+# Cache Layer 1: Copy only dependency definition to prevent invalidating entire pip cache on source code change
+COPY apps/api/pyproject.toml /app/apps/api/
 
 WORKDIR /app/apps/api
 
-RUN pip install --no-cache-dir -i https://pypi.tuna.tsinghua.edu.cn/simple -e . \
+# Create a dummy src structure so pip install doesn't fail parsing the package tree
+RUN mkdir -p src/review_control_plane_api && touch README.md src/__init__.py \
+    && pip install --no-cache-dir -i https://pypi.tuna.tsinghua.edu.cn/simple -e . \
     && python -m playwright install --with-deps chromium
+
+# Cache Layer 2: Copy the actual volatile business logic
+COPY apps/api /app/apps/api
+
+# (Optional) re-run editable install in case entrypoints changed, usually heavily cached
+RUN pip install --no-cache-dir -i https://pypi.tuna.tsinghua.edu.cn/simple -e .
 
 EXPOSE 8018
 

@@ -87,5 +87,11 @@ All user-visible content in reports, interfaces, and statuses MUST be presented 
 - the machine-readable source of truth is `config/hermes_upstream.yaml`.
 - upgrade and patch policy are defined in `docs/architecture/hermes-upstream-contract.md`.
 
+## Deployment SOP
+
+- Any deployment to the server MUST strictly follow the instructions and architectural caveats outlined in `hermes-agent-deployment-sop.md`.
+- Be aware of the **Dual-Cache Layer** structure in `Dockerfile.api`. Even though runtime volumes exist for Python hot-reloading, explicitly executing `--build` (e.g., `docker compose up -d --build api`) is the heavily-cached best practice for guaranteeing dependency consistency.
+- Ensure production environment files (like `.env`) are excluded from any automated `rsync` synchronizations to prevent catastrophic credential loss.
+
 ## Archive Strategy
 - Historically deprecated code, outdated scripts, unlinked tests, and obsolete experimentation artifacts MUST be moved to the `archive/` directory instead of being permanently deleted immediately. This ensures a clean active tree while retaining history for manual confirmation.
