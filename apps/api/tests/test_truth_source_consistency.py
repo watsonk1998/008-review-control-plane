@@ -167,6 +167,7 @@ def test_distribution_network_governed_basis_files_are_registered(basis_registry
         "power-grid-《工程建设标准强制性条文 电力工程部分》（2016年版）",
         "power-grid-《中国南方电网公司电网建设工程专项施工方案管理工作指引》（2022）",
         "power-grid-《中国南方电网基建施工方案全流程管控工作指引》",
+        "power-grid-监理工程师对停电施工方案的审核规则及要点",
     }
     for basis_id in expected_basis_ids:
         assert basis_id in basis_registry_data, f"missing governed basis: {basis_id}"
@@ -179,3 +180,15 @@ def test_distribution_network_governed_basis_files_are_registered(basis_registry
         assert {"distribution_network_special_scheme", "power_outage_work"} <= tags, (
             f"{basis_id} missing distribution-network applicability tags"
         )
+
+
+def test_distribution_network_excludes_generic_construction_and_hazardous_basis_tags(basis_registry_data):
+    excluded_basis_ids = {
+        "construction-《建筑施工组织设计规范》GB/T 50502-2009",
+        "construction-《建设工程监理规范》GB/T 50319",
+        "construction-《危险性较大的分部分项工程专项施工方案编制指南》（建办质〔2021〕48号）",
+    }
+    for basis_id in excluded_basis_ids:
+        entry = basis_registry_data[basis_id]
+        tags = set(entry.get("applicability_tags", []))
+        assert "distribution_network_special_scheme" not in tags

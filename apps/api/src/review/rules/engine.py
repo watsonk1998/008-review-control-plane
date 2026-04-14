@@ -1182,6 +1182,26 @@ class ReviewRuleEngine:
         fact_refs = [f'project.structureCompleteness.{row["itemKey"]}' for row in [*deficient_rows, *blocked_rows]]
         if not special_rows:
             fact_refs = ['project.structureCompleteness.powerOutageScope']
+        normalized_text = self._normalized_text(parse_result)
+        outage_scope_ready = self._text_contains_keywords(normalized_text, ('停电范围', '停电线路', '停电设备', '停电线路及设备范围'))
+        work_content_ready = self._text_contains_keywords(normalized_text, ('作业内容', '工作内容', '施工内容', '作业任务'))
+        outage_time_ready = self._text_contains_keywords(normalized_text, ('停电时间', '停电起止', '计划停电', '恢复送电时间', '送电时间', '恢复时间'))
+        important_user_ready = self._text_contains_keywords(normalized_text, ('重要用户', '保供', '用户告知', '停电通知'))
+        personnel_ready = self._text_contains_keywords(normalized_text, ('工作负责人', '监护人', '特种作业', '持证', '上岗证', '培训', '交底'))
+        approval_ready = self._text_contains_keywords(normalized_text, ('停电申请', '审批', '批复', '许可', '工作许可', '用户告知', '调度许可'))
+        survey_ready = self._text_contains_keywords(normalized_text, ('现场勘察', '勘察记录', '现场踏勘'))
+        ticket_ready = self._text_contains_keywords(normalized_text, ('工作票', '操作票', '工作许可'))
+        grounding_ready = self._text_contains_keywords(normalized_text, ('接地线', '接地装置', '验电', '挂接地线', '拆接地线'))
+        acceptance_ready = bool(section_presence.get('acceptanceRequirements')) or self._text_contains_keywords(normalized_text, ('验收', '质量控制', '质量管控', '验收要求'))
+        five_step_tokens = ('停电', '验电', '接地', '挂牌', '遮栏')
+        five_step_count = sum(1 for token in five_step_tokens if token in normalized_text)
+        anti_backfeed_count = sum(1 for token in ('反送电', '倒送电', '双电源', '低压反送电') if token in normalized_text)
+        restoration_count = sum(
+            1
+            for token in ('完工检查', '拆接地线', '恢复送电', '送电恢复', '资料归档', '整改闭环', '终结手续')
+            if token in normalized_text
+        )
+
         pack_id, pack_readiness = pack_by_rule.get(
             'power_outage_work_structure_completeness',
             ('power_outage_work.base', 'ready'),
@@ -1201,6 +1221,148 @@ class ReviewRuleEngine:
             )
         )
 
+        basic_pack_id, basic_pack_readiness = pack_by_rule.get(
+            'power_outage_work_basic_info_integrity',
+            ('power_outage_work.base', 'ready'),
+        )
+        basic_missing_refs: list[str] = []
+        if not outage_scope_ready:
+            basic_missing_refs.append('project.structureCompleteness.powerOutageScope')
+        if not work_content_ready:
+            basic_missing_refs.append('project.structureCompleteness.powerOutageWorkContent')
+        if not outage_time_ready:
+            basic_missing_refs.append('schedule.shutdownWindowDays')
+        if not important_user_ready:
+            basic_missing_refs.append('project.sectionPresence.specialPreparationBasis')
+        hits.append(
+            RuleHit(
+                ruleId='power_outage_work_basic_info_integrity',
+                packId=basic_pack_id,
+                packReadiness=basic_pack_readiness,
+                matchType='inferred_risk',
+                status='hit' if basic_missing_refs else 'pass',
+                layerHint=ReviewLayer.L2,
+                severityHint='high' if len(basic_missing_refs) >= 2 else 'medium',
+                factRefs=basic_missing_refs or ['project.structureCompleteness.powerOutageScope'],
+                evidenceRefs=['policy:power_outage_work_basic_info'],
+                rationale='停电施工方案应明确停电范围、作业内容、停复电时间以及重要用户保障等基础信息。',
+            )
+        )
+
+        personnel_pack_id, personnel_pack_readiness = pack_by_rule.get(
+            'power_outage_work_personnel_qualification_and_training',
+            ('power_outage_work.base', 'ready'),
+        )
+        personnel_refs = []
+        if not any(self._matches_structure_item(row, 'powerOutageStaffing') for row in special_rows):
+            personnel_refs.append('project.structureCompleteness.powerOutageStaffing')
+        if not personnel_ready:
+            personnel_refs.append('resource.laborTotal')
+        hits.append(
+            RuleHit(
+                ruleId='power_outage_work_personnel_qualification_and_training',
+                packId=personnel_pack_id,
+                packReadiness=personnel_pack_readiness,
+                matchType='inferred_risk',
+                status='hit' if personnel_refs else 'pass',
+                layerHint=ReviewLayer.L2,
+                severityHint='medium',
+                factRefs=personnel_refs or ['project.structureCompleteness.powerOutageStaffing'],
+                evidenceRefs=['policy:power_outage_work_personnel_training'],
+                rationale='停电施工方案应明确工作负责人、监护人、持证上岗、培训交底和现场监护安排。',
+            )
+        )
+
+        approval_pack_id, approval_pack_readiness = pack_by_rule.get(
+            'power_outage_work_application_approval_linkage',
+            ('power_outage_work.base', 'ready'),
+        )
+        approval_refs = []
+        if not approval_ready:
+            approval_refs.extend(['project.sectionPresence.preparationBasis', 'project.sectionPresence.processMethod'])
+        hits.append(
+            RuleHit(
+                ruleId='power_outage_work_application_approval_linkage',
+                packId=approval_pack_id,
+                packReadiness=approval_pack_readiness,
+                matchType='inferred_risk',
+                status='hit' if approval_refs else 'pass',
+                layerHint=ReviewLayer.L2,
+                severityHint='high',
+                factRefs=approval_refs or ['project.sectionPresence.preparationBasis'],
+                evidenceRefs=['policy:power_outage_work_application_approval'],
+                rationale='停电施工作业应形成停电申请、审批、许可办理及用户告知等前置手续闭环。',
+            )
+        )
+
+        five_step_pack_id, five_step_pack_readiness = pack_by_rule.get(
+            'power_outage_work_shutdown_five_step_closure',
+            ('power_outage_work.base', 'ready'),
+        )
+        five_step_refs = []
+        if five_step_count < 4:
+            five_step_refs.extend(['project.sectionPresence.processMethod', 'project.structureCompleteness.powerOutageSafetyControl'])
+        hits.append(
+            RuleHit(
+                ruleId='power_outage_work_shutdown_five_step_closure',
+                packId=five_step_pack_id,
+                packReadiness=five_step_pack_readiness,
+                matchType='inferred_risk',
+                status='hit' if five_step_refs else 'pass',
+                layerHint=ReviewLayer.L2,
+                severityHint='high',
+                factRefs=five_step_refs or ['project.sectionPresence.processMethod'],
+                evidenceRefs=['policy:power_outage_work_five_step'],
+                rationale='停电作业应围绕停电、验电、接地、挂牌、遮栏建立全过程安全措施闭环。',
+            )
+        )
+
+        anti_pack_id, anti_pack_readiness = pack_by_rule.get(
+            'power_outage_work_anti_backfeed_controls',
+            ('power_outage_work.base', 'ready'),
+        )
+        anti_refs = []
+        if anti_backfeed_count == 0:
+            anti_refs.extend(['hazard.temporaryPower', 'project.structureCompleteness.powerOutageSafetyControl'])
+        hits.append(
+            RuleHit(
+                ruleId='power_outage_work_anti_backfeed_controls',
+                packId=anti_pack_id,
+                packReadiness=anti_pack_readiness,
+                matchType='inferred_risk',
+                status='hit' if anti_refs else 'pass',
+                layerHint=ReviewLayer.L2,
+                severityHint='high',
+                factRefs=anti_refs or ['hazard.temporaryPower'],
+                evidenceRefs=['policy:power_outage_work_anti_backfeed'],
+                rationale='停电施工方案应针对双电源、反送电、倒送电等场景设置防误送电控制措施。',
+            )
+        )
+
+        ticket_survey_pack_id, ticket_survey_pack_readiness = pack_by_rule.get(
+            'power_outage_work_work_ticket_and_site_survey',
+            ('power_outage_work.base', 'ready'),
+        )
+        ticket_survey_refs = []
+        if not ticket_ready:
+            ticket_survey_refs.append('project.sectionPresence.processMethod')
+        if not survey_ready:
+            ticket_survey_refs.append('project.sectionPresence.specialPreparationBasis')
+        hits.append(
+            RuleHit(
+                ruleId='power_outage_work_work_ticket_and_site_survey',
+                packId=ticket_survey_pack_id,
+                packReadiness=ticket_survey_pack_readiness,
+                matchType='inferred_risk',
+                status='hit' if ticket_survey_refs else 'pass',
+                layerHint=ReviewLayer.L3,
+                severityHint='medium',
+                factRefs=ticket_survey_refs or ['project.sectionPresence.processMethod'],
+                evidenceRefs=['policy:power_outage_work_application_approval'],
+                rationale='停电作业应具备工作票、操作票和现场勘察记录等前置证据链。',
+            )
+        )
+
         controls_pack_id, controls_pack_readiness = pack_by_rule.get(
             'power_outage_work_safety_and_quality_controls',
             ('power_outage_work.base', 'ready'),
@@ -1210,7 +1372,7 @@ class ReviewRuleEngine:
             missing_control_refs.append('project.structureCompleteness.powerOutageSafetyControl')
         if not any(self._matches_structure_item(row, 'powerOutageQualityControl') for row in special_rows):
             missing_control_refs.append('project.structureCompleteness.powerOutageQualityControl')
-        if not section_presence.get('acceptanceRequirements'):
+        if not acceptance_ready:
             missing_control_refs.append('project.sectionPresence.acceptanceRequirements')
         hits.append(
             RuleHit(
@@ -1223,12 +1385,10 @@ class ReviewRuleEngine:
                 severityHint='medium',
                 factRefs=missing_control_refs or ['project.structureCompleteness.powerOutageSafetyControl'],
                 evidenceRefs=['policy:power_outage_work_controls'],
-                rationale='停电施工作业专项应将安全管控、质量管控和验收要求串成稳定的执行控制链。',
+                rationale='停电施工作业专项应将安全控制、质量控制和关键验收点串成稳定的执行控制链。',
             )
         )
 
-        normalized_text = str(getattr(parse_result, 'normalizedText', '') or '')
-        grounding_ready = any(keyword in normalized_text for keyword in ('接地线', '接地装置', '验电', '工作票', '操作票'))
         ticket_pack_id, ticket_pack_readiness = pack_by_rule.get(
             'power_outage_work_ticket_grounding_traceability',
             ('power_outage_work.base', 'ready'),
@@ -1239,12 +1399,34 @@ class ReviewRuleEngine:
                 packId=ticket_pack_id,
                 packReadiness=ticket_pack_readiness,
                 matchType='inferred_risk',
-                status='pass' if grounding_ready else 'hit',
+                status='pass' if (grounding_ready and ticket_ready) else 'hit',
                 layerHint=ReviewLayer.L3,
                 severityHint='high',
                 factRefs=['project.structureCompleteness.powerOutageScope', 'project.sectionPresence.processMethod'],
                 evidenceRefs=['policy:power_outage_work_ticket_grounding'],
                 rationale='停电施工作业应对工作票/操作票、验电和接地线等关键执行证据链形成可追溯表达。',
+            )
+        )
+
+        restoration_pack_id, restoration_pack_readiness = pack_by_rule.get(
+            'power_outage_work_restoration_and_archive_closure',
+            ('power_outage_work.base', 'ready'),
+        )
+        restoration_refs = []
+        if restoration_count < 3:
+            restoration_refs.extend(['project.sectionPresence.acceptanceRequirements', 'project.structureCompleteness.powerOutageEmergencyMeasures'])
+        hits.append(
+            RuleHit(
+                ruleId='power_outage_work_restoration_and_archive_closure',
+                packId=restoration_pack_id,
+                packReadiness=restoration_pack_readiness,
+                matchType='inferred_risk',
+                status='hit' if restoration_refs else 'pass',
+                layerHint=ReviewLayer.L3,
+                severityHint='medium',
+                factRefs=restoration_refs or ['project.sectionPresence.acceptanceRequirements'],
+                evidenceRefs=['policy:power_outage_work_restoration_closure'],
+                rationale='停电施工作业应明确完工检查、拆接地线、恢复送电、资料归档及整改闭环要求。',
             )
         )
         return hits
@@ -1498,6 +1680,12 @@ class ReviewRuleEngine:
                 rationale='煤气区域作业至少应形成控制措施、监测监控与中毒/窒息/爆炸类应急处置的同链表达。',
             )
         ]
+
+    def _normalized_text(self, parse_result) -> str:
+        return str(getattr(parse_result, 'normalizedText', '') or '')
+
+    def _text_contains_keywords(self, text: str, keywords: tuple[str, ...]) -> bool:
+        return any(keyword in text for keyword in keywords)
 
     def _contains_keywords(self, values: list[str], keywords: tuple[str, ...]) -> bool:
         return any(any(keyword in str(value) for keyword in keywords) for value in values)

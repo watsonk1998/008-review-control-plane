@@ -1499,17 +1499,19 @@ def test_support_scope_route_returns_official_and_placeholder_scope():
     assert packs['curtain_wall_installation.base']['readiness'] == 'ready'
     assert packs['manual_bored_pile.base']['readiness'] == 'ready'
     assert packs['steel_structure_installation.base']['readiness'] == 'ready'
-    capability_tree = payload['capabilityTree']
-    assert capability_tree[0]['entryKey'] == 'special_scheme_review'
-    families = {item['documentType']: item for item in capability_tree[0]['families']}
-    assert families['hazardous_special_scheme']['label'] == '危大工程专项施工方案'
-    assert families['distribution_network_special_scheme']['label'] == '配网工程专项施工方案'
-    hazardous_children = {item['tag'] for item in families['hazardous_special_scheme']['children']}
+    capability_tree = {item['entryKey']: item for item in payload['capabilityTree']}
+    assert 'special_scheme_review' in capability_tree
+    assert 'general_management_review' in capability_tree
+    hazardous_families = {item['documentType']: item for item in capability_tree['special_scheme_review']['families']}
+    assert hazardous_families['hazardous_special_scheme']['label'] == '危大工程专项施工方案'
+    hazardous_children = {item['tag'] for item in hazardous_families['hazardous_special_scheme']['children']}
     assert 'foundation_pit' in hazardous_children
     assert 'steel_structure_installation' in hazardous_children
-    distribution_children = {item['tag'] for item in families['distribution_network_special_scheme']['children']}
+    general_families = {item['documentType']: item for item in capability_tree['general_management_review']['families']}
+    assert general_families['distribution_network_special_scheme']['label'] == '配电配网工程（停电施工专项）'
+    distribution_children = {item['tag'] for item in general_families['distribution_network_special_scheme']['children']}
     assert distribution_children == {'power_outage_work'}
-    cross_modules = {item['tag'] for item in capability_tree[0]['crossCuttingModules']}
+    cross_modules = {item['tag'] for item in capability_tree['general_management_review']['crossCuttingModules']}
     assert 'temporary_power' in cross_modules
     assert 'hot_work' in cross_modules
     assert 'gas_area_ops' in cross_modules

@@ -210,17 +210,20 @@ class BasisPackResolver:
                 basis_ids=pack_basis_ids,
             ))
 
-        # Auto-discover bases matching the active context (profile, level tags, pack families)
-        tags_to_match = {profile_id, doc_type, classification.get("level1"), "all"}
-        for p in resolved_packs:
-            tags_to_match.add(p.pack_id)
-            tags_to_match.add(p.family)
-            
-        tags_to_match.discard(None)  # Remove empty values if any
+        # Auto-discover bases matching the active context (profile, level tags, pack families).
+        # For配电配网/停电专项，严格采用显式 pack basis，避免把通用施组、监理或危大依据误吸入。
+        enable_tag_expansion = profile_id != 'distribution_network_special_scheme'
+        if enable_tag_expansion:
+            tags_to_match = {profile_id, doc_type, classification.get("level1"), "all"}
+            for p in resolved_packs:
+                tags_to_match.add(p.pack_id)
+                tags_to_match.add(p.family)
 
-        for tag in tags_to_match:
-            if tag in self._tag_to_basis_ids:
-                collected_basis_ids.extend(self._tag_to_basis_ids[tag])
+            tags_to_match.discard(None)  # Remove empty values if any
+
+            for tag in tags_to_match:
+                if tag in self._tag_to_basis_ids:
+                    collected_basis_ids.extend(self._tag_to_basis_ids[tag])
 
         # 4. Deduplicate basis IDs (order-preserved)
         unique_basis_ids = list(dict.fromkeys(collected_basis_ids))

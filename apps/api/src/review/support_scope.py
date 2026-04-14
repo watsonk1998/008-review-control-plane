@@ -15,7 +15,7 @@ DOCUMENT_TYPE_LABELS = {
     'construction_org': '施工组织设计审查',
     'construction_scheme': '一般施工方案审查',
     'hazardous_special_scheme': '危大工程专项施工方案',
-    'distribution_network_special_scheme': '配网工程专项施工方案',
+    'distribution_network_special_scheme': '配电配网工程（停电施工专项）',
     'supervision_plan': '监理规划审查',
     'review_support_material': '审查辅助材料（边界说明）',
 }
@@ -82,7 +82,15 @@ def get_pack_support_scope() -> list[dict[str, object]]:
             'defaultEnabled': pack.defaultEnabled,
             'description': pack.description,
             'promotionCriteria': pack.promotionCriteria,
-            'entryKey': 'special_scheme_review' if pack.role in {'third_level', 'cross_cutting'} or pack.familyKey in {'hazardous_special_scheme', 'distribution_network_special_scheme'} else None,
+            'entryKey': (
+                'special_scheme_review'
+                if pack.familyKey == 'hazardous_special_scheme'
+                else 'general_management_review'
+                if pack.familyKey == 'distribution_network_special_scheme'
+                else 'general_management_review'
+                if pack.id in {'temporary_power.base', 'hot_work.base', 'gas_area_ops.base'}
+                else None
+            ),
             'familyKey': pack.familyKey,
             'role': pack.role,
             'tier': pack.tier,
@@ -93,7 +101,8 @@ def get_pack_support_scope() -> list[dict[str, object]]:
 
 def get_special_scheme_capability_tree() -> list[dict[str, object]]:
     registry = get_policy_pack_registry()
-    families = []
+    hazardous_families = []
+    general_families = []
     for document_type in ['hazardous_special_scheme', 'distribution_network_special_scheme']:
         base_pack_id = f'{document_type}.base'
         base_pack = registry[base_pack_id]
@@ -111,7 +120,7 @@ def get_special_scheme_capability_tree() -> list[dict[str, object]]:
                     'promotionCriteria': pack.promotionCriteria,
                 }
             )
-        families.append(
+        family_payload = (
             {
                 'familyKey': document_type,
                 'documentType': document_type,
@@ -122,6 +131,10 @@ def get_special_scheme_capability_tree() -> list[dict[str, object]]:
                 'children': family_children,
             }
         )
+        if document_type == 'hazardous_special_scheme':
+            hazardous_families.append(family_payload)
+        else:
+            general_families.append(family_payload)
 
     cross_cutting_modules = []
     for pack in registry.values():
@@ -142,10 +155,16 @@ def get_special_scheme_capability_tree() -> list[dict[str, object]]:
     return [
         {
             'entryKey': 'special_scheme_review',
-            'label': '专项方案审查',
-            'families': families,
+            'label': '危大工程专项审查',
+            'families': hazardous_families,
             'crossCuttingModules': cross_cutting_modules,
-        }
+        },
+        {
+            'entryKey': 'general_management_review',
+            'label': '一般专项与管理体系类审查',
+            'families': general_families,
+            'crossCuttingModules': cross_cutting_modules,
+        },
     ]
 
 

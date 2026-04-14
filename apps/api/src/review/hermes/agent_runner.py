@@ -34,8 +34,9 @@ class HermesAgentRunner:
         if template.execution_mode == 'hermes_router':
             parse_result = workspace.get('parse_result')
             doc_text = parse_result.normalizedText if parse_result else ''
+            effective_brief = self._brief_for_template(brief, template, workspace.get('governed_support_packet'))
             packet = await self.hermes_engine.review(
-                brief=brief,
+                brief=effective_brief,
                 fact_packet_008=workspace.get('support_packet_008'),
                 document_preview=doc_text,
                 governed_support_packet=workspace.get('governed_support_packet'),
@@ -48,7 +49,7 @@ class HermesAgentRunner:
                 'template_id': template.id,
                 'worker_id': 'hermes_router',
                 'module_ids': list(template.module_bindings),
-                'review_modules': template_review_modules(template.id),
+                'review_modules': self._template_review_modules(template),
                 'ownership': 'hermes_main_review',
             }
         else:
@@ -63,7 +64,7 @@ class HermesAgentRunner:
         )
 
     def _annotate_finding_ownership(self, template: AgentTemplate, finding: FindingItem) -> FindingItem:
-        review_modules = template_review_modules(template.id)
+        review_modules = self._template_review_modules(template)
         module_name = self._resolve_finding_module_name(finding, review_modules)
         finding.raw_data = {
             **finding.raw_data,
@@ -98,7 +99,7 @@ class HermesAgentRunner:
                 'template_id': template.id,
                 'worker_id': 'structured_review_primary_worker',
                 'module_ids': list(template.module_bindings),
-                'review_modules': template_review_modules(template.id),
+                'review_modules': self._template_review_modules(template),
                 'ownership': 'support_material',
             }
             for finding in packet.findings:
@@ -174,6 +175,24 @@ class HermesAgentRunner:
             return self._build_packet(template, findings, overall='规范命中与证据线索已整理。')
         return None
 
+
+    def _template_review_modules(self, template: AgentTemplate) -> list[str]:
+        configured = list(template.metadata.get('review_modules') or [])
+        return configured or template_review_modules(template.id)
+
+    def _brief_for_template(self, brief, template: AgentTemplate, governed_support_packet) -> Any:
+        focus_lines = []
+        if template.instructions:
+            focus_lines.append(f'专项职责：{template.instructions}')
+        if template.prompt:
+            focus_lines.append(f'专项任务：{template.prompt}')
+        priority_focus_axes = list(getattr(governed_support_packet, 'priority_focus_axes', []) or [])
+        if priority_focus_axes and template.id.startswith('power_outage_'):
+            focus_lines.append('优先深挖轴：' + '；'.join(priority_focus_axes))
+        if not focus_lines:
+            return brief
+        merged_query = '\n'.join([brief.query.strip(), *focus_lines]).strip()
+        return brief.model_copy(update={'query': merged_query, 'metadata': {**brief.metadata, 'template_id': template.id}})
     def _build_packet(self, template: AgentTemplate, findings: list[FindingItem], *, overall: str) -> FactPacket:
         findings = [self._annotate_finding_ownership(template, finding) for finding in findings]
         metrics = ReviewPacketMetrics(
@@ -198,7 +217,7 @@ class HermesAgentRunner:
                 'template_id': template.id,
                 'worker_id': template.execution_mode,
                 'module_ids': list(template.module_bindings),
-                'review_modules': template_review_modules(template.id),
+                'review_modules': self._template_review_modules(template),
                 'ownership': template.metadata.get('ownership', 'hermes_main_review' if template.execution_mode == 'hermes_router' else 'support_material'),
             },
         )

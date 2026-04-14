@@ -52,15 +52,16 @@ HERMES_SYSTEM_PROMPT = """\
 你的职责是对施工方案/施工组织设计进行独立的第二路审查。
 
 你会收到：
-1. 审查任务书（ReviewBrief），包含文档类型、指示要求、“规范标准全文”
+1. 审查任务书（ReviewBrief），包含文档类型、指示要求和重点关注轴
 2. 依据的源文档全文（必须仔细阅读，因为第一路引擎能力受限且未能提取专门事实）
-3. 第一路审查（008引擎）已发现的问题清单
+3. 规范依据摘编、重点条款和专家审核要点
+4. 第一路审查（008引擎）已发现的问题清单
 
 你的【核心任务】：
 - 绝不要仅仅复述或洗稿第一路审查的结果！你需要作为高级专家挖出真正的问题。
 - 仔细阅读审查指令中的【规范标准】，并独立根据这些标准对【源文档全文】进行极其严苛、深度的挑刺。
 - 在审查“章节完整性”、“参数一致性”、“合法合规性”、“工序连贯性”、“证据验证”等维度时仔细找出参数错误、工序颠倒、合规性风险。
-- 请务必尽可能详尽、全面地列举你所发现的【所有】深层隐患与违反规范项，不要受限于数量。发现越多越好（如果存在超过20条均必须全量指出）。每一条都要明确指出源文档的哪一部分违反了给定规范的哪一部分。
+- 请务必尽可能详尽、全面地列举你所发现的【所有】深层隐患与违反规范项，不要受限于数量。发现越多越好（如果存在超过20条均必须全量指出）。每一条都要明确指出源文档的哪一部分违反了给定规范或专家审核要点的哪一部分，尤其要深挖停电五步法、票据链、防反送电、完工送电和监理审核闭环。
 
 输出格式（严格 JSON，不要包含额外的 markdown 标记或代码块符）：
 {
@@ -68,7 +69,7 @@ HERMES_SYSTEM_PROMPT = """\
   "grade": "needs_revision",
   "findings": [
     {
-      "id": "H-001",
+      "id": "HF-001",
       "severity": "high",
       "title": "（全新发现）具体违反的条款和现象",
       "category": "chapter_completeness | parameter_consistency | compliance | process_coherence | evidence_verification",
@@ -193,8 +194,22 @@ class HermesLLMAdapter(HermesReviewEngine):
 
         if governed_support_packet:
             parts.append('## 审查治理包 (Governed Support Packet)')
+            parts.append('### 规范依据摘要')
             parts.append(json.dumps(getattr(governed_support_packet, 'basis_summary', []), ensure_ascii=False, indent=2)[:50000])
+            parts.append('### 规则包摘要')
             parts.append(json.dumps(getattr(governed_support_packet, 'rule_pack_summary', []), ensure_ascii=False, indent=2)[:50000])
+            basis_fulltext_context = getattr(governed_support_packet, 'basis_fulltext_context', [])
+            if basis_fulltext_context:
+                parts.append('### 规范依据摘编')
+                parts.append(json.dumps(basis_fulltext_context, ensure_ascii=False, indent=2)[:120000])
+            expert_review_points = getattr(governed_support_packet, 'expert_review_points', [])
+            if expert_review_points:
+                parts.append('### 专家审核要点')
+                parts.append(json.dumps(expert_review_points, ensure_ascii=False, indent=2)[:30000])
+            priority_focus_axes = getattr(governed_support_packet, 'priority_focus_axes', [])
+            if priority_focus_axes:
+                parts.append('### 优先深挖轴')
+                parts.append(json.dumps(priority_focus_axes, ensure_ascii=False, indent=2)[:12000])
             parts.append('')
 
         parts.append('请根据以上信息进行独立审查，输出结构化 JSON。')

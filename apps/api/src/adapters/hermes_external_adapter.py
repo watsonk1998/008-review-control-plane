@@ -42,7 +42,7 @@ HERMES_EXTERNAL_PROMPT = """\
   "grade": "conditional_pass | needs_revision | fail",
   "findings": [
     {
-      "id": "H-001",
+      "id": "HF-001",
       "title": "问题标题",
       "severity": "high | medium | low | info",
       "category": "structure | compliance | safety | completeness | consistency",
@@ -109,7 +109,7 @@ class HermesExternalAdapter(HermesReviewEngine):
 
         try:
             logger.info('[hermes_external] Calling external agent at %s', self._endpoint)
-            prompt_content = self._build_prompt(brief, fact_packet_008, document_preview)
+            prompt_content = self._build_prompt(brief, fact_packet_008, document_preview, governed_support_packet)
             system_instruction = HERMES_EXTERNAL_PROMPT
             
             # Assuming external Hermes expects {"message": ..., "system": ...} mapping
@@ -142,7 +142,7 @@ class HermesExternalAdapter(HermesReviewEngine):
             logger.error('[hermes_external] Error calling external Hermes: %s', e)
             return self._degraded_packet(brief.review_id, f'unexpected error: {e}')
 
-    def _build_prompt(self, brief: ReviewBrief, packet_008: FactPacket | None, document_preview: str) -> str:
+    def _build_prompt(self, brief: ReviewBrief, packet_008: FactPacket | None, document_preview: str, governed_support_packet: dict[str, Any] | None = None) -> str:
         parts: list[str] = []
         parts.append('## 审查任务书')
         parts.append(f'- 审查ID: {brief.review_id}')
@@ -162,6 +162,15 @@ class HermesExternalAdapter(HermesReviewEngine):
             parts.append('')
             for f in packet_008.findings[:20]:
                 parts.append(f'- [{f.id}] [{f.severity}] {f.title}')
+        if governed_support_packet:
+            parts.append('## 治理化审查上下文')
+            parts.append(json.dumps(getattr(governed_support_packet, 'basis_summary', []), ensure_ascii=False, indent=2)[:12000])
+            basis_fulltext_context = getattr(governed_support_packet, 'basis_fulltext_context', [])
+            if basis_fulltext_context:
+                parts.append(json.dumps(basis_fulltext_context, ensure_ascii=False, indent=2)[:40000])
+            expert_review_points = getattr(governed_support_packet, 'expert_review_points', [])
+            if expert_review_points:
+                parts.append(json.dumps(expert_review_points, ensure_ascii=False, indent=2)[:12000])
         return '\n'.join(parts)
 
     def _parse_json(self, content: str | None) -> dict[str, Any]:

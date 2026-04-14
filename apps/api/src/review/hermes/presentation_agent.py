@@ -25,11 +25,10 @@ class PresentationConsistencyValidator:
             if expected_keywords and not any(kw in presentation_md for kw in expected_keywords):
                 errors.append(f"Missing final grade conclusion keyword, expected one of: {expected_keywords}")
         
-        # 2 & 3 & 8 & 9. Issue count and IDs MUST NOT be added or removed
+        # 2 & 3 & 8 & 9. 问题数量与主要标题不得丢失；不再要求在正文或隐藏注释中保留英文 ID。
         for finding in authoritative.all_findings:
-            if finding.id not in presentation_md:
-                # If we use strict ISSUE-id matching, it must be present
-                errors.append(f"Missing finding ID from authoritative packet: {finding.id}")
+            if finding.title and finding.title not in presentation_md:
+                errors.append(f"Missing finding title from authoritative packet: {finding.title}")
 
         # 6. Manual review required flag MUST NOT be lost
         needs_manual = any(f.manual_review_needed for f in authoritative.all_findings)
@@ -87,7 +86,7 @@ class HermesPresentationAgent:
 【硬性不可触碰的安全红线】：
 1. 绝对不能修改、弱化、或隐藏“总体评级结论”（如有条件通过、不通过等）。必须严格忠于原始审查结论！
 2. 绝对不可在给用户看的正文中暴露任何英文系统词汇（如 HIGH, MEDIUM, ISSUE 等），必须翻译为普通人友好的中文（如“高风险”、“严重”）。
-3. 绝对不能修改问题数量、遗漏溯源编号（如 ISSUE-xxx, H-xxx）、更改风险等级本身。这三者是底层防篡改底线。为了既不干扰用户阅读又不切断溯源追踪，请务必将这些冰冷的英文溯源编号使用 HTML 隐藏注释（如：`<!-- ISSUE-001 -->`）的方式附在对应问题描述的末尾，绝不可暴露在人眼可见的正文中。
+3. 绝对不能修改问题数量或更改风险等级本身。底层追溯编号由系统元数据保存，不要求也不允许在给用户看的正文中展示 ISSUE-xxx、H-xxx 等英文编号。
 4. 绝对不能修改、合并或删减任何证据摘要、条文依据和整改建议的核心事实含义。必须忠于原始报告的引用依据。
 5. 绝对不能把阻断风险说轻，也不能把必须进行“人工复核”的地方弱化。
 6. 对于系统状态提示（如：可视域缺失问题、组件降级提示），必须原样保留或更显眼地提示，绝不可删除！
@@ -106,7 +105,7 @@ class HermesPresentationAgent:
         
         try:
             content = await self.llm_gateway.chat([
-                {'role': 'system', 'content': '你是只读的正式报告中文表达层。只优化表达，绝不篡改事实、等级、原编号ID或强制提示。'},
+                {'role': 'system', 'content': '你是只读的正式报告中文表达层。只优化表达，绝不篡改事实、等级、强制提示，也不要在用户可见正文中输出任何英文编号。'},
                 {'role': 'user', 'content': prompt}
             ], temperature=0.1, max_tokens=20000)
             

@@ -36,7 +36,7 @@ REVIEW_MODULE_BINDINGS: dict[str, ReviewModuleBinding] = {
     'parameter_consistency': ReviewModuleBinding(
         module_name='parameter_consistency',
         title='参数一致性',
-        hermes_templates=['execution_risk_reviewer'],
+        hermes_templates=['execution_risk_reviewer', 'power_outage_operation_chain_reviewer'],
         support_capabilities=['fact_extract', 'rule_and_evidence'],
         decision_policy='require_support_for_parameter_conflict',
         result_bucket='parameter_consistency',
@@ -44,7 +44,7 @@ REVIEW_MODULE_BINDINGS: dict[str, ReviewModuleBinding] = {
     'legality_compliance': ReviewModuleBinding(
         module_name='legality_compliance',
         title='合法合规性',
-        hermes_templates=['policy_compliance_reviewer'],
+        hermes_templates=['policy_compliance_reviewer', 'power_outage_normative_reviewer', 'power_outage_restoration_closure_reviewer'],
         support_capabilities=['profile_and_packs', 'rule_and_evidence'],
         decision_policy='promote_when_rule_hits_are_grounded',
         result_bucket='legality_compliance',
@@ -52,7 +52,7 @@ REVIEW_MODULE_BINDINGS: dict[str, ReviewModuleBinding] = {
     'execution_continuity': ReviewModuleBinding(
         module_name='execution_continuity',
         title='执行连续性',
-        hermes_templates=['execution_risk_reviewer'],
+        hermes_templates=['execution_risk_reviewer', 'power_outage_operation_chain_reviewer'],
         support_capabilities=['fact_extract', 'rule_and_evidence'],
         decision_policy='prefer_conservative_sequence_expression',
         result_bucket='execution_continuity',

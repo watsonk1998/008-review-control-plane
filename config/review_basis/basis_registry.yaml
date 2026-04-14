@@ -10,7 +10,7 @@
   jurisdiction: "National"
   file_refs:
     - "knowledge/review_basis/national_standards/gb_t_50502_2009.md"
-  applicability_tags: ["construction_org", "base", "distribution_network_special_scheme"]
+  applicability_tags: ["construction_org", "base"]
   owner: "MOHURD"
   freshness_rule: "yearly"
 
@@ -23,7 +23,7 @@
   jurisdiction: "National"
   file_refs:
     - "knowledge/review_basis/national_standards/gb_t_50319.md"
-  applicability_tags: ["supervision_plan", "base", "distribution_network_special_scheme"]
+  applicability_tags: ["supervision_plan", "base"]
   owner: "MOHURD"
   freshness_rule: "yearly"
 
@@ -36,7 +36,7 @@
   jurisdiction: "National"
   file_refs:
     - "knowledge/review_basis/industry_standards/mohurd_2021_48.md"
-  applicability_tags: ["hazardous_special_scheme", "base", "distribution_network_special_scheme"]
+  applicability_tags: ["hazardous_special_scheme", "base"]
   owner: "MOHURD"
   freshness_rule: "yearly"
 
@@ -103,6 +103,19 @@
     - "knowledge/review_basis/local_standards/csg_scheme_full_process_control_guideline.md"
   applicability_tags: ["distribution_network_special_scheme", "power_outage_work", "base"]
   owner: "CSG"
+  freshness_rule: "on_demand"
+
+"power-grid-监理工程师对停电施工方案的审核规则及要点":
+  basis_id: "power-grid-监理工程师对停电施工方案的审核规则及要点"
+  title: "监理工程师对停电施工方案的审核规则及要点"
+  source_type: "enterprise"
+  version: "监理审核要点"
+  effective_status: "active"
+  jurisdiction: "Project / Power Distribution Supervision"
+  file_refs:
+    - "knowledge/review_basis/local_standards/supervision_power_outage_review_points.md"
+  applicability_tags: ["distribution_network_special_scheme", "power_outage_work"]
+  owner: "Project Supervision"
   freshness_rule: "on_demand"
 
 "review-control-plane-special-scheme-structure-policy":

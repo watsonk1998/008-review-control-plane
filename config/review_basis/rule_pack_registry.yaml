@@ -114,6 +114,51 @@ rule_packs:
       - "ticket_grounding_gap"
     false_positive_risk: "medium"
 
+  "distribution_network.preparation.v1":
+    rule_pack_id: "distribution_network.preparation.v1"
+    related_pack_ids:
+      - "power_outage_work.base"
+    scope: "停电施工准备与审批闭环"
+    evidence_requirements:
+      - require_basic_info_and_basis
+      - require_personnel_and_training
+      - require_outage_application_and_notification
+    output_issue_types:
+      - "basic_info_gap"
+      - "qualification_training_gap"
+      - "approval_notification_gap"
+    false_positive_risk: "medium"
+
+  "distribution_network.operation_chain.v1":
+    rule_pack_id: "distribution_network.operation_chain.v1"
+    related_pack_ids:
+      - "power_outage_work.base"
+    scope: "停电五步法与票据链"
+    evidence_requirements:
+      - require_shutdown_five_step
+      - require_work_ticket_operation_ticket
+      - require_anti_backfeed_controls
+    output_issue_types:
+      - "five_step_gap"
+      - "ticket_chain_gap"
+      - "anti_backfeed_gap"
+    false_positive_risk: "medium"
+
+  "distribution_network.restoration_closure.v1":
+    rule_pack_id: "distribution_network.restoration_closure.v1"
+    related_pack_ids:
+      - "power_outage_work.base"
+    scope: "停电施工完工送电与监理闭环"
+    evidence_requirements:
+      - require_completion_check
+      - require_restoration_delivery
+      - require_archive_and_rectification_closure
+    output_issue_types:
+      - "restoration_gap"
+      - "archive_gap"
+      - "closure_gap"
+    false_positive_risk: "medium"
+
   "supervision.core.v1":
     rule_pack_id: "supervision.core.v1"
     related_pack_ids: 

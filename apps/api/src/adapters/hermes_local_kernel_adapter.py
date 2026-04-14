@@ -134,8 +134,14 @@ class HermesLocalKernelAdapter(HermesReviewEngine):
             )
             
             if governed_support_packet:
-                prompt += f"\n\nGoverned Support Packet Context:\nBasis Summary:\n{json.dumps(governed_support_packet.get('basis_summary', []), ensure_ascii=False, indent=2)[:2000]}"
-                prompt += f"\nRule Pack Summary:\n{json.dumps(governed_support_packet.get('rule_pack_summary', []), ensure_ascii=False, indent=2)[:2000]}"
+                prompt += f"\n\nGoverned Support Packet Context:\nBasis Summary:\n{json.dumps(getattr(governed_support_packet, 'basis_summary', []), ensure_ascii=False, indent=2)[:2000]}"
+                prompt += f"\nRule Pack Summary:\n{json.dumps(getattr(governed_support_packet, 'rule_pack_summary', []), ensure_ascii=False, indent=2)[:2000]}"
+                basis_fulltext_context = getattr(governed_support_packet, 'basis_fulltext_context', [])
+                if basis_fulltext_context:
+                    prompt += f"\nBasis Fulltext Context:\n{json.dumps(basis_fulltext_context, ensure_ascii=False, indent=2)[:6000]}"
+                expert_review_points = getattr(governed_support_packet, 'expert_review_points', [])
+                if expert_review_points:
+                    prompt += f"\nExpert Review Points:\n{json.dumps(expert_review_points, ensure_ascii=False, indent=2)[:3000]}"
 
             payload = {
                 "review_id": brief.review_id,

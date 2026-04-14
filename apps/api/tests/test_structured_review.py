@@ -620,16 +620,23 @@ def test_structured_review_executor_assigns_power_outage_structure_rule_and_repo
     issue_titles = {issue['title'] for issue in result['issues']}
     assert '配网工程专项施工方案通用章节不完整' in issue_titles
     assert '停电施工作业专项章节不完整' in issue_titles
+    assert '停电施工基础信息及编制依据不完整' in issue_titles
+    assert '停电申请审批与用户告知闭环不完整' in issue_titles
+    assert '停电五步法安全措施闭环不完整' in issue_titles
     assert '停电施工作业安全/质量控制链不完整' in issue_titles
     assert '停电施工作业工作票/验电接地证据链不可追溯' in issue_titles
-    assert len(result['issues']) > 3
+    assert len(result['issues']) > 8
     rule_hits = {row['ruleId']: row for row in result['matrices']['ruleHits']}
     assert rule_hits['distribution_network_special_scheme_structure_completeness']['packId'] == 'distribution_network_special_scheme.base'
     assert rule_hits['power_outage_work_structure_completeness']['packId'] == 'power_outage_work.base'
+    assert rule_hits['power_outage_work_basic_info_integrity']['packId'] == 'power_outage_work.base'
+    assert rule_hits['power_outage_work_application_approval_linkage']['packId'] == 'power_outage_work.base'
+    assert rule_hits['power_outage_work_shutdown_five_step_closure']['packId'] == 'power_outage_work.base'
     assert rule_hits['power_outage_work_safety_and_quality_controls']['packId'] == 'power_outage_work.base'
     assert rule_hits['power_outage_work_ticket_grounding_traceability']['packId'] == 'power_outage_work.base'
+    assert rule_hits['power_outage_work_restoration_and_archive_closure']['packId'] == 'power_outage_work.base'
     assert rule_hits['temporary_power_control_linkage']['packId'] == 'power_outage_work.base'
-    assert len(result['matrices']['ruleHits']) > 3
+    assert len(result['matrices']['ruleHits']) > 8
     structure_rows = result['matrices']['structureCompleteness']
     assert structure_rows[0]['scope'] == 'special'
     first_common_index = next(index for index, row in enumerate(structure_rows) if row['scope'] == 'common')
@@ -647,7 +654,6 @@ def test_structured_review_executor_assigns_power_outage_structure_rule_and_repo
     assert report.count('<table class="structured-completeness-table">') >= 2
     assert '停电施工作业专项要求' in report
     assert '专项施工方案通用要求' in report
-    assert '系统结构审查规则' in report
     assert 'review-control-plane-special-scheme-structure-policy' not in report
     assert report.index('停电范围') < report.index('工程概况')
 

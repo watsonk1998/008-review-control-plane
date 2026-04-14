@@ -64,7 +64,7 @@ packs:
     
   "distribution_network_special_scheme.base":
     pack_id: "distribution_network_special_scheme.base"
-    display_name: "配网工程专项方案包"
+    display_name: "配电配网工程专项方案包"
     basis_ids:
       - "power-grid-《电网工程建设施工安全基准风险指南》（2012年版）"
       - "power-grid-《工程建设标准强制性条文 电力工程部分》（2016年版）"
@@ -86,6 +86,7 @@ packs:
       - "power-grid-《工程建设标准强制性条文 电力工程部分》（2016年版）"
       - "power-grid-《中国南方电网公司电网建设工程专项施工方案管理工作指引》（2022）"
       - "power-grid-《中国南方电网基建施工方案全流程管控工作指引》"
+      - "power-grid-监理工程师对停电施工方案的审核规则及要点"
     status: "active"
     default_profiles: ["distribution_network_special_scheme"]
     priority: "high"

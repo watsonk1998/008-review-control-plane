@@ -47,12 +47,12 @@ export function ReviewAcceptancePage() {
   const [targetFile, setTargetFile] = useState<FrozenUploadResponse | null>(null);
   const [basisFiles, setBasisFiles] = useState<FrozenUploadResponse[]>([]);
   const [contextFiles, setContextFiles] = useState<FrozenUploadResponse[]>([]);
-  const [l1, setL1] = useState("special_scheme_review");
+  const [l1, setL1] = useState("general_management_review");
   const [l2, setL2] = useState("distribution_network_special_scheme");
-  const [l3, setL3] = useState("temporary_power\nexecution_continuity");
+  const [l3, setL3] = useState("power_outage_work");
   const [standardIds, setStandardIds] = useState("gb50016");
   const [templateIds, setTemplateIds] = useState("structured_review_primary_worker");
-  const [rulePackIds, setRulePackIds] = useState("power_outage_work.base");
+  const [rulePackIds, setRulePackIds] = useState("distribution_network.power_outage.v1\ndistribution_network.operation_chain.v1\ndistribution_network.restoration_closure.v1");
   const [focusRequirements, setFocusRequirements] = useState("重点检查停送电链路闭环\n重点检查专项章节完整性");
   const [enabledModules, setEnabledModules] = useState<ReviewModuleName[]>([
     "structure_completeness",

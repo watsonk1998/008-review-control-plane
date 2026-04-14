@@ -28,7 +28,7 @@ def _build_test_packet() -> FinalReportPacket:
 
 async def test_presentation_agent_reads_only_authoritative_result():
     # Setup
-    llm = _mock_llm("优化后的正式中文报告: 包含 ISSUE-001，需要修改，人工复核，可视域异常，降级提示")
+    llm = _mock_llm("优化后的正式中文报告: 包含高危断层点，需要修改，人工复核，可视域异常，降级提示")
     agent = HermesPresentationAgent(llm)
     packet = _build_test_packet()
 
@@ -44,7 +44,7 @@ async def test_presentation_agent_cannot_access_raw_document_or_support_packet()
     # The signature `generate_presentation(authoritative_packet: FinalReportPacket)`
     # strictly enforces this at the type level.
     # We verify the prompt does not contain raw documents or support packets.
-    llm = _mock_llm("修改, ISSUE-001, 人工复核, 可视域, 降级")
+    llm = _mock_llm("修改, 高危断层点, 人工复核, 可视域, 降级")
     agent = HermesPresentationAgent(llm)
     packet = _build_test_packet()
     
@@ -60,7 +60,7 @@ async def test_presentation_agent_cannot_access_raw_document_or_support_packet()
     assert "raw_document" not in user_prompt
 
 async def test_presentation_agent_does_not_change_conclusion():
-    llm = _mock_llm("优化后报告：已经完全合规且正常。附带 ISSUE-001，人工复核，可视域异常，降级")
+    llm = _mock_llm("优化后报告：已经完全合规且正常。附带高危断层点，人工复核，可视域异常，降级")
     agent = HermesPresentationAgent(llm)
     packet = _build_test_packet()
     
@@ -82,13 +82,13 @@ async def test_presentation_agent_does_not_change_issue_count():
     
     result = await agent.generate_presentation(packet)
     
-    # Missing ISSUE-001 ID -> fallback
+    # Missing authoritative finding title -> fallback
     assert result.consistency_validated is False
-    assert "Missing finding ID" in str(result.consistency_errors)
+    assert "Missing finding title" in str(result.consistency_errors)
     assert result.presentation_markdown == packet.report_markdown
 
 async def test_presentation_agent_does_not_change_severity_or_manual_review_flags():
-    llm = _mock_llm("修改，存在 ISSUE-001 问题，但不需任何复核。可视域，降级")
+    llm = _mock_llm("修改，存在高危断层点问题，但不需任何复核。可视域，降级")
     agent = HermesPresentationAgent(llm)
     packet = _build_test_packet()
     
@@ -100,7 +100,7 @@ async def test_presentation_agent_does_not_change_severity_or_manual_review_flag
     assert result.presentation_markdown == packet.report_markdown
 
 async def test_presentation_agent_preserves_degraded_and_visibility_gap_notices():
-    llm = _mock_llm("修改，ISSUE-001，一切正常无需任何提示。")
+    llm = _mock_llm("修改，高危断层点，一切正常无需任何提示。")
     agent = HermesPresentationAgent(llm)
     packet = _build_test_packet()
     
@@ -129,7 +129,7 @@ async def test_presentation_failure_falls_back_to_authoritative_result():
 
 async def test_authoritative_result_not_overwritten_by_presentation_pass():
     # Ensured implicitly by returning PresentationResult instead of mutating FinalReportPacket.
-    llm = _mock_llm("修改，ISSUE-001，人工复核，可视域，降级，完美。")
+    llm = _mock_llm("修改，高危断层点，人工复核，可视域，降级，完美。")
     agent = HermesPresentationAgent(llm)
     packet = _build_test_packet()
     original_markdown = packet.report_markdown
@@ -141,7 +141,7 @@ async def test_authoritative_result_not_overwritten_by_presentation_pass():
 
 async def test_user_visible_presentation_is_chinese():
     # Checked via prompt definition
-    llm = _mock_llm("需要修改, ISSUE-001, 人工复核, 可视域, 降级")
+    llm = _mock_llm("需要修改, 高危断层点, 人工复核, 可视域, 降级")
     agent = HermesPresentationAgent(llm)
     packet = _build_test_packet()
     

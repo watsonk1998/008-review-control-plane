@@ -159,8 +159,15 @@ def _fallback_recommendations(candidate: IssueCandidate) -> list[str]:
             if structure_labels
             else '补齐停电施工作业专项要求中的缺项内容。'
         ],
+        'power_outage_work_basic_info_integrity': ['补齐停电范围、作业内容、停电起止时间、恢复送电时间及重要用户保障等基础信息，并在编制依据中明确引用停电专项适用标准。'],
+        'power_outage_work_personnel_qualification_and_training': ['补齐工作负责人、监护人、特种作业人员资质，以及班前交底、培训和现场监护安排。'],
+        'power_outage_work_application_approval_linkage': ['补齐停电申请、审批流转、批复文件、工作许可与用户告知链路，确保停电组织手续闭合。'],
+        'power_outage_work_shutdown_five_step_closure': ['按“停电、验电、接地、挂牌、遮栏”补齐全过程控制要求，明确责任人、先后顺序和现场确认动作。'],
+        'power_outage_work_anti_backfeed_controls': ['补齐双电源、反送电、倒送电和低压反送电等场景的隔离、验核与防误送电措施。'],
+        'power_outage_work_work_ticket_and_site_survey': ['补齐工作票、操作票、现场勘察记录及关键签认信息，形成停电作业前置证据链。'],
         'power_outage_work_safety_and_quality_controls': ['补齐停电施工作业的安全控制、质量控制和关键验收点，形成一致的执行与验收闭环。'],
         'power_outage_work_ticket_grounding_traceability': ['明确工作票/操作票、验电、接地线装拆、许可与终结等关键动作及其证据来源。'],
+        'power_outage_work_restoration_and_archive_closure': ['补齐完工检查、拆接地线、恢复送电、现场确认、资料归档和整改闭环要求，确保停电作业收尾闭合。'],
         'lifting_operations_special_scheme_linkage': ['在起重吊装相关章节明确专项方案、专项技术措施或附录挂接位置，并标注适用作业面。'],
         'lifting_operations_calculation_traceability': ['补齐吊装设备参数、计算起重量或验算书来源，并在正文中建立可追溯引用。'],
         'temporary_power_control_linkage': ['将临时用电/停送电作业的控制措施、监测要求和触电类应急处置串成同一条执行链。'],
@@ -371,10 +378,24 @@ def _build_summary(candidate: IssueCandidate) -> str:
         if structure_labels:
             return f'停电施工作业专项要求中，以下内容存在缺项或仅部分识别：{"、".join(structure_labels)}。'
         return '停电施工作业专项结构要求未完全闭合。'
+    if candidate.candidateId == 'power_outage_work_basic_info_integrity':
+        return '停电施工基础信息、编制依据或停复电关键信息不完整，难以稳定界定本次停电作业边界。'
+    if candidate.candidateId == 'power_outage_work_personnel_qualification_and_training':
+        return '停电施工人员资质、培训交底或现场监护安排不足，关键岗位责任边界不清。'
+    if candidate.candidateId == 'power_outage_work_application_approval_linkage':
+        return '停电申请审批、许可办理或用户告知链路不完整，前置组织手续仍有断点。'
+    if candidate.candidateId == 'power_outage_work_shutdown_five_step_closure':
+        return '停电、验电、接地、挂牌、遮栏等关键安全动作未形成稳定的全过程闭环。'
+    if candidate.candidateId == 'power_outage_work_anti_backfeed_controls':
+        return '防反送电、双电源或倒送电控制措施不足，误送电风险未被充分约束。'
+    if candidate.candidateId == 'power_outage_work_work_ticket_and_site_survey':
+        return '工作票、操作票或现场勘察记录等前置证据链不完整，停电作业许可依据不足。'
     if candidate.candidateId == 'power_outage_work_safety_and_quality_controls':
         return '停电施工作业的安全控制、质量控制或关键验收点表达不足，执行闭环不稳定。'
     if candidate.candidateId == 'power_outage_work_ticket_grounding_traceability':
         return '停电施工作业未形成工作票/操作票、验电和接地装拆等关键动作的可追溯证据链。'
+    if candidate.candidateId == 'power_outage_work_restoration_and_archive_closure':
+        return '停电施工完工检查、拆接地线、恢复送电、资料归档或整改闭环安排不完整。'
     if candidate.candidateId == 'lifting_operations_special_scheme_linkage':
         return '已识别起重吊装场景，但当前专项方案/专项技术措施挂接位置仍不稳定或需人工确认。'
     if candidate.candidateId == 'lifting_operations_calculation_traceability':

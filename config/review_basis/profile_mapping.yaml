@@ -81,7 +81,9 @@ construction_scheme:
 distribution_network_special_scheme:
   profile_id: distribution_network_special_scheme
   classification:
-    level1: "配网工程专项施工方案"
+    level1: "一般专项与管理体系类"
+    level2: "配电配网工程"
+    level3: "停电施工作业 / 组塔架线等"
   default_pack_ids:
     - "distribution_network_special_scheme.base"
     - "power_outage_work.base"
@@ -95,6 +97,9 @@ distribution_network_special_scheme:
     - "distribution_network.structure.v1"
     - "distribution_network.safety_closure.v1"
     - "distribution_network.power_outage.v1"
+    - "distribution_network.preparation.v1"
+    - "distribution_network.operation_chain.v1"
+    - "distribution_network.restoration_closure.v1"
 
 supervision_plan:
   profile_id: supervision_plan
