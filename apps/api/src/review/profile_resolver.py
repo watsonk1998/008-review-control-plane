@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import Any
 
 from src.review.schema import ExtractedFacts, PolicyPack, ResolvedReviewProfile, StructuredReviewTask
+from src.review.rules.packs import get_policy_pack_registry
 
 logger = logging.getLogger(__name__)
 
@@ -96,6 +97,9 @@ def resolve_review_profile(
 
     # 6. Build PolicyPack objects from pack_registry YAML data
     selected_packs: list[PolicyPack] = []
+    
+    python_registry = get_policy_pack_registry()
+    
     for pack_id in all_pack_ids:
         pack_entry = pack_registry.get(pack_id)
         if pack_entry is None:
@@ -115,6 +119,10 @@ def resolve_review_profile(
             ))
             continue
 
+        python_pack = python_registry.get(pack_id)
+        target_rule_ids = python_pack.ruleIds if python_pack else []
+        target_evidence_pack_ids = python_pack.evidencePackIds if python_pack else []
+
         selected_packs.append(PolicyPack(
             id=pack_id,
             version='1.0.0',
@@ -123,6 +131,8 @@ def resolve_review_profile(
             role=pack_entry.get('role', 'base'),
             readiness='ready' if pack_entry.get('status') == 'active' else 'placeholder',
             description=pack_entry.get('display_name', ''),
+            ruleIds=target_rule_ids,
+            evidencePackIds=target_evidence_pack_ids,
         ))
 
     executable_packs = [pack for pack in selected_packs if pack.readiness == 'ready']
