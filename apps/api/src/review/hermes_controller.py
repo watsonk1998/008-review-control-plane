@@ -3,10 +3,12 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import mimetypes
 import re
 from pathlib import Path
 from typing import Any
 
+from src.domain.models import TaskArtifact
 from src.review.contracts import FactPacket, ReviewBrief
 from src.review.hermes.agent_runner import HermesAgentRunner
 from src.review.hermes.assembler import HermesReviewAssembler
@@ -16,6 +18,8 @@ from src.review.hermes.module_registry import HermesModuleRegistry
 from src.review.hermes.presentation_agent import HermesPresentationAgent
 from src.review.hermes.template_models import AgentTemplate, AgentTemplateMatch
 from src.review.hermes.template_registry import HermesTemplateRegistry
+from src.review.report.final_report_view_model import FinalReportRenderer
+from src.review.report.pdf_exporter import render_structured_review_pdf
 
 logger = logging.getLogger(__name__)
 
@@ -55,6 +59,7 @@ class HermesController:
         )
         self.assembler = HermesReviewAssembler()
         self.presentation_agent = HermesPresentationAgent(llm_gateway=self.llm_gateway)
+        self.final_report_renderer = FinalReportRenderer()
 
     async def run(
         self,
@@ -326,18 +331,108 @@ class HermesController:
             if write_json_artifact:
                 write_json_artifact('hermes-controller-presentation-result', presentation_result.model_dump(mode='json'))
 
+        final_artifact_paths: dict[str, str] = {}
+        if final_packet is not None:
+            final_report_view_model = self.final_report_renderer.build_view_model(
+                final_packet=final_packet,
+                support_result=support_result_008,
+            )
+            report_html = self.final_report_renderer.render_html(final_report_view_model)
+            report_print_css = self.final_report_renderer.render_print_css()
+            enriched['finalReportViewModel'] = final_report_view_model.model_dump(mode='json')
+            enriched['reportHtml'] = report_html
+            enriched['reportPrintCss'] = report_print_css
+
+            if write_json_artifact:
+                write_json_artifact('hermes-controller-final-report-packet', final_packet.model_dump(mode='json'))
+                write_json_artifact('hermes-controller-final-report-view-model', final_report_view_model.model_dump(mode='json'))
+            if write_text_artifact:
+                # We must ALWAYS output the authoritative formal report as a text artifact,
+                # ensuring that the system of record defaults to the assembler's deterministic output.
+                final_artifact_paths['markdown'] = write_text_artifact('hermes-controller-final-report', final_packet.report_markdown, '.md')
+                final_artifact_paths['html'] = write_text_artifact('hermes-controller-final-report', report_html, '.html')
+                final_artifact_paths['css'] = write_text_artifact('hermes-controller-final-report.print', report_print_css, '.css')
+            if write_binary_artifact:
+                pdf_path = Path(write_binary_artifact('hermes-controller-final-report', b'', '.pdf'))
+                await render_structured_review_pdf(
+                    report_html=report_html,
+                    report_print_css=report_print_css,
+                    output_path=pdf_path,
+                    title=final_report_view_model.title,
+                    markdown_fallback=final_packet.report_markdown,
+                )
+                final_artifact_paths['pdf'] = str(pdf_path)
+
         if write_json_artifact:
             write_json_artifact('hermes-controller-agent-results', agent_results)
-            if final_packet is not None:
-                write_json_artifact('hermes-controller-final-report-packet', final_packet.model_dump(mode='json'))
-        if write_text_artifact and final_packet is not None:
-            # We must ALWAYS output the authoritative formal report as a text artifact,
-            # ensuring that the system of record defaults to the assembler's deterministic output.
-            write_text_artifact('hermes-controller-final-report', final_packet.report_markdown, '.md')
+
+        enriched['artifactIndex'] = self._merge_artifact_index(
+            support_result=support_result_008,
+            review_id=task.id,
+            artifact_paths=final_artifact_paths,
+        )
 
         return enriched
 
+    def _merge_artifact_index(
+        self,
+        *,
+        support_result: dict[str, Any] | None,
+        review_id: str,
+        artifact_paths: dict[str, str],
+    ) -> list[dict[str, Any]]:
+        support_artifacts = []
+        if isinstance(support_result, dict):
+            support_artifacts = [item for item in (support_result.get('artifactIndex') or []) if isinstance(item, dict)]
+        merged: list[dict[str, Any]] = []
+        if artifact_paths.get('pdf'):
+            merged.append(self._artifact_from_path(review_id, artifact_paths['pdf'], category='report', stage='report', primary=True, artifact_role='formal_final_report', label='最终正式报告 PDF'))
+        if artifact_paths.get('markdown'):
+            merged.append(self._artifact_from_path(review_id, artifact_paths['markdown'], category='report', stage='report', primary=False, artifact_role='formal_final_report_markdown', label='最终正式报告 Markdown'))
+        if artifact_paths.get('html'):
+            merged.append(self._artifact_from_path(review_id, artifact_paths['html'], category='report', stage='report', primary=False, artifact_role='formal_final_report_html', label='最终正式报告 HTML'))
+        if artifact_paths.get('css'):
+            merged.append(self._artifact_from_path(review_id, artifact_paths['css'], category='report', stage='report', primary=False, artifact_role='formal_final_report_print_css', label='最终正式报告样式'))
 
+        seen_downloads = {item['downloadUrl'] for item in merged if isinstance(item, dict)}
+        for item in support_artifacts:
+            normalized = dict(item)
+            file_name = str(normalized.get('fileName') or '')
+            if normalized.get('artifactRole') is None and file_name.endswith('.pdf'):
+                normalized['artifactRole'] = 'supporting_report_pdf'
+                normalized['label'] = normalized.get('label') or '支撑层报告 PDF'
+                normalized['primary'] = False
+            if normalized.get('downloadUrl') in seen_downloads:
+                continue
+            merged.append(normalized)
+        return merged
+
+    def _artifact_from_path(
+        self,
+        review_id: str,
+        path: str,
+        *,
+        category: str,
+        stage: str,
+        primary: bool,
+        artifact_role: str,
+        label: str,
+    ) -> dict[str, Any]:
+        artifact_path = Path(path)
+        media_type, _ = mimetypes.guess_type(artifact_path.name)
+        artifact = TaskArtifact(
+            name=artifact_path.stem,
+            fileName=artifact_path.name,
+            mediaType=media_type or 'application/octet-stream',
+            sizeBytes=artifact_path.stat().st_size if artifact_path.exists() else 0,
+            downloadUrl=f'/api/tasks/{review_id}/artifacts/{artifact_path.name}',
+            category=category,
+            stage=stage,
+            primary=primary,
+            artifactRole=artifact_role,
+            label=label,
+        )
+        return artifact.model_dump(mode='json')
 
     async def _generate_candidate_template(
         self,

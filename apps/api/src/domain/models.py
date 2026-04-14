@@ -188,6 +188,8 @@ class TaskArtifact(BaseModel):
     category: ArtifactCategory | None = None
     stage: str | None = None
     primary: bool = False
+    artifactRole: str | None = None
+    label: str | None = None
 
 
 class TaskEvent(BaseModel):

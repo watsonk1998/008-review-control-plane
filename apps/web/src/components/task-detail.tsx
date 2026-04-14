@@ -65,7 +65,7 @@ function formatEventMessage(message: string | undefined) {
     .replace(/^No output from agent:\s*/i, "专项审查器未返回有效结果：");
 }
 
-function estimateReviewProgress({
+function estimateRealReviewProgress({
   totalAgents,
   completedAgents,
   stage,
@@ -77,18 +77,24 @@ function estimateReviewProgress({
   status?: string;
 }) {
   const normalizedStatus = (status || "").trim().toLowerCase();
-  if (TERMINAL_STATES.has(normalizedStatus)) return 100;
-  if (stage === "report" || stage === "finalize") return 96;
-  if (stage === "hermes_controller") return 90;
+  if (["succeeded", "accepted"].includes(normalizedStatus)) return 100;
+  if (["failed", "partial", "rejected", "needs_attachment"].includes(normalizedStatus)) return 96;
+  if (stage === "finalize") return 99;
+  if (stage === "report") return 95;
+  if (stage === "hermes_controller") return 91;
   if (["agent_select", "agent_running", "agent_done"].includes(stage || "")) {
-    if (!totalAgents) return 74;
-    return Math.max(60, Math.min(92, Math.round(60 + (Math.min(completedAgents, totalAgents) / totalAgents) * 30)));
+    if (!totalAgents) return 68;
+    return Math.max(60, Math.min(89, Math.round(60 + (Math.min(completedAgents, totalAgents) / totalAgents) * 29)));
   }
-  if (stage === "rules" || stage === "evidence") return 48;
+  if (stage === "rules" || stage === "evidence") return 45;
   if (stage === "extract") return 30;
-  if (stage === "dispatch" || stage === "parse") return 16;
-  if (stage === "planning") return 8;
-  return 12;
+  if (stage === "dispatch" || stage === "parse") return 15;
+  if (stage === "planning") return 5;
+  return 8;
+}
+
+function estimateSimulatedProgress(elapsedSeconds: number) {
+  return Math.min(90, Math.max(0, Math.floor(elapsedSeconds / 3)));
 }
 
 function formatElapsed(seconds: number) {
@@ -402,6 +408,9 @@ export function TaskDetail({ taskId }: { taskId: string }) {
 
   const reportArtifact = useMemo(
     () =>
+      structuredArtifacts.find((artifact) => artifact.artifactRole === "formal_final_report") ||
+      structuredArtifacts.find((artifact) => artifact.primary && artifact.fileName.toLowerCase().endsWith(".pdf")) ||
+      structuredArtifacts.find((artifact) => artifact.fileName === "hermes-controller-final-report.pdf") ||
       structuredArtifacts.find((artifact) => artifact.fileName.toLowerCase().endsWith(".pdf")) ||
       structuredArtifacts.find((artifact) => artifact.name === "hermes-controller-final-report") ||
       structuredArtifacts.find((artifact) => artifact.name === "structured-review-report"),
@@ -420,19 +429,30 @@ export function TaskDetail({ taskId }: { taskId: string }) {
       ? debugCompletedAgents
       : completedAgentEvents.length;
     const stage = latestEvent?.stage || "";
+    const startAt = events[0]?.timestamp || task?.createdAt;
+    const nowAt = TERMINAL_STATES.has((task?.status || "").trim().toLowerCase()) ? task?.updatedAt : new Date(now).toISOString();
+    const elapsedSeconds = startAt && nowAt
+      ? Math.max(0, Math.floor((new Date(nowAt).getTime() - new Date(startAt).getTime()) / 1000))
+      : 0;
+    const realPercent = estimateRealReviewProgress({
+      totalAgents,
+      completedAgents,
+      stage,
+      status: task?.status,
+    });
+    const simulatedPercent = ["succeeded", "accepted"].includes((task?.status || "").trim().toLowerCase())
+      ? realPercent
+      : estimateSimulatedProgress(elapsedSeconds);
     return {
       latestEvent,
       currentStage: STAGE_LABELS[stage] || "审查执行中",
       totalAgents,
       completedAgents,
-      progressPercent: estimateReviewProgress({
-        totalAgents,
-        completedAgents,
-        stage,
-        status: task?.status,
-      }),
+      simulatedPercent,
+      realPercent,
+      progressPercent: Math.max(Math.min(simulatedPercent, 90), realPercent),
     };
-  }, [events, structuredResult, task?.status]);
+  }, [events, structuredResult, task?.createdAt, task?.status, task?.updatedAt, now]);
 
   const reviewElapsedSeconds = useMemo(() => {
     if (!task) return 0;
@@ -501,7 +521,11 @@ export function TaskDetail({ taskId }: { taskId: string }) {
               )}
               <div style={{ flex: 1 }}>
                 <div style={{ fontWeight: 600, color: "#172033", marginBottom: "4px" }}>
-                  {TERMINAL_STATES.has((task.status || "").trim().toLowerCase()) ? "审查已完成" : "系统正在持续审查中，请稍候"}
+                  {["succeeded", "accepted"].includes((task.status || "").trim().toLowerCase())
+                    ? "审查已完成"
+                    : TERMINAL_STATES.has((task.status || "").trim().toLowerCase())
+                      ? "审查流程已结束"
+                      : "系统正在持续审查中，请稍候"}
                 </div>
                 <div style={{ color: "#6B7280", fontSize: "0.92rem" }}>审查时间：{formatElapsed(reviewElapsedSeconds)}</div>
               </div>

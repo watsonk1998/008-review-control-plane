@@ -5,6 +5,7 @@ services:
     restart: unless-stopped
     ports:
       - "81:3000"
+      - "23031:3000"
     volumes:
       - .:/app
     working_dir: /app/apps/web

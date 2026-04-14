@@ -174,6 +174,8 @@ export interface TaskArtifact {
   category?: ArtifactCategory | null;
   stage?: string | null;
   primary?: boolean;
+  artifactRole?: string | null;
+  label?: string | null;
 }
 
 export interface HazardIdentificationMatrix {
@@ -251,6 +253,52 @@ export interface StructuredReviewMatrices {
   issueLayerCounts?: Record<string, number>;
 }
 
+export interface FinalReportIssueView {
+  id: string;
+  title: string;
+  severity: string;
+  severityLabel: string;
+  location: string;
+  description: string;
+  recommendation: string;
+  basis: string[];
+}
+
+export interface FinalReportSectionView {
+  key: string;
+  title: string;
+  issues: FinalReportIssueView[];
+  emptyText: string;
+}
+
+export interface ChapterCompletenessRowView {
+  index: number;
+  requirement: string;
+  basis: string;
+  matchedSection: string;
+  status: string;
+  statusLabel: string;
+  note: string;
+}
+
+export interface ChapterCompletenessNoteView {
+  title: string;
+  description: string;
+}
+
+export interface FinalReportViewModel {
+  title: string;
+  documentTypeLabel: string;
+  executiveSummary: string;
+  basisFiles: string[];
+  chapterCompleteness: {
+    title: string;
+    tableRows: ChapterCompletenessRowView[];
+    notes: ChapterCompletenessNoteView[];
+  };
+  sections: FinalReportSectionView[];
+}
+
 export interface FinalReportPacket {
   review_id: string;
   final_grade: string;
@@ -278,6 +326,7 @@ export interface StructuredReviewResult {
   // Canonical final-report field for external/UI consumption.
   finalReportMarkdown?: string;
   finalReportPacket?: FinalReportPacket | null;
+  finalReportViewModel?: FinalReportViewModel | null;
   reportMarkdown?: string;
   traceability?: Array<Record<string, unknown>>;
   

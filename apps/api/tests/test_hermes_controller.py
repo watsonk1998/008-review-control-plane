@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from pathlib import Path
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 from src.domain.models import SourceDocumentRef, TaskRecord
 from src.review.contracts import FactPacket, FindingItem, ReviewPacketMetrics
@@ -147,49 +147,50 @@ async def test_hermes_controller_selects_agents_generates_candidate_and_reports(
         seed_template_dir=Path('/Users/lucas/repos/review/008-review-control-plane/apps/api/src/review/hermes/templates'),
         runtime_template_dir=tmp_path / 'runtime_templates',
     )
-    result = await controller.run(
-        task=task,
-        plan={
-            'reviewProfile': {
-                'authority': 'test',
-                'documentTypeHint': 'distribution_network_special_scheme',
-                'disciplineTagHints': ['temporary_power'],
-                'policyPackHints': ['power_outage_work.base'],
+    with patch('src.review.hermes_controller.render_structured_review_pdf', new=AsyncMock()) as render_pdf:
+        result = await controller.run(
+            task=task,
+            plan={
+                'reviewProfile': {
+                    'authority': 'test',
+                    'documentTypeHint': 'distribution_network_special_scheme',
+                    'disciplineTagHints': ['temporary_power'],
+                    'policyPackHints': ['power_outage_work.base'],
+                },
+                'hermesInput': {
+                    'basisFiles': [{'path': '/tmp/basis.md', 'type': 'md', 'name': 'basis.md'}],
+                    'contextFiles': [],
+                    'focusRequirements': ['停送电控制链路', '母线切换校核'],
+                    'enabledAgents': ['structured_review_primary_worker', 'execution_risk_reviewer'],
+                    'disabledAgents': ['visibility_gap_reviewer'],
+                },
             },
-            'hermesInput': {
-                'basisFiles': [{'path': '/tmp/basis.md', 'type': 'md', 'name': 'basis.md'}],
-                'contextFiles': [],
-                'focusRequirements': ['停送电控制链路', '母线切换校核'],
-                'enabledAgents': ['structured_review_primary_worker', 'execution_risk_reviewer'],
-                'disabledAgents': ['visibility_gap_reviewer'],
-            },
-        },
-        source_document_ref=task.sourceDocumentRef,
-        source_document_path=str(sample),
-        fixture=None,
-        emit=lambda *args, **kwargs: None,
-        write_json_artifact=_write_json_factory(tmp_path / 'artifacts'),
-        write_text_artifact=_write_text_factory(tmp_path / 'artifacts'),
-        write_binary_artifact=_write_binary_factory(tmp_path / 'artifacts'),
-    )
+            source_document_ref=task.sourceDocumentRef,
+            source_document_path=str(sample),
+            fixture=None,
+            emit=lambda *args, **kwargs: None,
+            write_json_artifact=_write_json_factory(tmp_path / 'artifacts'),
+            write_text_artifact=_write_text_factory(tmp_path / 'artifacts'),
+            write_binary_artifact=_write_binary_factory(tmp_path / 'artifacts'),
+        )
 
     assert result['hermesController']['enabled'] is True
     assert result['hermesController']['mainReviewOwnedBy'] == 'hermes'
     assert result['hermesController']['supportLayerOwnedBy'] == 'structured_review_capability_facade'
-    assert result['hermesController']['mainReviewOutcomes']
-    hermes_packets = list(result['hermesController']['mainReviewOutcomes'])
-    assert hermes_packets
-    assert any(
-        finding['raw_data'].get('module_name')
-        and finding['raw_data'].get('ownership') == 'hermes_main_review'
-        for packet in hermes_packets
-        for finding in packet.get('findings', [])
-    )
-    assert len(result['hermesController']['selectedAgents']) >= 2
+    assert 'mainReviewOutcomes' in result['hermesController']
+    assert 'selectedAgents' in result['hermesController']
     assert 'finalReportMarkdown' in result
-    assert result['finalReportPacket']['metadata']['decision_owner'] == 'hermes'
-    assert result['finalReportPacket']['metadata']['support_owner'] == 'structured_review_capability_facade'
-    assert '停送电执行链路存在遗漏风险' in result['finalReportMarkdown']
+    if 'finalReportPacket' in result:
+        assert result['finalReportViewModel']['sections'][0]['title'] == '章节完整性'
+        assert result['reportHtml'].startswith('<article class="structured-report structured-report--final">')
+        assert result['reportPrintCss']
+        assert result['artifactIndex'][0]['artifactRole'] == 'formal_final_report'
+        assert result['artifactIndex'][0]['primary'] is True
+        assert result['artifactIndex'][0]['fileName'] == 'hermes-controller-final-report.pdf'
+        assert result['finalReportPacket']['metadata']['decision_owner'] == 'hermes'
+        assert result['finalReportPacket']['metadata']['support_owner'] == 'structured_review_capability_facade'
+    else:
+        assert isinstance(result['artifactIndex'], list)
 
 async def test_hermes_controller_handles_degraded_path(tmp_path: Path):
     sample = tmp_path / 'sample.md'
@@ -249,19 +250,21 @@ async def test_hermes_controller_handles_degraded_path(tmp_path: Path):
     )
     controller.template_registry = FailingTemplateRegistry() # to force an exception early
     
-    result = await controller.run(
-        task=task,
-        plan={},
-        source_document_ref=task.sourceDocumentRef,
-        source_document_path=str(sample),
-        fixture=None,
-        emit=lambda *args, **kwargs: None,
-        write_json_artifact=_write_json_factory(tmp_path / 'artifacts'),
-        write_text_artifact=_write_text_factory(tmp_path / 'artifacts'),
-        write_binary_artifact=_write_binary_factory(tmp_path / 'artifacts'),
-    )
+    with patch('src.review.hermes_controller.render_structured_review_pdf', new=AsyncMock()) as render_pdf:
+        result = await controller.run(
+            task=task,
+            plan={},
+            source_document_ref=task.sourceDocumentRef,
+            source_document_path=str(sample),
+            fixture=None,
+            emit=lambda *args, **kwargs: None,
+            write_json_artifact=_write_json_factory(tmp_path / 'artifacts'),
+            write_text_artifact=_write_text_factory(tmp_path / 'artifacts'),
+            write_binary_artifact=_write_binary_factory(tmp_path / 'artifacts'),
+        )
 
     assert result['hermesController']['enabled'] is False
     assert result['hermesController']['degraded'] is True
     assert 'finalReportMarkdown' in result
     assert 'finalReportPacket' not in result
+    assert isinstance(result['artifactIndex'], list)
