@@ -1,5 +1,10 @@
 # hermes-review-agent — Repository AGENTS
 
+## Contract posture
+This file remains a **thick local execution contract** because it defines upstream-vs-shell boundaries, the official review pipeline, fail-closed report ownership, and basis-governance constraints.
+
+If background architecture prose grows further, move explanatory material into `docs/architecture/` and keep only boundary, pipeline, result, and safety rules here.
+
 ## Repository Mission
 
 This repository is the **hermes-review-agent control plane / shell**.

@@ -1,17 +1,22 @@
-import { Suspense } from "react";
-import Link from "next/link";
 import { CreateTaskForm } from "@/components/create-task-form";
-import { SystemHealth } from "@/components/system-health";
-import { RecentTasks } from "@/components/recent-tasks";
-import { SystemHeartbeat } from "@/components/system-heartbeat";
-import { fetchFixtures, fetchSupportScope, getApiBaseUrl } from "@/lib/api";
+import { fetchFixtures, fetchSupportScope } from "@/lib/api";
 
-export default async function Home() {
+type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>;
+
+export default async function Home(props: { searchParams: SearchParams }) {
   // Parallel fetch initial foundation data (eliminating sequential waterfalls)
-  const [fixtures, supportScope] = await Promise.all([
+  const [fixtures, supportScope, searchParams] = await Promise.all([
     fetchFixtures().catch(() => []),
     fetchSupportScope().catch(() => null),
+    props.searchParams,
   ]);
+
+  const externalContext = {
+    agentId: typeof searchParams?.agentId === "string" ? searchParams.agentId : undefined,
+    callBackUrl: typeof searchParams?.callBackUrl === "string" ? searchParams.callBackUrl : undefined,
+    userId: typeof searchParams?.userId === "string" ? searchParams.userId : undefined,
+    tenantId: typeof searchParams?.tenantId === "string" ? searchParams.tenantId : undefined,
+  };
 
   return (
     <div className="home-dashboard stack-lg" style={{ maxWidth: "800px", margin: "0 auto", padding: "40px 0" }}>
@@ -21,7 +26,7 @@ export default async function Home() {
       </header>
 
       <main className="workbench-primary">
-        <CreateTaskForm fixtures={fixtures} supportScope={supportScope} />
+        <CreateTaskForm supportScope={supportScope} externalContext={externalContext} />
       </main>
     </div>
   );

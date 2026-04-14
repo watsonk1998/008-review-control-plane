@@ -7,15 +7,16 @@ import { StructuredReviewForm } from "./structured-review-form";
 import { createTask, uploadDocument } from "@/lib/api";
 import type {
   CreateTaskRequest,
-  FixtureRecord,
   SupportScopeResponse,
+  ExternalIntegrationContext,
 } from "@/types/control-plane";
 
 export function CreateTaskForm({
   supportScope,
+  externalContext,
 }: {
-  fixtures: FixtureRecord[];
   supportScope: SupportScopeResponse | null;
+  externalContext?: ExternalIntegrationContext;
 }) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
@@ -46,6 +47,7 @@ export function CreateTaskForm({
     disciplineTags: [],
     strictMode: true,
     policyPackIds: [],
+    externalContext,
   });
 
   const canSubmit = Boolean(form.sourceDocumentRef);

@@ -114,6 +114,13 @@ class SourceDocumentRef(BaseModel):
     uploadedAt: datetime | None = None
 
 
+class ExternalIntegrationContext(BaseModel):
+    agentId: str | None = None
+    callBackUrl: str | None = None
+    userId: str | None = None
+    tenantId: str | None = None
+
+
 class CreateTaskRequest(BaseModel):
     model_config = ConfigDict(extra='forbid')
 
@@ -132,6 +139,7 @@ class CreateTaskRequest(BaseModel):
     strictMode: bool | None = None
     policyPackIds: list[str] | None = None
     rulePackIds: list[str] | None = None
+    externalContext: ExternalIntegrationContext | None = None
 
     @model_validator(mode='after')
     def _validate_structured_review_source(self):
@@ -310,6 +318,7 @@ class TaskRecord(BaseModel):
     strictMode: bool | None = None  # compatibility field still persisted and propagated into profile/result shaping; not an independent runtime branch switch
     policyPackIds: list[str] = Field(default_factory=list)
     rulePackIds: list[str] = Field(default_factory=list)
+    externalContext: ExternalIntegrationContext | None = None
     status: TaskStatus = 'created'
     plan: dict[str, Any] | None = None
     result: dict[str, Any] | None = None

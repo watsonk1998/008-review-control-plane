@@ -61,6 +61,14 @@ class TaskService:
             updatedAt=now,
         )
         self.store.create_task(task)
+        
+        file_name = "未知文件"
+        if task.sourceDocumentRef:
+            file_name = task.sourceDocumentRef.fileName
+        
+        from src.services.external_callbacks import trigger_task_created_callback
+        trigger_task_created_callback(task.id, file_name, request.externalContext)
+        
         return task
 
     def schedule_task(self, task_id: str):

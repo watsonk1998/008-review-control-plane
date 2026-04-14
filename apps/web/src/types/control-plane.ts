@@ -492,6 +492,13 @@ export type TaskStreamEnvelope =
   | TaskStreamArtifactsEvent
   | TaskStreamHeartbeatEvent;
 
+export interface ExternalIntegrationContext {
+  agentId?: string | null;
+  callBackUrl?: string | null;
+  userId?: string | null;
+  tenantId?: string | null;
+}
+
 export interface CreateTaskRequest {
   taskType: TaskType;
   capabilityMode: CapabilityMode;
@@ -507,6 +514,7 @@ export interface CreateTaskRequest {
   disciplineTags?: string[];
   strictMode?: boolean;
   policyPackIds?: string[];
+  externalContext?: ExternalIntegrationContext | null;
 }
 
 export interface ReviewerDecisionUpdateRequest {

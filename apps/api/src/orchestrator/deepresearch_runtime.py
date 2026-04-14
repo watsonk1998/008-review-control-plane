@@ -83,10 +83,21 @@ class DeepResearchRuntime:
                 raise ValueError(f'Unsupported task type: {task.taskType}')
             self.store.update_task(task_id, status='succeeded', result=result)
             self._emit(task_id, 'finalize', 'deepresearch_runtime', 'completed', 'Task completed', debug={'capabilitiesUsed': result.get('capabilitiesUsed')})
+            
+            updated_task = self.store.get_task(task_id)
+            if updated_task and updated_task.externalContext:
+                from src.services.external_callbacks import trigger_task_status_callback
+                trigger_task_status_callback(task_id, 'succeeded', updated_task.externalContext)
+                
         except Exception as exc:
             status = 'partial' if self.store.get_task(task_id) and self.store.get_task(task_id).result else 'failed'
             self.store.update_task(task_id, status=status, error={'message': str(exc)})
             self._emit(task_id, 'finalize', 'deepresearch_runtime', 'failed', str(exc))
+            
+            updated_task = self.store.get_task(task_id)
+            if updated_task and updated_task.externalContext:
+                from src.services.external_callbacks import trigger_task_status_callback
+                trigger_task_status_callback(task_id, status, updated_task.externalContext)
 
     async def _run_knowledge_qa(self, task: TaskRecord, plan: dict) -> dict:
         capabilities = []
