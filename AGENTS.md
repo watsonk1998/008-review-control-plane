@@ -47,6 +47,7 @@ The formal basis for any review (laws, standards, enterprise rules) is strictly 
   - Adapters are FORBIDDEN from reading basis files directly or making basis choices.
   - Adapters MUST NOT use `fixtures/` as a formal basis repository.
   - Hardcoded mappings like `documentType -> basis file path` or large prompt injections of raw specifications are strictly prohibited.
+  - **Dynamic Mapping Constraint**: Review basis assignment (especially for tier-3 scheme additions) MUST be handled via dynamic `applicability_tags` mapping in `basis_registry.yaml`. Developers MUST NOT directly modify Python code or hardcode `basis_ids` arrays in `pack_registry.yaml` every time a new standard is introduced. Data binding must remain isolated in the configuration layer.
 
 ## Result Protocol & Final Report Ownership
 
