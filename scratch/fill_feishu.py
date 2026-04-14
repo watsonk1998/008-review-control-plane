@@ -3,6 +3,12 @@ import requests
 import json
 import time
 
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+
 APP_ID = "cli_a949c09281fa5bca"
 APP_SECRET = os.environ.get("FEISHU_APP_SECRET", "changeme")
 WIKI_TOKEN = "AebpwOoLRii46okbQkScuOYLnGb"
