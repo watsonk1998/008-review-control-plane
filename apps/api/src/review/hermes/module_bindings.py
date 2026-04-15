@@ -27,7 +27,7 @@ class ReviewModuleBinding(BaseModel):
 REVIEW_MODULE_BINDINGS: dict[str, ReviewModuleBinding] = {
     'structure_completeness': ReviewModuleBinding(
         module_name='structure_completeness',
-        title='章节完整性',
+        title='文档完整性',
         hermes_templates=['structure_completeness_reviewer'],
         support_capabilities=['primary_support_review', 'profile_and_packs'],
         decision_policy='prefer_conservative_structure_gap_expression',
@@ -35,7 +35,7 @@ REVIEW_MODULE_BINDINGS: dict[str, ReviewModuleBinding] = {
     ),
     'parameter_consistency': ReviewModuleBinding(
         module_name='parameter_consistency',
-        title='参数一致性',
+        title='内容一致性',
         hermes_templates=['execution_risk_reviewer', 'power_outage_operation_chain_reviewer'],
         support_capabilities=['fact_extract', 'rule_and_evidence'],
         decision_policy='require_support_for_parameter_conflict',
@@ -43,7 +43,7 @@ REVIEW_MODULE_BINDINGS: dict[str, ReviewModuleBinding] = {
     ),
     'legality_compliance': ReviewModuleBinding(
         module_name='legality_compliance',
-        title='合法合规性',
+        title='合规审查',
         hermes_templates=['policy_compliance_reviewer', 'power_outage_normative_reviewer', 'power_outage_restoration_closure_reviewer'],
         support_capabilities=['profile_and_packs', 'rule_and_evidence'],
         decision_policy='promote_when_rule_hits_are_grounded',
@@ -51,7 +51,7 @@ REVIEW_MODULE_BINDINGS: dict[str, ReviewModuleBinding] = {
     ),
     'execution_continuity': ReviewModuleBinding(
         module_name='execution_continuity',
-        title='工序连贯性',
+        title='技术方案审查',
         hermes_templates=['execution_risk_reviewer', 'power_outage_operation_chain_reviewer'],
         support_capabilities=['fact_extract', 'rule_and_evidence'],
         decision_policy='prefer_conservative_sequence_expression',
@@ -59,7 +59,7 @@ REVIEW_MODULE_BINDINGS: dict[str, ReviewModuleBinding] = {
     ),
     'evidence_validation': ReviewModuleBinding(
         module_name='evidence_validation',
-        title='证据验证',
+        title='依据与验证',
         hermes_templates=['visibility_gap_reviewer', 'normative_validity_reviewer', 'calculation_review_reviewer'],
         support_capabilities=['parse_visibility', 'rule_and_evidence'],
         decision_policy='degrade_when_evidence_is_insufficient',

@@ -47,32 +47,32 @@ def _get_module_keywords(document_type: str = '') -> dict[str, list[str]]:
 
 
 _MODULE_TITLES = {
-    'structure_completeness': '章节完整性',
-    'parameter_consistency': '参数一致性',
-    'legality_compliance': '合法合规性',
-    'execution_continuity': '工序连贯性',
-    'evidence_validation': '证据验证',
+    'structure_completeness': '文档完整性',
+    'parameter_consistency': '内容一致性',
+    'legality_compliance': '合规审查',
+    'execution_continuity': '技术方案审查',
+    'evidence_validation': '依据与验证',
 }
 
 _MODULE_META: dict[str, dict[str, str]] = {
     'structure_completeness': {
-        'description': '检查方案是否覆盖规范要求的必备章节与大纲结构',
+        'scope': '审查方案是否覆盖规范要求的必备章节、目录项和大纲结构',
         'theme': 'blue',
     },
     'parameter_consistency': {
-        'description': '核验方案中的数值、名称、参数在各处引用是否前后统一',
+        'scope': '核验方案中数值、名称、人员配置、编号等信息在各处引用是否前后统一',
         'theme': 'purple',
     },
     'legality_compliance': {
-        'description': '审查方案是否符合现行法规、强制性条文和安全规程要求',
+        'scope': '审查方案内容是否符合现行法律法规、强制性条文和行业安全规程的要求',
         'theme': 'red',
     },
     'execution_continuity': {
-        'description': '检查施工工序、停送电步骤、操作流程是否形成完整闭环',
+        'scope': '审查施工技术措施、安全防护措施、工艺方案和应急预案的充分性与合理性',
         'theme': 'amber',
     },
     'evidence_validation': {
-        'description': '核验编制依据的现行有效性、计算过程的正确性和证据材料的充分性',
+        'scope': '核验编制依据的现行有效性、计算过程的正确性和佐证材料的充分性',
         'theme': 'green',
     },
 }
@@ -315,10 +315,10 @@ class FinalReportRenderer:
         return parts
 
     def _render_section_header(self, section_number: int, section: FinalReportSectionView) -> list[str]:
-        """Render a themed section header with description and stats badge."""
+        """Render a themed section header with scope description and stats badge."""
         meta = _MODULE_META.get(section.key, {})
         theme = meta.get('theme', 'blue')
-        desc = meta.get('description', '')
+        scope = meta.get('scope', '')
         parts = [
             f'<section class="structured-report__section structured-report__section--{theme}">',
             f'<div class="structured-report__section-header">',
@@ -336,8 +336,13 @@ class FinalReportRenderer:
                 badge_parts.append(f'中危{medium_count}')
             parts.append(f'<span class="structured-report__section-badge structured-report__section-badge--{theme}">{" / ".join(badge_parts)}</span>')
         parts.append('</div>')  # close section-header
-        if desc:
-            parts.append(f'<p class="structured-report__section-desc">{html.escape(desc)}</p>')
+        if scope:
+            parts.append(
+                f'<div class="structured-report__section-scope">'
+                f'<span class="structured-report__section-scope-label">审查范围</span>'
+                f'<span class="structured-report__section-scope-text">{html.escape(scope)}</span>'
+                f'</div>'
+            )
         return parts
 
     def _render_chapter_completeness_section(
@@ -1130,13 +1135,36 @@ html, body {
 .structured-report__section-badge--amber  { background: #fef3c7; color: #92400e; }
 .structured-report__section-badge--green  { background: #d1fae5; color: #065f46; }
 
-/* Module description */
-.structured-report__section-desc {
-  margin: 12px 0 0;
+/* Module scope (审查范围) */
+.structured-report__section-scope {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin: 14px 0 0;
+  padding: 10px 14px;
+  background: #f9fafb;
+  border-radius: 8px;
+  border: 1px solid #f3f4f6;
+}
+
+.structured-report__section-scope-label {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 4px;
+  background: #e5e7eb;
+  color: #374151;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  letter-spacing: 0.04em;
+  flex-shrink: 0;
+}
+
+.structured-report__section-scope-text {
   font-size: 14px;
   color: #6b7280;
   line-height: 1.6;
-  padding-left: 2px;
 }
 
 .structured-report__subsection { margin-top: 20px; }
@@ -1346,7 +1374,17 @@ html, body {
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
-  .structured-report__section-desc {
+  .structured-report__section-scope {
+    padding: 8px 12px;
+    margin-top: 10px;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .structured-report__section-scope-label {
+    font-size: 10px;
+    padding: 2px 8px;
+  }
+  .structured-report__section-scope-text {
     font-size: 12px;
   }
   .structured-report__issue-card {

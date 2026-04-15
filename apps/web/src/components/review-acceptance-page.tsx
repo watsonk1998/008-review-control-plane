@@ -24,11 +24,11 @@ import type {
 } from "@/types/control-plane";
 
 const MODULE_OPTIONS: Array<{ value: ReviewModuleName; label: string }> = [
-  { value: "structure_completeness", label: "结构完整性" },
-  { value: "parameter_consistency", label: "参数一致性" },
-  { value: "legality_compliance", label: "合法合规性" },
-  { value: "execution_continuity", label: "工序连贯性" },
-  { value: "evidence_validation", label: "证据验证" },
+  { value: "structure_completeness", label: "文档完整性" },
+  { value: "parameter_consistency", label: "内容一致性" },
+  { value: "legality_compliance", label: "合规审查" },
+  { value: "execution_continuity", label: "技术方案审查" },
+  { value: "evidence_validation", label: "依据与验证" },
 ];
 
 function splitLines(value: string) {
