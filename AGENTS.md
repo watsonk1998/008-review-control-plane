@@ -101,6 +101,12 @@ All user-visible content in reports, interfaces, and statuses MUST be presented 
 - Be aware of the **Dual-Cache Layer** structure in `Dockerfile.api`. Even though runtime volumes exist for Python hot-reloading, explicitly executing `--build` (e.g., `docker compose up -d --build api`) is the heavily-cached best practice for guaranteeing dependency consistency.
 - Ensure production environment files (like `.env`) are excluded from any automated `rsync` synchronizations to prevent catastrophic credential loss.
 
+**`hermes-agent-deployment-sop.md` is explicitly listed in `.gitignore` (line 85) and MUST NEVER be committed or pushed to GitHub.**
+- AI Agents are FORBIDDEN from running: `git add hermes-agent-deployment-sop.md`, `git add -f hermes-agent-deployment-sop.md`, or any `git add -A` that includes this file.
+- This file contains server topology, port mappings, and operational secrets — it is a **local-only private document**.
+- When merging feature branches into `main`, always use `--no-ff`. Never use `--ff-only` (diverged branches will cause `fatal: Not possible to fast-forward`).
+- Dependabot **High** CVE alerts must be fixed and deployed within the current session — do not defer to the next session.
+
 ## Archive Strategy
 - Historically deprecated code, outdated scripts, unlinked tests, and obsolete experimentation artifacts MUST be moved to the `archive/` directory instead of being permanently deleted immediately. This ensures a clean active tree while retaining history for manual confirmation.
 
