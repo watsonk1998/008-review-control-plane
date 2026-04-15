@@ -7,6 +7,7 @@ from typing import Any
 from pydantic import BaseModel, Field
 
 from src.review.contracts import FinalReportPacket
+from src.review.evidence.packs import get_evidence_pack_registry
 
 
 _MODULE_TITLES = {
@@ -53,13 +54,6 @@ _VALIDITY_STATUS_LABELS = {
     'superseded': '疑似废止/替代',
     'unknown': '待人工核验',
 }
-
-_VALIDITY_RESOLVER_LABELS = {
-    'web': '联网校验',
-    'llm': '模型判断',
-    'heuristic': '规则兜底',
-}
-
 
 class ExecutiveSummaryMetricView(BaseModel):
     label: str
@@ -110,14 +104,10 @@ class NormativeValidityCheckView(BaseModel):
     title: str
     status: str
     statusLabel: str
-    resolvedBy: str
-    resolvedByLabel: str
-    evidence: str
-    summary: str
 
 
 class NormativeValidityView(BaseModel):
-    title: str = '审查依据现行有效性核验'
+    title: str = '编制依据现行有效性核验'
     summary: str = ''
     checks: list[NormativeValidityCheckView] = Field(default_factory=list)
 
@@ -147,7 +137,8 @@ class FinalReportRenderer:
         document_label = _DOCUMENT_TYPE_LABELS.get(document_type, document_type or '审查文档')
         support_issues = [item for item in support.get('issues', []) if isinstance(item, dict)]
         structure_rows = [item for item in ((support.get('matrices') or {}).get('structureCompleteness') or []) if isinstance(item, dict)]
-        basis_files = self._collect_basis_files(packet, support_issues)
+        section_structure = [item for item in ((support.get('matrices') or {}).get('sectionStructure') or []) if isinstance(item, dict)]
+        basis_files = self._collect_basis_files(packet, support_issues, support)
         findings = [item for item in packet.get('all_findings', []) if isinstance(item, dict)]
         grouped = {module: [] for module in _MODULE_ORDER}
         deduped_findings = self._dedupe_findings(findings)
@@ -158,7 +149,7 @@ class FinalReportRenderer:
         sections: list[FinalReportSectionView] = []
         for module in _MODULE_ORDER:
             issues = [
-                self._build_issue_view(finding, support_issues, structure_rows)
+                self._build_issue_view(finding, support_issues, structure_rows, section_structure)
                 for finding in grouped[module]
                 if not self._is_normative_validity_summary_finding(finding)
             ]
@@ -309,7 +300,7 @@ class FinalReportRenderer:
             parts.extend([
                 '<div class="structured-report__table-wrap">',
                 '<table class="structured-report__matrix-table structured-report__matrix-table--validity">',
-                '<thead><tr><th>序号</th><th>规范名称</th><th>核验状态</th><th>核验方式</th><th>说明</th><th>依据来源</th></tr></thead>',
+                '<thead><tr><th>序号</th><th>规范名称</th><th>核验状态</th></tr></thead>',
                 '<tbody>',
             ])
             for index, check in enumerate(normative_validity.checks, start=1):
@@ -318,9 +309,6 @@ class FinalReportRenderer:
                     f'<td>{index}</td>'
                     f'<td>{html.escape(check.title)}</td>'
                     f'<td>{html.escape(check.statusLabel)}</td>'
-                    f'<td>{html.escape(check.resolvedByLabel)}</td>'
-                    f'<td>{html.escape(check.summary)}</td>'
-                    f'<td>{html.escape(check.evidence)}</td>'
                     '</tr>'
                 )
             parts.extend(['</tbody>', '</table>', '</div>', '</div>'])
@@ -411,7 +399,7 @@ class FinalReportRenderer:
                 view = self._build_normative_validity_check(item)
                 if not view:
                     continue
-                dedupe_key = f'{view.title}|{view.status}|{view.evidence}'
+                dedupe_key = f'{view.title}|{view.status}'
                 if dedupe_key in seen_keys:
                     continue
                 seen_keys.add(dedupe_key)
@@ -420,7 +408,7 @@ class FinalReportRenderer:
             if isinstance(single_check, dict):
                 view = self._build_normative_validity_check(single_check)
                 if view:
-                    dedupe_key = f'{view.title}|{view.status}|{view.evidence}'
+                    dedupe_key = f'{view.title}|{view.status}'
                     if dedupe_key not in seen_keys:
                         seen_keys.add(dedupe_key)
                         checks.append(view)
@@ -429,7 +417,7 @@ class FinalReportRenderer:
         current_count = sum(1 for item in checks if item.status == 'current')
         superseded_count = sum(1 for item in checks if item.status == 'superseded')
         unknown_count = sum(1 for item in checks if item.status == 'unknown')
-        summary = f'共核验 {len(checks)} 项审查依据，其中现行有效 {current_count} 项，疑似废止/替代 {superseded_count} 项，待人工核验 {unknown_count} 项。'
+        summary = f'共核验 {len(checks)} 项编制依据，其中现行有效 {current_count} 项，疑似废止/替代 {superseded_count} 项，待人工核验 {unknown_count} 项。'
         return NormativeValidityView(summary=summary, checks=checks)
 
     def _build_normative_validity_check(self, item: dict[str, Any]) -> NormativeValidityCheckView | None:
@@ -437,17 +425,10 @@ class FinalReportRenderer:
         if not title:
             return None
         status = self._clean_text(item.get('status')) or 'unknown'
-        resolved_by = self._clean_text(item.get('resolvedBy')) or 'heuristic'
-        evidence = self._clean_text(item.get('evidenceTitle')) or self._clean_text(item.get('evidenceUrl')) or '未检索到权威公开依据'
-        summary = self._clean_text(item.get('summary')) or '当前未提取到更详细的核验说明。'
         return NormativeValidityCheckView(
             title=title,
             status=status,
             statusLabel=_VALIDITY_STATUS_LABELS.get(status, status),
-            resolvedBy=resolved_by,
-            resolvedByLabel=_VALIDITY_RESOLVER_LABELS.get(resolved_by, resolved_by),
-            evidence=evidence,
-            summary=summary,
         )
 
     def _build_issue_view(
@@ -455,6 +436,7 @@ class FinalReportRenderer:
         finding: dict[str, Any],
         support_issues: list[dict[str, Any]],
         structure_rows: list[dict[str, Any]],
+        section_structure: list[dict[str, Any]],
     ) -> FinalReportIssueView:
         support_issue = self._match_support_issue(finding, support_issues)
         basis = self._collect_basis_lines(finding, support_issue)
@@ -464,7 +446,7 @@ class FinalReportRenderer:
             title=self._clean_text(finding.get('title')) or '未命名问题',
             severity=str(finding.get('severity') or 'info'),
             severityLabel=_SEVERITY_LABELS.get(str(finding.get('severity') or 'info'), str(finding.get('severity') or '提示')),
-            location=self._resolve_location(finding, support_issue, structure_rows),
+            location=self._resolve_location(finding, support_issue, structure_rows, section_structure),
             description=self._description_text(finding, support_issue),
             recommendation=recommendation,
             basis=basis,
@@ -493,17 +475,24 @@ class FinalReportRenderer:
         finding: dict[str, Any],
         support_issue: dict[str, Any] | None,
         structure_rows: list[dict[str, Any]],
+        section_structure: list[dict[str, Any]],
     ) -> str:
         raw_data = finding.get('raw_data') if isinstance(finding.get('raw_data'), dict) else {}
-        matched_sections = (support_issue or {}).get('matchedSections') or raw_data.get('matchedSections') or []
-        matched_text = self._matched_section_text(matched_sections)
-        if matched_text and matched_text != '未识别到稳定对应章节':
-            return matched_text
+        for matched_sections in [(support_issue or {}).get('matchedSections') or [], raw_data.get('matchedSections') or []]:
+            matched_text = self._matched_section_text(matched_sections)
+            if matched_text and matched_text != '未识别到稳定对应章节':
+                return matched_text
 
         for row in self._matching_structure_rows(finding, structure_rows):
             matched_text = self._matched_section_text(row.get('matchedSections') or [])
             if matched_text and matched_text != '未识别到稳定对应章节':
                 return matched_text
+
+        section_lookup = self._build_section_lookup(section_structure)
+        for source in [raw_data, support_issue or {}, finding]:
+            precise = self._resolve_location_from_doc_evidence(source.get('docEvidence') or [], section_lookup)
+            if precise:
+                return precise
 
         candidates: list[str] = []
         for source in [raw_data, support_issue or {}, finding]:
@@ -533,6 +522,30 @@ class FinalReportRenderer:
             if title and any(title in value for value in [analysis, excerpt, requirement] if value):
                 results.append(row)
         return results
+
+    def _build_section_lookup(self, section_structure: list[dict[str, Any]]) -> dict[str, str]:
+        by_id = {
+            self._clean_text(item.get('id')): self._clean_text(item.get('title'))
+            for item in section_structure
+            if self._clean_text(item.get('id')) and self._clean_text(item.get('title'))
+        }
+        return by_id
+
+    def _resolve_location_from_doc_evidence(self, doc_evidence: list[dict[str, Any]], section_lookup: dict[str, str]) -> str:
+        for evidence in doc_evidence:
+            if not isinstance(evidence, dict):
+                continue
+            locator = evidence.get('locator') if isinstance(evidence.get('locator'), dict) else {}
+            section_id = self._clean_text(locator.get('sectionId'))
+            if section_id and section_id in section_lookup:
+                precise = self._format_location_candidate(section_lookup[section_id])
+                if precise:
+                    return precise
+            excerpt = self._clean_text(evidence.get('excerpt'))
+            precise = self._format_location_candidate(excerpt)
+            if precise:
+                return precise
+        return ''
 
     def _format_location_candidate(self, text: str) -> str:
         value = self._clean_text(text)
@@ -583,20 +596,20 @@ class FinalReportRenderer:
         title = self._clean_text(finding.get('title')).lower()
         return by_title.get(title)
 
-    def _collect_basis_files(self, packet: dict[str, Any], support_issues: list[dict[str, Any]]) -> list[str]:
+    def _collect_basis_files(self, packet: dict[str, Any], support_issues: list[dict[str, Any]], support_result: dict[str, Any]) -> list[str]:
         basis: list[str] = []
         seen: set[str] = set()
-        for source in self._iter_basis_source_ids(packet, support_issues):
-            if self._is_expert_review_point_source(source):
+        for source in self._iter_basis_source_ids(packet, support_issues, support_result):
+            if self._should_hide_basis_source(source):
                 continue
             label, is_external = self._normalize_policy_source(source)
             if not is_external or label in seen:
                 continue
             seen.add(label)
             basis.append(label)
-        return basis[:10]
+        return basis[:20]
 
-    def _iter_basis_source_ids(self, packet: dict[str, Any], support_issues: list[dict[str, Any]]) -> list[str]:
+    def _iter_basis_source_ids(self, packet: dict[str, Any], support_issues: list[dict[str, Any]], support_result: dict[str, Any]) -> list[str]:
         out: list[str] = []
         for finding in packet.get('all_findings', []):
             raw_data = finding.get('raw_data') if isinstance(finding, dict) and isinstance(finding.get('raw_data'), dict) else {}
@@ -608,6 +621,17 @@ class FinalReportRenderer:
             for span in issue.get('policyEvidence') or []:
                 if isinstance(span, dict) and span.get('sourceId'):
                     out.append(str(span.get('sourceId')))
+        selected_packs = list((support_result.get('summary') or {}).get('selectedPacks') or [])
+        if not selected_packs:
+            selected_packs = list((support_result.get('resolvedProfile') or {}).get('policyPackIds') or [])
+        registry = get_evidence_pack_registry()
+        for pack_id in selected_packs:
+            pack = registry.get(pack_id)
+            if not pack:
+                continue
+            for clause in pack.clauses:
+                if clause.sourceId:
+                    out.append(str(clause.sourceId))
         return out
 
     def _resolve_module(self, finding: dict[str, Any]) -> str:
@@ -734,6 +758,13 @@ class FinalReportRenderer:
 
     def _is_expert_review_point_source(self, source_id: str) -> bool:
         return '监理工程师对停电施工方案的审核规则及要点' in source_id
+
+    def _should_hide_basis_source(self, source_id: str) -> bool:
+        hidden_keywords = (
+            '监理工程师对停电施工方案的审核规则及要点',
+            '危险性较大的分部分项工程专项施工方案编制指南',
+        )
+        return any(keyword in source_id for keyword in hidden_keywords)
 
     def _format_basis_citation(self, source_id: str, clause: str) -> str:
         source_label, _ = self._normalize_policy_source(source_id)

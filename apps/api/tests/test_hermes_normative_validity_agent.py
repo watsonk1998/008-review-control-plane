@@ -1,34 +1,29 @@
 from __future__ import annotations
 
 from src.review.hermes.agent_runner import HermesAgentRunner
+from src.review.hermes.normative_validity import NormativeValidityChecker
 from src.review.hermes.template_models import AgentTemplate
 
 
 class DummyModuleRegistry:
     async def run_module(self, module_id, *, workspace, context):
-        workspace.setdefault('candidates', ['demo-candidate'])
+        workspace.setdefault('parse_result', object())
         return {'module_id': module_id}
 
 
 class StubNormativeValidityChecker:
-    async def verify_candidates(self, candidates):
-        assert candidates == ['demo-candidate']
+    async def verify_parse_result(self, parse_result):
+        assert parse_result is not None
         return [
             {
-                'title': '《建设工程安全生产管理条例》',
+                'title': '《中国南方电网有限责任公司电力安全工作规程》Q/CSG 510001-2015',
                 'status': 'current',
                 'resolvedBy': 'web',
-                'summary': '联网结果未见废止信号。',
-                'evidenceTitle': '国务院文件库',
-                'evidenceUrl': 'https://www.gov.cn/',
             },
             {
-                'title': '《电气装置安装工程低压电器施工及验收规范》GB 50254-2014',
+                'title': '《深圳电网工程安全文明施工标准（2019年版）》',
                 'status': 'unknown',
                 'resolvedBy': 'web',
-                'summary': '未能从公开摘要稳定判断现行状态。',
-                'evidenceTitle': '国家标准全文公开系统',
-                'evidenceUrl': 'https://openstd.samr.gov.cn/',
             },
         ]
 
@@ -61,4 +56,33 @@ async def test_normative_validity_reviewer_outputs_evidence_validation_findings(
     findings = packet['findings']
     assert findings[0]['raw_data']['module_name'] == 'evidence_validation'
     assert findings[0]['raw_data']['normativeValidityChecks'][0]['status'] == 'current'
-    assert any(item['title'].startswith('审查依据现行有效性存在疑点') for item in findings[1:])
+    assert findings[0]['title'] == '编制依据现行有效性核验'
+    assert any(item['title'].startswith('编制依据现行有效性存在疑点') for item in findings[1:])
+
+
+async def test_normative_validity_checker_extracts_only_preparation_basis_normative_items():
+    checker = NormativeValidityChecker()
+    parse_result = type(
+        'ParseResult',
+        (),
+        {
+            'sections': [
+                {'id': 'section-1', 'title': '第一章 编制依据', 'parentId': None},
+                {'id': 'section-2', 'title': '第二章 工程概况', 'parentId': None},
+            ],
+            'blocks': [
+                {'type': 'heading', 'sectionId': 'section-1', 'text': '第一章 编制依据'},
+                {'type': 'paragraph', 'sectionId': 'section-1', 'text': '1. 与委托方签订的项目咨询合同、委托函或中标通知书'},
+                {'type': 'paragraph', 'sectionId': 'section-1', 'text': '2. 《中国南方电网有限责任公司电力安全工作规程》Q/CSG 510001-2015'},
+                {'type': 'paragraph', 'sectionId': 'section-1', 'text': '3. 《深圳电网工程安全文明施工标准（2019年版）》'},
+                {'type': 'paragraph', 'sectionId': 'section-2', 'text': '项目位于深圳市南山区'},
+            ],
+        },
+    )()
+
+    sources = checker._extract_sources_from_parse_result(parse_result)
+
+    assert [item['title'] for item in sources] == [
+        '《中国南方电网有限责任公司电力安全工作规程》Q/CSG 510001-2015',
+        '《深圳电网工程安全文明施工标准（2019年版）》',
+    ]

@@ -13,7 +13,9 @@ export default async function Home(props: { searchParams: SearchParams }) {
 
   const externalContext = {
     agentId: typeof searchParams?.agentId === "string" ? searchParams.agentId : undefined,
-    callBackUrl: typeof searchParams?.callBackUrl === "string" ? searchParams.callBackUrl : undefined,
+    callBackUrl:
+      (typeof searchParams?.callBackUrl === "string" ? searchParams.callBackUrl : undefined) ??
+      (typeof searchParams?.callbackUrl === "string" ? searchParams.callbackUrl : undefined),
     userId: typeof searchParams?.userId === "string" ? searchParams.userId : undefined,
     tenantId: typeof searchParams?.tenantId === "string" ? searchParams.tenantId : undefined,
   };

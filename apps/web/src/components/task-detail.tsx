@@ -177,6 +177,7 @@ export function TaskDetail({ taskId }: { taskId: string }) {
   const [error, setError] = useState<string | null>(null);
   const [transportMode, setTransportMode] = useState<"connecting" | "sse" | "polling">("connecting");
   const [now, setNow] = useState(() => Date.now());
+  const [progressViewStartedAt, setProgressViewStartedAt] = useState(() => Date.now());
 
   const eventSourceRef = useRef<EventSource | null>(null);
   const pollingTimerRef = useRef<number | null>(null);
@@ -189,6 +190,10 @@ export function TaskDetail({ taskId }: { taskId: string }) {
   useEffect(() => {
     transportModeRef.current = transportMode;
   }, [transportMode]);
+
+  useEffect(() => {
+    setProgressViewStartedAt(Date.now());
+  }, [taskId]);
 
   const clearPolling = useCallback(() => {
     if (pollingTimerRef.current) {
@@ -408,20 +413,16 @@ export function TaskDetail({ taskId }: { taskId: string }) {
       ? debugCompletedAgents
       : completedAgentEvents.length;
     const stage = latestEvent?.stage || "";
-    const startAt = events[0]?.timestamp || task?.createdAt;
-    const nowAt = TERMINAL_STATES.has((task?.status || "").trim().toLowerCase()) ? task?.updatedAt : new Date(now).toISOString();
-    const elapsedSeconds = startAt && nowAt
-      ? Math.max(0, Math.floor((new Date(nowAt).getTime() - new Date(startAt).getTime()) / 1000))
-      : 0;
+    const elapsedSeconds = TERMINAL_STATES.has((task?.status || "").trim().toLowerCase())
+      ? 0
+      : Math.max(0, Math.floor((now - progressViewStartedAt) / 1000));
     const realPercent = estimateRealReviewProgress({
       totalAgents,
       completedAgents,
       stage,
       status: task?.status,
     });
-    const simulatedPercent = ["succeeded", "accepted"].includes((task?.status || "").trim().toLowerCase())
-      ? realPercent
-      : estimateSimulatedProgress(elapsedSeconds);
+    const simulatedPercent = estimateSimulatedProgress(elapsedSeconds);
     return {
       latestEvent,
       currentStage: STAGE_LABELS[stage] || "审查执行中",
@@ -431,9 +432,9 @@ export function TaskDetail({ taskId }: { taskId: string }) {
       realPercent,
       progressPercent: TERMINAL_STATES.has((task?.status || "").trim().toLowerCase())
         ? 100
-        : Math.min(90, Math.max(simulatedPercent, Math.min(realPercent, 90))),
+        : simulatedPercent,
     };
-  }, [events, structuredResult, task?.createdAt, task?.status, task?.updatedAt, now]);
+  }, [events, structuredResult, task?.status, now, progressViewStartedAt]);
 
   const reviewElapsedSeconds = useMemo(() => {
     if (!task) return 0;

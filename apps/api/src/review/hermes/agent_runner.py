@@ -192,24 +192,24 @@ class HermesAgentRunner:
         return None
 
     async def _build_normative_validity_packet(self, *, template: AgentTemplate, workspace: dict[str, Any]) -> FactPacket:
-        checks = await self.normative_validity_checker.verify_candidates(workspace.get('candidates') or [])
+        checks = await self.normative_validity_checker.verify_parse_result(workspace.get('parse_result'))
         if not checks:
-            return self._build_packet(template, [], overall='未识别到可执行现行有效性核验的法规或标准。')
+            return self._build_packet(template, [], overall='未识别到被审方案“编制依据”章节中可执行现行有效性核验的规范。')
 
         findings: list[FindingItem] = [
             FindingItem(
                 id='H-NORM-SUM-001',
-                title='审查依据现行有效性核验',
+                title='编制依据现行有效性核验',
                 severity='info',
                 category='evidence_verification',
                 layer='L2',
                 evidence_status='grounded' if any(item.get('resolvedBy') == 'web' for item in checks) else 'inferred',
                 summary=(
-                    f"共核验 {len(checks)} 项审查依据，其中现行有效 {sum(1 for item in checks if item.get('status') == 'current')} 项，"
+                    f"共核验 {len(checks)} 项编制依据，其中现行有效 {sum(1 for item in checks if item.get('status') == 'current')} 项，"
                     f"疑似废止/替代 {sum(1 for item in checks if item.get('status') == 'superseded')} 项，"
                     f"待人工核验 {sum(1 for item in checks if item.get('status') == 'unknown')} 项。"
                 ),
-                suggestion='现行状态异常或未核实的依据，应在正式引用前补做联网或人工复核。',
+                suggestion='被审方案编制依据中现行状态异常或未核实的规范，应在正式引用前补做联网或人工复核。',
                 source_engine='hermes',
                 finding_type='normative_validity_summary',
                 raw_data={
@@ -225,13 +225,13 @@ class HermesAgentRunner:
             findings.append(
                 FindingItem(
                     id=f'H-NORM-{idx:03d}',
-                    title=f"审查依据现行有效性存在疑点：{check.get('title', '')}",
+                    title=f"编制依据现行有效性存在疑点：{check.get('title', '')}",
                     severity='medium' if check.get('status') == 'superseded' else 'info',
                     category='evidence_verification',
                     layer='L2',
                     evidence_status='grounded' if check.get('resolvedBy') == 'web' else 'inferred',
-                    summary=str(check.get('summary') or '当前依据的现行状态仍需进一步复核。'),
-                    suggestion='如该依据已废止、被替代或状态不明，请改用现行版本并同步修正文内引用。',
+                    summary=str(check.get('summary') or '当前编制依据的现行状态仍需进一步复核。'),
+                    suggestion='如该编制依据已废止、被替代或状态不明，请改用现行版本并同步修正文内引用。',
                     source_engine='hermes',
                     finding_type='normative_validity_issue',
                     raw_data={
@@ -241,7 +241,7 @@ class HermesAgentRunner:
                 )
             )
             self._annotate_finding_ownership(template, findings[-1])
-        return self._build_packet(template, findings, overall='审查依据现行有效性核验已完成。')
+        return self._build_packet(template, findings, overall='被审方案“编制依据”现行有效性核验已完成。')
 
     def _template_review_modules(self, template: AgentTemplate) -> list[str]:
         configured = list(template.metadata.get('review_modules') or [])

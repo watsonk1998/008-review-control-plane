@@ -69,26 +69,20 @@ def test_final_report_view_model_builds_sections_and_compact_chapter_matrix():
             ),
             FindingItem(
                 id='H-NORM-SUM-001',
-                title='审查依据现行有效性核验',
+                title='编制依据现行有效性核验',
                 severity='info',
                 category='evidence_verification',
-                summary='共核验 2 项审查依据。',
+                summary='共核验 2 项编制依据。',
                 raw_data={
                     'module_name': 'evidence_validation',
                     'normativeValidityChecks': [
                         {
-                            'title': '《建设工程安全生产管理条例》',
+                            'title': '《中国南方电网有限责任公司电力安全工作规程》Q/CSG 510001-2015',
                             'status': 'current',
-                            'resolvedBy': 'web',
-                            'summary': '联网结果未见废止或替代信号。',
-                            'evidenceTitle': '国务院文件库',
                         },
                         {
-                            'title': '《电气装置安装工程低压电器施工及验收规范》GB 50254-2014',
+                            'title': '《深圳电网工程安全文明施工标准（2019年版）》',
                             'status': 'unknown',
-                            'resolvedBy': 'web',
-                            'summary': '未能从公开摘要稳定判断现行状态。',
-                            'evidenceTitle': '国家标准全文公开系统',
                         },
                     ],
                 },
@@ -96,7 +90,13 @@ def test_final_report_view_model_builds_sections_and_compact_chapter_matrix():
         ],
     )
     support_result = {
-        'summary': {'documentType': 'distribution_network_special_scheme'},
+        'summary': {
+            'documentType': 'distribution_network_special_scheme',
+            'selectedPacks': ['distribution_network_special_scheme.base', 'power_outage_work.base'],
+        },
+        'resolvedProfile': {
+            'policyPackIds': ['distribution_network_special_scheme.base', 'power_outage_work.base'],
+        },
         'issues': [
             _support_issue('ISSUE-001', '停电施工作业专项章节不完整', '第3章 3.1.2 计划停电工作时间'),
             _support_issue('ISSUE-002', '计划停电时间核心参数缺失', '3.1.2 计划停电工作时间：后无任何内容'),
@@ -124,7 +124,10 @@ def test_final_report_view_model_builds_sections_and_compact_chapter_matrix():
                     'analysis': '已命中部分章节，但内容仍不完整。',
                     'reportExcerpt': '建议补齐作业内容边界。',
                 },
-            ]
+            ],
+            'sectionStructure': [
+                {'id': 'section-11', 'title': '第11章 应急预案', 'level': 1, 'parentId': None},
+            ],
         },
     }
 
@@ -133,6 +136,9 @@ def test_final_report_view_model_builds_sections_and_compact_chapter_matrix():
     assert view_model.executiveSummaryView.verdict == '不通过'
     assert view_model.executiveSummaryView.metrics[0].value == '9 项'
     assert '监理工程师对停电施工方案的审核规则及要点' not in view_model.basisFiles
+    assert '《危险性较大的分部分项工程专项施工方案编制指南》（建办质〔2021〕48号）' not in ''.join(view_model.basisFiles)
+    assert '《中国南方电网公司电网建设工程专项施工方案管理工作指引》（2022）' in view_model.basisFiles
+    assert '《电力安全工作规程 发电厂和变电站电气部分》GB 26860-2011' in view_model.basisFiles
     assert all('条文' not in item for item in view_model.basisFiles)
     assert view_model.chapterCompleteness.tableRows[1].matchedSection == '第3章、3.2.3'
     assert not getattr(view_model.chapterCompleteness, 'notes', [])
@@ -140,7 +146,10 @@ def test_final_report_view_model_builds_sections_and_compact_chapter_matrix():
     html = renderer.render_html(view_model)
     assert '问题定位' in html
     assert '章节完整性矩阵' in html
-    assert '审查依据现行有效性核验' in html
+    assert '编制依据现行有效性核验' in html
+    assert '核验方式' not in html
+    assert '说明' not in html
+    assert '依据来源' not in html
     assert 'structured-report__issue-card--high' in html
     assert 'structured-report__issue-card--medium' in html
     assert '补充说明' not in html
@@ -154,7 +163,7 @@ def test_final_report_view_model_location_fallback_priority():
         executive_summary='需要修改。',
         all_findings=[
             FindingItem(id='A', title='A', severity='high', summary='A', raw_data={'docEvidence': [{'excerpt': '第3章 3.1.2 计划停电工作时间'}]}),
-            FindingItem(id='B', title='B', severity='high', summary='B', raw_data={}),
+            FindingItem(id='B', title='B', severity='high', summary='B', raw_data={'docEvidence': [{'locator': {'sectionId': 'section-11'}, 'excerpt': '演练要求未闭合'}]}),
             FindingItem(id='C', title='C', severity='high', summary='C', raw_data={}),
             FindingItem(id='D', title='D', severity='high', summary='D', raw_data={}),
         ],
@@ -166,13 +175,16 @@ def test_final_report_view_model_location_fallback_priority():
             _support_issue('C', 'C', '现场派工名单与表格不一致，需复核'),
             _support_issue('D', 'D', None),
         ],
-        'matrices': {'structureCompleteness': []},
+        'matrices': {
+            'structureCompleteness': [],
+            'sectionStructure': [{'id': 'section-11', 'title': '第11章 应急预案', 'level': 1, 'parentId': None}],
+        },
     }
 
     view_model = renderer.build_view_model(final_packet=packet, support_result=support_result)
     issue_map = {issue.id: issue for section in view_model.sections for issue in section.issues}
 
     assert issue_map['A'].location.startswith('第3章 3.1.2')
-    assert issue_map['B'].location.startswith('第5章')
+    assert issue_map['B'].location == '第11章'
     assert issue_map['C'].location.startswith('现场派工名单')
     assert issue_map['D'].location == '未定位到稳定章节，请结合原文复核。'
