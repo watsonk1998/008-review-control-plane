@@ -19,6 +19,29 @@ _MODULE_TITLES = {
     'evidence_validation': '证据验证',
 }
 
+_MODULE_META: dict[str, dict[str, str]] = {
+    'structure_completeness': {
+        'description': '检查方案是否覆盖规范要求的必备章节与大纲结构',
+        'theme': 'blue',
+    },
+    'parameter_consistency': {
+        'description': '核验方案中的数值、名称、参数在各处引用是否前后统一',
+        'theme': 'purple',
+    },
+    'legality_compliance': {
+        'description': '审查方案是否符合现行法规、强制性条文和安全规程要求',
+        'theme': 'red',
+    },
+    'execution_continuity': {
+        'description': '检查施工工序、停送电步骤、操作流程是否形成完整闭环',
+        'theme': 'amber',
+    },
+    'evidence_validation': {
+        'description': '核验编制依据的现行有效性、计算过程的正确性和证据材料的充分性',
+        'theme': 'green',
+    },
+}
+
 _MODULE_ORDER = [
     'structure_completeness',
     'parameter_consistency',
@@ -192,7 +215,7 @@ class FinalReportRenderer:
         parts = [
             '<article class="structured-report structured-report--final">',
             f'<h1 class="structured-report__title">{html.escape(view_model.title)}</h1>',
-            '<section class="structured-report__section">',
+            '<section class="structured-report__section structured-report__section--overview">',
             '<h2 class="structured-report__section-title">第一部分：审查结论与审查依据</h2>',
             '<div class="structured-report__subsection">',
             '<h3 class="structured-report__subsection-title">1. 总体审查结论</h3>',
@@ -254,16 +277,39 @@ class FinalReportRenderer:
                 parts.append('<p class="structured-report__summary">本次未生成可展示的综合结论。</p>')
         return parts
 
+    def _render_section_header(self, section_number: int, section: FinalReportSectionView) -> list[str]:
+        """Render a themed section header with description and stats badge."""
+        meta = _MODULE_META.get(section.key, {})
+        theme = meta.get('theme', 'blue')
+        desc = meta.get('description', '')
+        parts = [
+            f'<section class="structured-report__section structured-report__section--{theme}">',
+            f'<div class="structured-report__section-header">',
+            f'<h2 class="structured-report__section-title structured-report__section-title--{theme}">第{_number_to_cn(section_number)}部分：{html.escape(section.title)}</h2>',
+        ]
+        # Stats badges
+        total = len(section.issues)
+        high_count = sum(1 for i in section.issues if i.severity == 'high')
+        medium_count = sum(1 for i in section.issues if i.severity == 'medium')
+        if total > 0:
+            badge_parts = [f'{total}项']
+            if high_count:
+                badge_parts.append(f'高危{high_count}')
+            if medium_count:
+                badge_parts.append(f'中危{medium_count}')
+            parts.append(f'<span class="structured-report__section-badge structured-report__section-badge--{theme}">{" / ".join(badge_parts)}</span>')
+        parts.append('</div>')  # close section-header
+        if desc:
+            parts.append(f'<p class="structured-report__section-desc">{html.escape(desc)}</p>')
+        return parts
+
     def _render_chapter_completeness_section(
         self,
         section_number: int,
         section: FinalReportSectionView,
         chapter: ChapterCompletenessView,
     ) -> list[str]:
-        parts = [
-            '<section class="structured-report__section">',
-            f'<h2 class="structured-report__section-title">第{_number_to_cn(section_number)}部分：{html.escape(section.title)}</h2>',
-        ]
+        parts = self._render_section_header(section_number, section)
         if chapter.tableRows:
             parts.extend([
                 '<div class="structured-report__subsection">',
@@ -301,10 +347,7 @@ class FinalReportRenderer:
         section: FinalReportSectionView,
         normative_validity: NormativeValidityView,
     ) -> list[str]:
-        parts = [
-            '<section class="structured-report__section">',
-            f'<h2 class="structured-report__section-title">第{_number_to_cn(section_number)}部分：{html.escape(section.title)}</h2>',
-        ]
+        parts = self._render_section_header(section_number, section)
         if normative_validity.checks:
             parts.extend([
                 '<div class="structured-report__subsection">',
@@ -346,10 +389,7 @@ class FinalReportRenderer:
         return parts
 
     def _render_issue_section(self, section_number: int, section: FinalReportSectionView) -> list[str]:
-        parts = [
-            '<section class="structured-report__section">',
-            f'<h2 class="structured-report__section-title">第{_number_to_cn(section_number)}部分：{html.escape(section.title)}</h2>',
-        ]
+        parts = self._render_section_header(section_number, section)
         if section.issues:
             parts.extend(self._render_issue_cards(section.issues))
         else:
@@ -717,20 +757,57 @@ class FinalReportRenderer:
         # be generic ('compliance') but whose topic belongs to a specific
         # module.  This mirrors agent_runner._resolve_finding_module_name
         # and ensures cross-template findings are routed correctly.
+        # Order matters: more specific tokens first, broader tokens last.
         title_text = f"{self._clean_text(finding.get('title'))} {self._clean_text(finding.get('summary'))}".lower()
-        if any(token in title_text for token in ['编制依据', '现行有效', '废止', '过期', '替代', '规范版本', '标准号']):
+
+        # evidence_validation — highest priority for normative/calc findings
+        if any(token in title_text for token in [
+            '编制依据', '现行有效', '废止', '过期', '替代', '规范版本',
+            '标准号', '引用版本', '版本滞后',
+        ]):
             return 'evidence_validation'
-        if any(token in title_text for token in ['计算', '验算', '公式', '算式']):
+        if any(token in title_text for token in ['计算', '验算', '公式', '算式', '校核']):
             return 'evidence_validation'
-        if any(token in title_text for token in ['停送电', '执行链路', '工序', '连续', '衔接']):
-            return 'execution_continuity'
-        if any(token in title_text for token in ['参数', '荷载', '吨', '重量', '一致']):
+
+        # structure_completeness — chapter/outline/framework
+        if any(token in title_text for token in [
+            '章节不完整', '大纲', '目录缺', '框架缺', '缺少章节',
+        ]):
+            return 'structure_completeness'
+
+        # parameter_consistency — numbers/names/units mismatch
+        if any(token in title_text for token in [
+            '名称前后', '前后矛盾', '前后不一致', '数值矛盾',
+            '单位不一致', '人数矛盾', '姓名.*不一致',
+        ]):
             return 'parameter_consistency'
+
+        # legality_compliance — regulations/safety rules/permits
+        if any(token in title_text for token in [
+            '安规', '强制性条文', '资质', '许可', '工作票', '操作票',
+            '唱票复诵', '双人监护', '不符合.*要求',
+        ]):
+            return 'legality_compliance'
+
+        # execution_continuity — operational steps/sequence/closure
+        if any(token in title_text for token in [
+            '停送电', '工序', '衔接', '闭环', '流程缺失', '执行清单',
+            '拆地线', '核相', '送电流程', '倒闸', '签字确认',
+            '五步法', '十个规定动作',
+        ]):
+            return 'execution_continuity'
+
+        # Broader keywords with lower priority
+        if any(token in title_text for token in ['参数', '荷载', '吨', '重量']):
+            return 'parameter_consistency'
+        if any(token in title_text for token in ['附件', '图纸', '证据']):
+            return 'evidence_validation'
+
         category = self._clean_text(finding.get('category'))
         category_map = {
             'chapter_completeness': 'structure_completeness',
             'structure': 'structure_completeness',
-            'visibility': 'structure_completeness',
+            'visibility': 'evidence_validation',
             'parameter_consistency': 'parameter_consistency',
             'compliance': 'legality_compliance',
             'safety': 'legality_compliance',
@@ -949,7 +1026,7 @@ def _number_to_cn(value: int) -> str:
 
 _FINAL_REPORT_CSS = """
 html, body {
-  background: #ffffff !important;
+  background: #f8f9fb !important;
   margin: 0;
   padding: 0;
   -webkit-print-color-adjust: exact;
@@ -961,8 +1038,8 @@ html, body {
 .structured-report {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 28px;
-  background: #ffffff;
+  padding: 32px;
+  background: #f8f9fb;
 }
 
 .structured-report * {
@@ -974,36 +1051,90 @@ html, body {
 }
 
 .structured-report__title {
-  margin: 0 0 24px;
+  margin: 0 0 28px;
   text-align: center;
-  font-size: 30px;
+  font-size: 28px;
   line-height: 1.3;
-  color: #172033;
+  color: #111827;
+  font-weight: 700;
+  letter-spacing: 0.02em;
 }
 
+/* --- Module section base --- */
 .structured-report__section {
-  margin-top: 24px;
-  padding: 24px;
-  border-radius: 24px;
+  margin-top: 28px;
+  padding: 28px;
+  border-radius: 16px;
   background: #ffffff;
   border: 1px solid #e5e7eb;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
   break-inside: avoid;
 }
 
-.structured-report__section-title {
-  margin: 0 0 16px;
-  padding: 16px 20px;
-  background: #f3f4f6;
-  border-left: 6px solid #2563eb;
-  color: #172033;
-  font-size: 22px;
+.structured-report__section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
-.structured-report__subsection { margin-top: 18px; }
+.structured-report__section-title {
+  margin: 0;
+  padding: 14px 20px;
+  border-radius: 10px;
+  color: #ffffff;
+  font-size: 20px;
+  font-weight: 700;
+  flex-grow: 1;
+}
+
+/* --- Per-module theme colors --- */
+.structured-report__section-title--blue   { background: linear-gradient(135deg, #2563eb, #3b82f6); }
+.structured-report__section-title--purple { background: linear-gradient(135deg, #7c3aed, #8b5cf6); }
+.structured-report__section-title--red    { background: linear-gradient(135deg, #dc2626, #ef4444); }
+.structured-report__section-title--amber  { background: linear-gradient(135deg, #d97706, #f59e0b); }
+.structured-report__section-title--green  { background: linear-gradient(135deg, #059669, #10b981); }
+
+.structured-report__section--blue   { border-left: 5px solid #2563eb; }
+.structured-report__section--purple { border-left: 5px solid #7c3aed; }
+.structured-report__section--red    { border-left: 5px solid #dc2626; }
+.structured-report__section--amber  { border-left: 5px solid #d97706; }
+.structured-report__section--green  { border-left: 5px solid #059669; }
+.structured-report__section--overview { border-left: 5px solid #374151; }
+
+/* Stats badge */
+.structured-report__section-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.structured-report__section-badge--blue   { background: #dbeafe; color: #1e40af; }
+.structured-report__section-badge--purple { background: #ede9fe; color: #5b21b6; }
+.structured-report__section-badge--red    { background: #fee2e2; color: #991b1b; }
+.structured-report__section-badge--amber  { background: #fef3c7; color: #92400e; }
+.structured-report__section-badge--green  { background: #d1fae5; color: #065f46; }
+
+/* Module description */
+.structured-report__section-desc {
+  margin: 12px 0 0;
+  font-size: 14px;
+  color: #6b7280;
+  line-height: 1.6;
+  padding-left: 2px;
+}
+
+.structured-report__subsection { margin-top: 20px; }
 .structured-report__subsection-title {
   margin: 0 0 12px;
-  font-size: 18px;
+  font-size: 17px;
   color: #172033;
+  font-weight: 600;
 }
 
 .structured-report__summary,
@@ -1012,8 +1143,10 @@ html, body {
 .structured-report__issue-card-law-item,
 .structured-report__basis-list li {
   font-size: 15px;
-  line-height: 1.9;
+  line-height: 1.85;
 }
+
+.structured-report__muted { color: #9ca3af; }
 
 .structured-report__verdict-row {
   display: flex;
@@ -1031,11 +1164,12 @@ html, body {
 .structured-report__verdict-badge {
   display: inline-flex;
   align-items: center;
-  padding: 6px 14px;
+  padding: 6px 16px;
   border-radius: 999px;
   background: #fee2e2;
   color: #991b1b;
   font-weight: 700;
+  font-size: 15px;
 }
 
 .structured-report__summary-metrics {
@@ -1047,7 +1181,7 @@ html, body {
 
 .structured-report__summary-metric {
   border: 1px solid #e5e7eb;
-  border-radius: 16px;
+  border-radius: 12px;
   padding: 14px 16px;
   background: #ffffff;
 }
@@ -1076,7 +1210,7 @@ html, body {
 
 .structured-report__table-wrap {
   overflow-x: auto;
-  border-radius: 18px;
+  border-radius: 12px;
   border: 1px solid #d1d5db;
   background: #ffffff;
 }
@@ -1095,11 +1229,11 @@ html, body {
 
 .structured-report__matrix-table th,
 .structured-report__matrix-table td {
-  padding: 16px;
+  padding: 14px 16px;
   border-bottom: 1px solid #e5e7eb;
   text-align: left;
   vertical-align: top;
-  font-size: 15px;
+  font-size: 14px;
   line-height: 1.7;
 }
 
@@ -1110,43 +1244,49 @@ html, body {
 }
 
 .structured-report__matrix-table tbody tr:last-child td { border-bottom: none; }
+.structured-report__matrix-table tbody tr:nth-child(even) { background: #fafbfc; }
 
+/* --- Issue cards --- */
 .structured-report__issue-card {
-  margin-top: 18px;
-  padding: 24px 28px;
-  border-radius: 18px;
+  margin-top: 16px;
+  padding: 22px 24px;
+  border-radius: 12px;
   border: 1px solid #e5e7eb;
   background: #ffffff;
   break-inside: avoid;
   page-break-inside: avoid;
+  transition: box-shadow 0.15s ease;
 }
 
+.structured-report__issue-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+
 .structured-report__issue-card--high {
-  border-left: 6px solid #dc2626;
-  background: rgba(254, 242, 242, 0.75);
+  border-left: 5px solid #dc2626;
+  background: #fef8f8;
 }
 
 .structured-report__issue-card--medium {
-  border-left: 6px solid #d97706;
-  background: rgba(255, 247, 237, 0.78);
+  border-left: 5px solid #d97706;
+  background: #fffcf5;
 }
 
 .structured-report__issue-card--low,
 .structured-report__issue-card--info {
-  border-left: 6px solid #2563eb;
-  background: rgba(239, 246, 255, 0.7);
+  border-left: 5px solid #2563eb;
+  background: #f8faff;
 }
 
 .structured-report__issue-card-title {
   margin: 0 0 14px;
-  font-size: 18px;
-  color: #172033;
+  font-size: 16px;
+  color: #111827;
+  font-weight: 600;
 }
 
-.structured-report__issue-card-section { margin-top: 14px; }
+.structured-report__issue-card-section { margin-top: 12px; }
 .structured-report__issue-card-section-title {
-  margin-bottom: 8px;
-  font-size: 15px;
+  margin-bottom: 6px;
+  font-size: 14px;
   font-weight: 700;
   color: #9f1239;
 }
@@ -1163,7 +1303,9 @@ html, body {
 
 @media print {
   html, body { background: #ffffff !important; }
-  .structured-report { max-width: none; padding: 0; }
+  .structured-report { max-width: none; padding: 0; background: #ffffff; }
+  .structured-report__section { box-shadow: none; }
+  .structured-report__issue-card:hover { box-shadow: none; }
   .structured-report__section-title,
   .structured-report__subsection-title,
   .structured-report__issue-card-title {

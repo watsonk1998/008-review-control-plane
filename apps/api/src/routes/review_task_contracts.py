@@ -295,16 +295,40 @@ def _group_issue_module_fallback(issue: dict[str, Any]) -> str:
     title = f"{issue.get('title', '')} {issue.get('summary', '')}".lower()
     if issue.get('issueKind') in {'visibility_gap', 'evidence_gap'} or issue.get('evidenceMissing') or issue.get('manualReviewNeeded'):
         return 'evidence_validation'
-    # Normative validity / calculation topics MUST route to evidence_validation,
-    # even when they originate from non-ev templates (AGENTS.md HG-15).
-    if any(token in title for token in ['编制依据', '现行有效', '废止', '过期', '替代', '规范版本', '标准号']):
+    # evidence_validation — normative/calc topics (highest priority)
+    if any(token in title for token in [
+        '编制依据', '现行有效', '废止', '过期', '替代', '规范版本',
+        '标准号', '引用版本', '版本滞后',
+    ]):
         return 'evidence_validation'
-    if any(token in title for token in ['计算', '验算', '公式', '算式']):
+    if any(token in title for token in ['计算', '验算', '公式', '算式', '校核']):
         return 'evidence_validation'
-    if any(token in title for token in ['参数', 'capacity', '荷载', '吨', '重量', '技术参数', 'consistency']):
+    # structure_completeness
+    if any(token in title for token in ['章节不完整', '大纲', '目录缺', '框架缺', '缺少章节']):
+        return 'structure_completeness'
+    # parameter_consistency — names/numbers mismatch
+    if any(token in title for token in [
+        '名称前后', '前后矛盾', '前后不一致', '数值矛盾', '单位不一致', '人数矛盾',
+    ]):
         return 'parameter_consistency'
-    if any(token in title for token in ['停送电', '流程', '工序', '衔接', '执行', 'sequence', 'continuity']):
+    # legality_compliance — regulations/safety rules
+    if any(token in title for token in [
+        '安规', '强制性条文', '资质', '许可', '工作票', '操作票',
+        '唱票复诵', '双人监护',
+    ]):
+        return 'legality_compliance'
+    # execution_continuity — operational steps/closure
+    if any(token in title for token in [
+        '停送电', '工序', '衔接', '闭环', '流程缺失', '执行清单',
+        '拆地线', '核相', '送电流程', '倒闸', '签字确认',
+        '五步法', '十个规定动作',
+    ]):
         return 'execution_continuity'
+    # Broader keywords
+    if any(token in title for token in ['参数', '荷载', '吨', '重量']):
+        return 'parameter_consistency'
+    if any(token in title for token in ['附件', '图纸', '证据']):
+        return 'evidence_validation'
     if issue.get('layer') == 'L1':
         return 'structure_completeness'
     if issue.get('layer') == 'L2':

@@ -190,3 +190,5 @@ All user-visible content in reports, interfaces, and statuses MUST be presented 
 - **模板 JSON 文件禁止包含中文弯引号（HG-21）**：`templates/*.json` 中的字符串值禁止使用中文弯引号（`\u201c` `\u201d` `\u2018` `\u2019`），必须使用书名号（`《》`）或直接去掉。中文弯引号会被 JSON 解析器视为字符串终止符，导致 `model_validate_json` 报 `expected , or }` 错误。`template_registry.load_templates()` 会静默跳过加载失败的模板（只打 warning），这是**静默失败反模式**——模板从未加载 → 从未被选中 → reviewer 从未执行 → 功能完全不可见。
 
 - **模板 JSON 创建/修改后必须执行验证门禁（HG-22）**：任何对 `templates/*.json` 的创建或修改操作完成后，必须立即执行以下验证：`python -c "import json; json.load(open('path/to/template.json'))"` 以及 `python -c "from src.review.hermes.template_models import AgentTemplate; AgentTemplate.model_validate_json(open('path').read())"`。两项均通过后方可提交。
+
+- **前端及正式报告禁止出现 Emoji 表情符号（HG-23）**：所有用户可见内容——包括正式报告 HTML/PDF、前端页面、状态提示、模块标题——禁止使用任何 Emoji（Unicode Emoji 序列、Emoji_Presentation 字符）。如需视觉标识，使用 SVG 图标或纯 CSS 实现。此规则覆盖 `apps/web/`、`_FINAL_REPORT_CSS`、`FinalReportRenderer` 和所有 view model 输出。
