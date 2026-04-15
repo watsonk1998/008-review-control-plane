@@ -486,10 +486,12 @@ def test_task_routes_legacy_structured_review_result_keeps_read_only_compatibili
     assert result_payload['visibility']['manualReviewReason'] is None
     assert result_payload['issues'][0]['manualReviewNeeded'] is True
     assert result_payload['issues'][0]['whetherManualReviewNeeded'] is True
+    assert 'finalReportMarkdown' not in result_payload
+    assert 'finalReportPacket' not in result_payload
     assert result_payload['artifactIndex'] == artifacts_response.json()
 
 
-def test_task_routes_fresh_structured_review_result_uses_canonical_visibility_only(monkeypatch):
+def test_task_routes_fresh_structured_review_result_does_not_synthesize_canonical_final_fields(monkeypatch):
     now = datetime.now(timezone.utc)
 
     class FakeService:
@@ -608,6 +610,9 @@ def test_task_routes_fresh_structured_review_result_uses_canonical_visibility_on
     assert result_payload['visibility']['manualReviewReason'] == 'title_detected_without_attachment_body'
     assert result_payload['visibility']['preflight']['gateDecision'] == 'manual_review_required'
     assert result_payload['visibility']['preflight']['blockingReasons'] == ['attachment_unparsed']
+    assert result_payload['reportMarkdown'] == '# demo'
+    assert 'finalReportMarkdown' not in result_payload
+    assert 'finalReportPacket' not in result_payload
     assert 'whetherManualReviewNeeded' not in result_payload['issues'][0]
 
 
@@ -1494,17 +1499,19 @@ def test_support_scope_route_returns_official_and_placeholder_scope():
     assert packs['curtain_wall_installation.base']['readiness'] == 'ready'
     assert packs['manual_bored_pile.base']['readiness'] == 'ready'
     assert packs['steel_structure_installation.base']['readiness'] == 'ready'
-    capability_tree = payload['capabilityTree']
-    assert capability_tree[0]['entryKey'] == 'special_scheme_review'
-    families = {item['documentType']: item for item in capability_tree[0]['families']}
-    assert families['hazardous_special_scheme']['label'] == '危大工程专项施工方案'
-    assert families['distribution_network_special_scheme']['label'] == '配网工程专项施工方案'
-    hazardous_children = {item['tag'] for item in families['hazardous_special_scheme']['children']}
+    capability_tree = {item['entryKey']: item for item in payload['capabilityTree']}
+    assert 'special_scheme_review' in capability_tree
+    assert 'general_management_review' in capability_tree
+    hazardous_families = {item['documentType']: item for item in capability_tree['special_scheme_review']['families']}
+    assert hazardous_families['hazardous_special_scheme']['label'] == '危大工程专项施工方案'
+    hazardous_children = {item['tag'] for item in hazardous_families['hazardous_special_scheme']['children']}
     assert 'foundation_pit' in hazardous_children
     assert 'steel_structure_installation' in hazardous_children
-    distribution_children = {item['tag'] for item in families['distribution_network_special_scheme']['children']}
+    general_families = {item['documentType']: item for item in capability_tree['general_management_review']['families']}
+    assert general_families['distribution_network_special_scheme']['label'] == '配电配网工程（停电施工专项）'
+    distribution_children = {item['tag'] for item in general_families['distribution_network_special_scheme']['children']}
     assert distribution_children == {'power_outage_work'}
-    cross_modules = {item['tag'] for item in capability_tree[0]['crossCuttingModules']}
+    cross_modules = {item['tag'] for item in capability_tree['general_management_review']['crossCuttingModules']}
     assert 'temporary_power' in cross_modules
     assert 'hot_work' in cross_modules
     assert 'gas_area_ops' in cross_modules
@@ -1527,6 +1534,8 @@ def test_upload_route_returns_source_document_ref(monkeypatch, tmp_path: Path):
     payload = response.json()
     assert payload['sourceType'] == 'upload'
     assert payload['fileType'] == 'md'
+    assert payload['file_id'] == payload['refId']
+    assert payload['file_name'] == payload['fileName']
     stored_path = Path(payload['storagePath'])
     assert stored_path.exists()
     assert stored_path.read_text(encoding='utf-8') == '# demo\n\ncontent\n'
@@ -1545,7 +1554,10 @@ def test_upload_route_rejects_missing_content_type(monkeypatch, tmp_path: Path):
         files={'file': ('uploaded.md', b'# demo\n\ncontent\n', '')},
     )
     assert response.status_code == 400
-    assert response.json()['detail'] == 'Missing content type for .md upload'
+    assert response.json()['detail'] == {
+        'code': 'missing_content_type',
+        'message': 'Missing content type for .md upload',
+    }
 
 
 def test_upload_route_rejects_suffix_mime_mismatch(monkeypatch, tmp_path: Path):
@@ -1561,7 +1573,10 @@ def test_upload_route_rejects_suffix_mime_mismatch(monkeypatch, tmp_path: Path):
         files={'file': ('uploaded.md', b'# demo\n\ncontent\n', 'application/pdf')},
     )
     assert response.status_code == 400
-    assert response.json()['detail'] == 'Unexpected content type for .md upload: application/pdf'
+    assert response.json()['detail'] == {
+        'code': 'content_type_mismatch',
+        'message': 'Unexpected content type for .md upload: application/pdf',
+    }
 
 
 def test_task_routes_list_recent_tasks(monkeypatch):

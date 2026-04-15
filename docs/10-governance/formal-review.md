@@ -32,7 +32,7 @@
 - `fixtureId` 与 `sourceDocumentRef` 会在服务端统一归一化为 `sourceDocumentRef`
 - `documentType` 缺省时允许后端推断，但最终生效值必须写回 `resolvedProfile.documentType`
 - `disciplineTags` 缺省时允许由事实抽取补齐
-- `strictMode` 默认 `true`，但当前状态是 `reserved / no-op`
+- `strictMode` 默认 `true`，当前仍作为输入/持久化/profile 透传字段保留，但并不单独决定 HermesController-first 主链分支。
 - `policyPackIds` 为空表示自动选 pack；显式传入时只会执行 `ready` packs
 
 ## 结果结构
@@ -45,7 +45,10 @@ P0 的稳定结果字段：
 - `issues`
 - `matrices`
 - `artifactIndex`
-- `reportMarkdown`
+- `finalReportMarkdown`
+- `finalReportViewModel`
+- `reportHtml`
+- `reportPrintCss`
 - `unresolvedFacts`
 
 其中：
@@ -54,7 +57,12 @@ P0 的稳定结果字段：
 - parse 结果内部使用 typed `visibility`、`parseMode`、`parserLimited`
 - `result.visibility` 是 top-level canonical visibility 对象，并直接携带 `parseMode / parseWarnings / manualReviewReason / preflight`
 - `summary.visibilitySummary` 仅负责总览；`matrices.attachmentVisibility` 负责结构化明细
-- `reportMarkdown` 为面向审查专家的中文正式报告，不展示 JSON、技术 ID（如 pack id / ruleId / issue id），而改为展示审查依据文件、条文规定、风险限制与审查建议
+- `finalReportMarkdown` 是对外主协议中的专家可读正式报告；`reportMarkdown` 仅作为 008 内部结果字段保留，不应再被外部调用方视为 canonical 主字段
+- `finalReportViewModel + reportHtml + reportPrintCss` 是 Hermes controller 基于 `FinalReportPacket` 生成的正式展示层；网页预览与 PDF 导出必须同源消费这一层，不得再出现“网页读 Hermes 最终结果、PDF 指向 support-layer PDF artifact”的双口径分叉
+- `artifactIndex` 中若存在正式最终 PDF，必须显式标记 `artifactRole=formal_final_report`，前端下载入口优先选择该 artifact；support-layer PDF 只能作为内部支撑工件保留
+
+- “审查依据文件”是正式展示层的一部分，必须覆盖本次审查实际启用的全部正式依据（含 selected packs），但必须隐藏 `监理工程师对停电施工方案的审核规则及要点` 与 `《危险性较大的分部分项工程专项施工方案编制指南》（建办质〔2021〕48号）` 这两类用户不可见来源
+- `evidence_validation` 中的 `编制依据现行有效性核验` 只允许核验被审方案 `编制依据/编制说明` 章节抽取出的规范性依据；系统内置 basis pack 不得作为核验对象
 - issue 会显式给出 `issueKind`（`hard_defect / visibility_gap / evidence_gap / enhancement`）与 `applicabilityState`
 - issue 会稳定输出 `missingFactKeys / blockingReasons`，用于解释 blocked-by-visibility 与 blocked-by-missing-fact
 - task-detail 结果页优先以结构化 reviewer 视图呈现 `attachmentVisibility / ruleHits / conflicts / sectionStructure`，raw JSON 仅作为折叠调试信息

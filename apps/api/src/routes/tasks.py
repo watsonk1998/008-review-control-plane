@@ -8,6 +8,7 @@ from fastapi import APIRouter, HTTPException, Query, Request
 from fastapi.responses import FileResponse, StreamingResponse
 
 from src.domain.models import CreateTaskRequest, ReviewerDecisionUpdateRequest
+from src.review.hermes.module_bindings import module_template_ids
 from src.main_dependencies import get_task_service
 from src.review.reviewer_decision import (
     build_review_preparation_asset,
@@ -21,6 +22,8 @@ TASK_STREAM_POLL_SECONDS = 1.0
 TASK_STREAM_HEARTBEAT_SECONDS = 10.0
 
 
+# Legacy serializer compatibility shim.
+# Freeze boundary: read-only compatibility only; do not add new business fields here.
 def _serialize_structured_review_result(result):
     if not isinstance(result, dict):
         return result
@@ -53,7 +56,6 @@ def _serialize_structured_review_result(result):
                 },
             },
         }
-    if is_legacy_payload:
         payload['issues'] = [
             {
                 **issue,
@@ -61,6 +63,7 @@ def _serialize_structured_review_result(result):
             }
             for issue in payload.get('issues', [])
         ]
+
     return payload
 
 
@@ -88,6 +91,38 @@ def _task_summary_payload(task):
     }
 
 
+
+
+def _legacy_review_plan_seed(request: CreateTaskRequest) -> dict[str, object] | None:
+    if request.taskType != 'structured_review' or request.reviewIntent is None:
+        return None
+    enabled_modules = list(request.reviewIntent.enabled_modules or [])
+    disabled_modules = list(request.reviewIntent.disabled_modules or [])
+    focus_requirements = list(request.reviewIntent.focus_requirements or [])
+    enabled_agents = module_template_ids(enabled_modules)
+    disabled_agents = module_template_ids(disabled_modules)
+    return {
+        'reviewProfile': {
+            'authority': 'legacy_frontend_contract',
+            'requestedDocumentType': request.documentType,
+            'requestedDisciplineTags': list(request.disciplineTags or []),
+            'requestedPolicyPackIds': list(request.policyPackIds or []),
+            'requestedRulePackIds': list(request.rulePackIds or []),
+        },
+        'hermesInput': {
+            'focusRequirements': focus_requirements,
+            'enabledAgents': enabled_agents,
+            'disabledAgents': disabled_agents,
+            'frontendSelections': {
+                'review_intent': {
+                    'enabled_modules': enabled_modules,
+                    'disabled_modules': disabled_modules,
+                    'focus_requirements': focus_requirements,
+                },
+            },
+        },
+    }
+
 def _sse_event(name: str, payload) -> str:
     return f"event: {name}\ndata: {json.dumps(payload, ensure_ascii=False, default=str)}\n\n"
 
@@ -96,6 +131,9 @@ def _sse_event(name: str, payload) -> str:
 async def create_task(request: CreateTaskRequest):
     service = get_task_service()
     task = service.create_task(request)
+    plan_seed = _legacy_review_plan_seed(request)
+    if plan_seed is not None:
+        task = service.store.update_task(task.id, plan=plan_seed)
     service.schedule_task(task.id)
     return _serialize_task(task)
 

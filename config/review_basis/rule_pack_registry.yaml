@@ -1,0 +1,172 @@
+# config/review_basis/rule_pack_registry.yaml
+# Direct execution-layer constraints derived from packs.
+
+rule_packs:
+  "hazardous.core.v1":
+    rule_pack_id: "hazardous.core.v1"
+    related_pack_ids: 
+      - "hazardous_special_scheme.base"
+    scope: "危大工程通用审查点"
+    evidence_requirements:
+      - require_expert_signature
+      - require_emergency_plan
+      - require_detailed_calculation
+    output_issue_types:
+      - "structural_safety"
+      - "process_missing"
+      - "lack_of_evidence"
+    false_positive_risk: "low"
+
+  "hazardous.foundation_pit.v1":
+    rule_pack_id: "hazardous.foundation_pit.v1"
+    related_pack_ids: 
+      - "foundation_pit.base"
+    scope: "基坑专项要求"
+    evidence_requirements:
+      - require_groundwater_control_plan
+      - require_support_monitoring_plan
+    output_issue_types:
+      - "water_control_flaw"
+      - "support_design_flaw"
+    false_positive_risk: "medium"
+
+  "hazardous.formwork.v1":
+    rule_pack_id: "hazardous.formwork.v1"
+    related_pack_ids: 
+      - "formwork_support.base"
+    scope: "高支模专项要求"
+    evidence_requirements:
+      - require_load_distribution_calc
+      - require_concrete_pour_sequence
+    output_issue_types:
+      - "unstable_support"
+      - "calculation_error"
+    false_positive_risk: "medium"
+
+  "construction_org.core.v1":
+    rule_pack_id: "construction_org.core.v1"
+    related_pack_ids: 
+      - "construction_org.base"
+    scope: "施组总体要求"
+    evidence_requirements:
+      - require_milestone_schedule
+      - require_resource_allocation
+    output_issue_types:
+      - "schedule_infeasible"
+      - "resource_mismatch"
+    false_positive_risk: "low"
+
+  "distribution_network.core.v1":
+    rule_pack_id: "distribution_network.core.v1"
+    related_pack_ids: 
+      - "distribution_network_special_scheme.base"
+    scope: "配网作业安全"
+    evidence_requirements:
+      - require_outage_range_def
+      - require_grounding_wire_plan
+    output_issue_types:
+      - "outage_conflict"
+      - "electric_shock_risk"
+    false_positive_risk: "high"
+
+  "distribution_network.structure.v1":
+    rule_pack_id: "distribution_network.structure.v1"
+    related_pack_ids:
+      - "distribution_network_special_scheme.base"
+    scope: "配网专项通用结构要求"
+    evidence_requirements:
+      - require_general_scheme_structure
+      - require_drawings_and_boundary
+      - require_risk_identification
+    output_issue_types:
+      - "structure_missing"
+      - "boundary_unclear"
+      - "drawing_visibility_gap"
+    false_positive_risk: "medium"
+
+  "distribution_network.safety_closure.v1":
+    rule_pack_id: "distribution_network.safety_closure.v1"
+    related_pack_ids:
+      - "distribution_network_special_scheme.base"
+    scope: "配网专项风险与安全闭环"
+    evidence_requirements:
+      - require_risk_measure_linkage
+      - require_emergency_targeted
+      - require_acceptance_traceability
+    output_issue_types:
+      - "risk_control_gap"
+      - "emergency_gap"
+      - "acceptance_gap"
+    false_positive_risk: "medium"
+
+  "distribution_network.power_outage.v1":
+    rule_pack_id: "distribution_network.power_outage.v1"
+    related_pack_ids:
+      - "power_outage_work.base"
+    scope: "停电施工作业专项要求"
+    evidence_requirements:
+      - require_outage_scope
+      - require_operation_chain
+      - require_quality_and_safety_controls
+    output_issue_types:
+      - "power_outage_structure_gap"
+      - "control_linkage_gap"
+      - "ticket_grounding_gap"
+    false_positive_risk: "medium"
+
+  "distribution_network.preparation.v1":
+    rule_pack_id: "distribution_network.preparation.v1"
+    related_pack_ids:
+      - "power_outage_work.base"
+    scope: "停电施工准备与审批闭环"
+    evidence_requirements:
+      - require_basic_info_and_basis
+      - require_personnel_and_training
+      - require_outage_application_and_notification
+    output_issue_types:
+      - "basic_info_gap"
+      - "qualification_training_gap"
+      - "approval_notification_gap"
+    false_positive_risk: "medium"
+
+  "distribution_network.operation_chain.v1":
+    rule_pack_id: "distribution_network.operation_chain.v1"
+    related_pack_ids:
+      - "power_outage_work.base"
+    scope: "停电五步法与票据链"
+    evidence_requirements:
+      - require_shutdown_five_step
+      - require_work_ticket_operation_ticket
+      - require_anti_backfeed_controls
+    output_issue_types:
+      - "five_step_gap"
+      - "ticket_chain_gap"
+      - "anti_backfeed_gap"
+    false_positive_risk: "medium"
+
+  "distribution_network.restoration_closure.v1":
+    rule_pack_id: "distribution_network.restoration_closure.v1"
+    related_pack_ids:
+      - "power_outage_work.base"
+    scope: "停电施工完工送电与监理闭环"
+    evidence_requirements:
+      - require_completion_check
+      - require_restoration_delivery
+      - require_archive_and_rectification_closure
+    output_issue_types:
+      - "restoration_gap"
+      - "archive_gap"
+      - "closure_gap"
+    false_positive_risk: "medium"
+
+  "supervision.core.v1":
+    rule_pack_id: "supervision.core.v1"
+    related_pack_ids: 
+      - "supervision_plan.base"
+    scope: "监理方案要求"
+    evidence_requirements:
+      - require_supervision_milestones
+      - require_witness_testing_list
+    output_issue_types:
+      - "missing_supervision_step"
+    false_positive_risk: "low"

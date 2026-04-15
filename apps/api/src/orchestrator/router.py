@@ -79,6 +79,7 @@ def choose_structured_review_profile(
     requested_document_type: str | None = None,
     requested_discipline_tags: list[str] | None = None,
     requested_policy_pack_ids: list[str] | None = None,
+    requested_rule_pack_ids: list[str] | None = None,
     strict_mode: bool | None = None,
 ) -> dict[str, object]:
     document_type = infer_review_document_type(query, fixture_title, requested_document_type)
@@ -100,9 +101,11 @@ def choose_structured_review_profile(
         'requestedDocumentType': requested_document_type,
         'requestedDisciplineTags': requested_discipline_tags or [],
         'requestedPolicyPackIds': requested_policy_pack_ids or [],
+        'requestedRulePackIds': requested_rule_pack_ids or [],
         'documentTypeHint': document_type,
         'disciplineTagHints': discipline_tags,
         'policyPackHints': hinted_packs,
+        'rulePackHints': requested_rule_pack_ids or [],
         'strictMode': True if strict_mode is None else strict_mode,
     }
 

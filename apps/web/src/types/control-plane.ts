@@ -28,6 +28,11 @@ export interface SourceDocumentRef {
   mediaType?: string | null;
   fixtureId?: string | null;
   uploadedAt?: string | null;
+  file_id?: string;
+  file_name?: string;
+  file_type?: string;
+  display_name?: string | null;
+  uploaded_at?: string | null;
 }
 
 export interface CapabilityHealth {
@@ -169,6 +174,8 @@ export interface TaskArtifact {
   category?: ArtifactCategory | null;
   stage?: string | null;
   primary?: boolean;
+  artifactRole?: string | null;
+  label?: string | null;
 }
 
 export interface HazardIdentificationMatrix {
@@ -246,17 +253,88 @@ export interface StructuredReviewMatrices {
   issueLayerCounts?: Record<string, number>;
 }
 
+export interface FinalReportIssueView {
+  id: string;
+  title: string;
+  severity: string;
+  severityLabel: string;
+  location: string;
+  description: string;
+  recommendation: string;
+  basis: string[];
+}
+
+export interface FinalReportSectionView {
+  key: string;
+  title: string;
+  issues: FinalReportIssueView[];
+  emptyText: string;
+}
+
+export interface ChapterCompletenessRowView {
+  index: number;
+  requirement: string;
+  basis: string;
+  matchedSection: string;
+  status: string;
+  statusLabel: string;
+  note: string;
+}
+
+export interface ChapterCompletenessNoteView {
+  title: string;
+  description: string;
+}
+
+export interface FinalReportViewModel {
+  title: string;
+  documentTypeLabel: string;
+  executiveSummary: string;
+  basisFiles: string[];
+  chapterCompleteness: {
+    title: string;
+    tableRows: ChapterCompletenessRowView[];
+    notes: ChapterCompletenessNoteView[];
+  };
+  sections: FinalReportSectionView[];
+}
+
+export interface FinalReportPacket {
+  review_id: string;
+  final_grade: string;
+  executive_summary: string;
+  top_risks: ReviewIssue[] | Array<Record<string, unknown>>;
+  key_findings: ReviewIssue[] | Array<Record<string, unknown>>;
+  supplemental_findings: ReviewIssue[] | Array<Record<string, unknown>>;
+  all_findings: ReviewIssue[] | Array<Record<string, unknown>>;
+  traceability: Array<Record<string, unknown>>;
+  report_markdown: string;
+  report_sections?: Array<Record<string, unknown>>;
+  engines_used: string[];
+  degradation_info?: Record<string, unknown>;
+  source_packets?: Record<string, unknown>;
+  metadata?: Record<string, unknown>;
+}
+
 export interface StructuredReviewResult {
-  summary: StructuredReviewSummary;
-  visibility: VisibilityAssessment;
-  resolvedProfile: ResolvedReviewProfile;
-  issues: ReviewIssue[];
-  matrices: StructuredReviewMatrices;
-  artifactIndex: TaskArtifact[];
-  reportMarkdown: string;
+  summary?: StructuredReviewSummary;
+  visibility?: VisibilityAssessment;
+  resolvedProfile?: ResolvedReviewProfile;
+  issues?: ReviewIssue[];
+  matrices?: StructuredReviewMatrices;
+  artifactIndex?: TaskArtifact[];
+  // Canonical final-report field for external/UI consumption.
+  finalReportMarkdown?: string;
+  finalReportPacket?: FinalReportPacket | null;
+  finalReportViewModel?: FinalReportViewModel | null;
+  reportMarkdown?: string;
+  traceability?: Array<Record<string, unknown>>;
+  
+  support_result_008?: any;
+  hermesController?: any;
   reportHtml?: string;
   reportPrintCss?: string;
-  artifacts: string[];
+  artifacts?: string[];
   unresolvedFacts: Array<{
     code: string;
     factKey: string;
@@ -463,6 +541,13 @@ export type TaskStreamEnvelope =
   | TaskStreamArtifactsEvent
   | TaskStreamHeartbeatEvent;
 
+export interface ExternalIntegrationContext {
+  agentId?: string | null;
+  callBackUrl?: string | null;
+  userId?: string | null;
+  tenantId?: string | null;
+}
+
 export interface CreateTaskRequest {
   taskType: TaskType;
   capabilityMode: CapabilityMode;
@@ -478,6 +563,12 @@ export interface CreateTaskRequest {
   disciplineTags?: string[];
   strictMode?: boolean;
   policyPackIds?: string[];
+  reviewIntent?: {
+    enabled_modules: ReviewModuleName[];
+    disabled_modules: ReviewModuleName[];
+    focus_requirements: string[];
+  };
+  externalContext?: ExternalIntegrationContext | null;
 }
 
 export interface ReviewerDecisionUpdateRequest {
@@ -534,4 +625,165 @@ export interface SupportScopeResponse {
       promotionCriteria: Record<string, boolean>;
     }>;
   }>;
+  basisMapping?: Record<string, string[]>;
+}
+
+export type ReviewModuleName =
+  | "structure_completeness"
+  | "parameter_consistency"
+  | "legality_compliance"
+  | "execution_continuity"
+  | "evidence_validation";
+
+export type FrozenReviewTaskStatus =
+  | "created"
+  | "compiling"
+  | "running"
+  | "assembling"
+  | "completed"
+  | "failed"
+  | "degraded";
+
+export type FrozenReviewTaskProgressStage =
+  | "review_brief_compiling"
+  | "assets_loading"
+  | "agents_running"
+  | "modules_running"
+  | "report_assembling"
+  | "done";
+
+export type ReviewTaskEventType =
+  | "task_created"
+  | "progress"
+  | "artifact_ready"
+  | "completed"
+  | "failed";
+
+export type ReviewFeedbackType = "helpful" | "inaccurate" | "missing" | "save_as_template";
+
+export interface FrozenUploadResponse {
+  file_id: string;
+  file_name: string;
+  file_type: string;
+  display_name?: string | null;
+  uploaded_at?: string | null;
+  source_ref: SourceDocumentRef;
+}
+
+export interface ReviewTaskCreateRequest {
+  classification: {
+    l1: string;
+    l2: ReviewDocumentType;
+    l3: string[];
+  };
+  documents: {
+    target_file_ids: string[];
+    basis_file_ids: string[];
+    project_context_file_ids: string[];
+  };
+  builtin_asset_selections: {
+    standard_ids: string[];
+    template_ids: string[];
+    rule_pack_ids: string[];
+  };
+  review_intent: {
+    enabled_modules: ReviewModuleName[];
+    disabled_modules: ReviewModuleName[];
+    focus_requirements: string[];
+  };
+  metadata: {
+    client_request_id?: string;
+    source?: string;
+    debug: boolean;
+  };
+}
+
+export interface ReviewTaskCreateResponse {
+  task_id: string;
+  status: FrozenReviewTaskStatus;
+  review_brief_id: string;
+  links: {
+    status: string;
+    events: string;
+    result: string;
+  };
+}
+
+export interface ReviewTaskStatusResponse {
+  task_id: string;
+  status: FrozenReviewTaskStatus;
+  progress_stage: FrozenReviewTaskProgressStage;
+  progress_message: string;
+  created_at: string;
+  updated_at: string;
+  report_id?: string | null;
+  degraded: boolean;
+  error?: {
+    code: string;
+    message: string;
+  } | null;
+}
+
+export interface ReviewTaskSseEvent {
+  event: ReviewTaskEventType;
+  task_id: string;
+  stage: FrozenReviewTaskProgressStage;
+  message: string;
+  timestamp: string;
+  status: FrozenReviewTaskStatus;
+  artifact?: {
+    file_name: string;
+    download_url: string;
+    category?: string | null;
+    stage?: string | null;
+  } | null;
+  payload?: Record<string, unknown> | null;
+}
+
+export interface FrozenReviewModuleResult {
+  title: string;
+  findings: ReviewIssue[] | Array<Record<string, unknown>>;
+  severity_summary: Record<string, number>;
+  traceability_summary: Array<Record<string, unknown>>;
+  status: "available" | "partial" | "not_applicable";
+}
+
+export interface ReviewTaskResultResponse {
+  task_id: string;
+  status: FrozenReviewTaskStatus;
+  report_id: string;
+  summary: {
+    overall_conclusion: string;
+    risk_level: "low" | "medium" | "high" | "unknown";
+    key_counts: Record<string, number>;
+    key_metrics: Record<string, number>;
+  };
+  modules: Record<ReviewModuleName, FrozenReviewModuleResult>;
+  key_findings: Array<Record<string, unknown>>;
+  recommendations: string[];
+  export_links: {
+    markdown?: string | null;
+    pdf?: string | null;
+    html?: string | null;
+  };
+  metadata: {
+    report_id: string;
+    generated_at: string;
+    degraded: boolean;
+    traceability_available: boolean;
+    assembler: string;
+  };
+  raw: Record<string, unknown>;
+}
+
+export interface ReviewReportFeedbackRequest {
+  feedback_type: ReviewFeedbackType;
+  comment?: string;
+  source?: string;
+}
+
+export interface ReviewReportFeedbackResponse {
+  accepted: boolean;
+  report_id: string;
+  feedback_id: string;
 }

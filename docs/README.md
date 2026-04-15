@@ -55,8 +55,10 @@ docs/
   20-design/
     architecture.md
     review-structure-overview.md
+    structured-review-module-boundary.md
     008-v1-implementation-skeleton.md
     008-v1-pr1-pr8-workplan.md
+    adr/
     integration/
 
   30-quality/
@@ -90,6 +92,9 @@ docs/
 | V1 PR1–PR8 拆分执行骨架 | `docs/20-design/008-v1-pr1-pr8-workplan.md` |
 | 系统架构说明 | `docs/20-design/architecture.md` |
 | 审查结构总览 | `docs/20-design/review-structure-overview.md` |
+| Structured review 模块边界 | `docs/20-design/structured-review-module-boundary.md` |
+| Hermes controller-first 边界 ADR | `docs/20-design/adr/ADR-001-hermes-controller-first-boundary.md` |
+| 审查 Agent 前端冻结契约 | `docs/20-design/review-agent-frontend-contract-freeze.md` |
 | 测试执行方式与回归入口 | `docs/30-quality/testing.md` |
 | 当前已知限制 | `docs/30-quality/known-limitations.md` |
 | PRD 验证结果与验证纪要 | `docs/30-quality/prd-validation-report.md` |

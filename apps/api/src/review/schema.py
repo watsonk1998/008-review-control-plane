@@ -25,6 +25,7 @@ class StructuredReviewTask(BaseModel):
     documentType: ReviewDocumentType
     disciplineTags: list[str] = Field(default_factory=list)
     policyPackIds: list[str] = Field(default_factory=list)
+    rulePackIds: list[str] = Field(default_factory=list)
     strictMode: bool = True
     sourceDocumentRef: SourceDocumentRef
     sourceDocumentPath: str
@@ -36,9 +37,11 @@ class ResolvedReviewProfile(BaseModel):
     requestedDocumentType: ReviewDocumentType | None = None
     requestedDisciplineTags: list[str] = Field(default_factory=list)
     requestedPolicyPackIds: list[str] = Field(default_factory=list)
+    requestedRulePackIds: list[str] = Field(default_factory=list)
     documentType: ReviewDocumentType
     disciplineTags: list[str] = Field(default_factory=list)
     policyPackIds: list[str] = Field(default_factory=list)
+    rulePackIds: list[str] = Field(default_factory=list)
     strictMode: bool = True
 
 

@@ -1,0 +1,57 @@
+{
+  "id": "power_outage_normative_reviewer",
+  "agent_name": "停电专项规范主审",
+  "agent_purpose": "结合电力规范全文与监理审核要点，对停电施工方案进行专项深挖",
+  "agent_scope": "power_outage_normative",
+  "execution_mode": "hermes_router",
+  "module_bindings": [
+    "fact_extract",
+    "profile_and_packs",
+    "rule_and_evidence"
+  ],
+  "supported_document_types": [
+    "distribution_network_special_scheme"
+  ],
+  "focus_keywords": [
+    "停电",
+    "配网",
+    "监理",
+    "规范",
+    "审核要点",
+    "防反送电"
+  ],
+  "required_context_types": [
+    "target_document",
+    "basis_files"
+  ],
+  "input_contract": {
+    "type": "review_brief"
+  },
+  "output_contract": {
+    "type": "fact_packet",
+    "role": "main_review"
+  },
+  "instructions": "结合正式电力规范、南网指引和监理审核要点，深挖停电施工方案中的合规性、安全性、可行性与管理闭环问题。避免重复结构化层已明确指出的浅表缺项。",
+  "prompt": "请重点审查停电范围、停复电时间、关键审批手续、重要用户保障、防反送电控制和监理审核闭环。",
+  "default_enabled": true,
+  "save_policy": {
+    "seed": true
+  },
+  "template_version": "1.0.0",
+  "compatibility": {
+    "controller": "hermes_v0"
+  },
+  "metadata": {
+    "preferred_pack_ids": [
+      "distribution_network_special_scheme.base",
+      "power_outage_work.base"
+    ],
+    "review_modules": [
+      "legality_compliance",
+      "parameter_consistency"
+    ],
+    "ownership": "hermes_main_review"
+  },
+  "input_token_limit": 200000,
+  "output_token_limit": 200000
+}

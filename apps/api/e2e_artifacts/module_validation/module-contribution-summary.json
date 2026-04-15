@@ -1,0 +1,87 @@
+{
+  "task_id": "task-module-validation-001",
+  "modules": [
+    {
+      "module": "structure_completeness",
+      "main_review_contribution": {
+        "count": 0,
+        "templates": [],
+        "titles": []
+      },
+      "support_contribution": {
+        "count": 2,
+        "titles": [
+          "配网工程专项施工方案通用章节不完整",
+          "停电施工作业专项章节不完整"
+        ]
+      },
+      "final_decision_contribution": {
+        "count": 3,
+        "titles": [
+          "配网工程专项施工方案通用章节不完整",
+          "停电施工作业专项章节不完整",
+          "临时用电/停送电控制链路不完整"
+        ],
+        "summary": "本次审查综合评级：**需要修改**。 008引擎发现 3 个问题（高 2，中 1，低 0）。 Hermes补充发现 5 个独立问题。"
+      },
+      "current_judgement": "底座主导，Hermes 重表达"
+    },
+    {
+      "module": "legality_compliance",
+      "main_review_contribution": {
+        "count": 3,
+        "templates": [
+          "policy_compliance_reviewer"
+        ],
+        "titles": [
+          "配网工程专项施工方案通用章节不完整",
+          "停电施工作业专项章节不完整",
+          "临时用电/停送电控制链路不完整"
+        ]
+      },
+      "support_contribution": {
+        "count": 1,
+        "titles": [
+          "临时用电/停送电控制链路不完整"
+        ]
+      },
+      "final_decision_contribution": {
+        "count": 3,
+        "titles": [
+          "配网工程专项施工方案通用章节不完整",
+          "停电施工作业专项章节不完整",
+          "临时用电/停送电控制链路不完整"
+        ],
+        "summary": "本次审查综合评级：**需要修改**。 008引擎发现 3 个问题（高 2，中 1，低 0）。 Hermes补充发现 5 个独立问题。"
+      },
+      "current_judgement": "混合过渡态"
+    },
+    {
+      "module": "execution_continuity",
+      "main_review_contribution": {
+        "count": 2,
+        "templates": [
+          "candidate_temporary_power",
+          "execution_risk_reviewer"
+        ],
+        "titles": [
+          "停送电执行链路存在遗漏风险",
+          "停送电执行链路存在遗漏风险"
+        ]
+      },
+      "support_contribution": {
+        "count": 0,
+        "titles": []
+      },
+      "final_decision_contribution": {
+        "count": 2,
+        "titles": [
+          "停送电执行链路存在遗漏风险",
+          "停送电执行链路存在遗漏风险"
+        ],
+        "summary": "本次审查综合评级：**需要修改**。 008引擎发现 3 个问题（高 2，中 1，低 0）。 Hermes补充发现 5 个独立问题。"
+      },
+      "current_judgement": "Hermes 主审 + 底座支撑"
+    }
+  ]
+}

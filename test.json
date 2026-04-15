@@ -1,5 +1,0 @@
-{
-  "code": 1,
-  "data": null,
-  "error": "Invalid --format value: mmd. Must be 'json', 'ndjson', or 'data'."
-}

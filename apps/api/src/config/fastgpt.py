@@ -5,7 +5,7 @@ from pathlib import Path
 import json
 import os
 
-DEFAULT_FASTGPT_CONFIG_PATH = Path.home() / 'tools' / 'from-obsidian' / 'AI' / 'config' / 'gbcs-fast.json'
+DEFAULT_FASTGPT_CONFIG_PATH = Path.home() / 'control' / 'secrets' / 'api-keys' / 'gbcs-fast.json'
 
 
 @dataclass
@@ -45,7 +45,9 @@ def resolve_fastgpt_config() -> FastGPTConfig:
     env_api_key = _first_non_empty(os.getenv('FASTGPT_API_KEY'))
     env_search_key = _first_non_empty(os.getenv('FASTGPT_SEARCH_API_KEY'), env_api_key)
 
-    if env_api_key and (env_chat or env_base):
+    if env_api_key:
+        if not (env_chat or env_base):
+            raise RuntimeError("【生产部署预警】检测到 FASTGPT_API_KEY，但缺失配套的 BASE_URL。系统已熔断，拒绝回滚至本地物理配置。请补全环境变量。")
         base_url = _normalize_base_from_chat_url(env_chat or env_base)
         chat_url = env_chat.rstrip('/') if env_chat else base_url.rstrip('/') + '/v1/chat/completions'
         return FastGPTConfig(
@@ -58,7 +60,11 @@ def resolve_fastgpt_config() -> FastGPTConfig:
 
     config_path = Path(os.getenv('FASTGPT_CONFIG_PATH', str(DEFAULT_FASTGPT_CONFIG_PATH))).expanduser()
     if not config_path.exists():
-        raise FileNotFoundError(f'FastGPT config file not found: {config_path}')
+        raise RuntimeError(
+            f"【生产部署预警】FastGPT API 配置缺失！\n"
+            f"-> 若为 Docker/线上部署: 请确保环境变量 'FASTGPT_API_KEY' 和 'FASTGPT_BASE_URL' 被正确注入。\n"
+            f"-> 若为本地开发: 未能在默认路径找到物理配置文件 '{config_path}'，请检查文件系统，或通过 'FASTGPT_CONFIG_PATH' 重定义。"
+        )
     payload = json.loads(config_path.read_text())
     profile = payload.get('gbcs-fast')
     if not isinstance(profile, dict):

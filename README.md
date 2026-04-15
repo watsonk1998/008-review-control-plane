@@ -1,120 +1,129 @@
-# 008 Review Control Plane
+# hermes-review-agent: The Review Control Plane Shell
 
-008 is a review control plane for engineering document review.
-Its current primary track is `structured_review`: a formal-review pipeline that turns review inputs into **structured, reviewable draft outputs** rather than final signed conclusions.
+<p align="center">
+  <strong>Engineering-grade governance shell for deterministic document review</strong>
+</p>
 
-> For the full documentation map and source-of-truth guide, start from [`docs/README.md`](docs/README.md).
+<p align="center">
+  <a href="https://github.com/watsonctl/hermes-review-agent/actions">
+    <img src="https://img.shields.io/github/actions/workflow/status/watsonctl/hermes-review-agent/repo-checks.yml?branch=main" alt="Build Status">
+  </a>
+  <a href="docs/README.md">
+    <img src="https://img.shields.io/badge/docs-source--of--truth-blue" alt="Docs">
+  </a>
+</p>
 
-## Current Focus
+## Manifesto: Why a "Shell"?
 
-The repository is currently centered on:
+`hermes-review-agent` is not just a wrapper; it is a **Governed Control Plane**. 
 
-- formal-review oriented `structured_review`
-- reviewable structured issues, evidence, and visibility-aware outputs
-- governance-aware capability evolution (`official` / `ready` / `experimental`)
+Its mission is to provide a deterministic, fail-closed orchestrator around the **NousResearch/hermes-agent** kernel. We separate the "Thinking" (Kernel) from the "Governing" (Shell) to ensure that every review result is grounded in explicit evidence, standard registries, and formal acceptance rules.
 
-This repository does **not** position the current system as a fully automatic final review-signing engine.
+### Core Philosophy
+- **Smart Owner, Dumb Tools**: This repo owns the *Planet/Policy*, while adapters and kernels own the *Execution*.
+- **Fail-Closed by Design**: If evidence is missing or the kernel degrades, the shell refuses to emit a formal report.
+- **DeepSeek Primary**: Optimized for DeepSeek's specific reasoning patterns for high-recall issue detection.
 
-## Repository Guide
+---
 
-### Key areas
+## Architectural Topology
 
-- `apps/` — application code
-- `fixtures/` — review fixtures and sample inputs
-- `docs/` — product, governance, design, quality, operations, and research docs
-- `scripts/` — project scripts and utilities
-- `artifacts/` — generated outputs and evaluation artifacts
+The repository operates as a **Governance Shell** protecting the **Upstream Kernel**.
 
-### Documentation entrypoints
+```text
+[ External Caller / Web UI ]
+            |
+            v
++-------------------------------------------------------+
+| hermes-review-agent (Local Shell / Control Plane)     |
+|                                                       |
+|   - Task Governance & Basis Selection                 |
+|   - Evidence Synthesis & Result Assembly              |
+|   - Fail-Closed Safety Gates                          |
+|                                                       |
+|  +-------------------------------------------------+  |
+|  | external/hermes-agent (Upstream Kernel)         |  |
+|  |   - Judgment Engine & Reasoning                 |  |
+|  +-------------------------------------------------+  |
+|                                                       |
++-------------------------------------------------------+
+```
 
-- Product and V1 definition:
-  - [`docs/00-product/`](docs/00-product/)
-- Governance and formal-review boundaries:
-  - [`docs/10-governance/`](docs/10-governance/)
-- Design and implementation:
-  - [`docs/20-design/`](docs/20-design/)
-- Quality, testing, and known limitations:
-  - [`docs/30-quality/`](docs/30-quality/)
-- Full docs map and source-of-truth guide:
-  - [`docs/README.md`](docs/README.md)
+---
 
-For detailed governance, capability boundaries, acceptance rules, and implementation planning, use:
+## The Governed Review Pipeline
 
-- [`docs/10-governance/formal-review.md`](docs/10-governance/formal-review.md)
-- [`docs/10-governance/008-v1-capability-boundary.md`](docs/10-governance/008-v1-capability-boundary.md)
-- [`docs/10-governance/008-v1-acceptance-spec.md`](docs/10-governance/008-v1-acceptance-spec.md)
-- [`docs/20-design/008-v1-implementation-skeleton.md`](docs/20-design/008-v1-implementation-skeleton.md)
-- [`docs/20-design/008-v1-pr1-pr8-workplan.md`](docs/20-design/008-v1-pr1-pr8-workplan.md)
+All formal reviews follow this strict, audited execution chain:
+
+```mermaid
+graph LR
+    A[TaskCompiler] --> B[ProfileResolver]
+    B --> C[BasisPackResolver]
+    C --> D[SupportPacketBuilder]
+    D --> E[Hermes Main Review]
+    E --> F[FinalReportAssembler]
+    
+    style F fill:#f96,stroke:#333,stroke-width:4px
+```
+
+1. **TaskCompiler**: Normalizes raw inputs into a strict `ReviewBrief`.
+2. **ProfileResolver**: Determines the system classification and governance profile.
+3. **BasisPackResolver**: Assembles laws, standards, and rule sets based on the profile.
+4. **SupportPacketBuilder**: Prepares the visibility gaps and evidence pointers.
+5. **Hermes Main Review**: Executes the judgment using the reasoning kernel.
+6. **FinalReportAssembler**: The **ONLY** official exit point for synthesized reports.
+
+---
 
 ## Quick Start
 
-### Bootstrap
-
+### 1. Setup Environment
 ```bash
 make bootstrap
 ```
 
-### Run the local stack
-
+### 2. Launch Local Control Plane
 ```bash
 make dev
 ```
 
-### Run tests
-
-```bash
-make test
-```
-
-### Run review evaluation
-
+### 3. Execute Evaluation Suite
 ```bash
 make eval-review
 ```
 
-## What the System Currently Produces
+---
 
-At a high level, the main `structured_review` path aims to produce:
+## Documentation Index
 
-- structured review issues
-- evidence-aware review artifacts
-- visibility and parser-limitation disclosure
-- unresolved facts and manual-review cues
-- reviewable markdown and report outputs
+The **Source of Truth** for all governance and design resides in the `docs/` hierarchy.
 
-The detailed result contract, review semantics, and governance rules are maintained in the governance and design docs listed above rather than duplicated in this root README.
+| Layer | Content | Focus |
+|---|---|---|
+| [00-Product](docs/00-product/) | Landscape & Strategy | "What & Why" |
+| [10-Governance](docs/10-governance/) | Capability Boundaries & Spec | "Rules & Gates" |
+| [20-Design](docs/20-design/) | Architecture & Modules | "How it works" |
+| [30-Quality](docs/30-quality/) | Testing & Limitations | "Validation" |
+| [40-Operations](docs/40-operations/) | Runbooks & Deployment | "Maintenance" |
 
-## Current Documentation Model
+> For a detailed layer-by-layer definition including frozen and legacy code paths, see [docs/20-design/layer-governance.md](docs/20-design/layer-governance.md).
 
-Docs are organized in layers:
+---
 
-- `00-product` — what the product is
-- `10-governance` — what is officially supported and where the boundaries are
-- `20-design` — how the system is designed and implemented
-- `30-quality` — testing, limitations, and validation
-- `40-operations` — runbooks and maintenance
-- `50-research` — background research
-- `90-archive` — historical indexes and compiled artifacts
+## Repository Governance
 
-For reading order, ownership, and source-of-truth mapping, use [`docs/README.md`](docs/README.md).
+This project follows the **Harness Engineering** governance model. All technical decisions and execution rules are codified in:
+- `[[AGENTS.md]]`: The local execution contract for AI agents and human contributors.
+- `[[REPO_CATALOG.md]]`: System-level repository mapping.
 
-## Notes
+---
 
-- Some capabilities may exist in code or experimental packs without being official product commitments.
-- Historical compiled docs and legacy indexes are retained under `docs/90-archive/`, but they are not the day-to-day source of truth.
-- When in doubt about documentation ownership, follow the source-of-truth table in [`docs/README.md`](docs/README.md).
+## License
 
-## Development Status
+MIT © 2026 [watsonctl](https://github.com/watsonctl)
 
-This repository is actively evolving around:
+---
 
-- structured review contracts
-- evidence and visibility-aware review behavior
-- evaluation and governance alignment
-- implementation staging toward V1 formal-review goals
-
-For implementation planning and staged delivery context, see:
-
-- [`docs/20-design/008-v1-implementation-skeleton.md`](docs/20-design/008-v1-implementation-skeleton.md)
-- [`docs/20-design/008-v1-pr1-pr8-workplan.md`](docs/20-design/008-v1-pr1-pr8-workplan.md)
-- [`DELIVERY_REPORT.md`](DELIVERY_REPORT.md)
+<p align="center">
+  <sub>Publish the framework, govern the memory, trust the evidence.</sub>
+</p>

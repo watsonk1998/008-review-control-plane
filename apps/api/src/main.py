@@ -4,12 +4,14 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from src.config.settings import get_settings
+from src.routes.review_reports import router as review_reports_router
+from src.routes.review_tasks import router as review_tasks_router
 from src.routes.system import router as system_router
 from src.routes.tasks import router as tasks_router
 from src.routes.uploads import router as uploads_router
+from src.routes.admin.governance import router as admin_governance_router
 
-
-app = FastAPI(title='008 Review Control Plane API', version='0.1.0')
+app = FastAPI(title='hermes-review-agent API', version='0.1.0')
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -27,13 +29,15 @@ app.add_middleware(
 )
 app.include_router(system_router)
 app.include_router(tasks_router)
+app.include_router(review_tasks_router)
+app.include_router(review_reports_router)
 app.include_router(uploads_router)
-
+app.include_router(admin_governance_router)
 
 @app.get('/')
 async def root():
     return {
-        'name': '008 Review Control Plane API',
+        'name': 'hermes-review-agent API',
         'role': 'DeepResearchAgent-compatible orchestration layer',
         'docs': '/docs',
     }

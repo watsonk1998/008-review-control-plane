@@ -1,9 +1,16 @@
 import type {
   CreateTaskRequest,
+  FrozenUploadResponse,
   FixtureRecord,
   HealthResponse,
   HeartbeatResponse,
   RecentTaskSummary,
+  ReviewReportFeedbackRequest,
+  ReviewReportFeedbackResponse,
+  ReviewTaskCreateRequest,
+  ReviewTaskCreateResponse,
+  ReviewTaskResultResponse,
+  ReviewTaskStatusResponse,
   ReviewerDecisionUpdateRequest,
   SourceDocumentRef,
   SupportScopeResponse,
@@ -39,6 +46,20 @@ async function fetchJson<T>(path: string, init?: RequestInit): Promise<T> {
 
   if (!response.ok) {
     const text = await response.text();
+    try {
+      const parsed = JSON.parse(text) as { detail?: string | { message?: string } };
+      const detail = parsed?.detail;
+      if (typeof detail === "string") {
+        throw new Error(detail);
+      }
+      if (detail && typeof detail === "object" && typeof detail.message === "string") {
+        throw new Error(detail.message);
+      }
+    } catch (parseError) {
+      if (parseError instanceof Error && !(parseError instanceof SyntaxError)) {
+        throw parseError;
+      }
+    }
     throw new Error(text || `${response.status} ${response.statusText}`);
   }
 
@@ -81,6 +102,18 @@ export function uploadDocument(file: File) {
   });
 }
 
+export async function uploadReviewDocument(file: File): Promise<FrozenUploadResponse> {
+  const payload = await uploadDocument(file);
+  return {
+    file_id: payload.file_id || payload.refId,
+    file_name: payload.file_name || payload.fileName,
+    file_type: payload.file_type || payload.fileType,
+    display_name: payload.display_name || payload.displayName,
+    uploaded_at: payload.uploaded_at || payload.uploadedAt,
+    source_ref: payload,
+  };
+}
+
 export function fetchTask(taskId: string) {
   return fetchJson<TaskRecord>(`/api/tasks/${taskId}`);
 }
@@ -106,4 +139,30 @@ export function getTaskStreamUrl(taskId: string) {
 
 export function getTaskArtifactUrl(taskId: string, fileName: string) {
   return resolveApiUrl(`/api/tasks/${taskId}/artifacts/${encodeURIComponent(fileName)}`);
+}
+
+export function createReviewTask(payload: ReviewTaskCreateRequest) {
+  return fetchJson<ReviewTaskCreateResponse>("/api/review-tasks", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function fetchReviewTask(taskId: string) {
+  return fetchJson<ReviewTaskStatusResponse>(`/api/review-tasks/${taskId}`);
+}
+
+export function getReviewTaskEventsUrl(taskId: string) {
+  return resolveApiUrl(`/api/review-tasks/${taskId}/events`);
+}
+
+export function fetchReviewTaskResult(taskId: string) {
+  return fetchJson<ReviewTaskResultResponse>(`/api/review-tasks/${taskId}/result`);
+}
+
+export function submitReviewReportFeedback(reportId: string, payload: ReviewReportFeedbackRequest) {
+  return fetchJson<ReviewReportFeedbackResponse>(`/api/review-reports/${reportId}/feedback`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
 }

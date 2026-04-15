@@ -1,0 +1,145 @@
+# config/review_basis/pack_registry.yaml
+# Governs the valid packs within the system.
+
+packs:
+  "construction_org.base":
+    pack_id: "construction_org.base"
+    display_name: "施工组织设计基础审查包"
+    basis_ids:
+      - "construction-《建筑施工组织设计规范》GB/T 50502-2009"
+      - "construction-《建设工程安全生产管理条例》"
+    status: "active"
+    default_profiles: ["construction_org"]
+    priority: "high"
+    promotion_state: "official"
+    role: "base"
+    family: "construction_org"
+  
+  "hazardous_special_scheme.base":
+    pack_id: "hazardous_special_scheme.base"
+    display_name: "危大工程专项方案基础包"
+    basis_ids:
+      - "construction-《危险性较大的分部分项工程专项施工方案编制指南》（建办质〔2021〕48号）"
+      - "review-control-plane-special-scheme-structure-policy"
+    status: "active"
+    default_profiles: ["hazardous_special_scheme", "foundation_pit", "formwork_support"]
+    priority: "high"
+    promotion_state: "official"
+    role: "base"
+    family: "hazardous_special_scheme"
+    
+  "foundation_pit.base":
+    pack_id: "foundation_pit.base"
+    display_name: "基坑工程专项包"
+    basis_ids:
+      - "construction-《危险性较大的分部分项工程专项施工方案编制指南》（建办质〔2021〕48号）"
+    status: "active"
+    default_profiles: ["foundation_pit"]
+    priority: "high"
+    promotion_state: "official"
+    role: "third_level"
+    family: "hazardous_special_scheme"
+    
+  "formwork_support.base":
+    pack_id: "formwork_support.base"
+    display_name: "模板支撑体系专项包"
+    basis_ids: []
+    status: "active"
+    default_profiles: ["formwork_support"]
+    priority: "high"
+    promotion_state: "official"
+    role: "third_level"
+    family: "hazardous_special_scheme"
+    
+  "construction_scheme.base":
+    pack_id: "construction_scheme.base"
+    display_name: "一般施工方案基础包"
+    basis_ids: []
+    status: "active"
+    default_profiles: ["construction_scheme"]
+    priority: "medium"
+    promotion_state: "official"
+    role: "base"
+    family: "construction_scheme"
+    
+  "distribution_network_special_scheme.base":
+    pack_id: "distribution_network_special_scheme.base"
+    display_name: "配电配网工程专项方案包"
+    basis_ids:
+      - "power-grid-《电网工程建设施工安全基准风险指南》（2012年版）"
+      - "power-grid-《电力安全工作规程 发电厂和变电站电气部分》GB 26860-2011"
+      - "power-grid-《工程建设标准强制性条文 电力工程部分》（2016年版）"
+      - "power-grid-《中国南方电网公司电网建设工程专项施工方案管理工作指引》（2022）"
+      - "power-grid-《中国南方电网基建施工方案全流程管控工作指引》"
+      - "construction-《建设工程安全生产管理条例》"
+    status: "active"
+    default_profiles: ["distribution_network_special_scheme"]
+    priority: "high"
+    promotion_state: "official"
+    role: "base"
+    family: "distribution_network_special_scheme"
+
+  "power_outage_work.base":
+    pack_id: "power_outage_work.base"
+    display_name: "停电施工作业专项包"
+    basis_ids:
+      - "power-grid-《电网工程建设施工安全基准风险指南》（2012年版）"
+      - "power-grid-《电力安全工作规程 发电厂和变电站电气部分》GB 26860-2011"
+      - "power-grid-《工程建设标准强制性条文 电力工程部分》（2016年版）"
+      - "power-grid-《电气装置安装工程低压电器施工及验收规范》GB 50254-2014"
+      - "power-grid-《中国南方电网公司电网建设工程专项施工方案管理工作指引》（2022）"
+      - "power-grid-《中国南方电网基建施工方案全流程管控工作指引》"
+      - "power-grid-监理工程师对停电施工方案的审核规则及要点"
+    status: "active"
+    default_profiles: ["distribution_network_special_scheme"]
+    priority: "high"
+    promotion_state: "official"
+    role: "third_level"
+    family: "distribution_network_special_scheme"
+    
+  "supervision_plan.base":
+    pack_id: "supervision_plan.base"
+    display_name: "监理规划审查包"
+    basis_ids:
+      - "construction-《建设工程监理规范》GB/T 50319"
+    status: "active"
+    default_profiles: ["supervision_plan"]
+    priority: "medium"
+    promotion_state: "official"
+    role: "base"
+    family: "supervision_plan"
+    
+  "review_support_material.base":
+    pack_id: "review_support_material.base"
+    display_name: "审查辅助材料过滤包"
+    basis_ids:
+      - "review-control-plane-support-scope-policy"
+    status: "active"
+    default_profiles: ["review_support_material"]
+    priority: "low"
+    promotion_state: "official"
+    role: "base"
+    family: "review_support_material"
+    
+  "review.visibility":
+    pack_id: "review.visibility"
+    display_name: "可见性拦截规则包"
+    basis_ids:
+      - "review-control-plane-visibility-policy"
+    status: "active"
+    default_profiles: ["all"]
+    priority: "critical"
+    promotion_state: "official"
+    role: "cross_cutting"
+    family: "all"
+    
+  "review.emergency":
+    pack_id: "review.emergency"
+    display_name: "应急响应机制拦截包"
+    basis_ids: []
+    status: "active"
+    default_profiles: ["all"]
+    priority: "critical"
+    promotion_state: "official"
+    role: "cross_cutting"
+    family: "all"

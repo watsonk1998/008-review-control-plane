@@ -1,0 +1,45 @@
+# Hermes Local Kernel — Launch Configuration Sample
+#
+# Origin: new sample for overlay bootstrap
+# Status: sample — not yet consumed by the launcher
+#
+# This file demonstrates the configuration schema that the
+# HermesKernelLauncher will read from overlays/hermes-agent/config/
+# when starting the local kernel subprocess in the future.
+
+kernel:
+  # Entry point inside the kernel checkout
+  entry_script: "run_agent.py"
+
+  # Python interpreter to use for the subprocess
+  python: "python3"
+
+  # Working directory mode:
+  #   kernel — cwd = external/hermes-agent/
+  #   repo   — cwd = repo root (overlay paths are absolute)
+  cwd_mode: "kernel"
+
+  # Timeout for a single review invocation (seconds)
+  invocation_timeout: 120
+
+  # Maximum concurrent kernel subprocesses
+  max_concurrency: 1
+
+llm:
+  # Model routing for the kernel subprocess
+  # The launcher injects these as environment variables
+  provider: "dashscope"
+  model: "qwen-max"
+  # Reference: credential file path (resolved by launcher, not by kernel)
+  credential_ref: "config/century.json"
+
+overlays:
+  # Which overlay subdirectories to mount
+  skills: true
+  memory: true
+  prompts: true
+
+logging:
+  level: "INFO"
+  # Pipe kernel stdout/stderr to this file
+  log_file: "logs/hermes_kernel.log"

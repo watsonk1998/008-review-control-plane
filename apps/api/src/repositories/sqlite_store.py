@@ -14,8 +14,10 @@ _TASK_EXTRA_COLUMNS = {
     'discipline_tags_json': 'TEXT',
     'strict_mode': 'INTEGER',
     'policy_pack_ids_json': 'TEXT',
+    'rule_pack_ids_json': 'TEXT',
     'source_document_ref_json': 'TEXT',
     'reviewer_decision_json': 'TEXT',
+    'external_context_json': 'TEXT',
 }
 
 
@@ -75,6 +77,19 @@ class SQLiteTaskStore:
                 )
                 '''
             )
+            conn.execute(
+                '''
+                CREATE TABLE IF NOT EXISTS review_report_feedback (
+                    id TEXT PRIMARY KEY,
+                    report_id TEXT NOT NULL,
+                    task_id TEXT NOT NULL,
+                    feedback_type TEXT NOT NULL,
+                    comment TEXT,
+                    source TEXT,
+                    created_at TEXT NOT NULL
+                )
+                '''
+            )
 
     def _ensure_task_columns(self, conn: sqlite3.Connection):
         rows = conn.execute('PRAGMA table_info(tasks)').fetchall()
@@ -90,9 +105,9 @@ class SQLiteTaskStore:
                 INSERT INTO tasks (
                     id, task_type, capability_mode, query, dataset_id, collection_id, fixture_id,
                     source_document_ref_json, use_web, debug, source_urls, document_type, discipline_tags_json, strict_mode,
-                    policy_pack_ids_json, reviewer_decision_json, status, plan_json, result_json, error_json,
+                    policy_pack_ids_json, rule_pack_ids_json, reviewer_decision_json, external_context_json, status, plan_json, result_json, error_json,
                     created_at, updated_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ''',
                 (
                     task.id,
@@ -110,7 +125,9 @@ class SQLiteTaskStore:
                     json.dumps(task.disciplineTags, ensure_ascii=False),
                     int(task.strictMode) if task.strictMode is not None else None,
                     json.dumps(task.policyPackIds, ensure_ascii=False),
+                    json.dumps(task.rulePackIds, ensure_ascii=False),
                     json.dumps(task.reviewerDecision.model_dump(mode='json'), ensure_ascii=False) if task.reviewerDecision is not None else None,
+                    json.dumps(task.externalContext.model_dump(mode='json'), ensure_ascii=False) if task.externalContext is not None else None,
                     task.status,
                     json.dumps(task.plan, ensure_ascii=False) if task.plan is not None else None,
                     json.dumps(task.result, ensure_ascii=False) if task.result is not None else None,
@@ -170,7 +187,9 @@ class SQLiteTaskStore:
             'disciplineTags': 'discipline_tags_json',
             'strictMode': 'strict_mode',
             'policyPackIds': 'policy_pack_ids_json',
+            'rulePackIds': 'rule_pack_ids_json',
             'reviewerDecision': 'reviewer_decision_json',
+            'externalContext': 'external_context_json',
             'createdAt': 'created_at',
             'updatedAt': 'updated_at',
         }
@@ -178,11 +197,13 @@ class SQLiteTaskStore:
             column = mapping.get(key, key)
             if column in {'plan', 'result', 'error'}:
                 serialized[f'{column}_json'] = json.dumps(value, ensure_ascii=False) if value is not None else None
-            elif column in {'source_urls', 'discipline_tags_json', 'policy_pack_ids_json'}:
+            elif column in {'source_urls', 'discipline_tags_json', 'policy_pack_ids_json', 'rule_pack_ids_json'}:
                 serialized[column] = json.dumps(value or [], ensure_ascii=False)
             elif column == 'source_document_ref_json':
                 serialized[column] = json.dumps(value.model_dump(mode='json'), ensure_ascii=False) if value is not None else None
             elif column == 'reviewer_decision_json':
+                serialized[column] = json.dumps(value.model_dump(mode='json'), ensure_ascii=False) if value is not None else None
+            elif column == 'external_context_json':
                 serialized[column] = json.dumps(value.model_dump(mode='json'), ensure_ascii=False) if value is not None else None
             elif column in {'use_web', 'debug'}:
                 serialized[column] = int(bool(value))
@@ -241,9 +262,49 @@ class SQLiteTaskStore:
             for row in rows
         ]
 
+    def append_report_feedback(
+        self,
+        *,
+        feedback_id: str,
+        report_id: str,
+        task_id: str,
+        feedback_type: str,
+        comment: str | None,
+        source: str | None,
+        created_at: datetime,
+    ) -> dict[str, Any]:
+        with self._connect() as conn:
+            conn.execute(
+                '''
+                INSERT INTO review_report_feedback (
+                    id, report_id, task_id, feedback_type, comment, source, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?)
+                ''',
+                (
+                    feedback_id,
+                    report_id,
+                    task_id,
+                    feedback_type,
+                    comment,
+                    source,
+                    created_at.isoformat(),
+                ),
+            )
+        return {
+            'id': feedback_id,
+            'report_id': report_id,
+            'task_id': task_id,
+            'feedback_type': feedback_type,
+            'comment': comment,
+            'source': source,
+            'created_at': created_at.isoformat(),
+        }
+
     def _row_to_task(self, row: sqlite3.Row) -> TaskRecord:
+        from src.domain.models import ExternalIntegrationContext
         source_document_ref = self._load_model(row['source_document_ref_json'], SourceDocumentRef)
         reviewer_decision = self._load_model(row['reviewer_decision_json'], ReviewerDecision)
+        external_context = self._load_model(row['external_context_json'], ExternalIntegrationContext) if 'external_context_json' in row.keys() else None
         return TaskRecord(
             id=row['id'],
             taskType=row['task_type'],
@@ -260,10 +321,12 @@ class SQLiteTaskStore:
             disciplineTags=self._load_list_json(row['discipline_tags_json']),
             strictMode=bool(row['strict_mode']) if row['strict_mode'] is not None else None,
             policyPackIds=self._load_list_json(row['policy_pack_ids_json']),
+            rulePackIds=self._load_list_json(row['rule_pack_ids_json']),
             status=row['status'],
             plan=self._load_json(row['plan_json']),
             result=self._load_json(row['result_json']),
             reviewerDecision=reviewer_decision,
+            externalContext=external_context,
             error=self._load_json(row['error_json']),
             createdAt=datetime.fromisoformat(row['created_at']),
             updatedAt=datetime.fromisoformat(row['updated_at']),

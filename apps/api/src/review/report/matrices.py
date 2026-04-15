@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+"""008 support matrix generation for Hermes-controlled review flows."""
+
 from collections import Counter
 
 from src.review.schema import (

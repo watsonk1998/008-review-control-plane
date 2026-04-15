@@ -1,0 +1,1094 @@
+{
+  "summary": {
+    "overallConclusion": "修改后重新报审",
+    "documentType": "distribution_network_special_scheme",
+    "selectedPacks": [
+      "distribution_network_special_scheme.base",
+      "power_outage_work.base"
+    ],
+    "manualReviewNeeded": false,
+    "issueCount": 3,
+    "layerCounts": {
+      "L1": 2,
+      "L2": 1
+    },
+    "stats": {
+      "attachmentCount": 0,
+      "ruleHitCount": 3,
+      "unresolvedFactCount": 5,
+      "issueKindCounts": {
+        "hard_defect": 2,
+        "evidence_gap": 1
+      },
+      "preflightGateDecision": "ready",
+      "blockedIssueCount": 1
+    },
+    "visibilitySummary": {
+      "attachmentCount": 0,
+      "counts": {
+        "parsed": 0,
+        "attachment_unparsed": 0,
+        "referenced_only": 0,
+        "missing": 0,
+        "unknown": 0
+      },
+      "duplicateSectionTitles": [],
+      "parseWarnings": [
+        "text_tables_not_preserved",
+        "text_attachment_boundaries_inferred_from_headings"
+      ],
+      "reasonCounts": {},
+      "manualReviewNeeded": false
+    }
+  },
+  "visibility": {
+    "parseMode": "markdown_text",
+    "parserLimited": false,
+    "fileType": "md",
+    "attachmentCount": 0,
+    "counts": {
+      "parsed": 0,
+      "attachment_unparsed": 0,
+      "referenced_only": 0,
+      "missing": 0,
+      "unknown": 0
+    },
+    "reasonCounts": {},
+    "duplicateSectionTitles": [],
+    "parseWarnings": [
+      "text_tables_not_preserved",
+      "text_attachment_boundaries_inferred_from_headings"
+    ],
+    "manualReviewNeeded": false,
+    "manualReviewReason": null,
+    "preflight": {
+      "gateDecision": "ready",
+      "blockingReasons": [],
+      "checklist": [
+        {
+          "key": "parse_source_readiness",
+          "status": "pass",
+          "summary": "当前解析路径未触发 parser-limited gate。",
+          "blocking": false
+        },
+        {
+          "key": "attachment_visibility",
+          "status": "pass",
+          "summary": "附件可视域未触发额外前置阻断。",
+          "blocking": false
+        },
+        {
+          "key": "section_structure_signal",
+          "status": "pass",
+          "summary": "章节结构未检测到重复标题信号。",
+          "blocking": false
+        },
+        {
+          "key": "manual_review_gate",
+          "status": "pass",
+          "summary": "当前任务未触发额外人工复核 gate。",
+          "blocking": false
+        }
+      ],
+      "parserLimitations": [
+        "text_tables_not_preserved",
+        "text_attachment_boundaries_inferred_from_headings"
+      ],
+      "attachmentTaxonomySummary": {
+        "attachmentCount": 0,
+        "counts": {
+          "parsed": 0,
+          "attachment_unparsed": 0,
+          "referenced_only": 0,
+          "missing": 0,
+          "unknown": 0
+        },
+        "reasonCounts": {},
+        "manualReviewReason": null
+      }
+    }
+  },
+  "resolvedProfile": {
+    "requestedDocumentType": "distribution_network_special_scheme",
+    "requestedDisciplineTags": [
+      "temporary_power"
+    ],
+    "requestedPolicyPackIds": [
+      "power_outage_work.base"
+    ],
+    "documentType": "distribution_network_special_scheme",
+    "disciplineTags": [
+      "power_outage_work",
+      "hot_work"
+    ],
+    "policyPackIds": [
+      "distribution_network_special_scheme.base",
+      "power_outage_work.base"
+    ],
+    "strictMode": true
+  },
+  "issues": [
+    {
+      "id": "ISSUE-001",
+      "title": "配网工程专项施工方案通用章节不完整",
+      "layer": "L1",
+      "severity": "high",
+      "findingType": "hard_evidence",
+      "summary": "配网工程专项施工方案通用章节不完整",
+      "manualReviewNeeded": false,
+      "evidenceMissing": false,
+      "manualReviewReason": null,
+      "issueKind": "hard_defect",
+      "applicabilityState": "applies",
+      "docEvidence": [
+        {
+          "sourceType": "document",
+          "sourceId": "validation_sample",
+          "locator": {
+            "blockId": "block-2",
+            "sectionId": "section-2"
+          },
+          "excerpt": "第一章 工程概况",
+          "visibility": null,
+          "confidence": "high",
+          "clauseTitle": null,
+          "forceLevel": null,
+          "applicability": null,
+          "sourceProvenance": "document:validation_sample.md:block:block-2",
+          "evidenceGapReason": null
+        }
+      ],
+      "policyEvidence": [
+        {
+          "sourceType": "policy",
+          "sourceId": "review-control-plane-special-scheme-structure-policy",
+          "locator": {
+            "clauseId": "distribution_network_special_scheme_structure"
+          },
+          "excerpt": "配网工程专项施工方案除专项补充要求外，仍应覆盖工程概况、编制依据、施工计划、施工工艺技术、施工保证措施、人员分工、验收要求、应急处置、图纸、风险辨识、平面布置或周边环境、计算与验算依据等通用内容。",
+          "visibility": null,
+          "confidence": "high",
+          "clauseTitle": "配网工程专项施工方案通用目录要求",
+          "forceLevel": "should",
+          "applicability": "distribution_network_special_scheme",
+          "sourceProvenance": "review-control-plane-special-scheme-structure-policy",
+          "evidenceGapReason": null
+        }
+      ],
+      "recommendation": [
+        "demo"
+      ],
+      "confidence": "medium",
+      "missingFactKeys": [],
+      "blockingReasons": []
+    },
+    {
+      "id": "ISSUE-002",
+      "title": "停电施工作业专项章节不完整",
+      "layer": "L1",
+      "severity": "high",
+      "findingType": "hard_evidence",
+      "summary": "停电施工作业专项章节不完整",
+      "manualReviewNeeded": false,
+      "evidenceMissing": false,
+      "manualReviewReason": null,
+      "issueKind": "hard_defect",
+      "applicabilityState": "applies",
+      "docEvidence": [],
+      "policyEvidence": [
+        {
+          "sourceType": "policy",
+          "sourceId": "review-control-plane-special-scheme-structure-policy",
+          "locator": {
+            "clauseId": "power_outage_work_structure"
+          },
+          "excerpt": "停电施工作业专项施工方案除专项施工方案通用要求外，还应覆盖停电范围、作业内容、主要风险、施工人员、机具、材料、安全管控、质量管控、应急措施等响应内容；不要求完全同名或同层级，但正文应有稳定支撑内容。",
+          "visibility": null,
+          "confidence": "high",
+          "clauseTitle": "停电施工作业专项补充目录要求",
+          "forceLevel": "should",
+          "applicability": "power_outage_work",
+          "sourceProvenance": "review-control-plane-special-scheme-structure-policy",
+          "evidenceGapReason": null
+        }
+      ],
+      "recommendation": [
+        "demo"
+      ],
+      "confidence": "medium",
+      "missingFactKeys": [],
+      "blockingReasons": []
+    },
+    {
+      "id": "ISSUE-003",
+      "title": "临时用电/停送电控制链路不完整",
+      "layer": "L2",
+      "severity": "medium",
+      "findingType": "engineering_inference",
+      "summary": "临时用电/停送电控制链路不完整",
+      "manualReviewNeeded": false,
+      "evidenceMissing": true,
+      "manualReviewReason": null,
+      "issueKind": "evidence_gap",
+      "applicabilityState": "blocked_by_missing_fact",
+      "docEvidence": [
+        {
+          "sourceType": "document",
+          "sourceId": "validation_sample",
+          "locator": {
+            "blockId": "block-5",
+            "sectionId": "section-3"
+          },
+          "excerpt": "涉及施工用电、动火作业。",
+          "visibility": null,
+          "confidence": "high",
+          "clauseTitle": null,
+          "forceLevel": null,
+          "applicability": null,
+          "sourceProvenance": "document:validation_sample.md:block:block-5",
+          "evidenceGapReason": "missing_fact"
+        },
+        {
+          "sourceType": "document",
+          "sourceId": "validation_sample",
+          "locator": {
+            "blockId": "block-6",
+            "sectionId": "section-4"
+          },
+          "excerpt": "第三章 停送电组织",
+          "visibility": null,
+          "confidence": "high",
+          "clauseTitle": null,
+          "forceLevel": null,
+          "applicability": null,
+          "sourceProvenance": "document:validation_sample.md:block:block-6",
+          "evidenceGapReason": "missing_fact"
+        }
+      ],
+      "policyEvidence": [
+        {
+          "sourceType": "policy",
+          "sourceId": "construction-《危险性较大的分部分项工程专项施工方案编制指南》（建办质〔2021〕48号）",
+          "locator": {
+            "clauseId": "hazardous_scheme_measures"
+          },
+          "excerpt": "专项方案应将主要危险源、控制措施、监测监控和应急处置形成闭环，便于现场执行。",
+          "visibility": null,
+          "confidence": "high",
+          "clauseTitle": "风险措施与监测监控",
+          "forceLevel": "should",
+          "applicability": "hazardous_special_scheme",
+          "sourceProvenance": "construction-《危险性较大的分部分项工程专项施工方案编制指南》（建办质〔2021〕48号）",
+          "evidenceGapReason": "missing_fact"
+        },
+        {
+          "sourceType": "policy",
+          "sourceId": "construction-《建设工程安全生产管理条例》",
+          "locator": {
+            "clauseId": "emergency_plan_targeted"
+          },
+          "excerpt": "应急管理文件应与主要危险源相匹配，便于事故类型、联系链路和现场处置动作快速落地。",
+          "visibility": null,
+          "confidence": "high",
+          "clauseTitle": "应急预案针对性",
+          "forceLevel": "should",
+          "applicability": "construction_org,hazardous_special_scheme",
+          "sourceProvenance": "construction-《建设工程安全生产管理条例》",
+          "evidenceGapReason": "missing_fact"
+        }
+      ],
+      "recommendation": [
+        "demo"
+      ],
+      "confidence": "medium",
+      "missingFactKeys": [
+        "emergency.planTitles"
+      ],
+      "blockingReasons": [
+        "missing_fact"
+      ]
+    }
+  ],
+  "matrices": {
+    "hazardIdentification": {
+      "values": {
+        "liftingOperation": false,
+        "gasArea": false,
+        "hotWork": true,
+        "temporaryPower": true,
+        "specialEquipmentMentioned": false,
+        "highRiskCategories": [
+          "temporary_power",
+          "hot_work"
+        ],
+        "craneCapacityTon": null,
+        "calculatedLiftWeightTon": null,
+        "shutdownWindowDays": null,
+        "laborTotal": null,
+        "sectionPresence": {
+          "engineeringOverview": true,
+          "preparationBasis": false,
+          "constructionPlan": false,
+          "schedulePlan": true,
+          "resourcePlan": false,
+          "layoutPlan": false,
+          "processMethod": true,
+          "safetyMeasures": false,
+          "emergencyPlan": false,
+          "calculationBook": false,
+          "monitoringPlan": false,
+          "staffingAndRoles": false,
+          "acceptanceRequirements": false,
+          "drawingSet": false,
+          "riskIdentification": false,
+          "siteLayout": false,
+          "surroundingConditions": false,
+          "participantResponsibilities": false,
+          "technicalParameters": false,
+          "processFlow": false,
+          "inspectionRequirements": false,
+          "organizationMeasures": false,
+          "technicalMeasures": false,
+          "monitoringMeasures": false
+        },
+        "calculationEvidencePresent": false,
+        "measureSectionPresent": false,
+        "monitoringSectionPresent": false
+      }
+    },
+    "ruleHits": [
+      {
+        "ruleId": "distribution_network_special_scheme_structure_completeness",
+        "packId": "distribution_network_special_scheme.base",
+        "packReadiness": "ready",
+        "status": "hit",
+        "applicabilityState": "applies",
+        "layerHint": "L1",
+        "severityHint": "high",
+        "matchType": "direct_hit",
+        "requiredFactKeys": [
+          "project.structureCompleteness.specialPreparationBasis",
+          "project.structureCompleteness.specialConstructionPlan",
+          "project.structureCompleteness.specialProcessTechnology",
+          "project.structureCompleteness.specialAssuranceMeasures",
+          "project.structureCompleteness.specialStaffingAndRoles",
+          "project.structureCompleteness.specialAcceptanceRequirements",
+          "project.structureCompleteness.specialEmergencyMeasures",
+          "project.structureCompleteness.specialDrawings",
+          "project.structureCompleteness.specialRiskIdentification",
+          "project.structureCompleteness.specialLayoutEnvironment",
+          "project.structureCompleteness.specialCalculationEvidence"
+        ],
+        "missingFactKeys": [],
+        "clauseIds": [
+          "distribution_network_special_scheme_structure"
+        ],
+        "blockingReasons": []
+      },
+      {
+        "ruleId": "power_outage_work_structure_completeness",
+        "packId": "power_outage_work.base",
+        "packReadiness": "ready",
+        "status": "hit",
+        "applicabilityState": "applies",
+        "layerHint": "L1",
+        "severityHint": "high",
+        "matchType": "direct_hit",
+        "requiredFactKeys": [
+          "project.structureCompleteness.powerOutageScope",
+          "project.structureCompleteness.powerOutageWorkContent",
+          "project.structureCompleteness.powerOutageMajorRisk",
+          "project.structureCompleteness.powerOutageStaffing",
+          "project.structureCompleteness.powerOutageEquipment",
+          "project.structureCompleteness.powerOutageMaterials",
+          "project.structureCompleteness.powerOutageSafetyControl",
+          "project.structureCompleteness.powerOutageQualityControl",
+          "project.structureCompleteness.powerOutageEmergencyMeasures"
+        ],
+        "missingFactKeys": [],
+        "clauseIds": [
+          "power_outage_work_structure"
+        ],
+        "blockingReasons": []
+      },
+      {
+        "ruleId": "temporary_power_control_linkage",
+        "packId": "power_outage_work.base",
+        "packReadiness": "ready",
+        "status": "hit",
+        "applicabilityState": "blocked_by_missing_fact",
+        "layerHint": "L2",
+        "severityHint": "medium",
+        "matchType": "inferred_risk",
+        "requiredFactKeys": [
+          "hazard.temporaryPower",
+          "hazard.measureSectionPresent",
+          "hazard.monitoringSectionPresent",
+          "emergency.planTitles"
+        ],
+        "missingFactKeys": [
+          "emergency.planTitles"
+        ],
+        "clauseIds": [
+          "hazardous_scheme_measures",
+          "emergency_plan_targeted"
+        ],
+        "blockingReasons": [
+          "missing_fact"
+        ]
+      }
+    ],
+    "conflicts": {
+      "values": {
+        "scheduleVsResources": {
+          "shutdownWindowDays": null,
+          "laborTotal": null,
+          "highRiskCategories": [
+            "temporary_power",
+            "hot_work"
+          ],
+          "issueTriggered": false
+        },
+        "hazardVsMeasures": {
+          "highRiskCategories": [
+            "temporary_power",
+            "hot_work"
+          ],
+          "measureSectionPresent": false,
+          "monitoringSectionPresent": false,
+          "issueTriggered": false
+        }
+      }
+    },
+    "attachmentVisibility": [],
+    "sectionStructure": [
+      {
+        "id": "section-1",
+        "title": "停电施工方案",
+        "level": 1,
+        "parentId": null,
+        "duplicate": false
+      },
+      {
+        "id": "section-2",
+        "title": "第一章 工程概况",
+        "level": 2,
+        "parentId": "section-1",
+        "duplicate": false
+      },
+      {
+        "id": "section-3",
+        "title": "第二章 施工组织",
+        "level": 2,
+        "parentId": "section-1",
+        "duplicate": false
+      },
+      {
+        "id": "section-4",
+        "title": "第三章 停送电组织",
+        "level": 2,
+        "parentId": "section-1",
+        "duplicate": false
+      },
+      {
+        "id": "section-5",
+        "title": "第四章 规范依据",
+        "level": 2,
+        "parentId": "section-1",
+        "duplicate": false
+      }
+    ],
+    "structureCompleteness": [
+      {
+        "itemKey": "powerOutageScope",
+        "requirementLabel": "停电范围",
+        "basisClause": "停电施工作业专项补充要求",
+        "basisRequirement": "停电施工作业应明确停电范围。",
+        "status": "missing",
+        "matchedSections": [],
+        "analysis": "当前正文中未识别到可稳定映射“停电范围”的章节标题或内容信号。",
+        "reportExcerpt": "当前未识别到可稳定对应“停电范围”的章节或内容信号。",
+        "scope": "special",
+        "displayOrder": 10,
+        "groupLabel": "停电施工作业专项要求"
+      },
+      {
+        "itemKey": "powerOutageWorkContent",
+        "requirementLabel": "作业内容",
+        "basisClause": "停电施工作业专项补充要求",
+        "basisRequirement": "停电施工作业应明确作业内容。",
+        "status": "missing",
+        "matchedSections": [],
+        "analysis": "当前正文中未识别到可稳定映射“作业内容”的章节标题或内容信号。",
+        "reportExcerpt": "当前未识别到可稳定对应“作业内容”的章节或内容信号。",
+        "scope": "special",
+        "displayOrder": 20,
+        "groupLabel": "停电施工作业专项要求"
+      },
+      {
+        "itemKey": "powerOutageMajorRisk",
+        "requirementLabel": "主要风险",
+        "basisClause": "停电施工作业专项补充要求",
+        "basisRequirement": "停电施工作业应明确主要风险。",
+        "status": "missing",
+        "matchedSections": [],
+        "analysis": "当前正文中未识别到可稳定映射“主要风险”的章节标题或内容信号。",
+        "reportExcerpt": "当前未识别到可稳定对应“主要风险”的章节或内容信号。",
+        "scope": "special",
+        "displayOrder": 30,
+        "groupLabel": "停电施工作业专项要求"
+      },
+      {
+        "itemKey": "powerOutageStaffing",
+        "requirementLabel": "施工人员",
+        "basisClause": "停电施工作业专项补充要求",
+        "basisRequirement": "停电施工作业应明确施工人员。",
+        "status": "missing",
+        "matchedSections": [],
+        "analysis": "当前正文中未识别到可稳定映射“施工人员”的章节标题或内容信号。",
+        "reportExcerpt": "当前未识别到可稳定对应“施工人员”的章节或内容信号。",
+        "scope": "special",
+        "displayOrder": 40,
+        "groupLabel": "停电施工作业专项要求"
+      },
+      {
+        "itemKey": "powerOutageEquipment",
+        "requirementLabel": "机具",
+        "basisClause": "停电施工作业专项补充要求",
+        "basisRequirement": "停电施工作业应明确机具。",
+        "status": "missing",
+        "matchedSections": [],
+        "analysis": "当前正文中未识别到可稳定映射“机具”的章节标题或内容信号。",
+        "reportExcerpt": "当前未识别到可稳定对应“机具”的章节或内容信号。",
+        "scope": "special",
+        "displayOrder": 50,
+        "groupLabel": "停电施工作业专项要求"
+      },
+      {
+        "itemKey": "powerOutageMaterials",
+        "requirementLabel": "材料",
+        "basisClause": "停电施工作业专项补充要求",
+        "basisRequirement": "停电施工作业应明确材料。",
+        "status": "missing",
+        "matchedSections": [],
+        "analysis": "当前正文中未识别到可稳定映射“材料”的章节标题或内容信号。",
+        "reportExcerpt": "当前未识别到可稳定对应“材料”的章节或内容信号。",
+        "scope": "special",
+        "displayOrder": 60,
+        "groupLabel": "停电施工作业专项要求"
+      },
+      {
+        "itemKey": "powerOutageSafetyControl",
+        "requirementLabel": "安全管控",
+        "basisClause": "停电施工作业专项补充要求",
+        "basisRequirement": "停电施工作业应明确安全管控。",
+        "status": "missing",
+        "matchedSections": [],
+        "analysis": "当前正文中未识别到可稳定映射“安全管控”的章节标题或内容信号。",
+        "reportExcerpt": "当前未识别到可稳定对应“安全管控”的章节或内容信号。",
+        "scope": "special",
+        "displayOrder": 70,
+        "groupLabel": "停电施工作业专项要求"
+      },
+      {
+        "itemKey": "powerOutageQualityControl",
+        "requirementLabel": "质量管控",
+        "basisClause": "停电施工作业专项补充要求",
+        "basisRequirement": "停电施工作业应明确质量管控。",
+        "status": "missing",
+        "matchedSections": [],
+        "analysis": "当前正文中未识别到可稳定映射“质量管控”的章节标题或内容信号。",
+        "reportExcerpt": "当前未识别到可稳定对应“质量管控”的章节或内容信号。",
+        "scope": "special",
+        "displayOrder": 80,
+        "groupLabel": "停电施工作业专项要求"
+      },
+      {
+        "itemKey": "powerOutageEmergencyMeasures",
+        "requirementLabel": "应急措施",
+        "basisClause": "停电施工作业专项补充要求",
+        "basisRequirement": "停电施工作业应明确应急措施。",
+        "status": "missing",
+        "matchedSections": [],
+        "analysis": "当前正文中未识别到可稳定映射“应急措施”的章节标题或内容信号。",
+        "reportExcerpt": "当前未识别到可稳定对应“应急措施”的章节或内容信号。",
+        "scope": "special",
+        "displayOrder": 90,
+        "groupLabel": "停电施工作业专项要求"
+      },
+      {
+        "itemKey": "specialEngineeringOverview",
+        "requirementLabel": "工程概况",
+        "basisClause": "专项施工方案通用要求",
+        "basisRequirement": "专项施工方案应体现工程概况。",
+        "status": "matched",
+        "matchedSections": [
+          {
+            "sectionId": "section-2",
+            "blockId": "block-2",
+            "title": "第一章 工程概况",
+            "position": 3,
+            "level": 2
+          }
+        ],
+        "analysis": "命中章节：第一章 工程概况。",
+        "reportExcerpt": "已识别到“第一章 工程概况”等内容，可支撑“工程概况”结构审查。",
+        "scope": "common",
+        "displayOrder": 110,
+        "groupLabel": "专项施工方案通用要求"
+      },
+      {
+        "itemKey": "specialPreparationBasis",
+        "requirementLabel": "编制依据",
+        "basisClause": "专项施工方案通用要求",
+        "basisRequirement": "专项施工方案应体现编制依据。",
+        "status": "missing",
+        "matchedSections": [],
+        "analysis": "当前正文中未识别到可稳定映射“编制依据”的章节标题或内容信号。",
+        "reportExcerpt": "当前未识别到可稳定对应“编制依据”的章节或内容信号。",
+        "scope": "common",
+        "displayOrder": 120,
+        "groupLabel": "专项施工方案通用要求"
+      },
+      {
+        "itemKey": "specialConstructionPlan",
+        "requirementLabel": "施工计划",
+        "basisClause": "专项施工方案通用要求",
+        "basisRequirement": "专项施工方案应体现施工计划。",
+        "status": "partial",
+        "matchedSections": [
+          {
+            "sectionId": "section-2",
+            "blockId": "block-2",
+            "title": "第一章 工程概况",
+            "position": 3,
+            "level": 2
+          }
+        ],
+        "analysis": "已识别到局部相关章节或内容信号：第一章 工程概况；建议补齐或单列“施工计划”。",
+        "reportExcerpt": "已识别到与“施工计划”相关的内容信号，但结构呈现仍不完整。",
+        "scope": "common",
+        "displayOrder": 130,
+        "groupLabel": "专项施工方案通用要求"
+      },
+      {
+        "itemKey": "specialProcessTechnology",
+        "requirementLabel": "施工工艺技术",
+        "basisClause": "专项施工方案通用要求",
+        "basisRequirement": "专项施工方案应体现施工工艺技术。",
+        "status": "missing",
+        "matchedSections": [],
+        "analysis": "当前正文中未识别到可稳定映射“施工工艺技术”的章节标题或内容信号。",
+        "reportExcerpt": "当前未识别到可稳定对应“施工工艺技术”的章节或内容信号。",
+        "scope": "common",
+        "displayOrder": 140,
+        "groupLabel": "专项施工方案通用要求"
+      },
+      {
+        "itemKey": "specialAssuranceMeasures",
+        "requirementLabel": "施工保证措施",
+        "basisClause": "专项施工方案通用要求",
+        "basisRequirement": "专项施工方案应体现施工保证措施。",
+        "status": "missing",
+        "matchedSections": [],
+        "analysis": "当前正文中未识别到可稳定映射“施工保证措施”的章节标题或内容信号。",
+        "reportExcerpt": "当前未识别到可稳定对应“施工保证措施”的章节或内容信号。",
+        "scope": "common",
+        "displayOrder": 150,
+        "groupLabel": "专项施工方案通用要求"
+      },
+      {
+        "itemKey": "specialStaffingAndRoles",
+        "requirementLabel": "施工管理及作业人员配备和分工",
+        "basisClause": "专项施工方案通用要求",
+        "basisRequirement": "专项施工方案应体现施工管理及作业人员配备和分工。",
+        "status": "missing",
+        "matchedSections": [],
+        "analysis": "当前正文中未识别到可稳定映射“施工管理及作业人员配备和分工”的章节标题或内容信号。",
+        "reportExcerpt": "当前未识别到可稳定对应“施工管理及作业人员配备和分工”的章节或内容信号。",
+        "scope": "common",
+        "displayOrder": 160,
+        "groupLabel": "专项施工方案通用要求"
+      },
+      {
+        "itemKey": "specialAcceptanceRequirements",
+        "requirementLabel": "验收要求",
+        "basisClause": "专项施工方案通用要求",
+        "basisRequirement": "专项施工方案应体现验收要求。",
+        "status": "missing",
+        "matchedSections": [],
+        "analysis": "当前正文中未识别到可稳定映射“验收要求”的章节标题或内容信号。",
+        "reportExcerpt": "当前未识别到可稳定对应“验收要求”的章节或内容信号。",
+        "scope": "common",
+        "displayOrder": 170,
+        "groupLabel": "专项施工方案通用要求"
+      },
+      {
+        "itemKey": "specialEmergencyMeasures",
+        "requirementLabel": "应急处置措施",
+        "basisClause": "专项施工方案通用要求",
+        "basisRequirement": "专项施工方案应体现应急处置措施。",
+        "status": "missing",
+        "matchedSections": [],
+        "analysis": "当前正文中未识别到可稳定映射“应急处置措施”的章节标题或内容信号。",
+        "reportExcerpt": "当前未识别到可稳定对应“应急处置措施”的章节或内容信号。",
+        "scope": "common",
+        "displayOrder": 180,
+        "groupLabel": "专项施工方案通用要求"
+      },
+      {
+        "itemKey": "specialDrawings",
+        "requirementLabel": "相关施工图纸 / 节点详图 / 布置图",
+        "basisClause": "专项施工方案通用要求",
+        "basisRequirement": "专项施工方案应体现相关施工图纸、节点详图或布置图。",
+        "status": "missing",
+        "matchedSections": [],
+        "analysis": "当前正文中未识别到可稳定映射“相关施工图纸 / 节点详图 / 布置图”的章节标题或内容信号。",
+        "reportExcerpt": "当前未识别到可稳定对应“相关施工图纸 / 节点详图 / 布置图”的章节或内容信号。",
+        "scope": "common",
+        "displayOrder": 190,
+        "groupLabel": "专项施工方案通用要求"
+      },
+      {
+        "itemKey": "specialRiskIdentification",
+        "requirementLabel": "风险辨识与分级",
+        "basisClause": "专项施工方案通用要求",
+        "basisRequirement": "专项施工方案应体现风险辨识与分级。",
+        "status": "missing",
+        "matchedSections": [],
+        "analysis": "当前正文中未识别到可稳定映射“风险辨识与分级”的章节标题或内容信号。",
+        "reportExcerpt": "当前未识别到可稳定对应“风险辨识与分级”的章节或内容信号。",
+        "scope": "common",
+        "displayOrder": 200,
+        "groupLabel": "专项施工方案通用要求"
+      },
+      {
+        "itemKey": "specialLayoutEnvironment",
+        "requirementLabel": "施工平面布置或周边环境条件",
+        "basisClause": "专项施工方案通用要求",
+        "basisRequirement": "专项施工方案应体现施工平面布置或周边环境条件。",
+        "status": "missing",
+        "matchedSections": [],
+        "analysis": "当前正文中未识别到可稳定映射“施工平面布置或周边环境条件”的章节标题或内容信号。",
+        "reportExcerpt": "当前未识别到可稳定对应“施工平面布置或周边环境条件”的章节或内容信号。",
+        "scope": "common",
+        "displayOrder": 210,
+        "groupLabel": "专项施工方案通用要求"
+      },
+      {
+        "itemKey": "specialCalculationEvidence",
+        "requirementLabel": "计算书及相关验算依据",
+        "basisClause": "专项施工方案通用要求",
+        "basisRequirement": "专项施工方案应体现计算书及相关验算依据。",
+        "status": "missing",
+        "matchedSections": [],
+        "analysis": "当前正文中未识别到可稳定映射“计算书及相关验算依据”的章节标题或内容信号。",
+        "reportExcerpt": "当前未识别到可稳定对应“计算书及相关验算依据”的章节或内容信号。",
+        "scope": "common",
+        "displayOrder": 220,
+        "groupLabel": "专项施工方案通用要求"
+      }
+    ],
+    "issueLayerCounts": {
+      "L1": 2,
+      "L2": 1
+    }
+  },
+  "artifactIndex": [
+    {
+      "name": "structured-review-parse",
+      "fileName": "structured-review-parse.json",
+      "mediaType": "application/json",
+      "sizeBytes": 7769,
+      "downloadUrl": "/api/tasks/task-module-validation-001/artifacts/structured-review-parse.json",
+      "category": "parse",
+      "stage": "parse",
+      "primary": false
+    },
+    {
+      "name": "structured-review-l0-visibility",
+      "fileName": "structured-review-l0-visibility.json",
+      "mediaType": "application/json",
+      "sizeBytes": 3335,
+      "downloadUrl": "/api/tasks/task-module-validation-001/artifacts/structured-review-l0-visibility.json",
+      "category": "parse",
+      "stage": "parse",
+      "primary": false
+    },
+    {
+      "name": "structured-review-facts",
+      "fileName": "structured-review-facts.json",
+      "mediaType": "application/json",
+      "sizeBytes": 33216,
+      "downloadUrl": "/api/tasks/task-module-validation-001/artifacts/structured-review-facts.json",
+      "category": "facts",
+      "stage": "extract",
+      "primary": false
+    },
+    {
+      "name": "structured-review-rule-hits",
+      "fileName": "structured-review-rule-hits.json",
+      "mediaType": "application/json",
+      "sizeBytes": 5012,
+      "downloadUrl": "/api/tasks/task-module-validation-001/artifacts/structured-review-rule-hits.json",
+      "category": "rule_hits",
+      "stage": "rules",
+      "primary": false
+    },
+    {
+      "name": "structured-review-candidates",
+      "fileName": "structured-review-candidates.json",
+      "mediaType": "application/json",
+      "sizeBytes": 11664,
+      "downloadUrl": "/api/tasks/task-module-validation-001/artifacts/structured-review-candidates.json",
+      "category": "candidates",
+      "stage": "evidence",
+      "primary": false
+    },
+    {
+      "name": "hazard-identification-matrix",
+      "fileName": "hazard-identification-matrix.json",
+      "mediaType": "application/json",
+      "sizeBytes": 1299,
+      "downloadUrl": "/api/tasks/task-module-validation-001/artifacts/hazard-identification-matrix.json",
+      "category": "matrices",
+      "stage": "report",
+      "primary": false
+    },
+    {
+      "name": "rule-hit-matrix",
+      "fileName": "rule-hit-matrix.json",
+      "mediaType": "application/json",
+      "sizeBytes": 2825,
+      "downloadUrl": "/api/tasks/task-module-validation-001/artifacts/rule-hit-matrix.json",
+      "category": "matrices",
+      "stage": "report",
+      "primary": false
+    },
+    {
+      "name": "conflict-matrix",
+      "fileName": "conflict-matrix.json",
+      "mediaType": "application/json",
+      "sizeBytes": 458,
+      "downloadUrl": "/api/tasks/task-module-validation-001/artifacts/conflict-matrix.json",
+      "category": "matrices",
+      "stage": "report",
+      "primary": false
+    },
+    {
+      "name": "attachment-visibility-matrix",
+      "fileName": "attachment-visibility-matrix.json",
+      "mediaType": "application/json",
+      "sizeBytes": 2,
+      "downloadUrl": "/api/tasks/task-module-validation-001/artifacts/attachment-visibility-matrix.json",
+      "category": "matrices",
+      "stage": "report",
+      "primary": false
+    },
+    {
+      "name": "section-structure-matrix",
+      "fileName": "section-structure-matrix.json",
+      "mediaType": "application/json",
+      "sizeBytes": 689,
+      "downloadUrl": "/api/tasks/task-module-validation-001/artifacts/section-structure-matrix.json",
+      "category": "matrices",
+      "stage": "report",
+      "primary": false
+    },
+    {
+      "name": "structure-completeness-matrix",
+      "fileName": "structure-completeness-matrix.json",
+      "mediaType": "application/json",
+      "sizeBytes": 13080,
+      "downloadUrl": "/api/tasks/task-module-validation-001/artifacts/structure-completeness-matrix.json",
+      "category": "matrices",
+      "stage": "report",
+      "primary": false
+    },
+    {
+      "name": "structured-review-report-buckets",
+      "fileName": "structured-review-report-buckets.json",
+      "mediaType": "application/json",
+      "sizeBytes": 538,
+      "downloadUrl": "/api/tasks/task-module-validation-001/artifacts/structured-review-report-buckets.json",
+      "category": "matrices",
+      "stage": "report",
+      "primary": false
+    },
+    {
+      "name": "structured-review-report",
+      "fileName": "structured-review-report.md",
+      "mediaType": "text/markdown",
+      "sizeBytes": 15275,
+      "downloadUrl": "/api/tasks/task-module-validation-001/artifacts/structured-review-report.md",
+      "category": "report",
+      "stage": "report",
+      "primary": false
+    },
+    {
+      "name": "structured-review-report",
+      "fileName": "structured-review-report.html",
+      "mediaType": "text/html",
+      "sizeBytes": 24925,
+      "downloadUrl": "/api/tasks/task-module-validation-001/artifacts/structured-review-report.html",
+      "category": "report",
+      "stage": "report",
+      "primary": false
+    },
+    {
+      "name": "structured-review-report.print",
+      "fileName": "structured-review-report.print.css",
+      "mediaType": "text/css",
+      "sizeBytes": 6367,
+      "downloadUrl": "/api/tasks/task-module-validation-001/artifacts/structured-review-report.print.css",
+      "category": "report",
+      "stage": "report",
+      "primary": false
+    },
+    {
+      "name": "structured-review-report",
+      "fileName": "structured-review-report.pdf",
+      "mediaType": "application/pdf",
+      "sizeBytes": 657289,
+      "downloadUrl": "/api/tasks/task-module-validation-001/artifacts/structured-review-report.pdf",
+      "category": "report",
+      "stage": "report",
+      "primary": true
+    },
+    {
+      "name": "structured-review-result",
+      "fileName": "structured-review-result.json",
+      "mediaType": "application/json",
+      "sizeBytes": 104090,
+      "downloadUrl": "/api/tasks/task-module-validation-001/artifacts/structured-review-result.json",
+      "category": "result",
+      "stage": "report",
+      "primary": false
+    }
+  ],
+  "reportMarkdown": "# 配网工程专项施工方案形式审查报告\n\n## 第一部分：审查结论与审查依据\n\n### 1. 总体审查结论\n- 审查结论：修改后重新报审\n- 文档类型：配网工程专项施工方案\n- 是否需人工复核：否\n- 当前识别问题总数：3 项\n\n### 2. 审查依据文件\n#### 主要审查依据文件\n- 《危险性较大的分部分项工程专项施工方案编制指南》（建办质〔2021〕48号）\n- 《建设工程安全生产管理条例》\n\n#### 补充说明依据\n- 系统结构审查规则\n\n### 3. 审查总览表\n\n#### 3.1 专项补充结构总览\n<table class=\"structured-overview-table\"><thead><tr><th>序号</th><th>结构项</th><th>结构判定</th><th>异常摘要</th><th>补齐建议（简）</th></tr></thead><tbody><tr><td>1</td><td>停电范围</td><td>缺失</td><td>未识别到稳定对应章节</td><td>建议补齐“停电范围”专章或稳定标题</td></tr><tr><td>2</td><td>作业内容</td><td>缺失</td><td>未识别到稳定对应章节</td><td>建议补齐“作业内容”专章或稳定标题</td></tr><tr><td>3</td><td>主要风险</td><td>缺失</td><td>未识别到稳定对应章节</td><td>建议补齐“主要风险”专章或稳定标题</td></tr><tr><td>4</td><td>施工人员</td><td>缺失</td><td>未识别到稳定对应章节</td><td>建议补齐“施工人员”专章或稳定标题</td></tr><tr><td>5</td><td>机具</td><td>缺失</td><td>未识别到稳定对应章节</td><td>建议补齐“机具”专章或稳定标题</td></tr><tr><td>6</td><td>材料</td><td>缺失</td><td>未识别到稳定对应章节</td><td>建议补齐“材料”专章或稳定标题</td></tr><tr><td>7</td><td>安全管控</td><td>缺失</td><td>未识别到稳定对应章节</td><td>建议补齐“安全管控”专章或稳定标题</td></tr><tr><td>8</td><td>质量管控</td><td>缺失</td><td>未识别到稳定对应章节</td><td>建议补齐“质量管控”专章或稳定标题</td></tr><tr><td>9</td><td>应急措施</td><td>缺失</td><td>未识别到稳定对应章节</td><td>建议补齐“应急措施”专章或稳定标题</td></tr></tbody></table>\n\n#### 3.2 专项施工方案通用结构总览\n<table class=\"structured-overview-table\"><thead><tr><th>序号</th><th>结构项</th><th>结构判定</th><th>异常摘要</th><th>补齐建议（简）</th></tr></thead><tbody><tr><td>1</td><td>工程概况</td><td>符合</td><td>—</td><td>—</td></tr><tr><td>2</td><td>编制依据</td><td>缺失</td><td>未识别到稳定对应章节</td><td>建议补齐“编制依据”专章或稳定标题</td></tr><tr><td>3</td><td>施工计划</td><td>部分符合</td><td>已识别到相关内容，但内容分散，未形成稳定章节闭合</td><td>建议补齐“施工计划”并形成稳定章节闭合</td></tr><tr><td>4</td><td>施工工艺技术</td><td>缺失</td><td>未识别到稳定对应章节</td><td>建议补齐“施工工艺技术”专章或稳定标题</td></tr><tr><td>5</td><td>施工保证措施</td><td>缺失</td><td>未识别到稳定对应章节</td><td>建议补齐“施工保证措施”专章或稳定标题</td></tr><tr><td>6</td><td>施工管理及作业人员配备和分工</td><td>缺失</td><td>未识别到稳定对应章节</td><td>建议补齐“施工管理及作业人员配备和分工”专章或稳定标题</td></tr><tr><td>7</td><td>验收要求</td><td>缺失</td><td>未识别到稳定对应章节</td><td>建议补齐“验收要求”专章或稳定标题</td></tr><tr><td>8</td><td>应急处置措施</td><td>缺失</td><td>未识别到稳定对应章节</td><td>建议补齐“应急处置措施”专章或稳定标题</td></tr><tr><td>9</td><td>相关施工图纸 / 节点详图 / 布置图</td><td>缺失</td><td>未识别到稳定对应章节</td><td>建议补齐“相关施工图纸 / 节点详图 / 布置图”专章或稳定标题</td></tr><tr><td>10</td><td>风险辨识与分级</td><td>缺失</td><td>未识别到稳定对应章节</td><td>建议补齐“风险辨识与分级”专章或稳定标题</td></tr><tr><td>11</td><td>施工平面布置或周边环境条件</td><td>缺失</td><td>未识别到稳定对应章节</td><td>建议补齐“施工平面布置或周边环境条件”专章或稳定标题</td></tr><tr><td>12</td><td>计算书及相关验算依据</td><td>缺失</td><td>未识别到稳定对应章节</td><td>建议补齐“计算书及相关验算依据”专章或稳定标题</td></tr></tbody></table>\n\n## 第二部分：L1 审查发现——合法合规与结构完整性\n\n### 2.1 结构完整性与形式合规性\n- 总体结论：对照专项施工方案目录要求，本文件结构主干未完全闭合，存在 19 项明确缺项，存在 1 项仅部分识别。\n- 主要审查依据：\n  - 系统结构审查规则：配网工程专项施工方案通用目录要求\n  - 系统结构审查规则：停电施工作业专项补充目录要求\n\n#### 2.1.1 专项补充结构要求\n- 主要审查依据：停电施工作业专项要求结构审查要求\n\n<table class=\"structured-completeness-table\"><thead><tr><th>序号</th><th>规范要求</th><th>规范依据</th><th>文档对应章节</th><th>结构判定</th><th>相关审查意见</th></tr></thead><tbody><tr><td>1</td><td>停电范围</td><td>停电施工作业专项要求</td><td>未识别到稳定对应章节</td><td>缺失</td><td>—</td></tr><tr><td>2</td><td>作业内容</td><td>停电施工作业专项要求</td><td>未识别到稳定对应章节</td><td>缺失</td><td>—</td></tr><tr><td>3</td><td>主要风险</td><td>停电施工作业专项要求</td><td>未识别到稳定对应章节</td><td>缺失</td><td>—</td></tr><tr><td>4</td><td>施工人员</td><td>停电施工作业专项要求</td><td>未识别到稳定对应章节</td><td>缺失</td><td>—</td></tr><tr><td>5</td><td>机具</td><td>停电施工作业专项要求</td><td>未识别到稳定对应章节</td><td>缺失</td><td>—</td></tr><tr><td>6</td><td>材料</td><td>停电施工作业专项要求</td><td>未识别到稳定对应章节</td><td>缺失</td><td>—</td></tr><tr><td>7</td><td>安全管控</td><td>停电施工作业专项要求</td><td>未识别到稳定对应章节</td><td>缺失</td><td>—</td></tr><tr><td>8</td><td>质量管控</td><td>停电施工作业专项要求</td><td>未识别到稳定对应章节</td><td>缺失</td><td>—</td></tr><tr><td>9</td><td>应急措施</td><td>停电施工作业专项要求</td><td>未识别到稳定对应章节</td><td>缺失</td><td>—</td></tr></tbody></table>\n\n#### 2.1.2 专项施工方案通用要求\n- 主要审查依据：专项施工方案通用结构审查要求\n\n<table class=\"structured-completeness-table\"><thead><tr><th>序号</th><th>规范要求</th><th>规范依据</th><th>文档对应章节</th><th>结构判定</th><th>相关审查意见</th></tr></thead><tbody><tr><td>1</td><td>工程概况</td><td>专项施工方案通用要求</td><td>第一章 工程概况</td><td>符合</td><td>—</td></tr><tr><td>2</td><td>编制依据</td><td>专项施工方案通用要求</td><td>未识别到稳定对应章节</td><td>缺失</td><td>—</td></tr><tr><td>3</td><td>施工计划</td><td>专项施工方案通用要求</td><td>第一章 工程概况</td><td>部分符合</td><td>—</td></tr><tr><td>4</td><td>施工工艺技术</td><td>专项施工方案通用要求</td><td>未识别到稳定对应章节</td><td>缺失</td><td>—</td></tr><tr><td>5</td><td>施工保证措施</td><td>专项施工方案通用要求</td><td>未识别到稳定对应章节</td><td>缺失</td><td>—</td></tr><tr><td>6</td><td>施工管理及作业人员配备和分工</td><td>专项施工方案通用要求</td><td>未识别到稳定对应章节</td><td>缺失</td><td>—</td></tr><tr><td>7</td><td>验收要求</td><td>专项施工方案通用要求</td><td>未识别到稳定对应章节</td><td>缺失</td><td>—</td></tr><tr><td>8</td><td>应急处置措施</td><td>专项施工方案通用要求</td><td>未识别到稳定对应章节</td><td>缺失</td><td>—</td></tr><tr><td>9</td><td>相关施工图纸 / 节点详图 / 布置图</td><td>专项施工方案通用要求</td><td>未识别到稳定对应章节</td><td>缺失</td><td>—</td></tr><tr><td>10</td><td>风险辨识与分级</td><td>专项施工方案通用要求</td><td>未识别到稳定对应章节</td><td>缺失</td><td>—</td></tr><tr><td>11</td><td>施工平面布置或周边环境条件</td><td>专项施工方案通用要求</td><td>未识别到稳定对应章节</td><td>缺失</td><td>—</td></tr><tr><td>12</td><td>计算书及相关验算依据</td><td>专项施工方案通用要求</td><td>未识别到稳定对应章节</td><td>缺失</td><td>—</td></tr></tbody></table>\n\n#### 专项补充要求：缺项分析与补齐意见\n【1. 停电范围】\n判定：缺失\n识别章节：\n- 未识别到稳定对应章节\n补齐建议：建议补齐“停电范围”专章或形成稳定章节标题。\n---\n【2. 作业内容】\n判定：缺失\n识别章节：\n- 未识别到稳定对应章节\n补齐建议：建议补齐“作业内容”专章或形成稳定章节标题。\n---\n【3. 主要风险】\n判定：缺失\n识别章节：\n- 未识别到稳定对应章节\n补齐建议：建议补齐“主要风险”专章或形成稳定章节标题。\n---\n【4. 施工人员】\n判定：缺失\n识别章节：\n- 未识别到稳定对应章节\n补齐建议：建议补齐“施工人员”专章或形成稳定章节标题。\n---\n【5. 机具】\n判定：缺失\n识别章节：\n- 未识别到稳定对应章节\n补齐建议：建议补齐“机具”专章或形成稳定章节标题。\n---\n【6. 材料】\n判定：缺失\n识别章节：\n- 未识别到稳定对应章节\n补齐建议：建议补齐“材料”专章或形成稳定章节标题。\n---\n【7. 安全管控】\n判定：缺失\n识别章节：\n- 未识别到稳定对应章节\n补齐建议：建议补齐“安全管控”专章或形成稳定章节标题。\n---\n【8. 质量管控】\n判定：缺失\n识别章节：\n- 未识别到稳定对应章节\n补齐建议：建议补齐“质量管控”专章或形成稳定章节标题。\n---\n【9. 应急措施】\n判定：缺失\n识别章节：\n- 未识别到稳定对应章节\n补齐建议：建议补齐“应急措施”专章或形成稳定章节标题。\n---\n\n#### 通用要求：缺项分析与补齐意见\n【1. 编制依据】\n判定：缺失\n识别章节：\n- 未识别到稳定对应章节\n补齐建议：建议补齐“编制依据”专章或形成稳定章节标题。\n---\n【2. 施工计划】\n判定：部分符合\n识别章节：\n- 第一章 工程概况\n补齐建议：建议补齐或单列“施工计划”。\n---\n【3. 施工工艺技术】\n判定：缺失\n识别章节：\n- 未识别到稳定对应章节\n补齐建议：建议补齐“施工工艺技术”专章或形成稳定章节标题。\n---\n【4. 施工保证措施】\n判定：缺失\n识别章节：\n- 未识别到稳定对应章节\n补齐建议：建议补齐“施工保证措施”专章或形成稳定章节标题。\n---\n【5. 施工管理及作业人员配备和分工】\n判定：缺失\n识别章节：\n- 未识别到稳定对应章节\n补齐建议：建议补齐“施工管理及作业人员配备和分工”专章或形成稳定章节标题。\n---\n【6. 验收要求】\n判定：缺失\n识别章节：\n- 未识别到稳定对应章节\n补齐建议：建议补齐“验收要求”专章或形成稳定章节标题。\n---\n【7. 应急处置措施】\n判定：缺失\n识别章节：\n- 未识别到稳定对应章节\n补齐建议：建议补齐“应急处置措施”专章或形成稳定章节标题。\n---\n【8. 相关施工图纸 / 节点详图 / 布置图】\n判定：缺失\n识别章节：\n- 未识别到稳定对应章节\n补齐建议：建议补齐“相关施工图纸 / 节点详图 / 布置图”专章或形成稳定章节标题。\n---\n【9. 风险辨识与分级】\n判定：缺失\n识别章节：\n- 未识别到稳定对应章节\n补齐建议：建议补齐“风险辨识与分级”专章或形成稳定章节标题。\n---\n【10. 施工平面布置或周边环境条件】\n判定：缺失\n识别章节：\n- 未识别到稳定对应章节\n补齐建议：建议补齐“施工平面布置或周边环境条件”专章或形成稳定章节标题。\n---\n【11. 计算书及相关验算依据】\n判定：缺失\n识别章节：\n- 未识别到稳定对应章节\n补齐建议：建议补齐“计算书及相关验算依据”专章或形成稳定章节标题。\n---\n\n\n### 2.2 补充审查意见\n- 当前未发现需要在表外单列提示的补充意见。\n\n## 第三部分：L2 审查发现——核心参数与规则实质性验证\n\n### 主要审查依据\n- 《危险性较大的分部分项工程专项施工方案编制指南》（建办质〔2021〕48号）：风险措施与监测监控\n- 《建设工程安全生产管理条例》：应急预案针对性\n\n### 1. 临时用电/停送电控制链路不完整\n问题描述\n- 临时用电/停送电控制链路不完整\n条文依据\n- 《危险性较大的分部分项工程专项施工方案编制指南》（建办质〔2021〕48号）\n  - 要求：专项方案应将主要危险源、控制措施、监测监控和应急处置形成闭环，便于现场执行\n- 《建设工程安全生产管理条例》\n  - 要求：应急管理文件应与主要危险源相匹配，便于事故类型、联系链路和现场处置动作快速落地\n\n## 第四部分：L3 审查发现——工程逻辑与实施风险预判\n\n- 本层未发现需要单独提示的问题。\n\n## 第五部分：关键数据识别汇总\n\n### 1. 危大工程识别情况\n- 已识别的高风险作业类型：临时用电、动火作业。\n- 涉及起重吊装作业：否。\n- 涉及煤气区域作业：否。\n- 涉及动火作业：是。\n- 涉及临时用电：是。\n- 提及特种设备：否。\n- 已提取验算依据：否。\n- 已识别风险控制措施章节：否。\n- 已识别监测监控章节：否。\n- 结构提示：以下关键章节未明确识别到：编制依据、施工部署/施工计划、施工准备与资源配置计划、施工现场平面布置、安全管理措施、应急预案、计算书/验算书、监测监控。\n\n## 第六部分：解析说明与复核提示\n\n### 6.1 文档解析状态与预检结果\n- 预检状态：可进入正式审查\n- 当前解析方式：Markdown 文本解析\n- 文件类型：Markdown 文档\n- 已识别附件数量：0\n- 人工复核说明：当前未触发额外人工复核说明。\n- 预检阻断说明：当前未识别额外阻断项。\n- 可视域概况：当前未检测到额外的结构提示。\n\n### 6.2 附件解析与关联情况\n- 当前未发现需要单独提示的附件可视域断链。\n\n### 6.3 待人工确认事项\n- 未解析到项目名称，需人工确认文档基础信息\n- 未解析到项目编号，需人工确认文档标识信息\n- 未解析到停机窗口时长，需人工确认工期窗口\n- 未解析到劳动力合计人数，需人工确认资源投入\n- 未解析到针对性应急预案标题，需人工确认应急安排\n\n说明：完整结构化结果、矩阵明细及可追溯工件已保留在系统结果与附件中，供复核和留档使用。",
+  "reportHtml": "<article class=\"structured-report\"><h1 class=\"structured-report__title\">配网工程专项施工方案形式审查报告</h1><section class=\"structured-report__section\"><h2 class=\"structured-report__section-title\">第一部分：审查结论与审查依据</h2><div class=\"structured-report__subsection\"><h3 class=\"structured-report__subsection-title\">1. 总体审查结论</h3><ul class=\"structured-report__bullet-list\"><li>审查结论：修改后重新报审</li><li>文档类型：配网工程专项施工方案</li><li>是否需人工复核：否</li><li>当前识别问题总数：3 项</li></ul></div><div class=\"structured-report__subsection\"><h3 class=\"structured-report__subsection-title\">2. 审查依据文件</h3><h4 class=\"structured-report__subsection-title\">主要审查依据文件</h4><ul class=\"structured-report__basis-list\"><li>《危险性较大的分部分项工程专项施工方案编制指南》（建办质〔2021〕48号）</li><li>《建设工程安全生产管理条例》</li></ul><h4 class=\"structured-report__subsection-title\">补充说明依据</h4><ul class=\"structured-report__basis-list\"><li>系统结构审查规则</li></ul></div><section class=\"structured-report__subsection structured-report__overview-section\"><h3 class=\"structured-report__subsection-title\">3. 审查总览表</h3><h4 class=\"structured-report__subsection-title\">3.1 专项补充结构总览</h4><div class=\"structured-report__table-wrap\"><table class=\"structured-overview-table\"><thead><tr><th>序号</th><th>结构项</th><th>结构判定</th><th>异常摘要</th><th>补齐建议（简）</th></tr></thead><tbody><tr><td>1</td><td>停电范围</td><td>缺失</td><td>未识别到稳定对应章节</td><td>建议补齐“停电范围”专章或稳定标题</td></tr><tr><td>2</td><td>作业内容</td><td>缺失</td><td>未识别到稳定对应章节</td><td>建议补齐“作业内容”专章或稳定标题</td></tr><tr><td>3</td><td>主要风险</td><td>缺失</td><td>未识别到稳定对应章节</td><td>建议补齐“主要风险”专章或稳定标题</td></tr><tr><td>4</td><td>施工人员</td><td>缺失</td><td>未识别到稳定对应章节</td><td>建议补齐“施工人员”专章或稳定标题</td></tr><tr><td>5</td><td>机具</td><td>缺失</td><td>未识别到稳定对应章节</td><td>建议补齐“机具”专章或稳定标题</td></tr><tr><td>6</td><td>材料</td><td>缺失</td><td>未识别到稳定对应章节</td><td>建议补齐“材料”专章或稳定标题</td></tr><tr><td>7</td><td>安全管控</td><td>缺失</td><td>未识别到稳定对应章节</td><td>建议补齐“安全管控”专章或稳定标题</td></tr><tr><td>8</td><td>质量管控</td><td>缺失</td><td>未识别到稳定对应章节</td><td>建议补齐“质量管控”专章或稳定标题</td></tr><tr><td>9</td><td>应急措施</td><td>缺失</td><td>未识别到稳定对应章节</td><td>建议补齐“应急措施”专章或稳定标题</td></tr></tbody></table></div><h4 class=\"structured-report__subsection-title\">3.2 专项施工方案通用结构总览</h4><div class=\"structured-report__table-wrap\"><table class=\"structured-overview-table\"><thead><tr><th>序号</th><th>结构项</th><th>结构判定</th><th>异常摘要</th><th>补齐建议（简）</th></tr></thead><tbody><tr><td>1</td><td>工程概况</td><td>符合</td><td>—</td><td>—</td></tr><tr><td>2</td><td>编制依据</td><td>缺失</td><td>未识别到稳定对应章节</td><td>建议补齐“编制依据”专章或稳定标题</td></tr><tr><td>3</td><td>施工计划</td><td>部分符合</td><td>已识别到相关内容，但内容分散，未形成稳定章节闭合</td><td>建议补齐“施工计划”并形成稳定章节闭合</td></tr><tr><td>4</td><td>施工工艺技术</td><td>缺失</td><td>未识别到稳定对应章节</td><td>建议补齐“施工工艺技术”专章或稳定标题</td></tr><tr><td>5</td><td>施工保证措施</td><td>缺失</td><td>未识别到稳定对应章节</td><td>建议补齐“施工保证措施”专章或稳定标题</td></tr><tr><td>6</td><td>施工管理及作业人员配备和分工</td><td>缺失</td><td>未识别到稳定对应章节</td><td>建议补齐“施工管理及作业人员配备和分工”专章或稳定标题</td></tr><tr><td>7</td><td>验收要求</td><td>缺失</td><td>未识别到稳定对应章节</td><td>建议补齐“验收要求”专章或稳定标题</td></tr><tr><td>8</td><td>应急处置措施</td><td>缺失</td><td>未识别到稳定对应章节</td><td>建议补齐“应急处置措施”专章或稳定标题</td></tr><tr><td>9</td><td>相关施工图纸 / 节点详图 / 布置图</td><td>缺失</td><td>未识别到稳定对应章节</td><td>建议补齐“相关施工图纸 / 节点详图 / 布置图”专章或稳定标题</td></tr><tr><td>10</td><td>风险辨识与分级</td><td>缺失</td><td>未识别到稳定对应章节</td><td>建议补齐“风险辨识与分级”专章或稳定标题</td></tr><tr><td>11</td><td>施工平面布置或周边环境条件</td><td>缺失</td><td>未识别到稳定对应章节</td><td>建议补齐“施工平面布置或周边环境条件”专章或稳定标题</td></tr><tr><td>12</td><td>计算书及相关验算依据</td><td>缺失</td><td>未识别到稳定对应章节</td><td>建议补齐“计算书及相关验算依据”专章或稳定标题</td></tr></tbody></table></div></section></section><section class=\"structured-report__section\"><h2 class=\"structured-report__section-title\">第二部分：L1 审查发现——合法合规与结构完整性</h2><div class=\"structured-report__subsection\"><h3 class=\"structured-report__subsection-title\">2.1 结构完整性与形式合规性</h3><ul class=\"structured-report__bullet-list\"><li>总体结论：对照专项施工方案目录要求，本文件结构主干未完全闭合，存在 19 项明确缺项，存在 1 项仅部分识别。</li></ul><ul class=\"structured-report__basis-list\"><li>系统结构审查规则：配网工程专项施工方案通用目录要求</li><li>系统结构审查规则：停电施工作业专项补充目录要求</li></ul><h4 class=\"structured-report__subsection-title\">2.1.1 专项补充结构要求</h4><p class=\"structured-report__subsection-intro\">主要审查依据：停电施工作业专项要求结构审查要求</p><div class=\"structured-report__table-wrap\"><table class=\"structured-completeness-table\"><thead><tr><th>序号</th><th>规范要求</th><th>规范依据</th><th>文档对应章节</th><th>结构判定</th><th>相关审查意见</th></tr></thead><tbody><tr><td>1</td><td>停电范围</td><td>停电施工作业专项要求</td><td>未识别到稳定对应章节</td><td>缺失</td><td>—</td></tr><tr><td>2</td><td>作业内容</td><td>停电施工作业专项要求</td><td>未识别到稳定对应章节</td><td>缺失</td><td>—</td></tr><tr><td>3</td><td>主要风险</td><td>停电施工作业专项要求</td><td>未识别到稳定对应章节</td><td>缺失</td><td>—</td></tr><tr><td>4</td><td>施工人员</td><td>停电施工作业专项要求</td><td>未识别到稳定对应章节</td><td>缺失</td><td>—</td></tr><tr><td>5</td><td>机具</td><td>停电施工作业专项要求</td><td>未识别到稳定对应章节</td><td>缺失</td><td>—</td></tr><tr><td>6</td><td>材料</td><td>停电施工作业专项要求</td><td>未识别到稳定对应章节</td><td>缺失</td><td>—</td></tr><tr><td>7</td><td>安全管控</td><td>停电施工作业专项要求</td><td>未识别到稳定对应章节</td><td>缺失</td><td>—</td></tr><tr><td>8</td><td>质量管控</td><td>停电施工作业专项要求</td><td>未识别到稳定对应章节</td><td>缺失</td><td>—</td></tr><tr><td>9</td><td>应急措施</td><td>停电施工作业专项要求</td><td>未识别到稳定对应章节</td><td>缺失</td><td>—</td></tr></tbody></table></div><h4 class=\"structured-report__subsection-title\">2.1.2 专项施工方案通用要求</h4><p class=\"structured-report__subsection-intro\">主要审查依据：专项施工方案通用结构审查要求</p><div class=\"structured-report__table-wrap\"><table class=\"structured-completeness-table\"><thead><tr><th>序号</th><th>规范要求</th><th>规范依据</th><th>文档对应章节</th><th>结构判定</th><th>相关审查意见</th></tr></thead><tbody><tr><td>1</td><td>工程概况</td><td>专项施工方案通用要求</td><td>第一章 工程概况</td><td>符合</td><td>—</td></tr><tr><td>2</td><td>编制依据</td><td>专项施工方案通用要求</td><td>未识别到稳定对应章节</td><td>缺失</td><td>—</td></tr><tr><td>3</td><td>施工计划</td><td>专项施工方案通用要求</td><td>第一章 工程概况</td><td>部分符合</td><td>—</td></tr><tr><td>4</td><td>施工工艺技术</td><td>专项施工方案通用要求</td><td>未识别到稳定对应章节</td><td>缺失</td><td>—</td></tr><tr><td>5</td><td>施工保证措施</td><td>专项施工方案通用要求</td><td>未识别到稳定对应章节</td><td>缺失</td><td>—</td></tr><tr><td>6</td><td>施工管理及作业人员配备和分工</td><td>专项施工方案通用要求</td><td>未识别到稳定对应章节</td><td>缺失</td><td>—</td></tr><tr><td>7</td><td>验收要求</td><td>专项施工方案通用要求</td><td>未识别到稳定对应章节</td><td>缺失</td><td>—</td></tr><tr><td>8</td><td>应急处置措施</td><td>专项施工方案通用要求</td><td>未识别到稳定对应章节</td><td>缺失</td><td>—</td></tr><tr><td>9</td><td>相关施工图纸 / 节点详图 / 布置图</td><td>专项施工方案通用要求</td><td>未识别到稳定对应章节</td><td>缺失</td><td>—</td></tr><tr><td>10</td><td>风险辨识与分级</td><td>专项施工方案通用要求</td><td>未识别到稳定对应章节</td><td>缺失</td><td>—</td></tr><tr><td>11</td><td>施工平面布置或周边环境条件</td><td>专项施工方案通用要求</td><td>未识别到稳定对应章节</td><td>缺失</td><td>—</td></tr><tr><td>12</td><td>计算书及相关验算依据</td><td>专项施工方案通用要求</td><td>未识别到稳定对应章节</td><td>缺失</td><td>—</td></tr></tbody></table></div><div class=\"structured-report__subsection\"><h4 class=\"structured-report__subsection-title\">缺项分析与补齐意见</h4><div class=\"structured-report__followup-group\"><h4 class=\"structured-report__subsection-title\">专项补充要求：缺项分析与补齐意见</h4><div class=\"structured-report__followup-compact\"><p class=\"structured-report__followup-compact-title\">【1. 停电范围】</p><p class=\"structured-report__followup-compact-line\">判定：缺失</p><p class=\"structured-report__followup-compact-line\">识别章节：未识别到稳定对应章节</p><p class=\"structured-report__followup-compact-line\">补齐建议：建议补齐“停电范围”专章或形成稳定章节标题。</p></div><div class=\"structured-report__followup-compact\"><p class=\"structured-report__followup-compact-title\">【2. 作业内容】</p><p class=\"structured-report__followup-compact-line\">判定：缺失</p><p class=\"structured-report__followup-compact-line\">识别章节：未识别到稳定对应章节</p><p class=\"structured-report__followup-compact-line\">补齐建议：建议补齐“作业内容”专章或形成稳定章节标题。</p></div><div class=\"structured-report__followup-compact\"><p class=\"structured-report__followup-compact-title\">【3. 主要风险】</p><p class=\"structured-report__followup-compact-line\">判定：缺失</p><p class=\"structured-report__followup-compact-line\">识别章节：未识别到稳定对应章节</p><p class=\"structured-report__followup-compact-line\">补齐建议：建议补齐“主要风险”专章或形成稳定章节标题。</p></div><div class=\"structured-report__followup-compact\"><p class=\"structured-report__followup-compact-title\">【4. 施工人员】</p><p class=\"structured-report__followup-compact-line\">判定：缺失</p><p class=\"structured-report__followup-compact-line\">识别章节：未识别到稳定对应章节</p><p class=\"structured-report__followup-compact-line\">补齐建议：建议补齐“施工人员”专章或形成稳定章节标题。</p></div><div class=\"structured-report__followup-compact\"><p class=\"structured-report__followup-compact-title\">【5. 机具】</p><p class=\"structured-report__followup-compact-line\">判定：缺失</p><p class=\"structured-report__followup-compact-line\">识别章节：未识别到稳定对应章节</p><p class=\"structured-report__followup-compact-line\">补齐建议：建议补齐“机具”专章或形成稳定章节标题。</p></div><div class=\"structured-report__followup-compact\"><p class=\"structured-report__followup-compact-title\">【6. 材料】</p><p class=\"structured-report__followup-compact-line\">判定：缺失</p><p class=\"structured-report__followup-compact-line\">识别章节：未识别到稳定对应章节</p><p class=\"structured-report__followup-compact-line\">补齐建议：建议补齐“材料”专章或形成稳定章节标题。</p></div><div class=\"structured-report__followup-compact\"><p class=\"structured-report__followup-compact-title\">【7. 安全管控】</p><p class=\"structured-report__followup-compact-line\">判定：缺失</p><p class=\"structured-report__followup-compact-line\">识别章节：未识别到稳定对应章节</p><p class=\"structured-report__followup-compact-line\">补齐建议：建议补齐“安全管控”专章或形成稳定章节标题。</p></div><div class=\"structured-report__followup-compact\"><p class=\"structured-report__followup-compact-title\">【8. 质量管控】</p><p class=\"structured-report__followup-compact-line\">判定：缺失</p><p class=\"structured-report__followup-compact-line\">识别章节：未识别到稳定对应章节</p><p class=\"structured-report__followup-compact-line\">补齐建议：建议补齐“质量管控”专章或形成稳定章节标题。</p></div><div class=\"structured-report__followup-compact\"><p class=\"structured-report__followup-compact-title\">【9. 应急措施】</p><p class=\"structured-report__followup-compact-line\">判定：缺失</p><p class=\"structured-report__followup-compact-line\">识别章节：未识别到稳定对应章节</p><p class=\"structured-report__followup-compact-line\">补齐建议：建议补齐“应急措施”专章或形成稳定章节标题。</p></div></div><div class=\"structured-report__followup-group\"><h4 class=\"structured-report__subsection-title\">通用要求：缺项分析与补齐意见</h4><div class=\"structured-report__followup-compact\"><p class=\"structured-report__followup-compact-title\">【1. 编制依据】</p><p class=\"structured-report__followup-compact-line\">判定：缺失</p><p class=\"structured-report__followup-compact-line\">识别章节：未识别到稳定对应章节</p><p class=\"structured-report__followup-compact-line\">补齐建议：建议补齐“编制依据”专章或形成稳定章节标题。</p></div><div class=\"structured-report__followup-compact\"><p class=\"structured-report__followup-compact-title\">【2. 施工计划】</p><p class=\"structured-report__followup-compact-line\">判定：部分符合</p><p class=\"structured-report__followup-compact-line\">识别章节：第一章 工程概况</p><p class=\"structured-report__followup-compact-line\">补齐建议：建议补齐或单列“施工计划”。</p></div><div class=\"structured-report__followup-compact\"><p class=\"structured-report__followup-compact-title\">【3. 施工工艺技术】</p><p class=\"structured-report__followup-compact-line\">判定：缺失</p><p class=\"structured-report__followup-compact-line\">识别章节：未识别到稳定对应章节</p><p class=\"structured-report__followup-compact-line\">补齐建议：建议补齐“施工工艺技术”专章或形成稳定章节标题。</p></div><div class=\"structured-report__followup-compact\"><p class=\"structured-report__followup-compact-title\">【4. 施工保证措施】</p><p class=\"structured-report__followup-compact-line\">判定：缺失</p><p class=\"structured-report__followup-compact-line\">识别章节：未识别到稳定对应章节</p><p class=\"structured-report__followup-compact-line\">补齐建议：建议补齐“施工保证措施”专章或形成稳定章节标题。</p></div><div class=\"structured-report__followup-compact\"><p class=\"structured-report__followup-compact-title\">【5. 施工管理及作业人员配备和分工】</p><p class=\"structured-report__followup-compact-line\">判定：缺失</p><p class=\"structured-report__followup-compact-line\">识别章节：未识别到稳定对应章节</p><p class=\"structured-report__followup-compact-line\">补齐建议：建议补齐“施工管理及作业人员配备和分工”专章或形成稳定章节标题。</p></div><div class=\"structured-report__followup-compact\"><p class=\"structured-report__followup-compact-title\">【6. 验收要求】</p><p class=\"structured-report__followup-compact-line\">判定：缺失</p><p class=\"structured-report__followup-compact-line\">识别章节：未识别到稳定对应章节</p><p class=\"structured-report__followup-compact-line\">补齐建议：建议补齐“验收要求”专章或形成稳定章节标题。</p></div><div class=\"structured-report__followup-compact\"><p class=\"structured-report__followup-compact-title\">【7. 应急处置措施】</p><p class=\"structured-report__followup-compact-line\">判定：缺失</p><p class=\"structured-report__followup-compact-line\">识别章节：未识别到稳定对应章节</p><p class=\"structured-report__followup-compact-line\">补齐建议：建议补齐“应急处置措施”专章或形成稳定章节标题。</p></div><div class=\"structured-report__followup-compact\"><p class=\"structured-report__followup-compact-title\">【8. 相关施工图纸 / 节点详图 / 布置图】</p><p class=\"structured-report__followup-compact-line\">判定：缺失</p><p class=\"structured-report__followup-compact-line\">识别章节：未识别到稳定对应章节</p><p class=\"structured-report__followup-compact-line\">补齐建议：建议补齐“相关施工图纸 / 节点详图 / 布置图”专章或形成稳定章节标题。</p></div><div class=\"structured-report__followup-compact\"><p class=\"structured-report__followup-compact-title\">【9. 风险辨识与分级】</p><p class=\"structured-report__followup-compact-line\">判定：缺失</p><p class=\"structured-report__followup-compact-line\">识别章节：未识别到稳定对应章节</p><p class=\"structured-report__followup-compact-line\">补齐建议：建议补齐“风险辨识与分级”专章或形成稳定章节标题。</p></div><div class=\"structured-report__followup-compact\"><p class=\"structured-report__followup-compact-title\">【10. 施工平面布置或周边环境条件】</p><p class=\"structured-report__followup-compact-line\">判定：缺失</p><p class=\"structured-report__followup-compact-line\">识别章节：未识别到稳定对应章节</p><p class=\"structured-report__followup-compact-line\">补齐建议：建议补齐“施工平面布置或周边环境条件”专章或形成稳定章节标题。</p></div><div class=\"structured-report__followup-compact\"><p class=\"structured-report__followup-compact-title\">【11. 计算书及相关验算依据】</p><p class=\"structured-report__followup-compact-line\">判定：缺失</p><p class=\"structured-report__followup-compact-line\">识别章节：未识别到稳定对应章节</p><p class=\"structured-report__followup-compact-line\">补齐建议：建议补齐“计算书及相关验算依据”专章或形成稳定章节标题。</p></div></div></div><div class=\"structured-report__subsection\"><h3 class=\"structured-report__subsection-title\">2.2 补充审查意见</h3><p class=\"structured-report__section-intro\">当前未发现需要在表外单列提示的补充意见。</p></div></div></section><section class=\"structured-report__section\"><h2 class=\"structured-report__section-title\">第三部分：L2 审查发现——核心参数与规则实质性验证</h2><div class=\"structured-report__subsection\"><h3 class=\"structured-report__subsection-title\">主要审查依据</h3><ul class=\"structured-report__basis-list\"><li>《危险性较大的分部分项工程专项施工方案编制指南》（建办质〔2021〕48号）：风险措施与监测监控</li><li>《建设工程安全生产管理条例》：应急预案针对性</li></ul></div><article class=\"structured-report__issue-card\"><h3 class=\"structured-report__issue-card-title\">1. 临时用电/停送电控制链路不完整</h3><section class=\"structured-report__issue-card-section\"><div class=\"structured-report__issue-card-section-title\">问题描述</div><p class=\"structured-report__issue-card-text\">临时用电/停送电控制链路不完整</p></section><section class=\"structured-report__issue-card-section\"><div class=\"structured-report__issue-card-section-title\">条文依据</div><ul class=\"structured-report__issue-card-law-list\"><li class=\"structured-report__issue-card-law-item\"><div class=\"structured-report__issue-card-law-title\">《危险性较大的分部分项工程专项施工方案编制指南》（建办质〔2021〕48号）</div><ul class=\"structured-report__issue-card-law-requirements\"><li class=\"structured-report__issue-card-law-requirement\">要求：专项方案应将主要危险源、控制措施、监测监控和应急处置形成闭环，便于现场执行</li></ul></li><li class=\"structured-report__issue-card-law-item\"><div class=\"structured-report__issue-card-law-title\">《建设工程安全生产管理条例》</div><ul class=\"structured-report__issue-card-law-requirements\"><li class=\"structured-report__issue-card-law-requirement\">要求：应急管理文件应与主要危险源相匹配，便于事故类型、联系链路和现场处置动作快速落地</li></ul></li></ul></section></article></section><section class=\"structured-report__section\"><h2 class=\"structured-report__section-title\">第四部分：L3 审查发现——工程逻辑与实施风险预判</h2><p class=\"structured-report__muted\">本层未发现需要单独提示的问题。</p></section><section class=\"structured-report__section\"><h2 class=\"structured-report__section-title\">第五部分：关键数据识别汇总</h2><div class=\"structured-report__subsection\"><h3 class=\"structured-report__subsection-title\">1. 危大工程识别情况</h3><ul class=\"structured-report__fact-list\"><li>已识别的高风险作业类型：临时用电、动火作业。</li><li>涉及起重吊装作业：否。</li><li>涉及煤气区域作业：否。</li><li>涉及动火作业：是。</li><li>涉及临时用电：是。</li><li>提及特种设备：否。</li><li>已提取验算依据：否。</li><li>已识别风险控制措施章节：否。</li><li>已识别监测监控章节：否。</li><li>结构提示：以下关键章节未明确识别到：编制依据、施工部署/施工计划、施工准备与资源配置计划、施工现场平面布置、安全管理措施、应急预案、计算书/验算书、监测监控。</li></ul></div></section><section class=\"structured-report__section\"><h2 class=\"structured-report__section-title\">第六部分：解析说明与复核提示</h2><div class=\"structured-report__subsection\"><h3 class=\"structured-report__subsection-title\">6.1 文档解析状态与预检结果</h3><ul class=\"structured-report__fact-list\"><li>预检状态：可进入正式审查</li><li>当前解析方式：Markdown 文本解析</li><li>文件类型：Markdown 文档</li><li>已识别附件数量：0</li><li>人工复核说明：当前未触发额外人工复核说明。</li><li>预检阻断说明：当前未识别额外阻断项。</li><li>可视域概况：当前未检测到额外的结构提示。</li></ul></div><div class=\"structured-report__subsection\"><h3 class=\"structured-report__subsection-title\">6.2 附件解析与关联情况</h3><ul class=\"structured-report__fact-list\"><li>当前未发现需要单独提示的附件可视域断链。</li></ul></div><div class=\"structured-report__subsection\"><h3 class=\"structured-report__subsection-title\">6.3 待人工确认事项</h3><ul class=\"structured-report__fact-list\"><li>未解析到项目名称，需人工确认文档基础信息</li><li>未解析到项目编号，需人工确认文档标识信息</li><li>未解析到停机窗口时长，需人工确认工期窗口</li><li>未解析到劳动力合计人数，需人工确认资源投入</li><li>未解析到针对性应急预案标题，需人工确认应急安排</li></ul></div><p class=\"structured-report__muted\">说明：完整结构化结果、矩阵明细及可追溯工件已保留在系统结果与附件中，供复核和留档使用。</p></section></article>",
+  "reportPrintCss": "\n/* ========================================================\n   Enterprise-Grade Print CSS for Structured Review Reports\n   ======================================================== */\n\nhtml, body {\n  background-color: #f8fafc !important;\n  margin: 0;\n  padding: 0;\n  -webkit-print-color-adjust: exact;\n  print-color-adjust: exact;\n  font-family: \"Inter\", -apple-system, BlinkMacSystemFont, \"PingFang SC\", \"Hiragino Sans GB\", \"Microsoft YaHei\", \"Noto Sans CJK SC\", \"WenQuanYi Micro Hei\", sans-serif;\n  color: #1e293b;\n  line-height: 1.6;\n}\n\n.structured-report {\n  max-width: 100%;\n  margin: 0 auto;\n  padding: 24px;\n  background-color: #ffffff !important;\n}\n\n.structured-report * {\n  box-sizing: border-box;\n  white-space: normal;\n  word-break: break-word;\n  overflow-wrap: anywhere;\n}\n\n.structured-report h1,\n.structured-report h2,\n.structured-report h3,\n.structured-report h4 {\n  color: #0f172a;\n  font-weight: 700;\n  margin-top: 0;\n  page-break-after: avoid;\n  break-after: avoid;\n}\n\n/* Document Title */\n.structured-report__title {\n  font-size: 32px;\n  text-align: center;\n  color: #0f172a;\n  padding-bottom: 24px;\n  margin-bottom: 32px;\n  border-bottom: 3px solid #cbd5e1;\n  letter-spacing: 1.5px;\n  text-transform: uppercase;\n}\n\n/* Sections */\n.structured-report__section {\n  margin-bottom: 32px;\n  padding-bottom: 24px;\n}\n\n.structured-report__section-title {\n  font-size: 22px;\n  color: #1e40af;\n  margin-bottom: 20px;\n  padding: 8px 16px;\n  background-color: #eff6ff;\n  border-left: 5px solid #2563eb;\n  border-radius: 0 4px 4px 0;\n}\n\n.structured-report__subsection {\n  margin-bottom: 24px;\n}\n\n.structured-report__subsection-title {\n  font-size: 18px;\n  color: #334155;\n  margin-bottom: 12px;\n  border-bottom: 1px solid #e2e8f0;\n  padding-bottom: 6px;\n}\n\n/* Lists & Text */\n.structured-report p,\n.structured-report li {\n  font-size: 14px;\n  color: #475569;\n  letter-spacing: 0.2px;\n}\n\n.structured-report__bullet-list,\n.structured-report__basis-list,\n.structured-report__fact-list {\n  padding-left: 20px;\n  margin: 12px 0;\n}\n\n.structured-report__bullet-list li,\n.structured-report__basis-list li,\n.structured-report__fact-list li {\n  margin-bottom: 8px;\n}\n\n/* Tables - Premium Data Layout */\n.structured-report__table-wrap {\n  margin: 20px 0;\n  border-radius: 8px;\n  border: 1px solid #cbd5e1;\n}\n\n.structured-report table {\n  width: 100%;\n  border-collapse: collapse;\n  background-color: #ffffff;\n}\n\n.structured-report th {\n  background-color: #f1f5f9 !important;\n  color: #0f172a;\n  font-size: 13px;\n  font-weight: 700;\n  text-align: left;\n  padding: 12px 16px;\n  border-bottom: 2px solid #cbd5e1;\n}\n\n.structured-report td {\n  padding: 12px 16px;\n  font-size: 13px;\n  color: #334155;\n  border-bottom: 1px solid #e2e8f0;\n  vertical-align: top;\n}\n\n.structured-report tr:last-child td {\n  border-bottom: none;\n}\n\n.structured-report tbody tr:nth-child(even) {\n  background-color: #f8fafc !important;\n}\n\n.structured-overview-table th:nth-child(1),\n.structured-overview-table td:nth-child(1) { width: 6%; }\n.structured-overview-table th:nth-child(2),\n.structured-overview-table td:nth-child(2) { width: 20%; }\n.structured-overview-table th:nth-child(3),\n.structured-overview-table td:nth-child(3) { width: 10%; }\n.structured-overview-table th:nth-child(4),\n.structured-overview-table td:nth-child(4) { width: 34%; }\n.structured-overview-table th:nth-child(5),\n.structured-overview-table td:nth-child(5) { width: 30%; }\n\n.structured-completeness-table th:nth-child(1),\n.structured-completeness-table td:nth-child(1) { width: 6%; }\n.structured-completeness-table th:nth-child(2),\n.structured-completeness-table td:nth-child(2) { width: 14%; }\n.structured-completeness-table th:nth-child(3),\n.structured-completeness-table td:nth-child(3) { width: 15%; }\n.structured-completeness-table th:nth-child(4),\n.structured-completeness-table td:nth-child(4) { width: 30%; }\n.structured-completeness-table th:nth-child(5),\n.structured-completeness-table td:nth-child(5) { width: 10%; }\n.structured-completeness-table th:nth-child(6),\n.structured-completeness-table td:nth-child(6) { width: 25%; }\n\n/* Issue Cards - High Visibility */\n.structured-report__issue-card {\n  background-color: #fff1f2 !important;\n  border: 1px solid #fecdd3;\n  border-left: 5px solid #e11d48;\n  border-radius: 8px;\n  padding: 20px;\n  margin-bottom: 20px;\n  page-break-inside: avoid;\n  break-inside: avoid;\n}\n\n.structured-report__issue-card-title {\n  color: #be123c;\n  font-size: 18px;\n  margin-bottom: 16px;\n  display: flex;\n  align-items: center;\n}\n\n.structured-report__issue-card-section {\n  margin-bottom: 16px;\n}\n\n.structured-report__issue-card-section:last-child {\n  margin-bottom: 0;\n}\n\n.structured-report__issue-card-section-title {\n  font-size: 13px;\n  text-transform: uppercase;\n  color: #9f1239;\n  font-weight: 800;\n  margin-bottom: 6px;\n  letter-spacing: 0.5px;\n}\n\n.structured-report__issue-card-text {\n  color: #4c0519;\n  font-size: 14px;\n}\n\n.structured-report__issue-card-law-list {\n  padding-left: 18px;\n  margin: 0;\n}\n\n.structured-report__issue-card-law-item {\n  color: #881337;\n  font-size: 14px;\n  margin-bottom: 8px;\n}\n\n.structured-report__issue-card-law-title {\n  font-weight: 700;\n}\n\n.structured-report__issue-card-law-requirements {\n  margin: 6px 0 0 18px;\n  padding: 0;\n}\n\n/* Gap Items / Followups */\n.structured-report__gap-item,\n.structured-report__followup-compact {\n  background-color: #fdf4ff !important;\n  border: 1px solid #f5d0fe;\n  border-left: 4px solid #c026d3;\n  border-radius: 6px;\n  padding: 16px;\n  margin-bottom: 16px;\n  page-break-inside: avoid;\n  break-inside: avoid;\n}\n\n.structured-report__gap-item-title,\n.structured-report__followup-compact-title {\n  color: #86198f;\n  font-size: 16px;\n  margin-bottom: 10px;\n}\n\n/* Print Specific Optimizations */\n@media print {\n  @page {\n    size: A4 landscape;\n    margin: 15mm;\n  }\n\n  html, \n  body, \n  .structured-report {\n    background-color: #ffffff !important;\n  }\n\n  /* Force page breaks for clean segmentation */\n  .structured-report__section {\n    page-break-inside: auto;\n  }\n\n  .structured-report__overview-section {\n    break-before: page;\n    page-break-before: always;\n  }\n\n  /* Prevent awkward splits */\n  .structured-report table,\n  .structured-report__issue-card,\n  .structured-report__gap-item {\n    page-break-inside: avoid;\n    break-inside: avoid;\n  }\n\n  thead {\n    display: table-header-group;\n  }\n}\n",
+  "artifacts": [
+    "/api/tasks/task-module-validation-001/artifacts/structured-review-parse.json",
+    "/api/tasks/task-module-validation-001/artifacts/structured-review-l0-visibility.json",
+    "/api/tasks/task-module-validation-001/artifacts/structured-review-facts.json",
+    "/api/tasks/task-module-validation-001/artifacts/structured-review-rule-hits.json",
+    "/api/tasks/task-module-validation-001/artifacts/structured-review-candidates.json",
+    "/api/tasks/task-module-validation-001/artifacts/hazard-identification-matrix.json",
+    "/api/tasks/task-module-validation-001/artifacts/rule-hit-matrix.json",
+    "/api/tasks/task-module-validation-001/artifacts/conflict-matrix.json",
+    "/api/tasks/task-module-validation-001/artifacts/attachment-visibility-matrix.json",
+    "/api/tasks/task-module-validation-001/artifacts/section-structure-matrix.json",
+    "/api/tasks/task-module-validation-001/artifacts/structure-completeness-matrix.json",
+    "/api/tasks/task-module-validation-001/artifacts/structured-review-report-buckets.json",
+    "/api/tasks/task-module-validation-001/artifacts/structured-review-report.md",
+    "/api/tasks/task-module-validation-001/artifacts/structured-review-report.html",
+    "/api/tasks/task-module-validation-001/artifacts/structured-review-report.print.css",
+    "/api/tasks/task-module-validation-001/artifacts/structured-review-report.pdf",
+    "/api/tasks/task-module-validation-001/artifacts/structured-review-result.json"
+  ],
+  "unresolvedFacts": [
+    {
+      "code": "missing_project_name",
+      "factKey": "project.projectName",
+      "summary": "未解析到项目名称，需人工确认文档基础信息。",
+      "sourceExtractor": "project_facts",
+      "blockingReason": "missing_fact",
+      "visibilityLimited": false,
+      "blockingRuleIds": [],
+      "blockingIssueIds": [],
+      "blockingIssueTitles": []
+    },
+    {
+      "code": "missing_project_code",
+      "factKey": "project.projectCode",
+      "summary": "未解析到项目编号，需人工确认文档标识信息。",
+      "sourceExtractor": "project_facts",
+      "blockingReason": "missing_fact",
+      "visibilityLimited": false,
+      "blockingRuleIds": [],
+      "blockingIssueIds": [],
+      "blockingIssueTitles": []
+    },
+    {
+      "code": "missing_shutdown_window_days",
+      "factKey": "schedule.shutdownWindowDays",
+      "summary": "未解析到停机窗口时长，需人工确认工期窗口。",
+      "sourceExtractor": "schedule_resource_facts",
+      "blockingReason": "missing_fact",
+      "visibilityLimited": false,
+      "blockingRuleIds": [],
+      "blockingIssueIds": [],
+      "blockingIssueTitles": []
+    },
+    {
+      "code": "missing_labor_total",
+      "factKey": "resource.laborTotal",
+      "summary": "未解析到劳动力合计人数，需人工确认资源投入。",
+      "sourceExtractor": "schedule_resource_facts",
+      "blockingReason": "missing_fact",
+      "visibilityLimited": false,
+      "blockingRuleIds": [],
+      "blockingIssueIds": [],
+      "blockingIssueTitles": []
+    },
+    {
+      "code": "missing_emergency_plan_titles",
+      "factKey": "emergency.planTitles",
+      "summary": "未解析到针对性应急预案标题，需人工确认应急安排。",
+      "sourceExtractor": "schedule_resource_facts",
+      "blockingReason": "missing_fact",
+      "visibilityLimited": false,
+      "blockingRuleIds": [
+        "temporary_power_control_linkage"
+      ],
+      "blockingIssueIds": [
+        "ISSUE-003"
+      ],
+      "blockingIssueTitles": [
+        "临时用电/停送电控制链路不完整"
+      ]
+    }
+  ],
+  "plan": {
+    "reviewProfile": {
+      "authority": "validation",
+      "documentTypeHint": "distribution_network_special_scheme",
+      "disciplineTagHints": [
+        "temporary_power"
+      ],
+      "policyPackHints": [
+        "power_outage_work.base"
+      ]
+    },
+    "hermesInput": {
+      "basisFiles": [
+        {
+          "path": "/tmp/basis.md",
+          "type": "md",
+          "name": "basis.md"
+        }
+      ],
+      "contextFiles": [],
+      "focusRequirements": [
+        "章节完整性",
+        "规范条款命中",
+        "停送电执行闭环"
+      ],
+      "enabledAgents": [
+        "structured_review_primary_worker",
+        "policy_compliance_reviewer",
+        "execution_risk_reviewer"
+      ],
+      "disabledAgents": []
+    }
+  },
+  "capabilitiesUsed": [
+    "structured_review_executor",
+    "llm_gateway"
+  ],
+  "finalAnswer": "# 配网工程专项施工方案形式审查报告\n\n## 第一部分：审查结论与审查依据\n\n### 1. 总体审查结论\n- 审查结论：修改后重新报审\n- 文档类型：配网工程专项施工方案\n- 是否需人工复核：否\n- 当前识别问题总数：3 项\n\n### 2. 审查依据文件\n#### 主要审查依据文件\n- 《危险性较大的分部分项工程专项施工方案编制指南》（建办质〔2021〕48号）\n- 《建设工程安全生产管理条例》\n\n#### 补充说明依据\n- 系统结构审查规则\n\n### 3. 审查总览表\n\n#### 3.1 专项补充结构总览\n<table class=\"structured-overview-table\"><thead><tr><th>序号</th><th>结构项</th><th>结构判定</th><th>异常摘要</th><th>补齐建议（简）</th></tr></thead><tbody><tr><td>1</td><td>停电范围</td><td>缺失</td><td>未识别到稳定对应章节</td><td>建议补齐“停电范围”专章或稳定标题</td></tr><tr><td>2</td><td>作业内容</td><td>缺失</td><td>未识别到稳定对应章节</td><td>建议补齐“作业内容”专章或稳定标题</td></tr><tr><td>3</td><td>主要风险</td><td>缺失</td><td>未识别到稳定对应章节</td><td>建议补齐“主要风险”专章或稳定标题</td></tr><tr><td>4</td><td>施工人员</td><td>缺失</td><td>未识别到稳定对应章节</td><td>建议补齐“施工人员”专章或稳定标题</td></tr><tr><td>5</td><td>机具</td><td>缺失</td><td>未识别到稳定对应章节</td><td>建议补齐“机具”专章或稳定标题</td></tr><tr><td>6</td><td>材料</td><td>缺失</td><td>未识别到稳定对应章节</td><td>建议补齐“材料”专章或稳定标题</td></tr><tr><td>7</td><td>安全管控</td><td>缺失</td><td>未识别到稳定对应章节</td><td>建议补齐“安全管控”专章或稳定标题</td></tr><tr><td>8</td><td>质量管控</td><td>缺失</td><td>未识别到稳定对应章节</td><td>建议补齐“质量管控”专章或稳定标题</td></tr><tr><td>9</td><td>应急措施</td><td>缺失</td><td>未识别到稳定对应章节</td><td>建议补齐“应急措施”专章或稳定标题</td></tr></tbody></table>\n\n#### 3.2 专项施工方案通用结构总览\n<table class=\"structured-overview-table\"><thead><tr><th>序号</th><th>结构项</th><th>结构判定</th><th>异常摘要</th><th>补齐建议（简）</th></tr></thead><tbody><tr><td>1</td><td>工程概况</td><td>符合</td><td>—</td><td>—</td></tr><tr><td>2</td><td>编制依据</td><td>缺失</td><td>未识别到稳定对应章节</td><td>建议补齐“编制依据”专章或稳定标题</td></tr><tr><td>3</td><td>施工计划</td><td>部分符合</td><td>已识别到相关内容，但内容分散，未形成稳定章节闭合</td><td>建议补齐“施工计划”并形成稳定章节闭合</td></tr><tr><td>4</td><td>施工工艺技术</td><td>缺失</td><td>未识别到稳定对应章节</td><td>建议补齐“施工工艺技术”专章或稳定标题</td></tr><tr><td>5</td><td>施工保证措施</td><td>缺失</td><td>未识别到稳定对应章节</td><td>建议补齐“施工保证措施”专章或稳定标题</td></tr><tr><td>6</td><td>施工管理及作业人员配备和分工</td><td>缺失</td><td>未识别到稳定对应章节</td><td>建议补齐“施工管理及作业人员配备和分工”专章或稳定标题</td></tr><tr><td>7</td><td>验收要求</td><td>缺失</td><td>未识别到稳定对应章节</td><td>建议补齐“验收要求”专章或稳定标题</td></tr><tr><td>8</td><td>应急处置措施</td><td>缺失</td><td>未识别到稳定对应章节</td><td>建议补齐“应急处置措施”专章或稳定标题</td></tr><tr><td>9</td><td>相关施工图纸 / 节点详图 / 布置图</td><td>缺失</td><td>未识别到稳定对应章节</td><td>建议补齐“相关施工图纸 / 节点详图 / 布置图”专章或稳定标题</td></tr><tr><td>10</td><td>风险辨识与分级</td><td>缺失</td><td>未识别到稳定对应章节</td><td>建议补齐“风险辨识与分级”专章或稳定标题</td></tr><tr><td>11</td><td>施工平面布置或周边环境条件</td><td>缺失</td><td>未识别到稳定对应章节</td><td>建议补齐“施工平面布置或周边环境条件”专章或稳定标题</td></tr><tr><td>12</td><td>计算书及相关验算依据</td><td>缺失</td><td>未识别到稳定对应章节</td><td>建议补齐“计算书及相关验算依据”专章或稳定标题</td></tr></tbody></table>\n\n## 第二部分：L1 审查发现——合法合规与结构完整性\n\n### 2.1 结构完整性与形式合规性\n- 总体结论：对照专项施工方案目录要求，本文件结构主干未完全闭合，存在 19 项明确缺项，存在 1 项仅部分识别。\n- 主要审查依据：\n  - 系统结构审查规则：配网工程专项施工方案通用目录要求\n  - 系统结构审查规则：停电施工作业专项补充目录要求\n\n#### 2.1.1 专项补充结构要求\n- 主要审查依据：停电施工作业专项要求结构审查要求\n\n<table class=\"structured-completeness-table\"><thead><tr><th>序号</th><th>规范要求</th><th>规范依据</th><th>文档对应章节</th><th>结构判定</th><th>相关审查意见</th></tr></thead><tbody><tr><td>1</td><td>停电范围</td><td>停电施工作业专项要求</td><td>未识别到稳定对应章节</td><td>缺失</td><td>—</td></tr><tr><td>2</td><td>作业内容</td><td>停电施工作业专项要求</td><td>未识别到稳定对应章节</td><td>缺失</td><td>—</td></tr><tr><td>3</td><td>主要风险</td><td>停电施工作业专项要求</td><td>未识别到稳定对应章节</td><td>缺失</td><td>—</td></tr><tr><td>4</td><td>施工人员</td><td>停电施工作业专项要求</td><td>未识别到稳定对应章节</td><td>缺失</td><td>—</td></tr><tr><td>5</td><td>机具</td><td>停电施工作业专项要求</td><td>未识别到稳定对应章节</td><td>缺失</td><td>—</td></tr><tr><td>6</td><td>材料</td><td>停电施工作业专项要求</td><td>未识别到稳定对应章节</td><td>缺失</td><td>—</td></tr><tr><td>7</td><td>安全管控</td><td>停电施工作业专项要求</td><td>未识别到稳定对应章节</td><td>缺失</td><td>—</td></tr><tr><td>8</td><td>质量管控</td><td>停电施工作业专项要求</td><td>未识别到稳定对应章节</td><td>缺失</td><td>—</td></tr><tr><td>9</td><td>应急措施</td><td>停电施工作业专项要求</td><td>未识别到稳定对应章节</td><td>缺失</td><td>—</td></tr></tbody></table>\n\n#### 2.1.2 专项施工方案通用要求\n- 主要审查依据：专项施工方案通用结构审查要求\n\n<table class=\"structured-completeness-table\"><thead><tr><th>序号</th><th>规范要求</th><th>规范依据</th><th>文档对应章节</th><th>结构判定</th><th>相关审查意见</th></tr></thead><tbody><tr><td>1</td><td>工程概况</td><td>专项施工方案通用要求</td><td>第一章 工程概况</td><td>符合</td><td>—</td></tr><tr><td>2</td><td>编制依据</td><td>专项施工方案通用要求</td><td>未识别到稳定对应章节</td><td>缺失</td><td>—</td></tr><tr><td>3</td><td>施工计划</td><td>专项施工方案通用要求</td><td>第一章 工程概况</td><td>部分符合</td><td>—</td></tr><tr><td>4</td><td>施工工艺技术</td><td>专项施工方案通用要求</td><td>未识别到稳定对应章节</td><td>缺失</td><td>—</td></tr><tr><td>5</td><td>施工保证措施</td><td>专项施工方案通用要求</td><td>未识别到稳定对应章节</td><td>缺失</td><td>—</td></tr><tr><td>6</td><td>施工管理及作业人员配备和分工</td><td>专项施工方案通用要求</td><td>未识别到稳定对应章节</td><td>缺失</td><td>—</td></tr><tr><td>7</td><td>验收要求</td><td>专项施工方案通用要求</td><td>未识别到稳定对应章节</td><td>缺失</td><td>—</td></tr><tr><td>8</td><td>应急处置措施</td><td>专项施工方案通用要求</td><td>未识别到稳定对应章节</td><td>缺失</td><td>—</td></tr><tr><td>9</td><td>相关施工图纸 / 节点详图 / 布置图</td><td>专项施工方案通用要求</td><td>未识别到稳定对应章节</td><td>缺失</td><td>—</td></tr><tr><td>10</td><td>风险辨识与分级</td><td>专项施工方案通用要求</td><td>未识别到稳定对应章节</td><td>缺失</td><td>—</td></tr><tr><td>11</td><td>施工平面布置或周边环境条件</td><td>专项施工方案通用要求</td><td>未识别到稳定对应章节</td><td>缺失</td><td>—</td></tr><tr><td>12</td><td>计算书及相关验算依据</td><td>专项施工方案通用要求</td><td>未识别到稳定对应章节</td><td>缺失</td><td>—</td></tr></tbody></table>\n\n#### 专项补充要求：缺项分析与补齐意见\n【1. 停电范围】\n判定：缺失\n识别章节：\n- 未识别到稳定对应章节\n补齐建议：建议补齐“停电范围”专章或形成稳定章节标题。\n---\n【2. 作业内容】\n判定：缺失\n识别章节：\n- 未识别到稳定对应章节\n补齐建议：建议补齐“作业内容”专章或形成稳定章节标题。\n---\n【3. 主要风险】\n判定：缺失\n识别章节：\n- 未识别到稳定对应章节\n补齐建议：建议补齐“主要风险”专章或形成稳定章节标题。\n---\n【4. 施工人员】\n判定：缺失\n识别章节：\n- 未识别到稳定对应章节\n补齐建议：建议补齐“施工人员”专章或形成稳定章节标题。\n---\n【5. 机具】\n判定：缺失\n识别章节：\n- 未识别到稳定对应章节\n补齐建议：建议补齐“机具”专章或形成稳定章节标题。\n---\n【6. 材料】\n判定：缺失\n识别章节：\n- 未识别到稳定对应章节\n补齐建议：建议补齐“材料”专章或形成稳定章节标题。\n---\n【7. 安全管控】\n判定：缺失\n识别章节：\n- 未识别到稳定对应章节\n补齐建议：建议补齐“安全管控”专章或形成稳定章节标题。\n---\n【8. 质量管控】\n判定：缺失\n识别章节：\n- 未识别到稳定对应章节\n补齐建议：建议补齐“质量管控”专章或形成稳定章节标题。\n---\n【9. 应急措施】\n判定：缺失\n识别章节：\n- 未识别到稳定对应章节\n补齐建议：建议补齐“应急措施”专章或形成稳定章节标题。\n---\n\n#### 通用要求：缺项分析与补齐意见\n【1. 编制依据】\n判定：缺失\n识别章节：\n- 未识别到稳定对应章节\n补齐建议：建议补齐“编制依据”专章或形成稳定章节标题。\n---\n【2. 施工计划】\n判定：部分符合\n识别章节：\n- 第一章 工程概况\n补齐建议：建议补齐或单列“施工计划”。\n---\n【3. 施工工艺技术】\n判定：缺失\n识别章节：\n- 未识别到稳定对应章节\n补齐建议：建议补齐“施工工艺技术”专章或形成稳定章节标题。\n---\n【4. 施工保证措施】\n判定：缺失\n识别章节：\n- 未识别到稳定对应章节\n补齐建议：建议补齐“施工保证措施”专章或形成稳定章节标题。\n---\n【5. 施工管理及作业人员配备和分工】\n判定：缺失\n识别章节：\n- 未识别到稳定对应章节\n补齐建议：建议补齐“施工管理及作业人员配备和分工”专章或形成稳定章节标题。\n---\n【6. 验收要求】\n判定：缺失\n识别章节：\n- 未识别到稳定对应章节\n补齐建议：建议补齐“验收要求”专章或形成稳定章节标题。\n---\n【7. 应急处置措施】\n判定：缺失\n识别章节：\n- 未识别到稳定对应章节\n补齐建议：建议补齐“应急处置措施”专章或形成稳定章节标题。\n---\n【8. 相关施工图纸 / 节点详图 / 布置图】\n判定：缺失\n识别章节：\n- 未识别到稳定对应章节\n补齐建议：建议补齐“相关施工图纸 / 节点详图 / 布置图”专章或形成稳定章节标题。\n---\n【9. 风险辨识与分级】\n判定：缺失\n识别章节：\n- 未识别到稳定对应章节\n补齐建议：建议补齐“风险辨识与分级”专章或形成稳定章节标题。\n---\n【10. 施工平面布置或周边环境条件】\n判定：缺失\n识别章节：\n- 未识别到稳定对应章节\n补齐建议：建议补齐“施工平面布置或周边环境条件”专章或形成稳定章节标题。\n---\n【11. 计算书及相关验算依据】\n判定：缺失\n识别章节：\n- 未识别到稳定对应章节\n补齐建议：建议补齐“计算书及相关验算依据”专章或形成稳定章节标题。\n---\n\n\n### 2.2 补充审查意见\n- 当前未发现需要在表外单列提示的补充意见。\n\n## 第三部分：L2 审查发现——核心参数与规则实质性验证\n\n### 主要审查依据\n- 《危险性较大的分部分项工程专项施工方案编制指南》（建办质〔2021〕48号）：风险措施与监测监控\n- 《建设工程安全生产管理条例》：应急预案针对性\n\n### 1. 临时用电/停送电控制链路不完整\n问题描述\n- 临时用电/停送电控制链路不完整\n条文依据\n- 《危险性较大的分部分项工程专项施工方案编制指南》（建办质〔2021〕48号）\n  - 要求：专项方案应将主要危险源、控制措施、监测监控和应急处置形成闭环，便于现场执行\n- 《建设工程安全生产管理条例》\n  - 要求：应急管理文件应与主要危险源相匹配，便于事故类型、联系链路和现场处置动作快速落地\n\n## 第四部分：L3 审查发现——工程逻辑与实施风险预判\n\n- 本层未发现需要单独提示的问题。\n\n## 第五部分：关键数据识别汇总\n\n### 1. 危大工程识别情况\n- 已识别的高风险作业类型：临时用电、动火作业。\n- 涉及起重吊装作业：否。\n- 涉及煤气区域作业：否。\n- 涉及动火作业：是。\n- 涉及临时用电：是。\n- 提及特种设备：否。\n- 已提取验算依据：否。\n- 已识别风险控制措施章节：否。\n- 已识别监测监控章节：否。\n- 结构提示：以下关键章节未明确识别到：编制依据、施工部署/施工计划、施工准备与资源配置计划、施工现场平面布置、安全管理措施、应急预案、计算书/验算书、监测监控。\n\n## 第六部分：解析说明与复核提示\n\n### 6.1 文档解析状态与预检结果\n- 预检状态：可进入正式审查\n- 当前解析方式：Markdown 文本解析\n- 文件类型：Markdown 文档\n- 已识别附件数量：0\n- 人工复核说明：当前未触发额外人工复核说明。\n- 预检阻断说明：当前未识别额外阻断项。\n- 可视域概况：当前未检测到额外的结构提示。\n\n### 6.2 附件解析与关联情况\n- 当前未发现需要单独提示的附件可视域断链。\n\n### 6.3 待人工确认事项\n- 未解析到项目名称，需人工确认文档基础信息\n- 未解析到项目编号，需人工确认文档标识信息\n- 未解析到停机窗口时长，需人工确认工期窗口\n- 未解析到劳动力合计人数，需人工确认资源投入\n- 未解析到针对性应急预案标题，需人工确认应急安排\n\n说明：完整结构化结果、矩阵明细及可追溯工件已保留在系统结果与附件中，供复核和留档使用。",
+  "notice": "这是正式结构化审查结果；若存在 visibility_gap / manual_review_needed，请结合附件原件人工复核。",
+  "executionOptions": {}
+}

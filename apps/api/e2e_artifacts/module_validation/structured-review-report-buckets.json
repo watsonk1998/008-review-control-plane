@@ -1,0 +1,26 @@
+{
+  "hard_defect": [
+    {
+      "id": "ISSUE-001",
+      "title": "配网工程专项施工方案通用章节不完整",
+      "layer": "L1",
+      "severity": "high"
+    },
+    {
+      "id": "ISSUE-002",
+      "title": "停电施工作业专项章节不完整",
+      "layer": "L1",
+      "severity": "high"
+    }
+  ],
+  "visibility_gap": [],
+  "evidence_gap": [
+    {
+      "id": "ISSUE-003",
+      "title": "临时用电/停送电控制链路不完整",
+      "layer": "L2",
+      "severity": "medium"
+    }
+  ],
+  "enhancement": []
+}

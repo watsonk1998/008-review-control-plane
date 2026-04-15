@@ -20,6 +20,7 @@ class Settings:
     web_origin: str
     gpt_researcher_external_path: str | None
     deeptutor_base_url: str | None
+    hermes_external_endpoint: str | None
 
 
 @lru_cache(maxsize=1)
@@ -45,4 +46,5 @@ def get_settings() -> Settings:
         web_origin=os.getenv('REVIEW_CONTROL_WEB_ORIGIN', 'http://127.0.0.1:3008'),
         gpt_researcher_external_path=os.getenv('GPT_RESEARCHER_EXTERNAL_PATH'),
         deeptutor_base_url=os.getenv('DEEPTUTOR_BASE_URL'),
+        hermes_external_endpoint=os.getenv('HERMES_EXTERNAL_ENDPOINT'),
     )

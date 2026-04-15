@@ -1,0 +1,46 @@
+{
+  "id": "visibility_gap_reviewer",
+  "agent_name": "可视域复核",
+  "agent_purpose": "聚焦附件、图纸和可视域缺口",
+  "agent_scope": "visibility_gap",
+  "execution_mode": "module_only",
+  "module_bindings": [
+    "parse_visibility"
+  ],
+  "supported_document_types": [],
+  "focus_keywords": [
+    "附件",
+    "图纸",
+    "可视域",
+    "pdf",
+    "OCR"
+  ],
+  "required_context_types": [
+    "target_document"
+  ],
+  "input_contract": {
+    "type": "review_brief"
+  },
+  "output_contract": {
+    "type": "fact_packet",
+    "role": "supplemental"
+  },
+  "instructions": "聚焦当前解析能力无法覆盖的可视域风险。",
+  "prompt": "",
+  "default_enabled": false,
+  "save_policy": {
+    "seed": true
+  },
+  "template_version": "1.0.0",
+  "compatibility": {
+    "controller": "hermes_v0"
+  },
+  "metadata": {
+    "review_modules": [
+      "evidence_validation"
+    ],
+    "ownership": "hermes_main_review"
+  },
+  "input_token_limit": 200000,
+  "output_token_limit": 200000
+}

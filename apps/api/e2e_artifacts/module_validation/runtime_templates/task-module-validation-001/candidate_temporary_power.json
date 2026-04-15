@@ -1,0 +1,37 @@
+{
+  "id": "candidate_temporary_power",
+  "agent_name": "候选子Agent-temporary_power",
+  "agent_purpose": "补充覆盖“temporary_power”相关审查重点",
+  "agent_scope": "narrow_focus_gap",
+  "execution_mode": "hermes_router",
+  "module_bindings": [
+    "fact_extract"
+  ],
+  "supported_document_types": [
+    "distribution_network_special_scheme"
+  ],
+  "focus_keywords": [
+    "temporary_power"
+  ],
+  "required_context_types": [
+    "target_document",
+    "focus_requirements"
+  ],
+  "input_contract": {},
+  "output_contract": {
+    "type": "fact_packet"
+  },
+  "instructions": "重点围绕“temporary_power”识别系统性风险和遗漏。",
+  "prompt": "请围绕 temporary_power 输出结构化审查结论。",
+  "default_enabled": true,
+  "save_policy": {
+    "runtime_only": true
+  },
+  "template_version": "1.0.0",
+  "compatibility": {
+    "hermes_controller_version": "v0.1"
+  },
+  "metadata": {
+    "generated": true
+  }
+}

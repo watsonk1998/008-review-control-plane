@@ -1,0 +1,55 @@
+{
+  "id": "power_outage_restoration_closure_reviewer",
+  "agent_name": "送电恢复与监理闭环审查",
+  "agent_purpose": "聚焦停电施工完工检查、恢复送电、资料归档和整改闭环",
+  "agent_scope": "power_outage_restoration_closure",
+  "execution_mode": "hermes_router",
+  "module_bindings": [
+    "fact_extract",
+    "profile_and_packs",
+    "rule_and_evidence"
+  ],
+  "supported_document_types": [
+    "distribution_network_special_scheme"
+  ],
+  "focus_keywords": [
+    "恢复送电",
+    "拆接地线",
+    "资料归档",
+    "整改闭环",
+    "监理"
+  ],
+  "required_context_types": [
+    "target_document",
+    "basis_files"
+  ],
+  "input_contract": {
+    "type": "review_brief"
+  },
+  "output_contract": {
+    "type": "fact_packet",
+    "role": "main_review"
+  },
+  "instructions": "从监理审核角度检查用户告知、完工检查、拆接地线、恢复送电、资料归档和整改闭环安排是否可执行、可追溯。",
+  "prompt": "请专项审查停电施工的收尾闭环，重点检查恢复送电条件、完工确认、资料归档和整改闭环。",
+  "default_enabled": true,
+  "save_policy": {
+    "seed": true
+  },
+  "template_version": "1.0.0",
+  "compatibility": {
+    "controller": "hermes_v0"
+  },
+  "metadata": {
+    "preferred_pack_ids": [
+      "power_outage_work.base"
+    ],
+    "review_modules": [
+      "legality_compliance",
+      "execution_continuity"
+    ],
+    "ownership": "hermes_main_review"
+  },
+  "input_token_limit": 200000,
+  "output_token_limit": 200000
+}

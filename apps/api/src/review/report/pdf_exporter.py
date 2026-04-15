@@ -1,5 +1,11 @@
 from __future__ import annotations
 
+"""008 support/export report material rendering.
+
+Generated PDFs remain export materials for the Hermes-controlled final result flow.
+They do not define product-level final decision ownership.
+"""
+
 import asyncio
 import html
 from pathlib import Path
@@ -61,7 +67,7 @@ async def _render_html_pdf_via_playwright(
             await page.pdf(
                 path=str(output_path),
                 format='A4',
-                landscape=True,
+                landscape=False,
                 print_background=True,
                 prefer_css_page_size=True,
                 display_header_footer=False,

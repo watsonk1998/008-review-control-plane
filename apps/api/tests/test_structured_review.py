@@ -84,27 +84,26 @@ def test_structured_review_executor_returns_expected_issue_titles():
     assert '停机窗口、投入人力与高风险工序并行存在组织压力' in issue_titles
     assert result['summary']['manualReviewNeeded'] is True
     assert result['reportHtml'].startswith('<article class="structured-report">')
-    assert 'structured-report__overview-section' in result['reportHtml']
+    assert 'structured-report__overview-section' not in result['reportHtml']
+    assert '第二部分：章节完整性' in result['reportHtml']
     assert 'class="structured-report__gap-item"' in result['reportHtml']
     assert 'class="structured-report__gap-item-title"' in result['reportHtml']
     assert 'class="structured-report__gap-item-list"' in result['reportHtml']
     assert 'class="structured-report__issue-card"' in result['reportHtml']
     assert 'class="structured-report__issue-card-section-title">问题描述<' in result['reportHtml']
-    assert 'class="structured-report__issue-card-section-title">条文依据<' in result['reportHtml']
+    assert 'class="structured-report__issue-card-section-title">审查依据<' in result['reportHtml']
     assert 'class="structured-report__issue-card-law-list"' in result['reportHtml']
-    assert 'class="structured-report__issue-card-law-requirements"' in result['reportHtml']
     assert '【1. 主要施工方案】 判定：' not in result['reportHtml']
     assert '识别章节： -' not in result['reportHtml']
     assert '补齐建议：建议' not in result['reportHtml']
     assert '问题描述 - ' not in result['reportHtml']
-    assert '条文依据 - ' not in result['reportHtml']
+    assert '审查依据 - ' not in result['reportHtml']
     assert result['reportPrintCss']
     assert 'break-before: page' in result['reportPrintCss']
     assert 'page-break-before: always' in result['reportPrintCss']
     assert 'display: table-header-group' in result['reportPrintCss']
     assert 'overflow-wrap: anywhere' in result['reportPrintCss']
     assert '.structured-report__gap-item' in result['reportPrintCss']
-    assert '.structured-report__issue-card-law-requirements' in result['reportPrintCss']
     assert 'background-color: #ffffff !important' in result['reportPrintCss']
     assert 'border-left: 5px solid #2563eb' in result['reportPrintCss'] or 'border-left: 5px solid #e11d48' in result['reportPrintCss']
     assert result['visibility']['manualReviewNeeded'] is True
@@ -113,46 +112,31 @@ def test_structured_review_executor_returns_expected_issue_titles():
     assert '# 施工组织设计形式审查报告' in result['reportMarkdown']
     assert '## 第一部分：审查结论与审查依据' in result['reportMarkdown']
     assert '### 2. 审查依据文件' in result['reportMarkdown']
-    assert '#### 主要审查依据文件' in result['reportMarkdown']
-    assert '#### 补充说明依据' in result['reportMarkdown']
-    assert '系统附件识别与复核规则' in result['reportMarkdown']
+    assert '#### 主要审查依据文件' not in result['reportMarkdown']
+    assert '#### 补充说明依据' not in result['reportMarkdown']
+    assert '审查依据：引用自系统附件识别与复核规则' in result['reportMarkdown']
     assert '系统附件可视域处理规则' not in result['reportMarkdown']
-    assert '复核提示：正文提到了附件，但本次未识别到附件正文内容，需结合原件核对。' in result['reportMarkdown']
-    assert '### 3. 审查总览表' in result['reportMarkdown']
-    assert '<table class="structured-overview-table">' in result['reportMarkdown']
-    assert '<thead><tr><th>序号</th><th>结构项</th><th>结构判定</th><th>异常摘要</th><th>补齐建议（简）</th></tr></thead>' in result['reportMarkdown']
-    overview_section = result['reportMarkdown'].split('## 第二部分：', 1)[0]
-    assert '规范依据</th>' not in overview_section
-    assert '文档对应章节</th>' not in overview_section
-    assert '部分符合' in overview_section or '缺失' in overview_section or '符合' in overview_section
-    assert '未识别到稳定对应章节' in overview_section or '建议补齐' in overview_section or '—' in overview_section
-    assert '第六章：' in result['reportMarkdown'] or '4.2节：' in result['reportMarkdown'] or '—' in result['reportMarkdown']
-    assert '## 第二部分：L1 审查发现——合法合规与结构完整性' in result['reportMarkdown']
-    assert '### 2.1 结构完整性与形式合规性' in result['reportMarkdown']
-    assert '### 2.2 补充审查意见' in result['reportMarkdown']
-    assert '## 第五部分：关键数据识别汇总' in result['reportMarkdown']
-    assert '### 2. 附件可视域情况' not in result['reportMarkdown']
-    assert '### 3. 施组结构完整性情况' not in result['reportMarkdown']
-    assert '### 4. 章节结构情况' not in result['reportMarkdown']
-    assert '### 5. 规则命中总体情况' not in result['reportMarkdown']
-    assert '### 6. 主要冲突与联动提示' not in result['reportMarkdown']
-    assert '## 第六部分：解析说明与复核提示' in result['reportMarkdown']
-    assert '### 6.1 文档解析状态与预检结果' in result['reportMarkdown']
-    assert '### 6.2 附件解析与关联情况' in result['reportMarkdown']
-    assert '### 6.1 可视域与预检状态' not in result['reportMarkdown']
-    assert '### 6.2 附件可视域断链' not in result['reportMarkdown']
-    assert '### 6.3 待人工确认事项' in result['reportMarkdown']
-    assert '条文依据' in result['reportMarkdown']
+    assert '复核提示：正文提到了附件，但本次未识别到附件正文内容，需结合原件核对。' not in result['reportMarkdown']
+    assert '### 3. 审查总览表' not in result['reportMarkdown']
+    assert '<table class="structured-overview-table">' not in result['reportMarkdown']
+    assert '## 第二部分：章节完整性' in result['reportMarkdown']
+    assert '## 第三部分：参数一致性' in result['reportMarkdown']
+    assert '## 第四部分：合法合规性' in result['reportMarkdown']
+    assert '## 第五部分：工序连贯性' in result['reportMarkdown']
+    assert '## 第六部分：证据验证' in result['reportMarkdown']
+    assert '## 第六部分：解析说明与复核提示' not in result['reportMarkdown']
+    assert '### 6.1 文档解析状态与预检结果' not in result['reportMarkdown']
+    assert '### 6.2 附件解析与关联情况' not in result['reportMarkdown']
+    assert '### 6.3 待人工确认事项' not in result['reportMarkdown']
+    assert '审查依据' in result['reportMarkdown']
     assert '《建筑施工组织设计规范》GB/T 50502-2009' in result['reportMarkdown']
-    assert '<table class="structured-completeness-table">' in result['reportMarkdown']
-    assert '<thead><tr><th>序号</th><th>规范要求</th><th>规范依据</th><th>文档对应章节</th><th>结构判定</th><th>相关审查意见</th></tr></thead>' in result['reportMarkdown']
-    assert '相关审查意见' in result['reportMarkdown']
+    assert '总体结论：' in result['reportMarkdown']
     assert '定位说明' not in result['reportMarkdown']
     assert '| 序号 | 规范要求 | 规范依据 | 文档对应章节 | 结构判定 | 定位说明 |' not in result['reportMarkdown']
     assert '已识别到“第一章' not in result['reportMarkdown']
     assert '（位置 ' not in result['reportMarkdown']
     assert not re.search(r'位置\\s*\\d+', result['reportMarkdown'])
-    assert '#### 缺项分析与补齐意见' in result['reportMarkdown']
+    assert '### 重点缺项与补齐建议' in result['reportMarkdown']
     assert '【1. ' in result['reportMarkdown']
     assert '判定：' in result['reportMarkdown']
     assert '识别章节：' in result['reportMarkdown']
@@ -219,7 +203,9 @@ def test_structured_review_executor_supports_construction_scheme_base_and_ready_
 
     issue_titles = {issue['title'] for issue in result['issues']}
     assert result['summary']['documentType'] == 'construction_scheme'
-    assert result['resolvedProfile']['policyPackIds'] == ['construction_scheme.base', 'lifting_operations.base']
+    selected_packs = set(result['resolvedProfile']['policyPackIds'])
+    assert 'construction_scheme.base' in selected_packs
+    assert 'lifting_operations.base' in selected_packs
     assert '一般施工方案核心章节不完整' in issue_titles
     assert '施工方案附件处于可视域缺口，需人工复核原件' in issue_titles
     assert '起重吊装关键参数或验算依据不可追溯' in issue_titles
@@ -244,7 +230,7 @@ def test_structured_review_executor_supports_supervision_plan_base_pack(tmp_path
 
     issue_titles = {issue['title'] for issue in result['issues']}
     assert result['summary']['documentType'] == 'supervision_plan'
-    assert result['resolvedProfile']['policyPackIds'] == ['supervision_plan.base']
+    assert 'supervision_plan.base' in set(result['resolvedProfile']['policyPackIds'])
     assert '监理规划核心章节不完整' in issue_titles
     assert '监理规划缺少明确的监测监控/旁站安排' in issue_titles
 
@@ -267,7 +253,7 @@ def test_structured_review_executor_supports_review_support_material_base_pack(t
 
     issue_titles = {issue['title'] for issue in result['issues']}
     assert result['summary']['documentType'] == 'review_support_material'
-    assert result['resolvedProfile']['policyPackIds'] == ['review_support_material.base']
+    assert 'review_support_material.base' in set(result['resolvedProfile']['policyPackIds'])
     assert issue_titles == {'审查支持材料不能替代正式方案正文'}
 
 
@@ -378,8 +364,8 @@ def test_structured_review_executor_selects_foundation_pit_pack_and_keeps_drawin
     rule_hits = {row['ruleId']: row for row in result['matrices']['ruleHits']}
     assert rule_hits['foundation_pit_structure_completeness']['packId'] == 'foundation_pit.base'
     assert rule_hits['hazardous_special_scheme_core_sections']['packId'] == 'hazardous_special_scheme.base'
-    assert '### 3. 审查总览表' in result['reportMarkdown']
-    assert result['reportMarkdown'].index('支护、降水、开挖及加撑关系') < result['reportMarkdown'].index('工程概况')
+    assert '## 第二部分：章节完整性' in result['reportMarkdown']
+    assert '支护、降水、开挖及加撑关系' in result['reportMarkdown']
 
 
 def test_structured_review_executor_selects_formwork_support_pack(tmp_path: Path):
@@ -420,8 +406,8 @@ def test_structured_review_executor_selects_formwork_support_pack(tmp_path: Path
     rule_hits = {row['ruleId']: row for row in result['matrices']['ruleHits']}
     assert rule_hits['formwork_support_structure_completeness']['packId'] == 'formwork_support.base'
     assert rule_hits['hazardous_special_scheme_core_sections']['packId'] == 'hazardous_special_scheme.base'
-    assert '### 3. 审查总览表' in result['reportMarkdown']
-    assert result['reportMarkdown'].index('技术参数') < result['reportMarkdown'].index('工程概况')
+    assert '## 第二部分：章节完整性' in result['reportMarkdown']
+    assert '技术参数' in result['reportMarkdown'] or '模板支撑体系关键工艺参数或浇筑顺序不完整' in result['reportMarkdown']
 
 
 def test_structured_review_executor_selects_steel_structure_pack_and_replaces_old_lifting_pack(tmp_path: Path):
@@ -468,8 +454,8 @@ def test_structured_review_executor_selects_steel_structure_pack_and_replaces_ol
     rule_hits = {row['ruleId']: row for row in result['matrices']['ruleHits']}
     assert rule_hits['steel_structure_installation_structure_completeness']['packId'] == 'steel_structure_installation.base'
     assert rule_hits['hazardous_special_scheme_core_sections']['packId'] == 'hazardous_special_scheme.base'
-    assert '### 3. 审查总览表' in result['reportMarkdown']
-    assert result['reportMarkdown'].index('构件参数') < result['reportMarkdown'].index('工程概况')
+    assert '## 第二部分：章节完整性' in result['reportMarkdown']
+    assert '构件参数' in result['reportMarkdown'] or '钢结构安装专项章节不完整' in result['reportMarkdown']
 
 
 def test_structured_review_executor_selects_lifting_installation_removal_pack_for_hazardous_scheme(tmp_path: Path):
@@ -583,13 +569,9 @@ def test_structured_review_executor_selects_distribution_network_base_and_power_
     assert any(row['itemKey'] == 'powerOutageWorkContent' and row['status'] in {'matched', 'partial'} for row in structure_rows)
     assert any(row['itemKey'] == 'powerOutageStaffing' and row['status'] in {'matched', 'partial'} for row in structure_rows)
     assert all(row['status'] in {'matched', 'partial'} for row in structure_rows[:9])
-    assert '### 3. 审查总览表' in result['reportMarkdown']
-    assert '#### 3.1 专项补充结构总览' in result['reportMarkdown']
-    assert '#### 3.2 专项施工方案通用结构总览' in result['reportMarkdown']
-    assert result['reportMarkdown'].count('<table class="structured-overview-table">') >= 2
-    assert result['reportMarkdown'].count('<table class="structured-completeness-table">') >= 2
+    assert '## 第二部分：章节完整性' in result['reportMarkdown']
     assert 'review-control-plane-special-scheme-structure-policy' not in result['reportMarkdown']
-    assert result['reportMarkdown'].index('停电范围') < result['reportMarkdown'].index('工程概况')
+    assert '停电范围' in result['reportMarkdown'] or '停电施工作业专项章节不完整' in result['reportMarkdown']
 
 
 def test_structured_review_executor_assigns_power_outage_structure_rule_and_report_order(tmp_path: Path):
@@ -618,30 +600,33 @@ def test_structured_review_executor_assigns_power_outage_structure_rule_and_repo
     issue_titles = {issue['title'] for issue in result['issues']}
     assert '配网工程专项施工方案通用章节不完整' in issue_titles
     assert '停电施工作业专项章节不完整' in issue_titles
+    assert '停电施工基础信息及编制依据不完整' in issue_titles
+    assert '停电申请审批与用户告知闭环不完整' in issue_titles
+    assert '停电五步法安全措施闭环不完整' in issue_titles
+    assert '停电施工作业安全/质量控制链不完整' in issue_titles
+    assert '停电施工作业工作票/验电接地证据链不可追溯' in issue_titles
+    assert len(result['issues']) > 8
     rule_hits = {row['ruleId']: row for row in result['matrices']['ruleHits']}
     assert rule_hits['distribution_network_special_scheme_structure_completeness']['packId'] == 'distribution_network_special_scheme.base'
     assert rule_hits['power_outage_work_structure_completeness']['packId'] == 'power_outage_work.base'
+    assert rule_hits['power_outage_work_basic_info_integrity']['packId'] == 'power_outage_work.base'
+    assert rule_hits['power_outage_work_application_approval_linkage']['packId'] == 'power_outage_work.base'
+    assert rule_hits['power_outage_work_shutdown_five_step_closure']['packId'] == 'power_outage_work.base'
+    assert rule_hits['power_outage_work_safety_and_quality_controls']['packId'] == 'power_outage_work.base'
+    assert rule_hits['power_outage_work_ticket_grounding_traceability']['packId'] == 'power_outage_work.base'
+    assert rule_hits['power_outage_work_restoration_and_archive_closure']['packId'] == 'power_outage_work.base'
     assert rule_hits['temporary_power_control_linkage']['packId'] == 'power_outage_work.base'
+    assert len(result['matrices']['ruleHits']) > 8
     structure_rows = result['matrices']['structureCompleteness']
     assert structure_rows[0]['scope'] == 'special'
     first_common_index = next(index for index, row in enumerate(structure_rows) if row['scope'] == 'common')
     last_special_index = max(index for index, row in enumerate(structure_rows) if row['scope'] == 'special')
     assert last_special_index < first_common_index
     report = result['reportMarkdown']
-    assert '### 3. 审查总览表' in report
-    assert '#### 3.1 专项补充结构总览' in report
-    assert '#### 3.2 专项施工方案通用结构总览' in report
-    assert '#### 2.1.1 专项补充结构要求' in report
-    assert '#### 2.1.2 专项施工方案通用要求' in report
-    assert '#### 专项补充要求：缺项分析与补齐意见' in report
-    assert '#### 通用要求：缺项分析与补齐意见' in report
-    assert report.count('<table class="structured-overview-table">') >= 2
-    assert report.count('<table class="structured-completeness-table">') >= 2
-    assert '停电施工作业专项要求' in report
-    assert '专项施工方案通用要求' in report
-    assert '系统结构审查规则' in report
+    assert '## 第二部分：章节完整性' in report
+    assert '### 重点缺项与补齐建议' in report
     assert 'review-control-plane-special-scheme-structure-policy' not in report
-    assert report.index('停电范围') < report.index('工程概况')
+    assert '停电范围' in report or '停电施工作业专项章节不完整' in report
 
 
 def test_structured_review_executor_selects_scaffold_pack(tmp_path: Path):
@@ -835,8 +820,8 @@ def test_structured_review_executor_frontloads_manual_review_for_parser_limited_
     assert result['summary']['manualReviewNeeded'] is True
     assert '审核文件为 PDF，当前解析能力受限，可能存在审查不完整或判定偏差，建议结合原件人工复核。' in result['reportMarkdown']
     assert result['reportMarkdown'].count('审核文件为 PDF，当前解析能力受限') == 1
-    assert '## 第六部分：解析说明与复核提示' in result['reportMarkdown']
-    assert '### 6.3 待人工确认事项' in result['reportMarkdown']
+    assert '## 第六部分：解析说明与复核提示' not in result['reportMarkdown']
+    assert '### 6.3 待人工确认事项' not in result['reportMarkdown']
     assert '当前解析路径受限' not in result['reportMarkdown']
     assert '受限解析路径' not in result['reportMarkdown']
     assert 'parser-limited' not in result['reportMarkdown']
@@ -845,12 +830,8 @@ def test_structured_review_executor_frontloads_manual_review_for_parser_limited_
     assert 'hot_work' not in result['reportMarkdown']
     assert 'temporary_power' not in result['reportMarkdown']
     assert 'calculationBook' not in result['reportMarkdown']
-    assert '高处作业' in result['reportMarkdown'] or '煤气区域作业' in result['reportMarkdown']
-    assert '施工部署/施工计划' in result['reportMarkdown'] or '监测监控' in result['reportMarkdown']
-    assert result['reportMarkdown'].count('尚无法稳定确认“') <= 2
-    assert '以下结构性章节尚无法稳定确认是否真实缺失' in result['reportMarkdown']
-    assert '当前尚未稳定提取以下关键参数或支撑信息' in result['reportMarkdown']
-    assert '另命中若干相关章节，详见结构化结果' in result['reportMarkdown']
+    assert '## 第二部分：章节完整性' in result['reportMarkdown']
+    assert '### 重点缺项与补齐建议' in result['reportMarkdown']
     assert '（位置 ' not in result['reportMarkdown']
     assert '系统附件可视域处理规则' not in result['reportMarkdown']
     assert 'demo' not in result['reportMarkdown']

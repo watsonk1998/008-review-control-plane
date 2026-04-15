@@ -5,7 +5,7 @@ from pathlib import Path
 import json
 import os
 
-DEFAULT_LLM_CONFIG_PATH = Path.home() / 'tools' / 'from-obsidian' / 'AI' / 'config' / 'century.json'
+DEFAULT_LLM_CONFIG_PATH = Path.home() / 'control' / 'secrets' / 'api-keys' / 'century.json'
 DEFAULT_LLM_PROFILE = 'dashscope'
 DEFAULT_LLM_MODEL = 'qwen3.5-plus'
 DEFAULT_EMBEDDING_PROFILE = 'dashscope_embedding'
@@ -37,7 +37,11 @@ def _first_non_empty(*values: str | None) -> str:
 def _load_profile_config(profile: str, *, default_model: str) -> LLMConfig:
     config_path = Path(os.getenv('LLM_CONFIG_PATH', str(DEFAULT_LLM_CONFIG_PATH))).expanduser()
     if not config_path.exists():
-        raise FileNotFoundError(f'LLM config file not found: {config_path}')
+        raise RuntimeError(
+            f"【生产部署预警】大模型 API 配置缺失！\n"
+            f"-> 若为 Docker/线上部署: 请确保环境变量 'LLM_API_KEY' 和 'LLM_BASE_URL' 被正确注入。\n"
+            f"-> 若为本地开发: 未能在默认路径找到物理配置文件 '{config_path}'，请检查文件系统，或通过 'LLM_CONFIG_PATH' 重定义。"
+        )
 
     payload = json.loads(config_path.read_text())
     profile_data = payload.get(profile)
@@ -75,7 +79,9 @@ def resolve_llm_config() -> LLMConfig:
     env_key = _first_non_empty(os.getenv('LLM_API_KEY'), os.getenv('OPENAI_API_KEY'))
     env_model = _first_non_empty(os.getenv('LLM_MODEL'), os.getenv('OPENAI_MODEL'))
     env_provider = _first_non_empty(os.getenv('LLM_PROVIDER'))
-    if env_base and env_key:
+    if env_key:
+        if not env_base:
+            raise RuntimeError("【生产部署预警】检测到环境变量 LLM_API_KEY / OPENAI_API_KEY，但缺失配套的 BASE_URL。系统已熔断，拒绝回滚至本地物理配置。请补全环境变量。")
         return LLMConfig(
             base_url=env_base.rstrip('/'),
             api_key=env_key,
@@ -97,7 +103,9 @@ def resolve_embedding_config() -> LLMConfig:
     env_key = _first_non_empty(os.getenv('EMBEDDING_API_KEY'))
     env_model = _first_non_empty(os.getenv('EMBEDDING_MODEL'), os.getenv('OPENAI_EMBEDDING_MODEL'))
     env_provider = _first_non_empty(os.getenv('EMBEDDING_PROVIDER'))
-    if env_base and env_key:
+    if env_key:
+        if not env_base:
+            raise RuntimeError("【生产部署预警】检测到环境变量 EMBEDDING_API_KEY，但缺失配套的 BASE_URL。系统已熔断。请补全环境变量。")
         return LLMConfig(
             base_url=env_base.rstrip('/'),
             api_key=env_key,

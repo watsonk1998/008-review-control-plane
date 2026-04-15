@@ -55,11 +55,21 @@ class TaskService:
             disciplineTags=request.disciplineTags or [],
             strictMode=strict_mode,
             policyPackIds=request.policyPackIds or [],
+            rulePackIds=request.rulePackIds or [],
+            externalContext=request.externalContext,
             status='created',
             createdAt=now,
             updatedAt=now,
         )
         self.store.create_task(task)
+        
+        file_name = "未知文件"
+        if task.sourceDocumentRef:
+            file_name = task.sourceDocumentRef.fileName
+        
+        from src.services.external_callbacks import trigger_task_created_callback
+        asyncio.create_task(trigger_task_created_callback(task.id, file_name, request.externalContext))
+        
         return task
 
     def schedule_task(self, task_id: str):
@@ -88,6 +98,21 @@ class TaskService:
             raise ValueError('reviewer decision is only supported for structured_review tasks')
         decision = merge_reviewer_decision(task, payload)
         return self.store.update_task(task_id, reviewerDecision=decision)
+
+    def submit_report_feedback(self, *, report_id: str, feedback_type: str, comment: str | None = None, source: str | None = None) -> dict:
+        task = self.store.get_task(report_id)
+        if task is None:
+            raise KeyError(f'Report not found: {report_id}')
+        feedback_id = uuid.uuid4().hex
+        return self.store.append_report_feedback(
+            feedback_id=feedback_id,
+            report_id=report_id,
+            task_id=task.id,
+            feedback_type=feedback_type,
+            comment=comment,
+            source=source,
+            created_at=datetime.now(timezone.utc),
+        )
 
     def list_task_artifacts(self, task_id: str) -> list[TaskArtifact]:
         task = self.store.get_task(task_id)

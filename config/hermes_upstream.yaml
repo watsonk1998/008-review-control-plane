@@ -1,0 +1,55 @@
+upstream:
+  repo: "https://github.com/NousResearch/hermes-agent"
+  tracking_branch: "main"
+  pinned_commit: "af9caec44fdab7a1b883dede16fe1ce8c2d60fb9"
+
+integration_mode: "submodule"
+
+boundary:
+  external_kernel_path: "external/hermes-agent"
+  submodule_path: "external/hermes-agent"
+  submodule_required: true
+  enforce_submodule_boundary: true
+  patch_directory: "patches/hermes-agent"
+
+allowed_integration_surfaces:
+  - "HermesReviewEngine contract"
+  - "HermesExternalAdapter"
+  - "HermesLLMAdapter"
+  - "HermesRouterAdapter"
+  - "Hermes review request/response schema"
+  - "template payload contract"
+  - "candidate template metadata contract"
+
+forbidden_dependency_surfaces:
+  - "run_agent.py internal loop details"
+  - "model_tools.py internal discovery/execution details"
+  - "agent/* internal implementation"
+  - "gateway/* internal implementation"
+  - "upstream tools/* internal implementation"
+  - "sys.path injection into external/hermes-agent"
+  - "runtime cwd coupling to external/hermes-agent internal files"
+
+versions:
+  adapter_contract: "v1"
+  template_schema_version: "v1"
+  final_packet_schema_version: "v1"
+
+overlay:
+  overlay_root: "overlays/hermes-agent"
+  overlay_subdirs:
+    - "skills"
+    - "memory"
+    - "config"
+    - "prompts"
+
+local_kernel:
+  local_kernel_smoke_available: true
+  local_kernel_minimal_execution_available: true
+  smoke_script_path: "apps/api/scripts/run_local_hermes_smoke.py"
+  minimal_review_script_path: "apps/api/scripts/run_local_hermes_minimal_review.py"
+  adapter_status: "isolated_standby"
+
+expected_runtime:
+  runtime_kernel_mode: "standby"
+

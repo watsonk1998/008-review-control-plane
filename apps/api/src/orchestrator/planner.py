@@ -48,6 +48,7 @@ class TaskPlanner:
                 requested_document_type=task.documentType,
                 requested_discipline_tags=task.disciplineTags,
                 requested_policy_pack_ids=task.policyPackIds,
+                requested_rule_pack_ids=task.rulePackIds,
                 strict_mode=task.strictMode,
             )
             notes.append('structured_review 的 reviewProfile 仅作为 provisional hints；最终 resolvedProfile 与 packs 由 review pipeline 生成。')

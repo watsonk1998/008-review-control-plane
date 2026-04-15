@@ -1,0 +1,56 @@
+{
+  "id": "power_outage_operation_chain_reviewer",
+  "agent_name": "停电五步法与票据链审查",
+  "agent_purpose": "围绕停电、验电、接地、挂牌、遮栏及票据链路进行专项复核",
+  "agent_scope": "power_outage_operation_chain",
+  "execution_mode": "hermes_router",
+  "module_bindings": [
+    "fact_extract",
+    "rule_and_evidence"
+  ],
+  "supported_document_types": [
+    "distribution_network_special_scheme"
+  ],
+  "focus_keywords": [
+    "停电",
+    "验电",
+    "接地",
+    "挂牌",
+    "遮栏",
+    "工作票",
+    "操作票"
+  ],
+  "required_context_types": [
+    "target_document",
+    "basis_files"
+  ],
+  "input_contract": {
+    "type": "review_brief"
+  },
+  "output_contract": {
+    "type": "fact_packet",
+    "role": "main_review"
+  },
+  "instructions": "重点检查停电五步法是否闭合，工作票/操作票/现场勘察记录是否完整，以及误送电、倒送电风险是否被准确控制。",
+  "prompt": "请专项审查停电五步法执行链、票据链和防反送电措施，优先指出流程断点与证据链断点。",
+  "default_enabled": true,
+  "save_policy": {
+    "seed": true
+  },
+  "template_version": "1.0.0",
+  "compatibility": {
+    "controller": "hermes_v0"
+  },
+  "metadata": {
+    "preferred_pack_ids": [
+      "power_outage_work.base"
+    ],
+    "review_modules": [
+      "execution_continuity",
+      "evidence_validation"
+    ],
+    "ownership": "hermes_main_review"
+  },
+  "input_token_limit": 200000,
+  "output_token_limit": 200000
+}

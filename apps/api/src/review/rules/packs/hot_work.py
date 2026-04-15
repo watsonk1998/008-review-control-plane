@@ -7,7 +7,7 @@ def get_hot_work_pack() -> PolicyPack:
     return PolicyPack(
         id='hot_work.base',
         version='1.0.0',
-        docTypes=['construction_org', 'construction_scheme'],
+        docTypes=['construction_org', 'construction_scheme', 'distribution_network_special_scheme'],
         label='动火作业',
         role='cross_cutting',
         tier=None,
