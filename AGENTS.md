@@ -152,3 +152,21 @@ All user-visible content in reports, interfaces, and statuses MUST be presented 
 
 - **`_parse_executive_summary()` 防御性过滤**：即使遗留数据仍含"本次结果共覆盖…形成…项审查问题…"类统计句，view model 解析时也必须过滤，不得渗透到前端 narrative。当先前文档或代码中关于 executive summary 的口径与本条冲突时，以本条为准。
 
+
+## Project Corrections Addendum (2026-04-15, normative scope + calculation reviewer + prose dedup)
+
+> Source: Engineering hardening session — scope narrowing, note column fix, calculation sub-agent, verdict dedup.
+
+- **`编制依据现行有效性核验` 范围严格限定为标准规范**：核验对象只能是带标准编号的规范性文件（国标 GB/GB/T、行标 DL/DL/T/NB、地标 DB/DBJ、带标准号企业标准 Q/CSG/Q/GDW 等）。法律法规、行政条例、部门规章、企业内部管理制度文件、通知、规定、办法等**明确排除**，不得进入核验集合。实现：`_is_standard_normative()` 门禁方法在两个文档抽取入口统一过滤。
+
+- **`_is_standard_normative()` 判断优先顺序不可颠倒**：(1) 先检查标准编号——有编号直接 return True，不走排除关键词路径（防止带编号的企业标准被误伤）；(2) 再检查排除关键词；(3) 再检查法律形态（以"X法》"结尾）；(4) 默认保守通过。任何修改不得将编号检查后移。
+
+- **`_heuristic_result()` 禁止对条例/法规词条判 current**：此类词条应在 `_is_standard_normative()` 入口已被过滤，不应流入 heuristic。历史代码中对"条例"的保守 current 映射已移除，禁止恢复。
+
+- **note 文案列位合同**：`编制依据现行有效性核验` 表格中，note 必须出现在**核验状态列**（以 structured-report__muted 样式追加在 statusLabel 之后），不得出现在**规范名称列** `<td>` 内。修改渲染方法时必须遵守此列位合同。
+
+- **`_render_executive_summary()` fallback 条件**：仅在 verdict 不存在时才允许 fallback 渲染 raw_text。有 verdict badge 时不得再追加 `<p>` 渲染 raw_text（否则 verdict 信息重复展示）。本条与旧代码口径冲突时以本条为准。
+
+- **calculation_review_reviewer 保守约束**：该模板负责计算式/验算/参数/公式审查，归属 evidence_validation。未见计算书/验算过程时，**禁止臆造计算错误**，只能输出"证据不足，需人工补充复核"类保守表达。
+
+- **测试文件内嵌中文书名号陷阱（HG-16）**：Python 字符串内嵌 `》` 时若外层引号同向会触发 SyntaxError: unterminated string literal。写入后必须执行语法验证：`python -c "import ast; ast.parse(open('file.py').read())"`，不得假设工具写入一定正确。

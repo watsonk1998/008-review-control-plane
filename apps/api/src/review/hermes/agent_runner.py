@@ -9,6 +9,15 @@ from src.review.hermes.module_bindings import template_review_modules
 from src.review.hermes.normative_validity import NormativeValidityChecker
 from src.review.hermes.template_models import AgentRunResult, AgentTemplate
 
+# Hard template→module mapping: these templates ALWAYS produce findings
+# for a specific module. Keyword-based guessing is ONLY a fallback for
+# templates not listed here. See AGENTS.md HG-15 / HG-17.
+_TEMPLATE_HARD_MODULE: dict[str, str] = {
+    'normative_validity_reviewer': 'evidence_validation',
+    'calculation_review_reviewer': 'evidence_validation',
+    'visibility_gap_reviewer': 'evidence_validation',
+}
+
 
 class HermesAgentRunner:
     def __init__(self, *, hermes_engine, module_registry, llm_gateway=None, normative_validity_checker=None):
@@ -74,7 +83,8 @@ class HermesAgentRunner:
 
     def _annotate_finding_ownership(self, template: AgentTemplate, finding: FindingItem) -> FindingItem:
         review_modules = self._template_review_modules(template)
-        module_name = self._resolve_finding_module_name(finding, review_modules)
+        # Hard mapping takes priority over keyword guessing (AGENTS.md HG-15)
+        module_name = _TEMPLATE_HARD_MODULE.get(template.id) or self._resolve_finding_module_name(finding, review_modules)
         finding.raw_data = {
             **finding.raw_data,
             'template_id': template.id,

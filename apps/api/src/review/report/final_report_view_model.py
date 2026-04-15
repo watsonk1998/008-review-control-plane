@@ -148,7 +148,9 @@ class FinalReportRenderer:
         findings = [item for item in packet.get('all_findings', []) if isinstance(item, dict)]
         grouped = {module: [] for module in self._module_order(effective_modules)}
         deduped_findings = self._dedupe_findings(findings, effective_modules)
-        normative_validity = self._build_normative_validity(deduped_findings)
+        # Use raw findings (pre-dedup) so normative validity table data is
+        # never lost due to deduplication or module filtering.
+        normative_validity = self._build_normative_validity(findings)
         for finding in deduped_findings:
             module_name = self._resolve_module(finding)
             if module_name not in grouped:
@@ -329,7 +331,15 @@ class FinalReportRenderer:
                 )
             parts.extend(['</tbody>', '</table>', '</div>', '</div>'])
         if section.issues:
-            parts.extend(self._render_issue_cards(section.issues))
+            if normative_validity.checks:
+                parts.extend([
+                    '<div class="structured-report__subsection">',
+                    '<h3 class="structured-report__subsection-title">其他证据验证问题</h3>',
+                    *self._render_issue_cards(section.issues),
+                    '</div>',
+                ])
+            else:
+                parts.extend(self._render_issue_cards(section.issues))
         elif not normative_validity.checks:
             parts.append(f'<p class="structured-report__muted">{html.escape(section.emptyText)}</p>')
         parts.append('</section>')
@@ -686,8 +696,20 @@ class FinalReportRenderer:
                     out.append(str(clause.sourceId))
         return out
 
+    # Hard template→module rules: findings from these templates are ALWAYS
+    # assigned to a fixed module, regardless of keyword/category fallback.
+    _TEMPLATE_HARD_MODULE: dict[str, str] = {
+        'normative_validity_reviewer': 'evidence_validation',
+        'calculation_review_reviewer': 'evidence_validation',
+        'visibility_gap_reviewer': 'evidence_validation',
+    }
+
     def _resolve_module(self, finding: dict[str, Any]) -> str:
         raw_data = finding.get('raw_data') if isinstance(finding.get('raw_data'), dict) else {}
+        # Hard template-based assignment takes priority (AGENTS.md HG-15)
+        template_id = self._clean_text(raw_data.get('template_id'))
+        if template_id in self._TEMPLATE_HARD_MODULE:
+            return self._TEMPLATE_HARD_MODULE[template_id]
         module_name = self._clean_text(raw_data.get('module_name'))
         if module_name in _MODULE_TITLES:
             return module_name

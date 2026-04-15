@@ -512,3 +512,223 @@ def test_calculation_reviewer_in_module_bindings():
     assert 'calculation_review_reviewer' in binding.hermes_templates
 
 
+# ---- Regression tests: evidence validation section stability ----
+
+def test_normative_validity_table_appears_in_evidence_validation_html():
+    """When normativeValidityChecks exist, the evidence_validation section MUST contain the table."""
+    renderer = FinalReportRenderer()
+    packet = FinalReportPacket(
+        review_id='r-norm',
+        executive_summary='',
+        all_findings=[
+            FindingItem(
+                id='NORM-001',
+                title='GB 50303-2015 \u73b0\u884c\u6709\u6548',
+                severity='info',
+                category='evidence_verification',
+                summary='\u7f16\u5236\u4f9d\u636e\u73b0\u884c\u6709\u6548\u6027\u6838\u9a8c\u7ed3\u679c',
+                raw_data={
+                    'template_id': 'normative_validity_reviewer',
+                    'module_name': 'evidence_validation',
+                    'normativeValidityChecks': [
+                        {'title': 'GB 50303-2015', 'status': 'current', 'summary': ''},
+                        {'title': 'DL/T 5161.1-2013', 'status': 'superseded', 'summary': '\u5df2\u88ab\u66ff\u4ee3'},
+                    ],
+                },
+            ),
+        ],
+    )
+    vm = renderer.build_view_model(final_packet=packet)
+    html_output = renderer.render_html(vm)
+    # Table headers must be present
+    assert '\u6838\u9a8c\u72b6\u6001' in html_output
+    assert '\u89c4\u8303\u540d\u79f0' in html_output
+    # Specific check titles must appear
+    assert 'GB 50303-2015' in html_output
+    assert 'DL/T 5161.1-2013' in html_output
+    # Must be in evidence_validation section
+    assert '\u8bc1\u636e\u9a8c\u8bc1' in html_output
+
+
+def test_calculation_finding_only_in_evidence_validation():
+    """Calculation reviewer findings must appear ONLY in evidence_validation, not in other modules."""
+    renderer = FinalReportRenderer()
+    packet = FinalReportPacket(
+        review_id='r-calc',
+        executive_summary='',
+        all_findings=[
+            FindingItem(
+                id='CALC-001',
+                title='\u8350\u8f7d\u8ba1\u7b97\u516c\u5f0f\u9009\u578b\u4e0d\u5f53',
+                severity='medium',
+                category='evidence_verification',
+                summary='\u516c\u5f0f\u9002\u7528\u6027\u5b58\u7591\u3002',
+                raw_data={
+                    'template_id': 'calculation_review_reviewer',
+                    'module_name': 'evidence_validation',
+                },
+            ),
+            FindingItem(
+                id='LEG-001',
+                title='\u65bd\u5de5\u65b9\u6848\u7f16\u5236\u4e3b\u4f53\u4e0d\u5408\u89c4',
+                severity='high',
+                category='compliance',
+                summary='\u7f16\u5236\u4e3b\u4f53\u8d44\u8d28\u4e0d\u7b26\u5408\u8981\u6c42\u3002',
+                raw_data={'module_name': 'legality_compliance'},
+            ),
+        ],
+    )
+    vm = renderer.build_view_model(final_packet=packet)
+    # Find each section by key
+    ev_section = next(s for s in vm.sections if s.key == 'evidence_validation')
+    other_sections = [s for s in vm.sections if s.key != 'evidence_validation']
+    # Calculation finding must be in evidence_validation
+    assert any('\u8350\u8f7d\u8ba1\u7b97' in issue.title for issue in ev_section.issues)
+    # Calculation finding must NOT be in any other section
+    for section in other_sections:
+        assert not any('\u8350\u8f7d\u8ba1\u7b97' in issue.title for issue in section.issues)
+
+
+def test_normative_finding_does_not_leak_to_other_modules():
+    """Normative validity findings (template_id=normative_validity_reviewer) must
+    never appear in legality_compliance or other modules, even if the title
+    contains keywords that would match other module heuristics."""
+    renderer = FinalReportRenderer()
+    packet = FinalReportPacket(
+        review_id='r-leak',
+        executive_summary='',
+        all_findings=[
+            FindingItem(
+                id='NV-001',
+                title='\u7f16\u5236\u4f9d\u636e\u5f15\u7528\u5df2\u5e9f\u6b62/\u8fc7\u671f\u4f01\u4e1a\u6807\u51c6',
+                severity='medium',
+                category='compliance',  # intentionally wrong category
+                summary='\u5e9f\u6b62\u6807\u51c6\u5f15\u7528\u3002',
+                raw_data={
+                    'template_id': 'normative_validity_reviewer',
+                    'module_name': 'legality_compliance',  # intentionally wrong
+                },
+            ),
+        ],
+    )
+    vm = renderer.build_view_model(final_packet=packet)
+    ev_section = next(s for s in vm.sections if s.key == 'evidence_validation')
+    leg_section = next(s for s in vm.sections if s.key == 'legality_compliance')
+    # Hard mapping must override both category and module_name
+    assert any('\u5e9f\u6b62' in issue.title for issue in ev_section.issues)
+    assert not any('\u5e9f\u6b62' in issue.title for issue in leg_section.issues)
+
+
+def test_template_hard_module_overrides_keyword_guessing():
+    """_resolve_module must use template_id hard mapping even when raw_data
+    contains a conflicting module_name."""
+    renderer = FinalReportRenderer()
+    finding = {
+        'id': 'F-1',
+        'title': '\u53c2\u6570\u4e00\u81f4\u6027\u6838\u67e5',
+        'severity': 'medium',
+        'category': 'parameter_consistency',
+        'raw_data': {
+            'template_id': 'calculation_review_reviewer',
+            'module_name': 'parameter_consistency',
+        },
+    }
+    assert renderer._resolve_module(finding) == 'evidence_validation'
+
+
+def test_power_outage_reviewer_no_evidence_validation_module():
+    """power_outage_operation_chain_reviewer must NOT declare evidence_validation
+    in its review_modules metadata."""
+    import json
+    import pathlib
+    template_path = pathlib.Path(__file__).parent.parent / 'src' / 'review' / 'hermes' / 'templates' / 'power_outage_operation_chain_reviewer.json'
+    with open(template_path) as f:
+        template = json.load(f)
+    review_modules = template.get('metadata', {}).get('review_modules', [])
+    assert 'evidence_validation' not in review_modules
+
+
+def test_evidence_validation_subsection_title_when_table_and_issues_coexist():
+    """When both normative validity table and issue cards exist in evidence_validation,
+    the issues must be wrapped in a subsection with heading."""
+    renderer = FinalReportRenderer()
+    packet = FinalReportPacket(
+        review_id='r-sub',
+        executive_summary='',
+        all_findings=[
+            FindingItem(
+                id='NV-SUB-001',
+                title='\u6838\u9a8c\u6982\u89c8',
+                severity='info',
+                category='evidence_verification',
+                summary='',
+                raw_data={
+                    'template_id': 'normative_validity_reviewer',
+                    'module_name': 'evidence_validation',
+                    'normativeValidityChecks': [
+                        {'title': 'GB 50150-2016', 'status': 'current', 'summary': ''},
+                    ],
+                },
+            ),
+            FindingItem(
+                id='CALC-SUB-001',
+                title='\u5b89\u5168\u7cfb\u6570\u53d6\u503c\u4f9d\u636e\u4e0d\u660e',
+                severity='medium',
+                category='evidence_verification',
+                summary='\u672a\u6807\u6ce8\u53d6\u503c\u6765\u6e90\u3002',
+                raw_data={
+                    'template_id': 'calculation_review_reviewer',
+                    'module_name': 'evidence_validation',
+                },
+            ),
+        ],
+    )
+    vm = renderer.build_view_model(final_packet=packet)
+    html_output = renderer.render_html(vm)
+    # Subsection title for issues must appear when table also exists
+    assert '\u5176\u4ed6\u8bc1\u636e\u9a8c\u8bc1\u95ee\u9898' in html_output
+    # Both table and issue content must be present
+    assert 'GB 50150-2016' in html_output
+    assert '\u5b89\u5168\u7cfb\u6570' in html_output
+
+
+def test_normative_validity_table_from_raw_findings_not_lost_by_dedup():
+    """Normative validity checks must be extracted from raw findings (pre-dedup),
+    not from deduplicated findings, so the table is never lost."""
+    renderer = FinalReportRenderer()
+    # Create two findings with same id/title (would be deduped) but only one has checks
+    packet = FinalReportPacket(
+        review_id='r-dedup',
+        executive_summary='',
+        all_findings=[
+            FindingItem(
+                id='DUP-001',
+                title='\u7f16\u5236\u4f9d\u636e\u6838\u9a8c',
+                severity='info',
+                category='evidence_verification',
+                summary='',
+                raw_data={
+                    'template_id': 'normative_validity_reviewer',
+                    'module_name': 'evidence_validation',
+                    'normativeValidityChecks': [
+                        {'title': 'GB 50168-2018', 'status': 'current', 'summary': ''},
+                    ],
+                },
+            ),
+            FindingItem(
+                id='DUP-001',
+                title='\u7f16\u5236\u4f9d\u636e\u6838\u9a8c',
+                severity='info',
+                category='evidence_verification',
+                summary='',
+                raw_data={
+                    'template_id': 'normative_validity_reviewer',
+                    'module_name': 'evidence_validation',
+                },
+            ),
+        ],
+    )
+    vm = renderer.build_view_model(final_packet=packet)
+    # Even though dedup would keep only one finding, the table must be built from raw findings
+    assert len(vm.normativeValidity.checks) >= 1
+    assert any('GB 50168-2018' in c.title for c in vm.normativeValidity.checks)
