@@ -3,12 +3,47 @@ from __future__ import annotations
 import html
 import re
 from difflib import SequenceMatcher
+from pathlib import Path
 from typing import Any
 
+import yaml
 from pydantic import BaseModel, Field
 
 from src.review.contracts import FinalReportPacket
 from src.review.evidence.packs import get_evidence_pack_registry
+
+
+# ---------------------------------------------------------------------------
+# Module routing configuration (loaded from config/module_routing.yaml)
+# ---------------------------------------------------------------------------
+_MODULE_ROUTING_CONFIG: dict[str, Any] | None = None
+_CONFIG_PATH = Path(__file__).resolve().parents[5] / 'config' / 'module_routing.yaml'
+
+
+def _load_module_routing_config() -> dict[str, Any]:
+    """Load and cache module routing keyword configuration."""
+    global _MODULE_ROUTING_CONFIG
+    if _MODULE_ROUTING_CONFIG is not None:
+        return _MODULE_ROUTING_CONFIG
+    if _CONFIG_PATH.exists():
+        with open(_CONFIG_PATH, encoding='utf-8') as f:
+            _MODULE_ROUTING_CONFIG = yaml.safe_load(f) or {}
+    else:
+        _MODULE_ROUTING_CONFIG = {}
+    return _MODULE_ROUTING_CONFIG
+
+
+def _get_module_keywords(document_type: str = '') -> dict[str, list[str]]:
+    """Return merged keyword lists per module: generic + domain-specific."""
+    cfg = _load_module_routing_config()
+    generic = dict(cfg.get('generic', {}))
+    domain = cfg.get('document_types', {}).get(document_type, {})
+    merged: dict[str, list[str]] = {}
+    for module in _MODULE_TITLES:
+        base = list(generic.get(module, []))
+        extra = list(domain.get(module, []))
+        merged[module] = base + extra
+    return merged
 
 
 _MODULE_TITLES = {
@@ -151,6 +186,7 @@ class FinalReportViewModel(BaseModel):
 
 
 class FinalReportRenderer:
+    _document_type: str = ''
     def build_view_model(
         self,
         *,
@@ -162,6 +198,7 @@ class FinalReportRenderer:
         support = dict(support_result or {})
         summary = dict(support.get('summary') or {})
         document_type = str(summary.get('documentType') or packet.get('metadata', {}).get('document_type') or '')
+        self._document_type = document_type
         document_label = _DOCUMENT_TYPE_LABELS.get(document_type, document_type or '审查文档')
         effective_modules = self._resolve_selected_modules(packet, selected_modules)
         support_issues = [item for item in support.get('issues', []) if isinstance(item, dict)]
@@ -753,56 +790,26 @@ class FinalReportRenderer:
         module_name = self._clean_text(raw_data.get('module_name'))
         if module_name in _MODULE_TITLES:
             return module_name
-        # Title keyword fallback — intercepts findings whose category may
-        # be generic ('compliance') but whose topic belongs to a specific
-        # module.  This mirrors agent_runner._resolve_finding_module_name
-        # and ensures cross-template findings are routed correctly.
-        # Order matters: more specific tokens first, broader tokens last.
+
+        # Config-driven keyword routing (generic + domain-specific)
         title_text = f"{self._clean_text(finding.get('title'))} {self._clean_text(finding.get('summary'))}".lower()
+        kw_map = _get_module_keywords(self._document_type)
 
-        # evidence_validation — highest priority for normative/calc findings
-        if any(token in title_text for token in [
-            '编制依据', '现行有效', '废止', '过期', '替代', '规范版本',
-            '标准号', '引用版本', '版本滞后',
-        ]):
-            return 'evidence_validation'
-        if any(token in title_text for token in ['计算', '验算', '公式', '算式', '校核']):
-            return 'evidence_validation'
+        # Route order: evidence_validation first (highest precision),
+        # then structure, parameter, legality, execution.
+        route_order = [
+            'evidence_validation',
+            'structure_completeness',
+            'parameter_consistency',
+            'legality_compliance',
+            'execution_continuity',
+        ]
+        for mod in route_order:
+            keywords = kw_map.get(mod, [])
+            if any(token in title_text for token in keywords):
+                return mod
 
-        # structure_completeness — chapter/outline/framework
-        if any(token in title_text for token in [
-            '章节不完整', '大纲', '目录缺', '框架缺', '缺少章节',
-        ]):
-            return 'structure_completeness'
-
-        # parameter_consistency — numbers/names/units mismatch
-        if any(token in title_text for token in [
-            '名称前后', '前后矛盾', '前后不一致', '数值矛盾',
-            '单位不一致', '人数矛盾', '姓名.*不一致',
-        ]):
-            return 'parameter_consistency'
-
-        # legality_compliance — regulations/safety rules/permits
-        if any(token in title_text for token in [
-            '安规', '强制性条文', '资质', '许可', '工作票', '操作票',
-            '唱票复诵', '双人监护', '不符合.*要求',
-        ]):
-            return 'legality_compliance'
-
-        # execution_continuity — operational steps/sequence/closure
-        if any(token in title_text for token in [
-            '停送电', '工序', '衔接', '闭环', '流程缺失', '执行清单',
-            '拆地线', '核相', '送电流程', '倒闸', '签字确认',
-            '五步法', '十个规定动作',
-        ]):
-            return 'execution_continuity'
-
-        # Broader keywords with lower priority
-        if any(token in title_text for token in ['参数', '荷载', '吨', '重量']):
-            return 'parameter_consistency'
-        if any(token in title_text for token in ['附件', '图纸', '证据']):
-            return 'evidence_validation'
-
+        # Category-based fallback
         category = self._clean_text(finding.get('category'))
         category_map = {
             'chapter_completeness': 'structure_completeness',

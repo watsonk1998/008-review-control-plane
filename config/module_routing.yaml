@@ -1,0 +1,105 @@
+# 模块路由关键词配置
+#
+# 本文件定义 finding → module 的关键词路由规则。
+# 分为 generic（适用所有文档类型）和 document_types（按文档类型叠加）两层。
+#
+# 路由优先级：
+#   1. template_id 硬映射（代码内 _TEMPLATE_HARD_MODULE）
+#   2. module_name 字段直接匹配
+#   3. 标题关键词匹配（本文件定义）—— 先 domain，再 generic
+#   4. category_map fallback
+#
+# 新增文档类型时，只需在 document_types 下添加对应条目。
+# 关键词按模块分组，匹配时对 finding.title + finding.summary 做 lowercase contains。
+
+generic:
+  evidence_validation:
+    - 编制依据
+    - 现行有效
+    - 废止
+    - 过期
+    - 替代
+    - 规范版本
+    - 标准号
+    - 引用版本
+    - 版本滞后
+    - 计算
+    - 验算
+    - 公式
+    - 算式
+    - 校核
+    - 附件
+    - 图纸
+    - 证据
+
+  structure_completeness:
+    - 章节不完整
+    - 章节缺失
+    - 大纲
+    - 目录缺
+    - 框架缺
+    - 缺少章节
+
+  parameter_consistency:
+    - 名称前后
+    - 前后矛盾
+    - 前后不一致
+    - 数值矛盾
+    - 单位不一致
+    - 人数矛盾
+    - 参数
+    - 荷载
+    - 重量
+
+  legality_compliance:
+    - 强制性条文
+    - 资质
+    - 许可
+
+  execution_continuity:
+    - 工序
+    - 衔接
+    - 闭环
+    - 流程缺失
+
+document_types:
+  # 配网工程专项施工方案 / 停电施工方案
+  distribution_network_special_scheme:
+    legality_compliance:
+      - 安规
+      - 工作票
+      - 操作票
+      - 唱票复诵
+      - 双人监护
+      - 不符合.*要求
+    execution_continuity:
+      - 停送电
+      - 拆地线
+      - 核相
+      - 送电流程
+      - 倒闸
+      - 签字确认
+      - 五步法
+      - 十个规定动作
+      - 执行清单
+    parameter_consistency:
+      - 吨
+
+  # 施工组织设计
+  construction_org:
+    legality_compliance:
+      - 安规
+      - 工作票
+      - 安全资质
+    execution_continuity:
+      - 施工工序
+      - 吊装顺序
+      - 基础浇筑
+    parameter_consistency:
+      - 吨位
+      - 起重量
+
+  # 后续新增文档类型在此追加
+  # my_new_doc_type:
+  #   legality_compliance:
+  #     - 某领域法规关键词
