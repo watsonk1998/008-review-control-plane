@@ -1,0 +1,44 @@
+{
+  "id": "normative_validity_reviewer",
+  "agent_name": "法规现行有效性审查",
+  "agent_purpose": "核验方案中引用的法律法规、标准规范是否仍为现行有效版本，并将异常项沉淀到证据验证模块。",
+  "agent_scope": "审查依据的现行状态、废止/替代信号、待人工核验项。",
+  "execution_mode": "module_only",
+  "module_bindings": [
+    "rule_and_evidence"
+  ],
+  "supported_document_types": [],
+  "focus_keywords": [
+    "法律法规",
+    "标准规范",
+    "现行有效",
+    "废止",
+    "替代"
+  ],
+  "required_context_types": [
+    "rule_and_evidence"
+  ],
+  "input_contract": {
+    "requires": [
+      "policy_evidence_sources"
+    ]
+  },
+  "output_contract": {
+    "type": "fact_packet"
+  },
+  "instructions": "对方案中实际引用到的法规和标准做现行有效性核验。优先使用联网公开来源判断；若联网结果与模型判断冲突，以联网结果为准；若联网无法稳定判断，则明确标记为待人工核验。不得编造确定性结论。",
+  "prompt": "请核验本次审查实际引用的法律法规、标准规范是否仍为现行有效版本，并将废止、替代或状态不明的依据单独标记出来。",
+  "default_enabled": true,
+  "save_policy": {},
+  "template_version": "1.0.0",
+  "compatibility": {},
+  "metadata": {
+    "preferred_pack_ids": [],
+    "review_modules": [
+      "evidence_validation"
+    ],
+    "ownership": "support_material"
+  },
+  "input_token_limit": 200000,
+  "output_token_limit": 200000
+}

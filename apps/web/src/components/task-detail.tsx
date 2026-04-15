@@ -44,27 +44,6 @@ const STAGE_LABELS: Record<string, string> = {
   finalize: "已完成",
 };
 
-const EVENT_MESSAGE_TRANSLATIONS: Record<string, string> = {
-  "Document parsed for structured review": "文档解析完成",
-  "Structured facts extracted": "关键事实提取完成",
-  "Rule engine finished": "规则匹配完成",
-  "Evidence candidates assembled": "证据线索整理完成",
-  "Task completed": "任务已完成",
-  "Task failed": "任务执行失败",
-  "Review task created": "审查任务已创建",
-};
-
-function formatEventMessage(message: string | undefined) {
-  const raw = (message || "").trim();
-  if (!raw) return "系统正在有序处理中";
-  return EVENT_MESSAGE_TRANSLATIONS[raw] || raw
-    .replace(/^Selected agent:\s*/i, "已选择专项审查器：")
-    .replace(/^Running agent:\s*/i, "专项审查器运行中：")
-    .replace(/^Completed agent:\s*/i, "专项审查器已完成：")
-    .replace(/^Failed agent:\s*/i, "专项审查器执行失败：")
-    .replace(/^No output from agent:\s*/i, "专项审查器未返回有效结果：");
-}
-
 function estimateRealReviewProgress({
   totalAgents,
   completedAgents,
@@ -94,7 +73,7 @@ function estimateRealReviewProgress({
 }
 
 function estimateSimulatedProgress(elapsedSeconds: number) {
-  return Math.min(90, Math.max(0, Math.floor(elapsedSeconds / 3)));
+  return Math.min(90, Math.max(0, Math.floor(elapsedSeconds / 4)));
 }
 
 function formatElapsed(seconds: number) {
@@ -450,7 +429,9 @@ export function TaskDetail({ taskId }: { taskId: string }) {
       completedAgents,
       simulatedPercent,
       realPercent,
-      progressPercent: Math.max(Math.min(simulatedPercent, 90), realPercent),
+      progressPercent: TERMINAL_STATES.has((task?.status || "").trim().toLowerCase())
+        ? 100
+        : Math.min(90, Math.max(simulatedPercent, Math.min(realPercent, 90))),
     };
   }, [events, structuredResult, task?.createdAt, task?.status, task?.updatedAt, now]);
 

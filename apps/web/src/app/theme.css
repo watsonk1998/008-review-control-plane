@@ -1,5 +1,5 @@
 :root {
-  --background: #FAF9F6;
+  --background: #FFFFFF;
   --foreground: #2D2D2D;
   
   --card: #FFFFFF;
@@ -699,7 +699,7 @@ main.shell {
 }
 
 .expert-report-card {
-  background: linear-gradient(180deg, #FFFFFF 0%, #FCFCFD 100%);
+  background: #FFFFFF;
 }
 
 .structured-report-host {

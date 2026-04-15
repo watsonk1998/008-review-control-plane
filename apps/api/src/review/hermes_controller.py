@@ -56,6 +56,7 @@ class HermesController:
         self.agent_runner = HermesAgentRunner(
             hermes_engine=hermes_engine,
             module_registry=self.module_registry,
+            llm_gateway=llm_gateway,
         )
         self.assembler = HermesReviewAssembler()
         self.presentation_agent = HermesPresentationAgent(llm_gateway=self.llm_gateway)

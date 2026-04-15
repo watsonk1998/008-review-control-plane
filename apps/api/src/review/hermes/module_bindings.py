@@ -60,7 +60,7 @@ REVIEW_MODULE_BINDINGS: dict[str, ReviewModuleBinding] = {
     'evidence_validation': ReviewModuleBinding(
         module_name='evidence_validation',
         title='证据验证',
-        hermes_templates=['visibility_gap_reviewer'],
+        hermes_templates=['visibility_gap_reviewer', 'normative_validity_reviewer'],
         support_capabilities=['parse_visibility', 'rule_and_evidence'],
         decision_policy='degrade_when_evidence_is_insufficient',
         result_bucket='evidence_validation',

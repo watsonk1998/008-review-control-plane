@@ -23,11 +23,15 @@ def _support_issue(issue_id: str, title: str, excerpt: str | None = None):
     }
 
 
-def test_final_report_view_model_builds_sections_and_chapter_notes():
+def test_final_report_view_model_builds_sections_and_compact_chapter_matrix():
     renderer = FinalReportRenderer()
     packet = FinalReportPacket(
         review_id='r1',
-        executive_summary='总体评级：需要修改。',
+        executive_summary=(
+            '本次审查已由专业主审组件裁决完成，总体评级结论为：**不通过**。 '
+            '底层设施提供事实抽提保障，当前命中 9 个预警指标（其中高危项 2 个，中阶 7 个，浅层瑕疵 0 个）。 '
+            '经综合审阅与交叉校验，主审环节额外标注了 88 个需重点复核的深层风险点。'
+        ),
         all_findings=[
             FindingItem(
                 id='ISSUE-001',
@@ -39,7 +43,10 @@ def test_final_report_view_model_builds_sections_and_chapter_notes():
                 raw_data={
                     'module_name': 'structure_completeness',
                     'docEvidence': [{'excerpt': '第3章 3.1.2 计划停电工作时间'}],
-                    'policyEvidence': [{'sourceId': 'construction-《危险性较大的分部分项工程专项施工方案编制指南》（建办质〔2021〕48号）', 'clauseTitle': '停电施工作业专项补充目录要求'}],
+                    'policyEvidence': [
+                        {'sourceId': 'construction-《危险性较大的分部分项工程专项施工方案编制指南》（建办质〔2021〕48号）', 'clauseTitle': '停电施工作业专项补充目录要求'},
+                        {'sourceId': 'power-grid-监理工程师对停电施工方案的审核规则及要点', 'clauseTitle': '停电范围'},
+                    ],
                 },
             ),
             FindingItem(
@@ -59,6 +66,32 @@ def test_final_report_view_model_builds_sections_and_chapter_notes():
                 summary='主体名称不一致。',
                 suggestion='统一主体名称。',
                 raw_data={'module_name': 'legality_compliance'},
+            ),
+            FindingItem(
+                id='H-NORM-SUM-001',
+                title='审查依据现行有效性核验',
+                severity='info',
+                category='evidence_verification',
+                summary='共核验 2 项审查依据。',
+                raw_data={
+                    'module_name': 'evidence_validation',
+                    'normativeValidityChecks': [
+                        {
+                            'title': '《建设工程安全生产管理条例》',
+                            'status': 'current',
+                            'resolvedBy': 'web',
+                            'summary': '联网结果未见废止或替代信号。',
+                            'evidenceTitle': '国务院文件库',
+                        },
+                        {
+                            'title': '《电气装置安装工程低压电器施工及验收规范》GB 50254-2014',
+                            'status': 'unknown',
+                            'resolvedBy': 'web',
+                            'summary': '未能从公开摘要稳定判断现行状态。',
+                            'evidenceTitle': '国家标准全文公开系统',
+                        },
+                    ],
+                },
             ),
         ],
     )
@@ -87,7 +120,7 @@ def test_final_report_view_model_builds_sections_and_chapter_notes():
                     'basisClause': '停电施工作业专项补充要求',
                     'basisRequirement': '应明确作业内容',
                     'status': 'partial',
-                    'matchedSections': [{'title': '第3章 本次停电作业内容及安全技术措施'}],
+                    'matchedSections': [{'title': '第3章 本次停电作业内容及安全技术措施'}, {'title': '3.2.3 停电范围及操作边界'}],
                     'analysis': '已命中部分章节，但内容仍不完整。',
                     'reportExcerpt': '建议补齐作业内容边界。',
                 },
@@ -97,18 +130,21 @@ def test_final_report_view_model_builds_sections_and_chapter_notes():
 
     view_model = renderer.build_view_model(final_packet=packet, support_result=support_result)
 
-    assert view_model.sections[0].title == '章节完整性'
-    assert view_model.sections[1].title == '参数一致性'
-    assert view_model.sections[2].title == '合法合规性'
-    assert view_model.chapterCompleteness.tableRows[0].requirement == '停电范围'
-    assert view_model.chapterCompleteness.notes
-    assert view_model.sections[1].issues[0].location.startswith('3.1.2')
-    assert view_model.sections[2].issues[0].location.startswith('第2章')
+    assert view_model.executiveSummaryView.verdict == '不通过'
+    assert view_model.executiveSummaryView.metrics[0].value == '9 项'
+    assert '监理工程师对停电施工方案的审核规则及要点' not in view_model.basisFiles
+    assert all('条文' not in item for item in view_model.basisFiles)
+    assert view_model.chapterCompleteness.tableRows[1].matchedSection == '第3章、3.2.3'
+    assert not getattr(view_model.chapterCompleteness, 'notes', [])
+    assert view_model.normativeValidity.checks[0].statusLabel == '现行有效'
     html = renderer.render_html(view_model)
     assert '问题定位' in html
     assert '章节完整性矩阵' in html
+    assert '审查依据现行有效性核验' in html
     assert 'structured-report__issue-card--high' in html
     assert 'structured-report__issue-card--medium' in html
+    assert '补充说明' not in html
+    assert '**不通过**' not in html
 
 
 def test_final_report_view_model_location_fallback_priority():

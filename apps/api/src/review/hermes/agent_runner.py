@@ -4,15 +4,18 @@ from datetime import datetime, timezone
 from typing import Any
 
 from src.review.contracts import FactPacket, FindingItem, ReviewPacketMetrics
-from src.review.hermes.module_bindings import template_review_modules
 from src.review.hermes.constants import is_primary_template_id
+from src.review.hermes.module_bindings import template_review_modules
+from src.review.hermes.normative_validity import NormativeValidityChecker
 from src.review.hermes.template_models import AgentRunResult, AgentTemplate
 
 
 class HermesAgentRunner:
-    def __init__(self, *, hermes_engine, module_registry):
+    def __init__(self, *, hermes_engine, module_registry, llm_gateway=None, normative_validity_checker=None):
         self.hermes_engine = hermes_engine
         self.module_registry = module_registry
+        self.llm_gateway = llm_gateway
+        self.normative_validity_checker = normative_validity_checker or NormativeValidityChecker(llm_gateway=llm_gateway)
 
     async def run_template(
         self,
@@ -30,7 +33,7 @@ class HermesAgentRunner:
                 workspace=workspace,
                 context=context,
             )
-            
+
         if template.execution_mode == 'hermes_router':
             parse_result = workspace.get('parse_result')
             doc_text = parse_result.normalizedText if parse_result else ''
@@ -55,7 +58,11 @@ class HermesAgentRunner:
                 'output_token_limit': template.output_token_limit,
             }
         else:
-            packet = self._module_output_to_packet(template=template, workspace=workspace)
+            if template.id == 'normative_validity_reviewer':
+                packet = await self._build_normative_validity_packet(template=template, workspace=workspace)
+            else:
+                packet = self._module_output_to_packet(template=template, workspace=workspace)
+
         return AgentRunResult(
             agent_id=template.id,
             template_id=template.id,
@@ -89,6 +96,8 @@ class HermesAgentRunner:
             return 'execution_continuity'
         if any(token in title for token in ['参数', 'capacity', '荷载', '吨', '重量', '一致']):
             return 'parameter_consistency'
+        if any(token in title for token in ['依据', '证据', '现行有效', '废止', '替代']):
+            return 'evidence_validation'
         return ''
 
     def _module_output_to_packet(self, *, template: AgentTemplate, workspace: dict[str, Any]) -> FactPacket | None:
@@ -109,38 +118,39 @@ class HermesAgentRunner:
             for finding in packet.findings:
                 self._annotate_finding_ownership(template, finding)
             return packet
+
         if template.id == 'visibility_gap_reviewer':
             parse_result = workspace.get('parse_result')
             if parse_result is None:
                 return None
             visibility = parse_result.visibility
             findings: list[FindingItem] = []
-            
             reason_zh_map = {
-                "reference_detected_without_attachment_body": "正文引用了附件或图纸，但系统未能扫描到其实质内容。",
-                "pdf_contains_images": "文档由于包含纯图片或未识别节点，部分内页可能未能完全提取。",
-                "attachment_file_too_large": "部分附件或图纸超出了自动挂载体积限制。",
-                "unsupported_attachment_format": "部分图纸格式暂不支持完全结构化阅读。",
+                'reference_detected_without_attachment_body': '正文引用了附件或图纸，但系统未能扫描到其实质内容。',
+                'pdf_contains_images': '文档由于包含纯图片或未识别节点，部分内页可能未能完全提取。',
+                'attachment_file_too_large': '部分附件或图纸超出了自动挂载体积限制。',
+                'unsupported_attachment_format': '部分图纸格式暂不支持完全结构化阅读。',
             }
-            
             if visibility.manualReviewNeeded:
-                raw_reason = visibility.manualReviewReason or ""
+                raw_reason = visibility.manualReviewReason or ''
                 mapped_reason = reason_zh_map.get(raw_reason, raw_reason) if raw_reason else '存在未解析的附件、图纸或系统提取限制。'
-                
-                findings.append(FindingItem(
-                    id='H-VIS-001',
-                    title='附件及图纸解析受限，请结合原件复核',
-                    severity='medium',
-                    category='visibility',
-                    finding_type='visibility_gap',
-                    evidence_status='visibility_gap',
-                    summary=mapped_reason,
-                    suggestion='提取盲区不影响核心指标评级。请根据提示，自行确认图纸或附件内容是否无误。',
-                    source_engine='hermes',
-                    raw_data={'attachment_count': visibility.attachmentCount},
-                ))
+                findings.append(
+                    FindingItem(
+                        id='H-VIS-001',
+                        title='附件及图纸解析受限，请结合原件复核',
+                        severity='medium',
+                        category='visibility',
+                        finding_type='visibility_gap',
+                        evidence_status='visibility_gap',
+                        summary=mapped_reason,
+                        suggestion='提取盲区不影响核心指标评级。请根据提示，自行确认图纸或附件内容是否无误。',
+                        source_engine='hermes',
+                        raw_data={'attachment_count': visibility.attachmentCount},
+                    )
+                )
                 self._annotate_finding_ownership(template, findings[-1])
             return self._build_packet(template, findings, overall='可视域检查已完成。')
+
         if template.id == 'policy_compliance_reviewer':
             candidates = workspace.get('candidates') or []
             findings: list[FindingItem] = []
@@ -158,27 +168,80 @@ class HermesAgentRunner:
                 else:
                     category = 'compliance'
 
-                findings.append(FindingItem(
-                    id=f'H-POL-{idx:03d}',
-                    title=candidate.title,
-                    severity=candidate.severityHint,
-                    category=category,
-                    layer=str(candidate.layerHint),
-                    evidence_status='grounded' if candidate.policyEvidence else 'evidence_gap',
-                    basis_refs=[getattr(span.locator, 'clauseId', '') for span in candidate.policyEvidence if getattr(span, 'locator', None)],
-                    summary='; '.join(hit.rationale for hit in candidate.ruleHits if hit.rationale)[:300],
-                    suggestion='结合命中规则与规范条款进一步补齐正文。',
-                    source_engine='hermes',
-                    finding_type=candidate.findingType.value,
-                    raw_data={
-                        'rule_ids': rule_ids,
-                        'corroborates_008_finding': candidate.candidateId,
-                    },
-                ))
+                findings.append(
+                    FindingItem(
+                        id=f'H-POL-{idx:03d}',
+                        title=candidate.title,
+                        severity=candidate.severityHint,
+                        category=category,
+                        layer=str(candidate.layerHint),
+                        evidence_status='grounded' if candidate.policyEvidence else 'evidence_gap',
+                        basis_refs=[getattr(span.locator, 'clauseId', '') for span in candidate.policyEvidence if getattr(span, 'locator', None)],
+                        summary='; '.join(hit.rationale for hit in candidate.ruleHits if hit.rationale)[:300],
+                        suggestion='结合命中规则与规范条款进一步补齐正文。',
+                        source_engine='hermes',
+                        finding_type=candidate.findingType.value,
+                        raw_data={
+                            'rule_ids': rule_ids,
+                            'corroborates_008_finding': candidate.candidateId,
+                        },
+                    )
+                )
                 self._annotate_finding_ownership(template, findings[-1])
             return self._build_packet(template, findings, overall='规范命中与证据线索已整理。')
         return None
 
+    async def _build_normative_validity_packet(self, *, template: AgentTemplate, workspace: dict[str, Any]) -> FactPacket:
+        checks = await self.normative_validity_checker.verify_candidates(workspace.get('candidates') or [])
+        if not checks:
+            return self._build_packet(template, [], overall='未识别到可执行现行有效性核验的法规或标准。')
+
+        findings: list[FindingItem] = [
+            FindingItem(
+                id='H-NORM-SUM-001',
+                title='审查依据现行有效性核验',
+                severity='info',
+                category='evidence_verification',
+                layer='L2',
+                evidence_status='grounded' if any(item.get('resolvedBy') == 'web' for item in checks) else 'inferred',
+                summary=(
+                    f"共核验 {len(checks)} 项审查依据，其中现行有效 {sum(1 for item in checks if item.get('status') == 'current')} 项，"
+                    f"疑似废止/替代 {sum(1 for item in checks if item.get('status') == 'superseded')} 项，"
+                    f"待人工核验 {sum(1 for item in checks if item.get('status') == 'unknown')} 项。"
+                ),
+                suggestion='现行状态异常或未核实的依据，应在正式引用前补做联网或人工复核。',
+                source_engine='hermes',
+                finding_type='normative_validity_summary',
+                raw_data={
+                    'module_name': 'evidence_validation',
+                    'normativeValidityChecks': checks,
+                },
+            )
+        ]
+        self._annotate_finding_ownership(template, findings[0])
+        for idx, check in enumerate(checks, start=1):
+            if check.get('status') == 'current':
+                continue
+            findings.append(
+                FindingItem(
+                    id=f'H-NORM-{idx:03d}',
+                    title=f"审查依据现行有效性存在疑点：{check.get('title', '')}",
+                    severity='medium' if check.get('status') == 'superseded' else 'info',
+                    category='evidence_verification',
+                    layer='L2',
+                    evidence_status='grounded' if check.get('resolvedBy') == 'web' else 'inferred',
+                    summary=str(check.get('summary') or '当前依据的现行状态仍需进一步复核。'),
+                    suggestion='如该依据已废止、被替代或状态不明，请改用现行版本并同步修正文内引用。',
+                    source_engine='hermes',
+                    finding_type='normative_validity_issue',
+                    raw_data={
+                        'module_name': 'evidence_validation',
+                        'normativeValidityCheck': check,
+                    },
+                )
+            )
+            self._annotate_finding_ownership(template, findings[-1])
+        return self._build_packet(template, findings, overall='审查依据现行有效性核验已完成。')
 
     def _template_review_modules(self, template: AgentTemplate) -> list[str]:
         configured = list(template.metadata.get('review_modules') or [])

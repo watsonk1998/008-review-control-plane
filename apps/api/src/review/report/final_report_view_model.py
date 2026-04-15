@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import html
 import re
-from pathlib import Path
 from typing import Any
 
 from pydantic import BaseModel, Field
@@ -49,6 +48,30 @@ _DOCUMENT_TYPE_LABELS = {
     'review_support_material': '审查支持材料',
 }
 
+_VALIDITY_STATUS_LABELS = {
+    'current': '现行有效',
+    'superseded': '疑似废止/替代',
+    'unknown': '待人工核验',
+}
+
+_VALIDITY_RESOLVER_LABELS = {
+    'web': '联网校验',
+    'llm': '模型判断',
+    'heuristic': '规则兜底',
+}
+
+
+class ExecutiveSummaryMetricView(BaseModel):
+    label: str
+    value: str
+    tone: str = 'neutral'
+
+
+class ExecutiveSummaryView(BaseModel):
+    verdict: str = ''
+    narrative: str = ''
+    metrics: list[ExecutiveSummaryMetricView] = Field(default_factory=list)
+
 
 class FinalReportIssueView(BaseModel):
     id: str
@@ -78,23 +101,35 @@ class ChapterCompletenessRowView(BaseModel):
     note: str
 
 
-class ChapterCompletenessNoteView(BaseModel):
-    title: str
-    description: str
-
-
 class ChapterCompletenessView(BaseModel):
     title: str = '章节完整性'
     tableRows: list[ChapterCompletenessRowView] = Field(default_factory=list)
-    notes: list[ChapterCompletenessNoteView] = Field(default_factory=list)
+
+
+class NormativeValidityCheckView(BaseModel):
+    title: str
+    status: str
+    statusLabel: str
+    resolvedBy: str
+    resolvedByLabel: str
+    evidence: str
+    summary: str
+
+
+class NormativeValidityView(BaseModel):
+    title: str = '审查依据现行有效性核验'
+    summary: str = ''
+    checks: list[NormativeValidityCheckView] = Field(default_factory=list)
 
 
 class FinalReportViewModel(BaseModel):
     title: str
     documentTypeLabel: str
     executiveSummary: str
+    executiveSummaryView: ExecutiveSummaryView = Field(default_factory=ExecutiveSummaryView)
     basisFiles: list[str] = Field(default_factory=list)
     chapterCompleteness: ChapterCompletenessView = Field(default_factory=ChapterCompletenessView)
+    normativeValidity: NormativeValidityView = Field(default_factory=NormativeValidityView)
     sections: list[FinalReportSectionView] = Field(default_factory=list)
 
 
@@ -112,15 +147,21 @@ class FinalReportRenderer:
         document_label = _DOCUMENT_TYPE_LABELS.get(document_type, document_type or '审查文档')
         support_issues = [item for item in support.get('issues', []) if isinstance(item, dict)]
         structure_rows = [item for item in ((support.get('matrices') or {}).get('structureCompleteness') or []) if isinstance(item, dict)]
-        basis_files = self._collect_basis_files(packet, support)
+        basis_files = self._collect_basis_files(packet, support_issues)
         findings = [item for item in packet.get('all_findings', []) if isinstance(item, dict)]
         grouped = {module: [] for module in _MODULE_ORDER}
-        for finding in self._dedupe_findings(findings):
+        deduped_findings = self._dedupe_findings(findings)
+        normative_validity = self._build_normative_validity(deduped_findings)
+        for finding in deduped_findings:
             grouped[self._resolve_module(finding)].append(finding)
 
         sections: list[FinalReportSectionView] = []
         for module in _MODULE_ORDER:
-            issues = [self._build_issue_view(finding, support_issues, structure_rows) for finding in grouped[module]]
+            issues = [
+                self._build_issue_view(finding, support_issues, structure_rows)
+                for finding in grouped[module]
+                if not self._is_normative_validity_summary_finding(finding)
+            ]
             sections.append(
                 FinalReportSectionView(
                     key=module,
@@ -129,12 +170,15 @@ class FinalReportRenderer:
                 )
             )
 
+        executive_summary = self._clean_text(packet.get('executive_summary') or support.get('finalReportMarkdown') or '')
         return FinalReportViewModel(
             title=f'{document_label}形式审查报告',
             documentTypeLabel=document_label,
-            executiveSummary=str(packet.get('executive_summary') or support.get('finalReportMarkdown') or '').strip(),
+            executiveSummary=executive_summary,
+            executiveSummaryView=self._parse_executive_summary(executive_summary),
             basisFiles=basis_files,
             chapterCompleteness=self._build_chapter_completeness(structure_rows),
+            normativeValidity=normative_validity,
             sections=sections,
         )
 
@@ -146,12 +190,14 @@ class FinalReportRenderer:
             '<h2 class="structured-report__section-title">第一部分：审查结论与审查依据</h2>',
             '<div class="structured-report__subsection">',
             '<h3 class="structured-report__subsection-title">1. 总体审查结论</h3>',
-            f'<p class="structured-report__summary">{html.escape(view_model.executiveSummary or "本次未生成可展示的综合结论。")}</p>',
+        ]
+        parts.extend(self._render_executive_summary(view_model.executiveSummaryView, view_model.executiveSummary))
+        parts.extend([
             '</div>',
             '<div class="structured-report__subsection">',
             '<h3 class="structured-report__subsection-title">2. 审查依据文件</h3>',
             '<ul class="structured-report__basis-list">',
-        ]
+        ])
         if view_model.basisFiles:
             parts.extend(f'<li>{html.escape(item)}</li>' for item in view_model.basisFiles)
         else:
@@ -162,6 +208,8 @@ class FinalReportRenderer:
         for section in view_model.sections:
             if section.key == 'structure_completeness':
                 parts.extend(self._render_chapter_completeness_section(section_number, section, view_model.chapterCompleteness))
+            elif section.key == 'evidence_validation':
+                parts.extend(self._render_evidence_validation_section(section_number, section, view_model.normativeValidity))
             else:
                 parts.extend(self._render_issue_section(section_number, section))
             section_number += 1
@@ -170,6 +218,33 @@ class FinalReportRenderer:
 
     def render_print_css(self) -> str:
         return _FINAL_REPORT_CSS
+
+    def _render_executive_summary(self, summary_view: ExecutiveSummaryView, raw_text: str) -> list[str]:
+        parts: list[str] = []
+        if summary_view.verdict:
+            parts.extend([
+                '<div class="structured-report__verdict-row">',
+                '<span class="structured-report__verdict-label">总体评级结论</span>',
+                f'<span class="structured-report__verdict-badge">{html.escape(summary_view.verdict)}</span>',
+                '</div>',
+            ])
+        if summary_view.metrics:
+            parts.extend(['<div class="structured-report__summary-metrics">'])
+            for metric in summary_view.metrics:
+                parts.extend([
+                    f'<div class="structured-report__summary-metric structured-report__summary-metric--{html.escape(metric.tone)}">',
+                    f'<div class="structured-report__summary-metric-label">{html.escape(metric.label)}</div>',
+                    f'<div class="structured-report__summary-metric-value">{html.escape(metric.value)}</div>',
+                    '</div>',
+                ])
+            parts.append('</div>')
+        if summary_view.narrative:
+            parts.append(f'<p class="structured-report__summary">{html.escape(summary_view.narrative)}</p>')
+        elif raw_text:
+            parts.append(f'<p class="structured-report__summary">{html.escape(raw_text.replace("**", ""))}</p>')
+        else:
+            parts.append('<p class="structured-report__summary">本次未生成可展示的综合结论。</p>')
+        return parts
 
     def _render_chapter_completeness_section(
         self,
@@ -202,20 +277,6 @@ class FinalReportRenderer:
                     '</tr>'
                 )
             parts.extend(['</tbody>', '</table>', '</div>', '</div>'])
-        if chapter.notes:
-            parts.extend([
-                '<div class="structured-report__subsection">',
-                '<h3 class="structured-report__subsection-title">补充说明</h3>',
-                '<div class="structured-report__note-list">',
-            ])
-            for note in chapter.notes:
-                parts.extend([
-                    '<section class="structured-report__note-card">',
-                    f'<h4 class="structured-report__note-title">{html.escape(note.title)}</h4>',
-                    f'<p class="structured-report__note-text">{html.escape(note.description)}</p>',
-                    '</section>',
-                ])
-            parts.extend(['</div>', '</div>'])
         if section.issues:
             parts.extend([
                 '<div class="structured-report__subsection">',
@@ -223,7 +284,49 @@ class FinalReportRenderer:
                 *self._render_issue_cards(section.issues),
                 '</div>',
             ])
-        elif not chapter.tableRows and not chapter.notes:
+        elif not chapter.tableRows:
+            parts.append(f'<p class="structured-report__muted">{html.escape(section.emptyText)}</p>')
+        parts.append('</section>')
+        return parts
+
+    def _render_evidence_validation_section(
+        self,
+        section_number: int,
+        section: FinalReportSectionView,
+        normative_validity: NormativeValidityView,
+    ) -> list[str]:
+        parts = [
+            '<section class="structured-report__section">',
+            f'<h2 class="structured-report__section-title">第{_number_to_cn(section_number)}部分：{html.escape(section.title)}</h2>',
+        ]
+        if normative_validity.checks:
+            parts.extend([
+                '<div class="structured-report__subsection">',
+                f'<h3 class="structured-report__subsection-title">{html.escape(normative_validity.title)}</h3>',
+            ])
+            if normative_validity.summary:
+                parts.append(f'<p class="structured-report__summary">{html.escape(normative_validity.summary)}</p>')
+            parts.extend([
+                '<div class="structured-report__table-wrap">',
+                '<table class="structured-report__matrix-table structured-report__matrix-table--validity">',
+                '<thead><tr><th>序号</th><th>规范名称</th><th>核验状态</th><th>核验方式</th><th>说明</th><th>依据来源</th></tr></thead>',
+                '<tbody>',
+            ])
+            for index, check in enumerate(normative_validity.checks, start=1):
+                parts.append(
+                    '<tr>'
+                    f'<td>{index}</td>'
+                    f'<td>{html.escape(check.title)}</td>'
+                    f'<td>{html.escape(check.statusLabel)}</td>'
+                    f'<td>{html.escape(check.resolvedByLabel)}</td>'
+                    f'<td>{html.escape(check.summary)}</td>'
+                    f'<td>{html.escape(check.evidence)}</td>'
+                    '</tr>'
+                )
+            parts.extend(['</tbody>', '</table>', '</div>', '</div>'])
+        if section.issues:
+            parts.extend(self._render_issue_cards(section.issues))
+        elif not normative_validity.checks:
             parts.append(f'<p class="structured-report__muted">{html.escape(section.emptyText)}</p>')
         parts.append('</section>')
         return parts
@@ -247,10 +350,15 @@ class FinalReportRenderer:
             parts.extend([
                 f'<article class="structured-report__issue-card {severity_class}">',
                 f'<h3 class="structured-report__issue-card-title">{index}. 【{html.escape(issue.severityLabel)}】{html.escape(issue.title)}</h3>',
-                '<section class="structured-report__issue-card-section">',
-                '<div class="structured-report__issue-card-section-title">问题定位</div>',
-                f'<p class="structured-report__issue-card-text">{html.escape(issue.location)}</p>',
-                '</section>',
+            ])
+            if issue.location:
+                parts.extend([
+                    '<section class="structured-report__issue-card-section">',
+                    '<div class="structured-report__issue-card-section-title">问题定位</div>',
+                    f'<p class="structured-report__issue-card-text">{html.escape(issue.location)}</p>',
+                    '</section>',
+                ])
+            parts.extend([
                 '<section class="structured-report__issue-card-section">',
                 '<div class="structured-report__issue-card-section-title">问题描述</div>',
                 f'<p class="structured-report__issue-card-text">{html.escape(issue.description)}</p>',
@@ -276,11 +384,9 @@ class FinalReportRenderer:
 
     def _build_chapter_completeness(self, rows: list[dict[str, Any]]) -> ChapterCompletenessView:
         table_rows: list[ChapterCompletenessRowView] = []
-        notes: list[ChapterCompletenessNoteView] = []
         for index, row in enumerate(rows, start=1):
             matched_section = self._matched_section_text(row.get('matchedSections') or [])
             status = str(row.get('status') or 'missing')
-            note = self._chapter_row_note(row)
             table_rows.append(
                 ChapterCompletenessRowView(
                     index=index,
@@ -289,17 +395,60 @@ class FinalReportRenderer:
                     matchedSection=matched_section,
                     status=status,
                     statusLabel=_STATUS_LABELS.get(status, status),
-                    note=note,
+                    note=self._chapter_row_note(row),
                 )
             )
-            if status in {'partial', 'missing', 'blocked_by_visibility'}:
-                notes.append(
-                    ChapterCompletenessNoteView(
-                        title=self._clean_text(row.get('requirementLabel')) or f'结构项 {index}',
-                        description=self._chapter_note_description(row),
-                    )
-                )
-        return ChapterCompletenessView(tableRows=table_rows, notes=notes)
+        return ChapterCompletenessView(tableRows=table_rows)
+
+    def _build_normative_validity(self, findings: list[dict[str, Any]]) -> NormativeValidityView:
+        checks: list[NormativeValidityCheckView] = []
+        seen_keys: set[str] = set()
+        for finding in findings:
+            raw_data = finding.get('raw_data') if isinstance(finding.get('raw_data'), dict) else {}
+            for item in raw_data.get('normativeValidityChecks') or []:
+                if not isinstance(item, dict):
+                    continue
+                view = self._build_normative_validity_check(item)
+                if not view:
+                    continue
+                dedupe_key = f'{view.title}|{view.status}|{view.evidence}'
+                if dedupe_key in seen_keys:
+                    continue
+                seen_keys.add(dedupe_key)
+                checks.append(view)
+            single_check = raw_data.get('normativeValidityCheck')
+            if isinstance(single_check, dict):
+                view = self._build_normative_validity_check(single_check)
+                if view:
+                    dedupe_key = f'{view.title}|{view.status}|{view.evidence}'
+                    if dedupe_key not in seen_keys:
+                        seen_keys.add(dedupe_key)
+                        checks.append(view)
+        if not checks:
+            return NormativeValidityView()
+        current_count = sum(1 for item in checks if item.status == 'current')
+        superseded_count = sum(1 for item in checks if item.status == 'superseded')
+        unknown_count = sum(1 for item in checks if item.status == 'unknown')
+        summary = f'共核验 {len(checks)} 项审查依据，其中现行有效 {current_count} 项，疑似废止/替代 {superseded_count} 项，待人工核验 {unknown_count} 项。'
+        return NormativeValidityView(summary=summary, checks=checks)
+
+    def _build_normative_validity_check(self, item: dict[str, Any]) -> NormativeValidityCheckView | None:
+        title = self._clean_text(item.get('title')) or self._clean_text(item.get('sourceTitle'))
+        if not title:
+            return None
+        status = self._clean_text(item.get('status')) or 'unknown'
+        resolved_by = self._clean_text(item.get('resolvedBy')) or 'heuristic'
+        evidence = self._clean_text(item.get('evidenceTitle')) or self._clean_text(item.get('evidenceUrl')) or '未检索到权威公开依据'
+        summary = self._clean_text(item.get('summary')) or '当前未提取到更详细的核验说明。'
+        return NormativeValidityCheckView(
+            title=title,
+            status=status,
+            statusLabel=_VALIDITY_STATUS_LABELS.get(status, status),
+            resolvedBy=resolved_by,
+            resolvedByLabel=_VALIDITY_RESOLVER_LABELS.get(resolved_by, resolved_by),
+            evidence=evidence,
+            summary=summary,
+        )
 
     def _build_issue_view(
         self,
@@ -345,48 +494,54 @@ class FinalReportRenderer:
         support_issue: dict[str, Any] | None,
         structure_rows: list[dict[str, Any]],
     ) -> str:
-        candidates: list[str] = []
         raw_data = finding.get('raw_data') if isinstance(finding.get('raw_data'), dict) else {}
+        matched_sections = (support_issue or {}).get('matchedSections') or raw_data.get('matchedSections') or []
+        matched_text = self._matched_section_text(matched_sections)
+        if matched_text and matched_text != '未识别到稳定对应章节':
+            return matched_text
+
+        for row in self._matching_structure_rows(finding, structure_rows):
+            matched_text = self._matched_section_text(row.get('matchedSections') or [])
+            if matched_text and matched_text != '未识别到稳定对应章节':
+                return matched_text
+
+        candidates: list[str] = []
         for source in [raw_data, support_issue or {}, finding]:
             for evidence in source.get('docEvidence') or []:
                 if isinstance(evidence, dict):
                     excerpt = self._clean_text(evidence.get('excerpt'))
                     if excerpt:
                         candidates.append(excerpt)
-        if support_issue is not None:
-            matched_sections = support_issue.get('matchedSections') or []
-            for item in matched_sections:
-                if isinstance(item, dict):
-                    title = self._clean_text(item.get('title'))
-                    if title:
-                        candidates.append(title)
-        title = self._clean_text(finding.get('title'))
-        if title:
-            for row in structure_rows:
-                analysis = self._clean_text(row.get('analysis'))
-                excerpt = self._clean_text(row.get('reportExcerpt'))
-                requirement = self._clean_text(row.get('requirementLabel'))
-                if any(title in value for value in [analysis, excerpt, requirement] if value):
-                    section_text = self._matched_section_text(row.get('matchedSections') or [])
-                    if section_text and section_text != '未识别到稳定对应章节':
-                        candidates.append(section_text)
         for candidate in candidates:
             precise = self._format_location_candidate(candidate)
             if precise:
                 return precise
         return '未定位到稳定章节，请结合原文复核。'
 
+    def _matching_structure_rows(self, finding: dict[str, Any], structure_rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        raw_data = finding.get('raw_data') if isinstance(finding.get('raw_data'), dict) else {}
+        title = self._clean_text(finding.get('title'))
+        item_key = self._clean_text(raw_data.get('structure_item_key'))
+        results: list[dict[str, Any]] = []
+        for row in structure_rows:
+            if item_key and item_key == self._clean_text(row.get('itemKey')):
+                results.append(row)
+                continue
+            analysis = self._clean_text(row.get('analysis'))
+            excerpt = self._clean_text(row.get('reportExcerpt'))
+            requirement = self._clean_text(row.get('requirementLabel'))
+            if title and any(title in value for value in [analysis, excerpt, requirement] if value):
+                results.append(row)
+        return results
+
     def _format_location_candidate(self, text: str) -> str:
         value = self._clean_text(text)
         if not value:
             return ''
-        locator_match = re.search(r'(第[一二三四五六七八九十百零〇两]+章(?:第[一二三四五六七八九十百零〇两]+节)?|(?:\d+\.)+\d+节?|\d+\.\d+)', value)
-        if locator_match:
-            locator = locator_match.group(1)
-            trimmed = value[:60].strip('；;，,。. ')
-            if locator in trimmed:
-                return trimmed
-            return f'{locator} {trimmed}'.strip()
+        locators = self._extract_section_locators(value)
+        if locators:
+            prefix = ' '.join(locators[:2])
+            return prefix if len(prefix) <= 32 else prefix[:32].rstrip()
         if len(value) <= 60:
             return value
         return f'{value[:56].rstrip()}…'
@@ -400,7 +555,7 @@ class FinalReportRenderer:
                     continue
                 source_id = self._clean_text(span.get('sourceId'))
                 clause = self._clean_text(span.get('clauseTitle'))
-                if not source_id:
+                if not source_id or self._is_expert_review_point_source(source_id):
                     continue
                 citation = self._format_basis_citation(source_id, clause)
                 if citation not in seen:
@@ -428,18 +583,32 @@ class FinalReportRenderer:
         title = self._clean_text(finding.get('title')).lower()
         return by_title.get(title)
 
-    def _collect_basis_files(self, packet: dict[str, Any], support: dict[str, Any]) -> list[str]:
+    def _collect_basis_files(self, packet: dict[str, Any], support_issues: list[dict[str, Any]]) -> list[str]:
         basis: list[str] = []
         seen: set[str] = set()
-        for finding in packet.get('all_findings', []):
-            if not isinstance(finding, dict):
+        for source in self._iter_basis_source_ids(packet, support_issues):
+            if self._is_expert_review_point_source(source):
                 continue
-            for source in self._collect_basis_lines(finding, None):
-                source_label = source.removeprefix('审查依据：引用自')
-                if source_label not in seen:
-                    seen.add(source_label)
-                    basis.append(source_label)
-        return basis[:8]
+            label, is_external = self._normalize_policy_source(source)
+            if not is_external or label in seen:
+                continue
+            seen.add(label)
+            basis.append(label)
+        return basis[:10]
+
+    def _iter_basis_source_ids(self, packet: dict[str, Any], support_issues: list[dict[str, Any]]) -> list[str]:
+        out: list[str] = []
+        for finding in packet.get('all_findings', []):
+            raw_data = finding.get('raw_data') if isinstance(finding, dict) and isinstance(finding.get('raw_data'), dict) else {}
+            for source in [raw_data, finding]:
+                for span in source.get('policyEvidence') or []:
+                    if isinstance(span, dict) and span.get('sourceId'):
+                        out.append(str(span.get('sourceId')))
+        for issue in support_issues:
+            for span in issue.get('policyEvidence') or []:
+                if isinstance(span, dict) and span.get('sourceId'):
+                    out.append(str(span.get('sourceId')))
+        return out
 
     def _resolve_module(self, finding: dict[str, Any]) -> str:
         raw_data = finding.get('raw_data') if isinstance(finding.get('raw_data'), dict) else {}
@@ -475,50 +644,107 @@ class FinalReportRenderer:
         return deduped
 
     def _matched_section_text(self, matched_sections: list[dict[str, Any]]) -> str:
-        titles = []
-        for item in matched_sections[:3]:
-            if isinstance(item, dict):
-                title = self._clean_text(item.get('title'))
-                if title:
-                    titles.append(title)
-        if not titles:
+        locators: list[str] = []
+        for item in matched_sections[:5]:
+            if not isinstance(item, dict):
+                continue
+            title = self._clean_text(item.get('title'))
+            locators.extend(self._extract_section_locators(title))
+        locators = list(dict.fromkeys(locator for locator in locators if locator))
+        if not locators:
             return '未识别到稳定对应章节'
-        text = '；'.join(titles)
-        return text if len(text) <= 80 else f'{text[:76].rstrip()}…'
+        return '、'.join(locators[:3])
 
     def _chapter_row_note(self, row: dict[str, Any]) -> str:
         status = str(row.get('status') or '')
         if status == 'matched':
             return '—'
-        if status == 'partial':
-            return f'建议补齐“{self._clean_text(row.get("requirementLabel"))}”并形成稳定章节闭合。'
-        if status == 'missing':
-            return f'建议补齐“{self._clean_text(row.get("requirementLabel"))}”专章或稳定标题。'
-        if status == 'blocked_by_visibility':
-            return '当前受解析可视域限制，建议结合原件人工复核。'
-        return self._clean_text(row.get('reportExcerpt')) or '—'
-
-    def _chapter_note_description(self, row: dict[str, Any]) -> str:
-        parts = []
-        matched = self._matched_section_text(row.get('matchedSections') or [])
-        if matched:
-            parts.append(f'对应章节：{matched}')
         analysis = self._clean_text(row.get('analysis'))
-        if analysis:
-            parts.append(analysis)
-        recommendation = self._chapter_row_note(row)
-        if recommendation and recommendation != '—':
-            parts.append(f'处理建议：{recommendation}')
-        return '；'.join(parts) if parts else '请结合原文进一步核对该结构项。'
+        recommendation = ''
+        requirement = self._clean_text(row.get('requirementLabel'))
+        if status == 'partial':
+            recommendation = f'建议补齐或单列“{requirement}”。'
+        elif status == 'missing':
+            recommendation = f'建议补齐“{requirement}”专章或形成稳定章节标题。'
+        elif status == 'blocked_by_visibility':
+            recommendation = '当前受解析可视域限制，建议结合原件人工复核。'
+        if recommendation and analysis:
+            return f'{analysis} {recommendation}'[:120]
+        return recommendation or analysis or '—'
+
+    def _parse_executive_summary(self, summary: str) -> ExecutiveSummaryView:
+        text = self._clean_text(summary)
+        verdict = ''
+        metrics: list[ExecutiveSummaryMetricView] = []
+        verdict_match = re.search(r'总体评级结论为：\*\*(.+?)\*\*', summary or '')
+        if verdict_match:
+            verdict = self._clean_text(verdict_match.group(1))
+        else:
+            fallback_match = re.search(r'总体评级(?:结论)?[:：]\s*([^。；]+)', text)
+            if fallback_match:
+                verdict = self._clean_text(fallback_match.group(1))
+
+        indicator_match = re.search(r'当前命中\s*(\d+)\s*个预警指标（其中高危项\s*(\d+)\s*个，中阶\s*(\d+)\s*个，浅层瑕疵\s*(\d+)\s*个）', text)
+        if indicator_match:
+            total, high, medium, low = indicator_match.groups()
+            metrics.extend([
+                ExecutiveSummaryMetricView(label='预警指标', value=f'{total} 项', tone='neutral'),
+                ExecutiveSummaryMetricView(label='高危项', value=f'{high} 项', tone='high'),
+                ExecutiveSummaryMetricView(label='中阶项', value=f'{medium} 项', tone='medium'),
+                ExecutiveSummaryMetricView(label='浅层瑕疵', value=f'{low} 项', tone='low'),
+            ])
+
+        deep_match = re.search(r'主审环节额外标注了\s*(\d+)\s*个需重点复核的深层风险点', text)
+        if deep_match:
+            metrics.append(ExecutiveSummaryMetricView(label='深层风险点', value=f'{deep_match.group(1)} 项', tone='medium'))
+
+        narrative_parts = []
+        cleaned_text = text.replace('**', '')
+        for sentence in re.split(r'(?<=[。！？])\s*', cleaned_text):
+            sentence = sentence.strip()
+            if not sentence:
+                continue
+            if '总体评级结论为' in sentence or '当前命中' in sentence or '主审环节额外标注了' in sentence:
+                continue
+            narrative_parts.append(sentence)
+        narrative = ' '.join(narrative_parts)
+        return ExecutiveSummaryView(verdict=verdict, narrative=narrative, metrics=metrics)
+
+    def _extract_section_locators(self, text: str) -> list[str]:
+        value = self._clean_text(text)
+        patterns = [
+            r'(第[一二三四五六七八九十百零〇两0-9]+章)',
+            r'(第[一二三四五六七八九十百零〇两0-9]+节)',
+            r'((?:\d+\.)+\d+节?)',
+        ]
+        out: list[str] = []
+        for pattern in patterns:
+            for match in re.finditer(pattern, value):
+                locator = self._clean_text(match.group(1))
+                if locator and locator not in out:
+                    out.append(locator)
+        return out
+
+    def _normalize_policy_source(self, source_id: str) -> tuple[str, bool]:
+        if source_id in _INTERNAL_POLICY_SOURCES:
+            return _INTERNAL_POLICY_SOURCES[source_id], False
+        if '《' in source_id:
+            return source_id[source_id.index('《'):], True
+        return source_id, not source_id.startswith('review-control-plane-')
+
+    def _is_expert_review_point_source(self, source_id: str) -> bool:
+        return '监理工程师对停电施工方案的审核规则及要点' in source_id
 
     def _format_basis_citation(self, source_id: str, clause: str) -> str:
-        label = source_id
-        if '《' in source_id:
-            label = source_id[source_id.index('《'):]
-        label = label.replace('construction-', '')
-        if clause:
-            return f'审查依据：引用自{label} {clause}'
-        return f'审查依据：引用自{label}'
+        source_label, _ = self._normalize_policy_source(source_id)
+        clause_text = self._clean_text(clause or '').strip()
+        if clause_text:
+            return f'审查依据：引用自{source_label} {clause_text}'
+        return f'审查依据：引用自{source_label}'
+
+    def _is_normative_validity_summary_finding(self, finding: dict[str, Any]) -> bool:
+        raw_data = finding.get('raw_data') if isinstance(finding.get('raw_data'), dict) else {}
+        return bool(raw_data.get('normativeValidityChecks'))
 
     def _clean_text(self, value: Any) -> str:
         if value is None:
@@ -530,6 +756,12 @@ class FinalReportRenderer:
         return text
 
 
+_INTERNAL_POLICY_SOURCES = {
+    'review-control-plane-support-scope-policy': '系统附件识别与复核规则',
+    'review-control-plane-visibility-policy': '系统可视域处理规则',
+}
+
+
 def _number_to_cn(value: int) -> str:
     mapping = {1: '一', 2: '二', 3: '三', 4: '四', 5: '五', 6: '六', 7: '七', 8: '八', 9: '九', 10: '十'}
     return mapping.get(value, str(value))
@@ -537,7 +769,7 @@ def _number_to_cn(value: int) -> str:
 
 _FINAL_REPORT_CSS = """
 html, body {
-  background: #f8f5ef !important;
+  background: #ffffff !important;
   margin: 0;
   padding: 0;
   -webkit-print-color-adjust: exact;
@@ -550,7 +782,7 @@ html, body {
   max-width: 1200px;
   margin: 0 auto;
   padding: 28px;
-  background: #f6edd7;
+  background: #ffffff;
 }
 
 .structured-report * {
@@ -573,15 +805,15 @@ html, body {
   margin-top: 24px;
   padding: 24px;
   border-radius: 24px;
-  background: #f3e8cc;
-  border: 1px solid #eadcc0;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
   break-inside: avoid;
 }
 
 .structured-report__section-title {
   margin: 0 0 16px;
   padding: 16px 20px;
-  background: #d9d5c6;
+  background: #f3f4f6;
   border-left: 6px solid #2563eb;
   color: #172033;
   font-size: 22px;
@@ -596,12 +828,64 @@ html, body {
 
 .structured-report__summary,
 .structured-report__muted,
-.structured-report__note-text,
 .structured-report__issue-card-text,
 .structured-report__issue-card-law-item,
 .structured-report__basis-list li {
   font-size: 15px;
   line-height: 1.9;
+}
+
+.structured-report__verdict-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.structured-report__verdict-label {
+  color: #4b5563;
+  font-weight: 600;
+}
+
+.structured-report__verdict-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: #fee2e2;
+  color: #991b1b;
+  font-weight: 700;
+}
+
+.structured-report__summary-metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.structured-report__summary-metric {
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 14px 16px;
+  background: #ffffff;
+}
+
+.structured-report__summary-metric--high { background: #fef2f2; border-color: #fecaca; }
+.structured-report__summary-metric--medium { background: #fff7ed; border-color: #fed7aa; }
+.structured-report__summary-metric--low { background: #eff6ff; border-color: #bfdbfe; }
+
+.structured-report__summary-metric-label {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.structured-report__summary-metric-value {
+  margin-top: 6px;
+  font-size: 22px;
+  font-weight: 700;
+  color: #111827;
 }
 
 .structured-report__basis-list,
@@ -613,8 +897,8 @@ html, body {
 .structured-report__table-wrap {
   overflow-x: auto;
   border-radius: 18px;
-  border: 1px solid #cfc8b4;
-  background: #efe6c8;
+  border: 1px solid #d1d5db;
+  background: #ffffff;
 }
 
 .structured-report__matrix-table {
@@ -626,7 +910,7 @@ html, body {
 .structured-report__matrix-table th,
 .structured-report__matrix-table td {
   padding: 16px;
-  border-bottom: 1px solid #cfc8b4;
+  border-bottom: 1px solid #e5e7eb;
   text-align: left;
   vertical-align: top;
   font-size: 15px;
@@ -634,56 +918,37 @@ html, body {
 }
 
 .structured-report__matrix-table th {
-  background: #d9d5c6;
+  background: #f3f4f6;
   color: #172033;
   font-weight: 700;
 }
 
 .structured-report__matrix-table tbody tr:last-child td { border-bottom: none; }
 
-.structured-report__note-list {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
-.structured-report__note-card {
-  padding: 18px 20px;
-  border-radius: 18px;
-  border: 1px solid #ebcf99;
-  background: rgba(255,255,255,0.25);
-}
-
-.structured-report__note-title {
-  margin: 0 0 8px;
-  font-size: 16px;
-  color: #172033;
-}
-
 .structured-report__issue-card {
   margin-top: 18px;
   padding: 24px 28px;
   border-radius: 18px;
-  border: 1px solid #e5d8be;
-  background: rgba(255,255,255,0.35);
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
   break-inside: avoid;
   page-break-inside: avoid;
 }
 
 .structured-report__issue-card--high {
   border-left: 6px solid #dc2626;
-  background: rgba(254, 242, 242, 0.48);
+  background: rgba(254, 242, 242, 0.75);
 }
 
 .structured-report__issue-card--medium {
   border-left: 6px solid #d97706;
-  background: rgba(255, 247, 237, 0.55);
+  background: rgba(255, 247, 237, 0.78);
 }
 
 .structured-report__issue-card--low,
 .structured-report__issue-card--info {
   border-left: 6px solid #2563eb;
-  background: rgba(239, 246, 255, 0.42);
+  background: rgba(239, 246, 255, 0.7);
 }
 
 .structured-report__issue-card-title {
@@ -706,7 +971,7 @@ html, body {
 }
 
 @media print {
-  html, body { background: #f8f5ef !important; }
+  html, body { background: #ffffff !important; }
   .structured-report { max-width: none; padding: 0; }
   .structured-report__section-title,
   .structured-report__subsection-title,
