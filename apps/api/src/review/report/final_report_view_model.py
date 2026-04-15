@@ -148,7 +148,9 @@ class FinalReportRenderer:
         findings = [item for item in packet.get('all_findings', []) if isinstance(item, dict)]
         grouped = {module: [] for module in self._module_order(effective_modules)}
         deduped_findings = self._dedupe_findings(findings, effective_modules)
-        normative_validity = self._build_normative_validity(deduped_findings)
+        # Use raw findings (pre-dedup) so normative validity table data is
+        # never lost due to deduplication or module filtering.
+        normative_validity = self._build_normative_validity(findings)
         for finding in deduped_findings:
             module_name = self._resolve_module(finding)
             if module_name not in grouped:
@@ -244,10 +246,12 @@ class FinalReportRenderer:
             parts.append('</div>')
         if summary_view.narrative:
             parts.append(f'<p class="structured-report__summary">{html.escape(summary_view.narrative)}</p>')
-        elif raw_text:
-            parts.append(f'<p class="structured-report__summary">{html.escape(raw_text.replace("**", ""))}</p>')
-        else:
-            parts.append('<p class="structured-report__summary">本次未生成可展示的综合结论。</p>')
+        elif not summary_view.verdict:
+            # Only show fallback text when there is no verdict badge at all.
+            if raw_text:
+                parts.append(f'<p class="structured-report__summary">{html.escape(raw_text.replace("**", ""))}</p>')
+            else:
+                parts.append('<p class="structured-report__summary">本次未生成可展示的综合结论。</p>')
         return parts
 
     def _render_chapter_completeness_section(
@@ -315,17 +319,27 @@ class FinalReportRenderer:
                 '<tbody>',
             ])
             for index, check in enumerate(normative_validity.checks, start=1):
-                note_html = f'<br><span class="structured-report__muted">{html.escape(check.note)}</span>' if check.note else ''
+                status_cell = html.escape(check.statusLabel)
+                if check.note:
+                    status_cell += f'<br><span class="structured-report__muted">{html.escape(check.note)}</span>'
                 parts.append(
                     '<tr>'
                     f'<td>{index}</td>'
-                    f'<td>{html.escape(check.title)}{note_html}</td>'
-                    f'<td>{html.escape(check.statusLabel)}</td>'
+                    f'<td>{html.escape(check.title)}</td>'
+                    f'<td>{status_cell}</td>'
                     '</tr>'
                 )
             parts.extend(['</tbody>', '</table>', '</div>', '</div>'])
         if section.issues:
-            parts.extend(self._render_issue_cards(section.issues))
+            if normative_validity.checks:
+                parts.extend([
+                    '<div class="structured-report__subsection">',
+                    '<h3 class="structured-report__subsection-title">其他证据验证问题</h3>',
+                    *self._render_issue_cards(section.issues),
+                    '</div>',
+                ])
+            else:
+                parts.extend(self._render_issue_cards(section.issues))
         elif not normative_validity.checks:
             parts.append(f'<p class="structured-report__muted">{html.escape(section.emptyText)}</p>')
         parts.append('</section>')
@@ -682,11 +696,36 @@ class FinalReportRenderer:
                     out.append(str(clause.sourceId))
         return out
 
+    # Hard template→module rules: findings from these templates are ALWAYS
+    # assigned to a fixed module, regardless of keyword/category fallback.
+    _TEMPLATE_HARD_MODULE: dict[str, str] = {
+        'normative_validity_reviewer': 'evidence_validation',
+        'calculation_review_reviewer': 'evidence_validation',
+        'visibility_gap_reviewer': 'evidence_validation',
+    }
+
     def _resolve_module(self, finding: dict[str, Any]) -> str:
         raw_data = finding.get('raw_data') if isinstance(finding.get('raw_data'), dict) else {}
+        # Hard template-based assignment takes priority (AGENTS.md HG-15)
+        template_id = self._clean_text(raw_data.get('template_id'))
+        if template_id in self._TEMPLATE_HARD_MODULE:
+            return self._TEMPLATE_HARD_MODULE[template_id]
         module_name = self._clean_text(raw_data.get('module_name'))
         if module_name in _MODULE_TITLES:
             return module_name
+        # Title keyword fallback — intercepts findings whose category may
+        # be generic ('compliance') but whose topic belongs to a specific
+        # module.  This mirrors agent_runner._resolve_finding_module_name
+        # and ensures cross-template findings are routed correctly.
+        title_text = f"{self._clean_text(finding.get('title'))} {self._clean_text(finding.get('summary'))}".lower()
+        if any(token in title_text for token in ['编制依据', '现行有效', '废止', '过期', '替代', '规范版本', '标准号']):
+            return 'evidence_validation'
+        if any(token in title_text for token in ['计算', '验算', '公式', '算式']):
+            return 'evidence_validation'
+        if any(token in title_text for token in ['停送电', '执行链路', '工序', '连续', '衔接']):
+            return 'execution_continuity'
+        if any(token in title_text for token in ['参数', '荷载', '吨', '重量', '一致']):
+            return 'parameter_consistency'
         category = self._clean_text(finding.get('category'))
         category_map = {
             'chapter_completeness': 'structure_completeness',

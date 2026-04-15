@@ -46,8 +46,7 @@
       "power_outage_work.base"
     ],
     "review_modules": [
-      "execution_continuity",
-      "evidence_validation"
+      "execution_continuity"
     ],
     "ownership": "hermes_main_review"
   },

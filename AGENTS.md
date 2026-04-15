@@ -152,3 +152,37 @@ All user-visible content in reports, interfaces, and statuses MUST be presented 
 
 - **`_parse_executive_summary()` 防御性过滤**：即使遗留数据仍含"本次结果共覆盖…形成…项审查问题…"类统计句，view model 解析时也必须过滤，不得渗透到前端 narrative。当先前文档或代码中关于 executive summary 的口径与本条冲突时，以本条为准。
 
+
+## Project Corrections Addendum (2026-04-15, normative scope + calculation reviewer + prose dedup)
+
+> Source: Engineering hardening session — scope narrowing, note column fix, calculation sub-agent, verdict dedup.
+
+- **`编制依据现行有效性核验` 范围严格限定为标准规范**：核验对象只能是带标准编号的规范性文件（国标 GB/GB/T、行标 DL/DL/T/NB、地标 DB/DBJ、带标准号企业标准 Q/CSG/Q/GDW 等）。法律法规、行政条例、部门规章、企业内部管理制度文件、通知、规定、办法等**明确排除**，不得进入核验集合。实现：`_is_standard_normative()` 门禁方法在两个文档抽取入口统一过滤。
+
+- **`_is_standard_normative()` 判断优先顺序不可颠倒**：(1) 先检查标准编号——有编号直接 return True，不走排除关键词路径（防止带编号的企业标准被误伤）；(2) 再检查排除关键词；(3) 再检查法律形态（以"X法》"结尾）；(4) 默认保守通过。任何修改不得将编号检查后移。
+
+- **`_heuristic_result()` 禁止对条例/法规词条判 current**：此类词条应在 `_is_standard_normative()` 入口已被过滤，不应流入 heuristic。历史代码中对"条例"的保守 current 映射已移除，禁止恢复。
+
+- **note 文案列位合同**：`编制依据现行有效性核验` 表格中，note 必须出现在**核验状态列**（以 structured-report__muted 样式追加在 statusLabel 之后），不得出现在**规范名称列** `<td>` 内。修改渲染方法时必须遵守此列位合同。
+
+- **`_render_executive_summary()` fallback 条件**：仅在 verdict 不存在时才允许 fallback 渲染 raw_text。有 verdict badge 时不得再追加 `<p>` 渲染 raw_text（否则 verdict 信息重复展示）。本条与旧代码口径冲突时以本条为准。
+
+- **calculation_review_reviewer 保守约束**：该模板负责计算式/验算/参数/公式审查，归属 evidence_validation。未见计算书/验算过程时，**禁止臆造计算错误**，只能输出"证据不足，需人工补充复核"类保守表达。
+
+- **测试文件内嵌中文书名号陷阱（HG-16）**：Python 字符串内嵌 `》` 时若外层引号同向会触发 SyntaxError: unterminated string literal。写入后必须执行语法验证：`python -c "import ast; ast.parse(open('file.py').read())"`，不得假设工具写入一定正确。
+
+## Project Corrections Addendum (2026-04-15, evidence_validation execution plan + calc fallback)
+
+> Source: User-reported evidence_validation module completely missing in reports — reviewer never selected + calculation reviewer invisible.
+
+- **前端默认启用模块必须包含全部 5 个模块（HG-18）**：`review-acceptance-page.tsx` 的 `enabledModules` 初始值必须与 `create-task-form.tsx` 保持一致，即同时包含 `structure_completeness`、`parameter_consistency`、`legality_compliance`、`execution_continuity`、`evidence_validation`。遗漏任何模块会导致对应 reviewer 不进入 `enabledAgents`，进而被 `template_registry.select_templates()` 的 `continue` 分支跳过。
+
+- **`template_registry.select_templates()` 的 enabled 过滤是硬门禁**：当 `enabledAgents` 非空时，不在列表中的 template **一律 `continue`**（L66-71），不会被 `default_enabled`、`document_type_match` 或 `focus_keywords` 救回。因此任何新增 reviewer 必须确保其 template_id 被 `module_template_ids()` 正确返回。
+
+- **calculation_review_reviewer 必须有确定性 fallback（HG-17）**：当 `hermes_router` 返回 0 个 findings 时，`agent_runner` 必须自动注入一条 `severity=info` 的保守型 finding（`H-CALC-FALLBACK-001`），文案为"未见计算书或验算过程，需人工补充复核"。这确保"计算核验"功能在前端始终可见，不会出现"模板存在但功能不存在"的用户体验。
+
+- **`_TEMPLATE_HARD_MODULE` 双层硬归属是必须的（HG-15 强化）**：`agent_runner._annotate_finding_ownership` 和 `final_report_view_model._resolve_module` 必须**同时维护** `_TEMPLATE_HARD_MODULE` 映射。两者缺一不可：runner 侧保证写入时正确，view_model 侧保证读取时不被 category/keyword fallback 覆盖。
+
+- **`power_outage_operation_chain_reviewer` 禁止声明 `evidence_validation`（HG-19）**：该 reviewer 的 `metadata.review_modules` 只允许包含 `execution_continuity`。将其绑定到 `evidence_validation` 会导致停电链路 finding 混入证据验证模块，与 normative_validity_reviewer / calculation_review_reviewer 的输出混淆。
+
+- **`_build_normative_validity()` 必须用原始 findings 构建表格（HG-20）**：传入 `deduped_findings` 会导致表格被 dedup 吞掉（ID/title 冲突时丢失含 `normativeValidityChecks` 的 finding）。必须传入 `findings`（pre-dedup）以保证表格数据不丢失。

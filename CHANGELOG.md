@@ -74,6 +74,39 @@
 - **Dependabot 高危 CVE 处理节奏**：High 级告警应在当轮 session 内立即修复（本次全流程 8 分钟内完成），不延迟到下一 session。
 - 本轮已完成两次完整部署闭环；`main` 分支现已在 GitHub 存在并持续对齐 `hermes-review-clean`。
 
+### Fixed (规范核验范围收敛 + 报告呈现优化)
+
+- **收窄"编制依据现行有效性核验"范围**（`normative_validity.py` + `normative_validity_reviewer.json`）：核验范围严格限定为标准规范（国标 GB/GB/T、行标 DL/DL/T/NB、地标 DB/DBJ、带标准号企业标准 Q/CSG/Q/GDW 等）。法律法规、行政条例、部门规章、企业内部管理制度文件明确排除。新增：
+  - `_EXCLUDED_DOCUMENT_KEYWORDS` 常量（条例/办法/管理制度/通知/规章等15项）
+  - `_is_standard_normative(title) → bool` 方法：有标准编号直接通过（含带编号的企业标准）；无编号+含排除关键词 → False；无编号+以"X法》"结尾 → False（法律）；其余保守通过
+  - 在 `_extract_sources_from_parse_result()` 和 `_extract_sources_from_candidates()` 两个入口同时调用
+  - 同步移除 `_heuristic_result()` 中对"条例"的旧保守 `current` 判定（条例是法规不是标准）
+  - 模板版本号 1.0.0 → 1.1.0，模板描述明确排除范围
+- **修正 note 文案列位**（`final_report_view_model.py`）：`note_html`（如"缺少年份/分册，需人工核验"）从标题列 `<td>` 移入核验状态列 `<td>`，以 `structured-report__muted` 样式 inline 展示在 `statusLabel` 之后，标题列保持纯文本。
+- **去除总体审查结论重复 prose**（`final_report_view_model.py`）：`_render_executive_summary()` 中当 `narrative` 为空但 `verdict` 已存在时，不再 fallback 渲染 `raw_text`（verdict 句）。有 verdict badge 时只展示 badge + metrics，无重复 prose。仅在 verdict 也不存在时才允许 fallback。
+
+### Added (计算式审查子 Agent + 测试矩阵)
+
+- **新建 `calculation_review_reviewer.json`**（`apps/api/src/review/hermes/templates/`）：`hermes_router` 模式，审查计算式/验算过程/参数来源/公式适用性/量纲自洽/验算覆盖范围，归属 `evidence_validation` 模块。保守约束：未见计算书时表达为"证据不足，需人工补充复核"，不臆造计算错误。
+- **注册到 `module_bindings.py`**：`evidence_validation.hermes_templates` 追加 `calculation_review_reviewer`（与 `visibility_gap_reviewer` / `normative_validity_reviewer` 并列）。`agent_runner.py` 无需改动（hermes_router 通用路径自动处理 ownership 标注）。
+- **新增 7 个测试用例**（`tests/test_final_report_view_model.py`）：
+  - 法律法规被 `_is_standard_normative()` 排除
+  - 内部制度（无标准号）被排除
+  - 带标准号企业标准（Q/CSG/Q/GDW）保留
+  - 编制依据解析链路排除法律法规（pipeline 级集成测试）
+  - note 文本出现在状态列而非标题列（HTML 断言）
+  - 有 verdict badge 时无重复 prose（HTML 断言）
+  - `calculation_review_reviewer` 已在 module_bindings 中注册
+- **验收结果**：`test_final_report_view_model.py` 14 passed，`test_hermes_normative_validity_agent.py` 10 passed，**合计 24 passed，0 failed**。
+
+### Notes (规范收敛 + 计算审查)
+
+- **带标准号的企业标准不得被"规章/制度"等排除词误伤**：`_is_standard_normative()` 先检查标准编号，有编号直接通过，排除关键词检查仅在无编号时触发。
+- **测试文件写入中文标点陷阱**：在 Python 字符串内嵌中文书名号 `》` 与相同方向外层引号混淆导致 `SyntaxError: unterminated string literal`；写入后需立即语法验证，或改用 Unicode 转义。已注册为 **HG-16**。
+- **条例类词条不得进入 heuristic 判定**：`_is_standard_normative()` 作为过滤器，条例类词条在入口即被拦截，不应流入 `_heuristic_result()`；旧代码对"条例"的 `current` 保守判定已移除。已注册为 **HG-17**。
+
+
+
 ## 2026-04-14
 
 ### Added

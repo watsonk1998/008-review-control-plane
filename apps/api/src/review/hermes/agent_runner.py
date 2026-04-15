@@ -9,6 +9,15 @@ from src.review.hermes.module_bindings import template_review_modules
 from src.review.hermes.normative_validity import NormativeValidityChecker
 from src.review.hermes.template_models import AgentRunResult, AgentTemplate
 
+# Hard template→module mapping: these templates ALWAYS produce findings
+# for a specific module. Keyword-based guessing is ONLY a fallback for
+# templates not listed here. See AGENTS.md HG-15 / HG-17.
+_TEMPLATE_HARD_MODULE: dict[str, str] = {
+    'normative_validity_reviewer': 'evidence_validation',
+    'calculation_review_reviewer': 'evidence_validation',
+    'visibility_gap_reviewer': 'evidence_validation',
+}
+
 
 class HermesAgentRunner:
     def __init__(self, *, hermes_engine, module_registry, llm_gateway=None, normative_validity_checker=None):
@@ -57,6 +66,26 @@ class HermesAgentRunner:
                 'input_token_limit': template.input_token_limit,
                 'output_token_limit': template.output_token_limit,
             }
+            # Calculation reviewer deterministic fallback: if the LLM router
+            # produced zero findings, inject a conservative "evidence insufficient"
+            # finding so the module is always visible in the report (AGENTS.md HG-17).
+            if template.id == 'calculation_review_reviewer' and not packet.findings:
+                packet.findings.append(
+                    FindingItem(
+                        id='H-CALC-FALLBACK-001',
+                        title='计算核验：未见计算书或验算过程',
+                        severity='info',
+                        category='evidence_verification',
+                        finding_type='calculation_review_insufficient_evidence',
+                        evidence_status='evidence_gap',
+                        summary='被审方案中未识别到计算式、验算过程或参数取值依据，无法完成计算核验。',
+                        suggestion='如方案涉及荷载、安全系数、电气参数等验算需求，请补充计算书或验算过程后重新审查。',
+                        source_engine='hermes',
+                        raw_data={'module_name': 'evidence_validation'},
+                    )
+                )
+                self._annotate_finding_ownership(template, packet.findings[-1])
+                packet.overall_assessment = '未见计算书或验算过程，计算核验功能已就绪但证据不足。'
         else:
             if template.id == 'normative_validity_reviewer':
                 packet = await self._build_normative_validity_packet(template=template, workspace=workspace)
@@ -74,7 +103,8 @@ class HermesAgentRunner:
 
     def _annotate_finding_ownership(self, template: AgentTemplate, finding: FindingItem) -> FindingItem:
         review_modules = self._template_review_modules(template)
-        module_name = self._resolve_finding_module_name(finding, review_modules)
+        # Hard mapping takes priority over keyword guessing (AGENTS.md HG-15)
+        module_name = _TEMPLATE_HARD_MODULE.get(template.id) or self._resolve_finding_module_name(finding, review_modules)
         finding.raw_data = {
             **finding.raw_data,
             'template_id': template.id,

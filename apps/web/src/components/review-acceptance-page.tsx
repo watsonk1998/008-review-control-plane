@@ -64,8 +64,10 @@ export function ReviewAcceptancePage() {
   const [focusRequirements, setFocusRequirements] = useState("重点检查停送电链路闭环\n重点检查专项章节完整性");
   const [enabledModules, setEnabledModules] = useState<ReviewModuleName[]>([
     "structure_completeness",
-    "execution_continuity",
+    "parameter_consistency",
     "legality_compliance",
+    "execution_continuity",
+    "evidence_validation",
   ]);
   const [disabledModules, setDisabledModules] = useState<ReviewModuleName[]>([]);
   const [task, setTask] = useState<ReviewTaskStatusResponse | null>(null);

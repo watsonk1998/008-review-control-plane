@@ -545,12 +545,10 @@ export function TaskDetail({ taskId }: { taskId: string }) {
               </div>
             ) : null}
             
-            {/* 假如渲染在网页里的精简报告 */}
+            {/* 正式报告直出 — 不再使用折叠交互 */}
             {structuredResult && task.status === "succeeded" && (
                 <div style={{ marginTop: "32px" }}>
-                  <details className="card expert-report-card">
-                  <summary style={{ fontWeight: 600, padding: "16px", cursor: "pointer", background: "#F1F5F9", borderRadius: "8px" }}>网页版报告在线预览</summary>
-                  <div style={{ padding: "24px" }}>
+                  <h3 style={{ fontSize: "1.1rem", fontWeight: 600, marginBottom: "16px", color: "#172033" }}>正式审查报告</h3>
                   {structuredResult?.reportHtml ? (
                     <StructuredReportHtml
                       htmlContent={structuredResult?.reportHtml}
@@ -559,8 +557,6 @@ export function TaskDetail({ taskId }: { taskId: string }) {
                   ) : (
                     <StructuredReportMarkdown markdown={canonicalStructuredReportMarkdown} />
                   )}
-                  </div>
-                  </details>
                 </div>
             )}
           </section>

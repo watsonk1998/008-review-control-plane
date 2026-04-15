@@ -43,6 +43,26 @@ _NORMATIVE_CODE_PATTERN = re.compile(
 )
 _VERSION_YEAR_PATTERN = re.compile(r'[-—]\d{4}(?:\b|$)')
 
+# Gate: keywords that identify non-standard documents (laws, regulations,
+# internal rules) which should NOT enter normative validity checking.
+_EXCLUDED_DOCUMENT_KEYWORDS = (
+    '条例',
+    '办法',
+    '规定',
+    '实施细则',
+    '通知',
+    '通告',
+    '意见',
+    '决定',
+    '命令',
+    '管理制度',
+    '规章',
+    '管理办法',
+    '管理规定',
+    '暂行规定',
+    '暂行办法',
+)
+
 
 class NormativeValidityChecker:
     def __init__(self, *, llm_gateway=None):
@@ -70,6 +90,8 @@ class NormativeValidityChecker:
                     continue
                 title = self._normalize_source_title(source_id)
                 if title in seen:
+                    continue
+                if not self._is_standard_normative(title):
                     continue
                 seen.add(title)
                 sources.append({'sourceId': source_id, 'title': title})
@@ -102,6 +124,8 @@ class NormativeValidityChecker:
             for candidate in self._split_reference_candidates(text):
                 title = self._extract_normative_title(candidate)
                 if not title or title in seen:
+                    continue
+                if not self._is_standard_normative(title):
                     continue
                 seen.add(title)
                 sources.append({'sourceId': title, 'title': title})
@@ -248,7 +272,7 @@ class NormativeValidityChecker:
     def _heuristic_result(self, title: str) -> dict[str, Any]:
         if _NORMATIVE_CODE_PATTERN.search(title):
             return self._unknown_result('heuristic', '仅根据规范编号无法稳定判断现行状态，需联网或人工复核。')
-        if '条例' in title or '工作规程' in title or '管理工作指引' in title:
+        if '工作规程' in title or '管理工作指引' in title:
             return {
                 'status': 'current',
                 'resolvedBy': 'heuristic',
@@ -257,6 +281,27 @@ class NormativeValidityChecker:
                 'evidenceUrl': '',
             }
         return self._unknown_result('heuristic', '当前仅能给出保守判断，建议人工核验。')
+
+    def _is_standard_normative(self, title: str) -> bool:
+        """Return True if the title refers to a standard/specification that should
+        enter normative validity checking.  Returns False for laws, regulations,
+        administrative rules, or internal management documents.
+
+        Logic:
+        1. If the title contains a recognized standard code (GB, DL/T, Q/CSG …)
+           → always True (even enterprise standards like Q/CSG are kept).
+        2. Otherwise, if the title contains any excluded keyword (条例, 办法, …)
+           → False.
+        3. Default → True (unknown items still enter checking conservatively).
+        """
+        if _NORMATIVE_CODE_PATTERN.search(title):
+            return True
+        if any(keyword in title for keyword in _EXCLUDED_DOCUMENT_KEYWORDS):
+            return False
+        # Also exclude titles that look like laws: ending with 法》 pattern
+        if re.search(r'[^办]法》', title):
+            return False
+        return True
 
     def _has_precise_version_anchor(self, title: str) -> bool:
         """Check if the title contains a standard code with a year suffix (e.g., -2015)."""
