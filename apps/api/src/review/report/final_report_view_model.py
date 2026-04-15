@@ -244,10 +244,12 @@ class FinalReportRenderer:
             parts.append('</div>')
         if summary_view.narrative:
             parts.append(f'<p class="structured-report__summary">{html.escape(summary_view.narrative)}</p>')
-        elif raw_text:
-            parts.append(f'<p class="structured-report__summary">{html.escape(raw_text.replace("**", ""))}</p>')
-        else:
-            parts.append('<p class="structured-report__summary">本次未生成可展示的综合结论。</p>')
+        elif not summary_view.verdict:
+            # Only show fallback text when there is no verdict badge at all.
+            if raw_text:
+                parts.append(f'<p class="structured-report__summary">{html.escape(raw_text.replace("**", ""))}</p>')
+            else:
+                parts.append('<p class="structured-report__summary">本次未生成可展示的综合结论。</p>')
         return parts
 
     def _render_chapter_completeness_section(
@@ -315,12 +317,14 @@ class FinalReportRenderer:
                 '<tbody>',
             ])
             for index, check in enumerate(normative_validity.checks, start=1):
-                note_html = f'<br><span class="structured-report__muted">{html.escape(check.note)}</span>' if check.note else ''
+                status_cell = html.escape(check.statusLabel)
+                if check.note:
+                    status_cell += f'<br><span class="structured-report__muted">{html.escape(check.note)}</span>'
                 parts.append(
                     '<tr>'
                     f'<td>{index}</td>'
-                    f'<td>{html.escape(check.title)}{note_html}</td>'
-                    f'<td>{html.escape(check.statusLabel)}</td>'
+                    f'<td>{html.escape(check.title)}</td>'
+                    f'<td>{status_cell}</td>'
                     '</tr>'
                 )
             parts.extend(['</tbody>', '</table>', '</div>', '</div>'])

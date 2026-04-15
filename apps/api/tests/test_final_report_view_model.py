@@ -366,3 +366,149 @@ def test_normative_validity_current_with_resolved_title():
     assert check.resolvedTitle == 'GB/T 50300-2013 建筑工程施工质量验收统一标准'
     assert '已确认现行标准' in check.note
 
+
+# ---------------------------------------------------------------------------
+# Regression tests (2026-04-15, batch 2): normative scope, note column, prose dedup
+# ---------------------------------------------------------------------------
+
+def test_normative_validity_note_in_status_column_not_title():
+    """The note text must appear in the status column, NOT in the title column."""
+    renderer = FinalReportRenderer()
+    packet = FinalReportPacket(
+        review_id='r-note-col',
+        executive_summary='总体评级结论为：**需要修改**。',
+        all_findings=[
+            FindingItem(
+                id='NV-COL',
+                title='编制依据现行有效性核验',
+                severity='info',
+                category='evidence_verification',
+                raw_data={
+                    'module_name': 'evidence_validation',
+                    'normativeValidityChecks': [
+                        {
+                            'title': '《电线电缆识别标志方法》GB/T 6995',
+                            'status': 'unknown',
+                            'summary': '原文引用缺少年份或分册版本号，无法唯一映射到具体现行标准，需人工核验。',
+                        },
+                    ],
+                },
+            ),
+        ],
+    )
+    view_model = renderer.build_view_model(
+        final_packet=packet,
+        support_result={'summary': {}, 'issues': [], 'matrices': {}},
+    )
+    html_output = renderer.render_html(view_model)
+    # The note must NOT be inside the title <td>.
+    # Parse: find the row containing '电线电缆' — the second <td> (title) must NOT
+    # contain the muted note; the third <td> (status) must contain it.
+    import re as _re
+    row_match = _re.search(r'<tr>.*?电线电缆.*?</tr>', html_output, _re.DOTALL)
+    assert row_match, 'Could not find the normative validity row in HTML'
+    row_html = row_match.group(0)
+    tds = _re.findall(r'<td>(.*?)</td>', row_html, _re.DOTALL)
+    assert len(tds) == 3
+    title_td = tds[1]
+    status_td = tds[2]
+    # Title column must NOT contain the muted note
+    assert 'structured-report__muted' not in title_td
+    assert '缺少年份' not in title_td
+    # Status column MUST contain the muted note
+    assert 'structured-report__muted' in status_td
+    assert '缺少年份' in status_td or '需人工核验' in status_td
+
+
+def test_executive_summary_no_duplicate_verdict_prose():
+    """When narrative is empty (verdict sentence filtered) and verdict badge exists,
+    the HTML must NOT contain the verdict prose sentence."""
+    renderer = FinalReportRenderer()
+    packet = FinalReportPacket(
+        review_id='r-dup',
+        executive_summary='本次审查已由专业主审组件裁决完成，总体评级结论为：**不通过**。',
+        all_findings=[
+            FindingItem(id='X-1', title='测试问题', severity='high', summary='测试',
+                        raw_data={'module_name': 'legality_compliance'}),
+        ],
+    )
+    view_model = renderer.build_view_model(
+        final_packet=packet,
+        support_result={'summary': {'documentType': 'construction_scheme'}, 'issues': [], 'matrices': {}},
+    )
+    # Verdict must be extracted
+    assert view_model.executiveSummaryView.verdict == '不通过'
+    html_output = renderer.render_html(view_model)
+    # The badge must exist
+    assert 'structured-report__verdict-badge' in html_output
+    # The prose sentence must NOT appear as visible text in a <p>
+    assert '本次审查已由专业主审组件裁决完成' not in html_output
+
+
+def test_normative_validity_law_excluded_from_checks():
+    """Laws/regulations (e.g. 《建设工程安全生产管理条例》) must NOT appear in
+    normativeValidityChecks after scope narrowing."""
+    from src.review.hermes.normative_validity import NormativeValidityChecker
+    checker = NormativeValidityChecker()
+    # Test the gate directly
+    assert checker._is_standard_normative('《建设工程安全生产管理条例》') is False
+    assert checker._is_standard_normative('《中华人民共和国安全生产法》') is False
+    assert checker._is_standard_normative('《电力安全事故应急处置和调查处理条例》') is False
+
+
+def test_normative_validity_internal_rule_excluded():
+    """Internal management documents without standard codes must be excluded."""
+    from src.review.hermes.normative_validity import NormativeValidityChecker
+    checker = NormativeValidityChecker()
+    assert checker._is_standard_normative('《某公司安全生产管理制度》') is False
+    assert checker._is_standard_normative('《关于加强施工现场管理的通知》') is False
+    assert checker._is_standard_normative('《施工现场管理暂行规定》') is False
+
+
+def test_normative_validity_enterprise_standard_with_code_retained():
+    """Enterprise standards WITH standard codes (Q/CSG, Q/GDW) must be retained."""
+    from src.review.hermes.normative_validity import NormativeValidityChecker
+    checker = NormativeValidityChecker()
+    assert checker._is_standard_normative('《中国南方电网有限责任公司电力安全工作规程》Q/CSG 510001-2015') is True
+    assert checker._is_standard_normative('Q/GDW 11372-2015 国家电网公司应急物资储备定额') is True
+    # A standard that happens to contain '规定' but has a code should still pass
+    assert checker._is_standard_normative('GB/T 50328-2014 建设工程文件归档规范') is True
+
+
+def test_normative_validity_parse_result_excludes_laws():
+    """The extraction pipeline should skip laws that appear in 编制依据 section."""
+    from src.review.hermes.normative_validity import NormativeValidityChecker
+    checker = NormativeValidityChecker()
+    parse_result = type(
+        'ParseResult',
+        (),
+        {
+            'sections': [
+                {'id': 'section-1', 'title': '第一章 编制依据', 'parentId': None},
+            ],
+            'blocks': [
+                {'type': 'heading', 'sectionId': 'section-1', 'text': '第一章 编制依据'},
+                {'type': 'paragraph', 'sectionId': 'section-1', 'text': '1. \u300a\u5efa\u8bbe\u5de5\u7a0b\u5b89\u5168\u751f\u4ea7\u7ba1\u7406\u6761\u4f8b\u300b'},
+                {'type': 'paragraph', 'sectionId': 'section-1', 'text': '2. \u300a\u4e2d\u534e\u4eba\u6c11\u5171\u548c\u56fd\u5b89\u5168\u751f\u4ea7\u6cd5\u300b'},
+                {'type': 'paragraph', 'sectionId': 'section-1', 'text': '3. 《中国南方电网有限责任公司电力安全工作规程》Q/CSG 510001-2015'},
+                {'type': 'paragraph', 'sectionId': 'section-1', 'text': '4. 《深圳电网工程安全文明施工标准（2019年版）》'},
+            ],
+        },
+    )()
+    sources = checker._extract_sources_from_parse_result(parse_result)
+    titles = [item['title'] for item in sources]
+    # Laws must be filtered out
+    assert not any('条例' in t for t in titles)
+    assert not any('安全生产法' in t for t in titles)
+    # Standards must be retained
+    assert any('Q/CSG' in t for t in titles)
+    assert any('施工标准' in t for t in titles)
+
+
+def test_calculation_reviewer_in_module_bindings():
+    """calculation_review_reviewer must be registered in evidence_validation bindings."""
+    from src.review.hermes.module_bindings import REVIEW_MODULE_BINDINGS
+    binding = REVIEW_MODULE_BINDINGS['evidence_validation']
+    assert 'calculation_review_reviewer' in binding.hermes_templates
+
+
