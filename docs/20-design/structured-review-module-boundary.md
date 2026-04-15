@@ -53,6 +53,9 @@ The `normalized_result` is the facade-owned compatibility surface for controller
 - `StructuredReviewCapabilityFacade` may continue to expose support-layer `reportHtml / reportPrintCss / artifactIndex`, but these are **not** the final user-facing report by default.
 - When Hermes formal review succeeds, the controller must build a controller-owned final presentation layer (for example `finalReportViewModel`, canonical `reportHtml / reportPrintCss`, and the formal final PDF artifact) from the authoritative `FinalReportPacket` plus support-layer matrices/position evidence.
 - Web preview and PDF export must consume the **same** controller-owned final presentation output. It is forbidden to let the web preview read Hermes final markdown while the PDF download still points at a support-layer PDF artifact.
+- If the frontend passes `review_intent.enabled_modules`, the controller-owned final presentation layer must treat that set as a hard gate: unselected modules must not survive in final findings aggregation, section rendering, summary cards, or result-module buckets.
+- Summary / card metrics must be computed from the controller-owned rendered issue set itself, not by parsing human-readable executive-summary prose back into machine counters. Prose is display text, not a harness contract.
+- Presentation-layer location fallback may use structured evidence first, but when structured locators are absent it may still recover stable chapter anchors from finding/support summaries. Do not degrade to the generic “未定位到稳定章节，请结合原文复核。” message while a chapter/section anchor is still recoverable from governed text.
 
 ## Degradation and error contract
 

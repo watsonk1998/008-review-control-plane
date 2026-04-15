@@ -24,10 +24,21 @@
 - 修正正式报告中的“问题定位”回填顺序：优先使用 support issue / finding raw data / 结构矩阵中的稳定 matched sections，再使用 `docEvidence.locator.sectionId -> sectionStructure` 反查章节，只有在确实无法建立稳定映射时才允许回退“未定位到稳定章节，请结合原文复核。”。
 - 将“证据验证”中的有效性核验对象从系统内置审查依据改为被审方案 `编制依据/编制说明` 章节中列出的规范性依据，并把表格收窄为 `序号 / 规范名称 / 核验状态` 三列；合同、委托函、图纸、技术资料等非规范性条目不再进入该表。
 - 将正式报告“审查依据文件”口径修正为“本次审查实际启用的全部正式依据”，显式对齐 selected packs，同时新增隐藏名单：除专家补充意见外，`《危险性较大的分部分项工程专项施工方案编制指南》（建办质〔2021〕48号）` 也不得出现在用户可见 basis list 中。
+- 把 `enabled_modules` 从前端冻结契约真正贯穿到 Hermes final assembly、正式报告视图层和 review task result contract：未选模块不再参与最终 findings 聚合、不再计数、不再显示在首页卡片、正文模块区块和结果接口 `modules` 中。
+- 将正式报告首页卡片从“解析 executive summary 文案”改为“直接由最终展示的 section/issues 计算”，彻底移除 `预警指标 / 高危项 / 中阶项 / 浅层瑕疵 / 深层风险点` 这类易漂移、对用户不友好的 summary 口径。
+- 增强正式报告去重与定位回退：除 `(id, title)` 精确去重外，新增展示层近重复 issue card 抑制；`问题定位` 在 `matchedSections / docEvidence` 缺失时，允许从 `finding.summary / support summary / recommendation` 提取 `第六章 / 5.1.5 / 第五章5.1.4` 等章节锚点，仅在完全失去定位线索时才回退为通用提示。
+- 继续收紧“章节完整性”展示：保留表格，但删除标题“章节完整性矩阵”与列“相关审查意见”，避免同一结构信息在矩阵标题、列名和问题卡中重复堆叠。
+- 将 Hermes 正式 PDF 打印样式改为“正文 A4 竖版 + 宽表横页”，并让 Playwright 导出服从同一套 print CSS，不再在导出代码中继续强制 landscape。
+### Fixed
+- Fix URL param case mismatch: callbackUrl (lowercase b) vs callBackUrl (uppercase B) in page.tsx, causing externalContext.callBackUrl to always be null.
+- Fix async/await callback chain: external_callbacks.py changed to async but deepresearch_runtime.py callers not updated to await, causing fire-and-forget drops. Also uvicorn default logging does not output app-level logger.info, switched to print(flush=True).
+- Fix fatal callback endpoint path: API doc says updateReportStatus but actual working path is updateReviewStatus (Report vs Review). Wrong path was intercepted by 401 auth gate. Manually retried historical task callback and confirmed 200 OK.
+
 ### Notes
 - 本日重点不是再扩规则面，而是把“正式报告能不能让专家一眼看懂、网页与 PDF 是否一致、前端是否还像调试台”这三个交付问题收口。
 - 已完成一次前端构建验证（`apps/web npm run build`）与 API 回归验证（`73 passed`），确认本轮 UI 降噪、报告结构重排与模块化渲染没有打坏现有主链。
 - 本轮额外沉淀一条执行纪律：验证阶段先区分“仓库既有 lint 债务”和“本轮新增回归”，避免把全仓历史问题误判为当前交付阻断项。
+- 本轮再补一条更细的 Harness Engineering 纪律：用户可见 summary/card 统计必须来自最终展示 contract，而不是从 prose summary 反解析；如果 contract、assembly、render、result 四层不同源，后面几乎一定会再出重复显示、错计数和定位漂移。
 
 ## 2026-04-14
 
@@ -36,7 +47,7 @@
 - **强化规则体系引擎**：正式将规则包 (`rule packs`) 与基线依据包解析器 (`basis pack resolver`) 串联入底座 Rule Engine，使基于动态工程配置文件执行的跨域审查能力进一步闭环。
 - **引入停电专项评估模板**：新增针对涉网类的专属模板组合：`power_outage_normative_reviewer`（规范强制项审查）、`power_outage_operation_chain_reviewer`（操作链条逻辑连贯性审查）以及 `power_outage_restoration_closure_reviewer`（恢复送电及闭环管理审查）。
 - **同步更新注册表及基线依据**：新增 `supervision_power_outage_review_points.md` 涉网方案审查管控清单，并在 `basis_registry.yaml` 与 `rule_pack_registry.yaml` 中完成全套关联映射下发。
-- **第三方回调基础设施**：新增 `ExternalIntegrationContext` 数据模型（承载 `agentId` / `userId` / `tenantId` / `callBackUrl`），实现 `external_callbacks.py` 基于 `httpx` 的非阻塞双向回调（任务创建→`submit`，终态→`updateReportStatus`），完成前端 URL 参数到后端任务记录的全链路 `externalContext` 传播。
+- **第三方回调基础设施**：新增 `ExternalIntegrationContext` 数据模型（承载 `agentId` / `userId` / `tenantId` / `callBackUrl`），实现 `external_callbacks.py` 基于 `httpx` 的异步回调（任务创建→`submit`，终态→`updateReviewStatus`），完成前端 URL 参数到后端任务记录的全链路 `externalContext` 传播。
 - **SQLite schema 扩展**：在 `sqlite_store.py` 的 `_TASK_EXTRA_COLUMNS` 中新增 `external_context_json TEXT` 列，`_ensure_task_columns` 自动 `ALTER TABLE` 迁移生产库。
 
 ### Changed

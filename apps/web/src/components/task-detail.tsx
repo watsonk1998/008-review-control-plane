@@ -524,28 +524,8 @@ export function TaskDetail({ taskId }: { taskId: string }) {
               </div>
             </div>
 
-            {/* 人工复核需求 */}
-            {(structuredResult?.support_result_008?.summary?.manualReviewNeeded || structuredResult?.summary?.manualReviewNeeded) ? (
-              <div className="callout warning-callout" style={{ marginTop: "16px" }}>
-                <strong>需要人工复核</strong>
-                <p>审查发现存在需要人工确认的阻断项或可视域缺口。请在下方正式报告中查看详情。</p>
-              </div>
-            ) : null}
-
-            {/* 预检/降级说明 */}
-            {(structuredResult?.support_result_008?.visibility?.parserLimited || structuredResult?.visibility?.parserLimited || structuredResult?.support_result_008?.visibility?.manualReviewReason || structuredResult?.visibility?.manualReviewReason) ? (
-              <div className="callout warning-callout" style={{ marginTop: "16px" }}>
-                <strong>预检与文档解析说明</strong>
-                <p>
-                  {(structuredResult?.support_result_008?.visibility?.parserLimited || structuredResult?.visibility?.parserLimited)
-                    ? "当前文档部分内容受限于解析引擎，部分结果按保守口径处理。"
-                    : "系统预检提示文档完整性存在潜在问题。"}
-                </p>
-                {(structuredResult?.support_result_008?.visibility?.manualReviewReason || structuredResult?.visibility?.manualReviewReason) ? (
-                  <p>系统降级指引：{manualReviewReasonLabel(structuredResult?.support_result_008?.visibility?.manualReviewReason || structuredResult?.visibility?.manualReviewReason)}</p>
-                ) : null}
-              </div>
-            ) : null}
+            {/* 人工复核需求 — 已按合同冻结要求从首屏移除，数据仍在正式报告中体现 */}
+            {/* 预检/降级说明 — 已按合同冻结要求从首屏移除，详情见正式报告 */}
 
             {/* 正式报告入口 */}
             {structuredResult && task.status === "succeeded" ? (

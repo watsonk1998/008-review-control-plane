@@ -25,6 +25,8 @@
 - 作用：返回冻结后的 `summary / modules / key_findings / recommendations / export_links / metadata / raw`
 
 > 正式报告展示补充：网页预览与 PDF 导出必须同源消费 Hermes controller 生成的正式展示层（如 `finalReportViewModel / reportHtml / reportPrintCss`）。前端不得再单独拼接一套网页报告，同时下载旧的 support-layer PDF。
+>
+> 模块选择补充（2026-04-15 supersede）：`review_intent.enabled_modules` 不是前端展示建议，而是正式执行合同。后端必须只审查这些模块，正式报告与 `/result.modules` 也只能显示这些模块；未选模块不得以“0 项占位”或“后台已审但前台隐藏”的方式继续存在。
 
 ### 反馈
 - `POST /api/review-reports/{report_id}/feedback`
@@ -132,6 +134,11 @@
 }
 ```
 
+> 结果展示冻结补充（2026-04-15 supersede）：
+> - 首页/概览卡片必须直接由最终展示的模块 section/issues 计算。
+> - 禁止从 `executive_summary` 反解析 `预警指标 / 高危项 / 中阶项 / 浅层瑕疵 / 深层风险点` 这类统计口径。
+> - 若未来需要显示卡片，卡片集合必须等于本次 `enabled_modules` 与实际成功执行模块的交集。
+
 ### feedback request / response
 ```json
 {
@@ -223,3 +230,13 @@ npm run dev -- --hostname 127.0.0.1 --port 3018
 - 表格冻结为三列：`序号 / 规范名称 / 核验状态`。
 - `核验状态` 仅允许：`现行有效 / 疑似废止或替代 / 待人工核验`。
 - 合同、委托函、图纸、技术资料、审批资料等非规范性条目不得进入该表。
+
+## 7. 正式报告呈现补充（2026-04-15 supersede）
+
+- `问题定位` 的正式回退顺序为：
+  1. `matchedSections`
+  2. `docEvidence.locator.sectionId -> sectionStructure`
+  3. `finding.summary / support summary / recommendation` 中可提取的章/节号
+  4. 仅在完全失去稳定锚点时才允许显示“未定位到稳定章节，请结合原文复核。”
+- `章节完整性` 保留表格，但正式展示中删除标题“章节完整性矩阵”和列“相关审查意见”。
+- 正式 PDF 版式默认采用“正文竖版 + 宽表横页”；网页与 PDF 必须继续消费同一套 `reportHtml / reportPrintCss` 真相源。

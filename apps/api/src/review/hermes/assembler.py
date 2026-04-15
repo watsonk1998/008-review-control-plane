@@ -3,8 +3,9 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Any
 
-from src.review.contracts import FactPacket, FinalReportPacket, FindingItem, ReviewBrief
+from src.review.contracts import FactPacket, FinalReportPacket, FindingItem, ReviewBrief, ReviewPacketMetrics
 from src.review.final_report_merger import FinalReportMerger
+from src.review.hermes.module_bindings import REVIEW_MODULE_BINDINGS
 
 _GRADE_LABELS = {
     'conditional_pass': '有条件通过',
@@ -40,8 +41,9 @@ class HermesReviewAssembler:
         hermes_ok = bool(hermes_review_packets and not all(p.degraded for p in hermes_review_packets))
 
         if not hermes_ok:
-            # FAIL-CLOSED: Do not emit a formal formal review report if Hermes is unavailable.
+            # FAIL-CLOSED: Do not emit a formal review report if Hermes is entirely unavailable.
             payload = dict(support_result_008 or (support_packet_008.raw_result if support_packet_008 else {}) or {})
+            error_reason = self._extract_error_reason(hermes_review_packets)
             payload['hermesController'] = {
                 'enabled': True,
                 'selectedAgents': [result.get('agent_id') for result in agent_results],
@@ -52,18 +54,61 @@ class HermesReviewAssembler:
                 'decisionOwner': 'hermes',
                 'supportOwner': 'structured_review_capability_facade',
                 'degraded': True,
+                'degradedReason': error_reason,
             }
-            
-            error_reason = hermes_review_packets[0].error if hermes_review_packets and hermes_review_packets[0].error else "主审引擎未返回有效裁决"
             fallback_markdown = self._render_degraded_markdown(
                 doc_label=_GRADE_LABELS.get(str(brief.review_object_type), str(brief.review_object_type)),
                 support_packet=support_packet_008,
-                error_reason=error_reason
+                error_reason=error_reason,
             )
             payload['finalReportMarkdown'] = fallback_markdown
             payload['finalAnswer'] = fallback_markdown
             payload['traceability'] = []
             return payload, None
+
+        # MODULE-LEVEL GATE: If any enabled module has ALL its hermes templates degraded,
+        # the module cannot produce meaningful findings — fail-closed to prevent misleading empty sections.
+        if enabled_modules:
+            blocked_modules, block_details = self._check_critical_module_blocks(
+                enabled_modules=enabled_modules,
+                agent_results=agent_results,
+            )
+            if blocked_modules:
+                payload = dict(support_result_008 or (support_packet_008.raw_result if support_packet_008 else {}) or {})
+                error_parts = [
+                    f'[{detail["title"]}] {tid}: {err}'
+                    for mod, detail in block_details.items()
+                    for tid, err in detail['errors'].items()
+                ]
+                blocked_titles = '、'.join(block_details[m]['title'] for m in blocked_modules)
+                error_reason = (
+                    '；'.join(error_parts)
+                    if error_parts
+                    else f'以下模块的全部审查组件均已降级，无法输出正式结论：{blocked_titles}'
+                )
+                payload['hermesController'] = {
+                    'enabled': True,
+                    'selectedAgents': [result.get('agent_id') for result in agent_results],
+                    'agentResults': agent_results,
+                    'finalReportReady': False,
+                    'supplementalPacketCount': 0,
+                    'mainReviewOwnedBy': 'hermes',
+                    'decisionOwner': 'hermes',
+                    'supportOwner': 'structured_review_capability_facade',
+                    'degraded': True,
+                    'degradedReason': error_reason,
+                    'blockedModules': blocked_modules,
+                    'blockDetails': block_details,
+                }
+                fallback_markdown = self._render_degraded_markdown(
+                    doc_label=_GRADE_LABELS.get(str(brief.review_object_type), str(brief.review_object_type)),
+                    support_packet=support_packet_008,
+                    error_reason=error_reason,
+                )
+                payload['finalReportMarkdown'] = fallback_markdown
+                payload['finalAnswer'] = fallback_markdown
+                payload['traceability'] = []
+                return payload, None
 
         merged_hermes_main_review = self._merge_hermes_review_outcomes(support_packet_008.review_id if support_packet_008 else brief.review_id, hermes_review_packets)
         support_packet_008, merged_hermes_main_review = self._apply_support_confidence_adjustments(
@@ -495,3 +540,81 @@ class HermesReviewAssembler:
             if isinstance(modules, list) and len(modules) == 1 and modules[0]:
                 return str(modules[0])
         return None
+
+    def _extract_error_reason(self, hermes_review_packets: list[FactPacket]) -> str:
+        """Extract a non-empty error reason from degraded packets."""
+        if not hermes_review_packets:
+            return '主审引擎未收到任何审查结果'
+        reasons = [
+            (p.metadata.get('template_id') or p.metadata.get('agent_id') or 'unknown', p.error or '')
+            for p in hermes_review_packets
+            if p.degraded
+        ]
+        if not reasons:
+            return '主审引擎未返回有效裁决'
+        parts = [
+            f'{tid}: {err}' if err else f'{tid} 审查组件降级，未返回有效结果'
+            for tid, err in reasons
+        ]
+        return '；'.join(parts)
+
+    def _check_critical_module_blocks(
+        self,
+        *,
+        enabled_modules: list[str],
+        agent_results: list[dict[str, Any]],
+    ) -> tuple[list[str], dict[str, Any]]:
+        """Identify enabled modules where ALL hermes reviewer templates are degraded.
+
+        A module is blocked only when every template responsible for it is degraded.
+        If even one template for a module succeeded, that module is NOT blocked.
+
+        Returns:
+            (blocked_module_names, block_detail_dict)
+        """
+        # Build a map of actually-run templates and their degradation status.
+        # Templates not present in agent_results were never selected/run.
+        run_results: dict[str, bool] = {}   # template_id -> degraded
+        template_errors: dict[str, str] = {}
+        for result in agent_results:
+            agent_id = result.get('agent_id') or ''
+            if not agent_id:
+                continue
+            packet = result.get('packet') or {}
+            is_degraded = bool(packet.get('degraded'))
+            run_results[agent_id] = is_degraded
+            if is_degraded:
+                err = packet.get('error') or ''
+                template_errors[agent_id] = (
+                    err if err else f'{agent_id} 审查组件降级，未返回有效结果'
+                )
+
+        if not any(run_results.values()):
+            # No template actually degraded — nothing to block.
+            return [], {}
+
+        blocked_modules: list[str] = []
+        block_details: dict[str, Any] = {}
+        for module_name in enabled_modules:
+            binding = REVIEW_MODULE_BINDINGS.get(module_name)
+            if not binding or not binding.hermes_templates:
+                continue
+            # Only consider templates that were actually run for this module.
+            run_templates = [tid for tid in binding.hermes_templates if tid in run_results]
+            if not run_templates:
+                # No templates ran for this module — cannot determine block status.
+                continue
+            # Block only when every run template for this module is degraded.
+            all_run_degraded = all(run_results[tid] for tid in run_templates)
+            if all_run_degraded:
+                blocked_modules.append(module_name)
+                degraded_tids = [tid for tid in run_templates if run_results[tid]]
+                block_details[module_name] = {
+                    'title': binding.title,
+                    'degraded_templates': degraded_tids,
+                    'errors': {
+                        tid: template_errors.get(tid, f'{tid} 降级')
+                        for tid in degraded_tids
+                    },
+                }
+        return blocked_modules, block_details
