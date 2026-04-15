@@ -29,10 +29,10 @@
 - 增强正式报告去重与定位回退：除 `(id, title)` 精确去重外，新增展示层近重复 issue card 抑制；`问题定位` 在 `matchedSections / docEvidence` 缺失时，允许从 `finding.summary / support summary / recommendation` 提取 `第六章 / 5.1.5 / 第五章5.1.4` 等章节锚点，仅在完全失去定位线索时才回退为通用提示。
 - 继续收紧“章节完整性”展示：保留表格，但删除标题“章节完整性矩阵”与列“相关审查意见”，避免同一结构信息在矩阵标题、列名和问题卡中重复堆叠。
 - 将 Hermes 正式 PDF 打印样式改为“正文 A4 竖版 + 宽表横页”，并让 Playwright 导出服从同一套 print CSS，不再在导出代码中继续强制 landscape。
-### Fixed
-- Fix URL param case mismatch: callbackUrl (lowercase b) vs callBackUrl (uppercase B) in page.tsx, causing externalContext.callBackUrl to always be null.
-- Fix async/await callback chain: external_callbacks.py changed to async but deepresearch_runtime.py callers not updated to await, causing fire-and-forget drops. Also uvicorn default logging does not output app-level logger.info, switched to print(flush=True).
-- Fix fatal callback endpoint path: API doc says updateReportStatus but actual working path is updateReviewStatus (Report vs Review). Wrong path was intercepted by 401 auth gate. Manually retried historical task callback and confirmed 200 OK.
+### Fixed (建果平台回调三连坑)
+- **修复 URL 参数大小写不匹配**：建果平台传入 `callbackUrl`（小写b），`page.tsx` 只读取 `callBackUrl`（大写B），导致 `externalContext.callBackUrl` 始终为 `null`，回调从未触发。修复为兼容两种写法。
+- **修复回调函数 async/await 断链**：`external_callbacks.py` 改为 `async def` 后，`deepresearch_runtime.py` 调用方未同步改为 `await`，回调变成 fire-and-forget 被事件循环丢弃。同时发现 uvicorn 默认 logging 配置不输出应用代码的 `logger.info`，改用 `print(flush=True)` 兜底确保日志输出。
+- **修复回调接口路径错误（致命）**：接口文档写的终态回调路径是 `updateReportStatus`，实际建果平台正确路径是 **`updateReviewStatus`**（Report vs Review），错误路径被建果 API 网关 401 拦截。已修正 `external_callbacks.py` 并手动补发历史任务回调验证通过（200 OK）。
 
 ### Notes
 - 本日重点不是再扩规则面，而是把“正式报告能不能让专家一眼看懂、网页与 PDF 是否一致、前端是否还像调试台”这三个交付问题收口。
