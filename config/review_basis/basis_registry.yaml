@@ -49,9 +49,75 @@
   jurisdiction: "National"
   file_refs:
     - "knowledge/review_basis/laws/safety_management_regulation.md"
-  applicability_tags: ["all", "distribution_network_special_scheme"]
+  applicability_tags: ["all", "distribution_network_special_scheme", "construction_org"]
   owner: "State Council"
   freshness_rule: "yearly"
+
+"construction-《建设工程质量管理条例》":
+  basis_id: "construction-《建设工程质量管理条例》"
+  title: "《建设工程质量管理条例》"
+  source_type: "law"
+  version: "国务院令第279号"
+  effective_status: "active"
+  jurisdiction: "National"
+  file_refs:
+    - "knowledge/review_basis/laws/construction_quality_regulation.md"
+  applicability_tags: ["construction_org", "base"]
+  owner: "State Council"
+  freshness_rule: "yearly"
+
+"construction-《建设工程施工现场消防安全技术规范》GB 50720-2011":
+  basis_id: "construction-《建设工程施工现场消防安全技术规范》GB 50720-2011"
+  title: "《建设工程施工现场消防安全技术规范》"
+  source_type: "national_standard"
+  version: "GB 50720-2011"
+  effective_status: "active"
+  jurisdiction: "National"
+  file_refs:
+    - "knowledge/review_basis/national_standards/gb_50720_2011.md"
+  applicability_tags: ["construction_org", "base"]
+  owner: "MOHURD"
+  freshness_rule: "yearly"
+
+"construction-《建筑施工安全检查标准》JGJ 59-2011":
+  basis_id: "construction-《建筑施工安全检查标准》JGJ 59-2011"
+  title: "《建筑施工安全检查标准》"
+  source_type: "industry_standard"
+  version: "JGJ 59-2011"
+  effective_status: "active"
+  jurisdiction: "National"
+  file_refs:
+    - "knowledge/review_basis/industry_standards/jgj_59_2011.md"
+  applicability_tags: ["construction_org", "base"]
+  owner: "MOHURD"
+  freshness_rule: "yearly"
+
+"construction-《关于实施危险性较大的分部分项工程安全管理规定有关问题的通知》（建办质〔2018〕31号）":
+  basis_id: "construction-《关于实施危险性较大的分部分项工程安全管理规定有关问题的通知》（建办质〔2018〕31号）"
+  title: "《关于实施〈危险性较大的分部分项工程安全管理规定〉有关问题的通知》"
+  source_type: "industry_standard"
+  version: "建办质〔2018〕31号"
+  effective_status: "active"
+  jurisdiction: "National"
+  file_refs:
+    - "knowledge/review_basis/industry_standards/mohurd_2018_31.md"
+  applicability_tags: ["construction_org", "hazardous_special_scheme", "base"]
+  owner: "MOHURD"
+  freshness_rule: "yearly"
+
+"construction-《房屋市政工程生产安全重大事故隐患判定标准（2024版）》":
+  basis_id: "construction-《房屋市政工程生产安全重大事故隐患判定标准（2024版）》"
+  title: "《房屋市政工程生产安全重大事故隐患判定标准（2024版）》"
+  source_type: "industry_standard"
+  version: "2024版"
+  effective_status: "active"
+  jurisdiction: "National"
+  file_refs:
+    - "knowledge/review_basis/industry_standards/mohurd_major_hazard_2024.md"
+  applicability_tags: ["construction_org", "base"]
+  owner: "MOHURD"
+  freshness_rule: "yearly"
+
 
 "power-grid-《电网工程建设施工安全基准风险指南》（2012年版）":
   basis_id: "power-grid-《电网工程建设施工安全基准风险指南》（2012年版）"

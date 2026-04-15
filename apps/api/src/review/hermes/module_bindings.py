@@ -28,7 +28,7 @@ REVIEW_MODULE_BINDINGS: dict[str, ReviewModuleBinding] = {
     'structure_completeness': ReviewModuleBinding(
         module_name='structure_completeness',
         title='文档完整性',
-        hermes_templates=['structure_completeness_reviewer'],
+        hermes_templates=['structure_completeness_reviewer', 'construction_org_structure_reviewer'],
         support_capabilities=['primary_support_review', 'profile_and_packs'],
         decision_policy='prefer_conservative_structure_gap_expression',
         result_bucket='structure_completeness',
@@ -44,7 +44,7 @@ REVIEW_MODULE_BINDINGS: dict[str, ReviewModuleBinding] = {
     'legality_compliance': ReviewModuleBinding(
         module_name='legality_compliance',
         title='合规审查',
-        hermes_templates=['policy_compliance_reviewer', 'power_outage_normative_reviewer', 'power_outage_restoration_closure_reviewer'],
+        hermes_templates=['policy_compliance_reviewer', 'power_outage_normative_reviewer', 'power_outage_restoration_closure_reviewer', 'construction_org_compliance_reviewer'],
         support_capabilities=['profile_and_packs', 'rule_and_evidence'],
         decision_policy='promote_when_rule_hits_are_grounded',
         result_bucket='legality_compliance',

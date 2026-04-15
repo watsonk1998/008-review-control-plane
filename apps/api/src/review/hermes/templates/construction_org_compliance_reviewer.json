@@ -1,0 +1,59 @@
+{
+  "id": "construction_org_compliance_reviewer",
+  "agent_name": "施工组织设计合规性审查",
+  "agent_purpose": "审查施工组织设计在安全管理、消防、质量、危大工程管控等方面是否满足现行法规与强制性标准要求",
+  "agent_scope": "legality_compliance",
+  "execution_mode": "hermes_router",
+  "module_bindings": [
+    "profile_and_packs",
+    "rule_and_evidence"
+  ],
+  "supported_document_types": ["construction_org"],
+  "focus_keywords": [
+    "安全管理",
+    "安全生产",
+    "消防",
+    "防火",
+    "质量管理",
+    "危险性较大",
+    "危大工程",
+    "重大事故隐患",
+    "专项方案",
+    "应急预案",
+    "文明施工",
+    "安全教育培训",
+    "安全技术措施",
+    "扬尘控制",
+    "临时用电",
+    "脚手架",
+    "起重吊装"
+  ],
+  "required_context_types": [
+    "target_document"
+  ],
+  "input_contract": {
+    "type": "review_brief"
+  },
+  "output_contract": {
+    "type": "fact_packet",
+    "role": "main_review"
+  },
+  "instructions": "依据以下现行法规和标准，审查施工组织设计的合规性：\n1. 《建设工程安全生产管理条例》（国务院令第393号）：安全管理组织机构、专项施工方案编制要求、安全技术交底\n2. 《建设工程质量管理条例》（国务院令第279号）：质量管理责任体系、验收程序\n3. 《建设工程施工现场消防安全技术规范》GB 50720-2011：临时消防设施、动火管理\n4. 《建筑施工安全检查标准》JGJ 59-2011：安全管理要素覆盖检查\n5. 《关于实施〈危险性较大的分部分项工程安全管理规定〉有关问题的通知》（建办质〔2018〕31号）：危大工程专项方案管理要求\n6. 《房屋市政工程生产安全重大事故隐患判定标准（2024版）》：重大事故隐患识别与防控\n\n重点审查：\n- 是否明确列出危大工程清单并说明专项方案编制计划\n- 安全管理计划是否覆盖风险辨识、安全技术措施、教育培训\n- 消防安全措施是否具体可操作\n- 质量管理体系是否建立并有可量化目标\n- 是否识别并防控重大事故隐患",
+  "prompt": "请依据现行法规标准（安全生产管理条例、质量管理条例、消防规范、安全检查标准等），审查此施工组织设计在安全、质量、消防、危大工程管控方面的合规性，指出不符合项及对应条款。",
+  "default_enabled": true,
+  "save_policy": {
+    "seed": true
+  },
+  "template_version": "1.0.0",
+  "compatibility": {
+    "controller": "hermes_v0"
+  },
+  "metadata": {
+    "review_modules": [
+      "legality_compliance"
+    ],
+    "ownership": "hermes_main_review"
+  },
+  "input_token_limit": 200000,
+  "output_token_limit": 200000
+}
