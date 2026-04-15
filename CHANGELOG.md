@@ -33,6 +33,7 @@
 - **修复 URL 参数大小写不匹配**：建果平台传入 `callbackUrl`（小写b），`page.tsx` 只读取 `callBackUrl`（大写B），导致 `externalContext.callBackUrl` 始终为 `null`，回调从未触发。修复为兼容两种写法。
 - **修复回调函数 async/await 断链**：`external_callbacks.py` 改为 `async def` 后，`deepresearch_runtime.py` 调用方未同步改为 `await`，回调变成 fire-and-forget 被事件循环丢弃。同时发现 uvicorn 默认 logging 配置不输出应用代码的 `logger.info`，改用 `print(flush=True)` 兜底确保日志输出。
 - **修复回调接口路径错误（致命）**：接口文档写的终态回调路径是 `updateReportStatus`，实际建果平台正确路径是 **`updateReviewStatus`**（Report vs Review），错误路径被建果 API 网关 401 拦截。已修正 `external_callbacks.py` 并手动补发历史任务回调验证通过（200 OK）。
+- **修复建果平台点击已审查项目跳转到首页**：建果平台传入 `reviewId` 参数（= weknora taskId），`page.tsx` 未处理，所有请求落到首页。修复为优先检测 `reviewId`/`taskId`，存在则 `redirect('/tasks/{id}')` 直接跳转任务详情页。
 
 ### Notes
 - 本日重点不是再扩规则面，而是把“正式报告能不能让专家一眼看懂、网页与 PDF 是否一致、前端是否还像调试台”这三个交付问题收口。

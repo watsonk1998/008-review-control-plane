@@ -396,22 +396,7 @@ class HermesReviewAssembler:
         executed_modules: list[str],
         grade: str,
     ) -> str:
-        high_count = sum(1 for finding in all_findings if finding.severity == 'high')
-        medium_count = sum(1 for finding in all_findings if finding.severity == 'medium')
-        low_count = sum(1 for finding in all_findings if finding.severity == 'low')
-        module_labels = {
-            'structure_completeness': '章节完整性',
-            'parameter_consistency': '参数一致性',
-            'legality_compliance': '合法合规性',
-            'execution_continuity': '工序连贯性',
-            'evidence_validation': '证据验证',
-        }
-        covered_modules = '、'.join(module_labels.get(module, module) for module in executed_modules[:5])
-        lines = [
-            f"本次审查已由专业主审组件裁决完成，总体评级结论为：**{_GRADE_LABELS.get(grade, grade)}**。",
-            f"本次结果共覆盖 {len(executed_modules)} 个审查模块{f'（{covered_modules}）' if covered_modules else ''}，形成 {len(all_findings)} 项审查问题（高风险 {high_count} 项，中等风险 {medium_count} 项，低风险 {low_count} 项）。",
-        ]
-        return ' '.join(lines)
+        return f"本次审查已由专业主审组件裁决完成，总体评级结论为：**{_GRADE_LABELS.get(grade, grade)}**。"
 
     def _render_markdown(
         self,
