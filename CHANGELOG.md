@@ -52,6 +52,28 @@
 - `tests/test_assembler_module_gate.py`：9 个回归 case，覆盖模块级门禁触发、部分降级不阻断、`enabled_modules=None` 旁路、`degradedReason` 非空合同等场景，12/12 pass。
 
 
+### Fixed (规范有效性判断收紧 + executive summary 禁统计句)
+
+- **收紧规范有效性判断门禁**（`normative_validity.py`）：裸标准号（无年份后缀，如 `GB/T 6995`）或多分册标准（如 `GB/T 6995` 指向多个分册）不得自动判 `current`，必须判 `unknown`（待人工核验）。仅凭搜索摘要出现"现行/有效"等正向关键词不足以判定。只有同时满足三项精确条件（搜索结果标题含精确标准编号含年份、基础编号与输入完全一致、输入无分册号时搜索结果也无分册）才允许判 `current`。
+- **禁止 executive summary 拼接统计句**（`assembler.py`）：`_decide_executive_summary()` 只允许输出主结论句，禁止拼接模块覆盖数、问题总数、风险分布等统计文案。`final_report_view_model.py` 新增防御性过滤，即使历史数据仍含统计句也不得渗透到前端 narrative。
+- **view model 补 `resolvedTitle` + `note` 字段**（`final_report_view_model.py`）：`NormativeValidityCheckView` 补充可选字段；精确命中时填 `resolvedTitle`（规范化标准标题），`unknown` 时填 `note`（人工核验原因）。
+
+### Added (规范有效性测试矩阵)
+- `tests/test_hermes_normative_validity_agent.py`：新增裸标准号 / 多分册 → `unknown` 完整测试矩阵。
+- `tests/test_final_report_view_model.py`：补充 executive summary 禁统计句断言。
+
+### Ops (分支治理 + Weknora 部署 + CVE-2026-23869 修复)
+
+- **commit `7f10a94`**：5 文件入库（`AGENTS.md` / `normative_validity.py` / `final_report_view_model.py` / 2 组测试文件），推送 `hermes-review-clean`。
+- **创建并推送 `main` 分支**：`hermes-review-clean` → `main`（`--no-ff`，因两分支历史存在分叉，`--ff-only` 报 fatal，改用 `--no-ff`）；`main` 首次推送至 GitHub（此前远端无 `main`）。
+- **Weknora 标准 SOP 部署**：backup `.env` + `docker-compose.yml` → rsync（排除 `.env` / `docker-compose.yml` / `.venv`）→ `docker compose up -d --build api web`，三容器 Recreate + Started，端口 `81:3000` + `23031:3000` 正常绑定。
+- **修复 CVE-2026-23869（Next.js DoS，High）**：Dependabot 告警 `next@16.2.2` 存在 App Router Server Function DoS 漏洞，`npm install next@16.2.3 --save`，`commit 93b773a`，二次合并 `main` + 二次 rsync + rebuild，Dependabot High 告警关闭。
+
+### Notes
+- **`git merge --ff-only` 使用约束**：仅当两分支历史完全线性时才可用，分支间存在分叉时必须用 `--no-ff`，否则报 `fatal: Not possible to fast-forward`。后续跨分支合并到 `main` 统一使用 `--no-ff`。
+- **Dependabot 高危 CVE 处理节奏**：High 级告警应在当轮 session 内立即修复（本次全流程 8 分钟内完成），不延迟到下一 session。
+- 本轮已完成两次完整部署闭环；`main` 分支现已在 GitHub 存在并持续对齐 `hermes-review-clean`。
+
 ## 2026-04-14
 
 ### Added
