@@ -38,9 +38,10 @@ _NON_NORMATIVE_HINTS = (
     '查勘记录',
 )
 _NORMATIVE_CODE_PATTERN = re.compile(
-    r'(?:(?:GB|GB/T|DL/T|DL|Q/CSG|Q/GDW|Q/SH|JGJ|NB/T|NB|AQ|DB|DBJ|YD/T|SL|GA|CECS)\s*[-/A-Z]*\s*\d{2,}(?:[-—]\d{2,4})?)',
+    r'(?:(?:GB|GB/T|DL/T|DL|Q/CSG|Q/GDW|Q/SH|JGJ|NB/T|NB|AQ|DB|DBJ|YD/T|SL|GA|CECS)\s*[-/A-Z]*\s*\d{2,}(?:\.\d+)?(?:[-—]\d{2,4})?)',
     re.IGNORECASE,
 )
+_VERSION_YEAR_PATTERN = re.compile(r'[-—]\d{4}(?:\b|$)')
 
 
 class NormativeValidityChecker:
@@ -159,6 +160,12 @@ class NormativeValidityChecker:
         final = web_result if web_result.get('status') != 'unknown' else llm_result
         if final.get('status') == 'unknown' and not final.get('summary'):
             final = self._heuristic_result(title)
+        # GATE: bare standard numbers (no year/sub-part version) cannot be
+        # declared 'current' unless evidence uniquely resolves to a specific
+        # versioned standard.  Family standards without sub-part specifier
+        # are always demoted.
+        if final.get('status') == 'current' and not self._has_precise_version_anchor(title):
+            final = self._demote_bare_to_manual_review(title, final)
         return {
             'sourceId': source['sourceId'],
             'title': title,
@@ -250,6 +257,54 @@ class NormativeValidityChecker:
                 'evidenceUrl': '',
             }
         return self._unknown_result('heuristic', '当前仅能给出保守判断，建议人工核验。')
+
+    def _has_precise_version_anchor(self, title: str) -> bool:
+        """Check if the title contains a standard code with a year suffix (e.g., -2015)."""
+        code = _NORMATIVE_CODE_PATTERN.search(title)
+        if not code:
+            return False
+        return bool(_VERSION_YEAR_PATTERN.search(code.group(0)))
+
+    def _evidence_resolves_uniquely(self, input_title: str, evidence_title: str) -> bool:
+        """Check if the web evidence uniquely maps the input to a single specific
+        versioned standard.  Returns False for family/series standards where the
+        input lacks a sub-part but the evidence points to a specific sub-part."""
+        if not evidence_title:
+            return False
+        evidence_code = _NORMATIVE_CODE_PATTERN.search(evidence_title)
+        if not evidence_code:
+            return False
+        ev_code = evidence_code.group(0)
+        # Evidence must carry a year suffix.
+        if not _VERSION_YEAR_PATTERN.search(ev_code):
+            return False
+        input_code = _NORMATIVE_CODE_PATTERN.search(input_title)
+        if not input_code:
+            return False
+        input_base = re.sub(r'[-—]\d{4}.*$', '', input_code.group(0)).strip().replace(' ', '').lower()
+        ev_base = re.sub(r'[-—]\d{4}.*$', '', ev_code).strip().replace(' ', '').lower()
+        # Family gate: input has no sub-part (e.g. GB/T 6995) but evidence
+        # resolves to a specific sub-part (e.g. GB/T 6995.1-2008) — not unique.
+        if '.' not in input_base and '.' in ev_base:
+            return False
+        return input_base == ev_base
+
+    def _demote_bare_to_manual_review(self, title: str, result: dict[str, Any]) -> dict[str, Any]:
+        """Demote a 'current' verdict to 'unknown' when the input standard
+        reference lacks a precise version anchor, unless web evidence can
+        uniquely resolve it to a single versioned standard."""
+        evidence_title = str(result.get('evidenceTitle') or '')
+        if self._evidence_resolves_uniquely(title, evidence_title):
+            # Evidence uniquely resolves — keep 'current' but annotate resolved title.
+            result['resolvedTitle'] = evidence_title
+            return result
+        return {
+            'status': 'unknown',
+            'resolvedBy': result.get('resolvedBy', 'gate'),
+            'summary': f'原文引用缺少年份或分册版本号，无法唯一映射到具体现行标准，需人工核验。',
+            'evidenceTitle': evidence_title,
+            'evidenceUrl': result.get('evidenceUrl', ''),
+        }
 
     def _unknown_result(self, resolved_by: str, summary: str) -> dict[str, Any]:
         return {

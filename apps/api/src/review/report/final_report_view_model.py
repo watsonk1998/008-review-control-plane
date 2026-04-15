@@ -105,6 +105,8 @@ class NormativeValidityCheckView(BaseModel):
     title: str
     status: str
     statusLabel: str
+    resolvedTitle: str = ''
+    note: str = ''
 
 
 class NormativeValidityView(BaseModel):
@@ -313,10 +315,11 @@ class FinalReportRenderer:
                 '<tbody>',
             ])
             for index, check in enumerate(normative_validity.checks, start=1):
+                note_html = f'<br><span class="structured-report__muted">{html.escape(check.note)}</span>' if check.note else ''
                 parts.append(
                     '<tr>'
                     f'<td>{index}</td>'
-                    f'<td>{html.escape(check.title)}</td>'
+                    f'<td>{html.escape(check.title)}{note_html}</td>'
                     f'<td>{html.escape(check.statusLabel)}</td>'
                     '</tr>'
                 )
@@ -430,14 +433,25 @@ class FinalReportRenderer:
         return NormativeValidityView(summary=summary, checks=checks)
 
     def _build_normative_validity_check(self, item: dict[str, Any]) -> NormativeValidityCheckView | None:
-        title = self._clean_text(item.get('title')) or self._clean_text(item.get('sourceTitle'))
-        if not title:
+        original_title = self._clean_text(item.get('title')) or self._clean_text(item.get('sourceTitle'))
+        if not original_title:
             return None
         status = self._clean_text(item.get('status')) or 'unknown'
+        resolved_title = self._clean_text(item.get('resolvedTitle')) or ''
+        summary = self._clean_text(item.get('summary')) or ''
+        # Use resolved title as display title when available and different.
+        display_title = resolved_title if resolved_title and resolved_title != original_title else original_title
+        note = ''
+        if status == 'unknown':
+            note = summary or '需人工核验。'
+        elif status == 'current' and resolved_title and resolved_title != original_title:
+            note = f'已确认现行标准：{resolved_title}'
         return NormativeValidityCheckView(
-            title=title,
+            title=display_title,
             status=status,
             statusLabel=_VALIDITY_STATUS_LABELS.get(status, status),
+            resolvedTitle=resolved_title,
+            note=note,
         )
 
     def _build_issue_view(
@@ -751,7 +765,7 @@ class FinalReportRenderer:
             sentence = sentence.strip()
             if not sentence:
                 continue
-            if '总体评级结论为' in sentence or '当前命中' in sentence or '主审环节额外标注了' in sentence:
+            if '总体评级结论为' in sentence or '当前命中' in sentence or '主审环节额外标注了' in sentence or '本次结果共覆盖' in sentence:
                 continue
             narrative_parts.append(sentence)
         narrative = ' '.join(narrative_parts)

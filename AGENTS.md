@@ -129,3 +129,20 @@ All user-visible content in reports, interfaces, and statuses MUST be presented 
 - **`assembler.py` 历史遗漏导入**：`ReviewPacketMetrics` 在 `_merge_hermes_review_outcomes` 中已被使用但原先未导入，属潜在 `NameError`；已在本批次修复。补导入时，务必同步检查同文件其他已使用但未显式导入的类型。
 
 - **测试执行环境**：`hermes-review-agent/apps/api` 项目使用本地虚拟环境，测试命令必须用 `.venv/bin/pytest`，不得假设系统 PATH 中有 `pytest`。
+
+## Project Corrections Addendum (2026-04-15, report output & normative validity)
+
+> Source: User-reported issues — executive summary stats sentence + over-aggressive normative validity judgment.
+
+- **正式报告 executive summary 禁止包含统计句**：`_decide_executive_summary()` 只允许输出"本次审查已由专业主审组件裁决完成，总体评级结论为：**X**。"这一句主结论。禁止拼接模块覆盖数、问题总数、风险分布等统计文案。此类信息由 view model 的 `executiveSummaryView.metrics` 独立计算展示，不得从 prose summary 中反向解析。
+
+- **裸标准号不得直接判定为"现行有效"**：若被审方案《编制依据》中引用的标准号缺少年份后缀（如 `GB/T 6995` 而非 `GB/T 6995.1-2008`），且联网结果无法唯一映射到单个具体现行标准，则状态必须为 `unknown`（待人工核验）。仅凭搜索摘要出现"现行/有效/实施"等正向关键词不得判定 `current`。
+
+- **家族标准 / 多分册标准不可自动收敛**：若输入无分册号（如 `GB/T 6995`）但搜索结果指向某个分册（如 `GB/T 6995.1-2008`），不算唯一映射，必须判定 `unknown`。
+
+- **联网精确唯一命中条件**：只有同时满足以下三项，才允许将裸标准号判定为 `current` 并标注 `resolvedTitle`：(1) 搜索结果标题含精确标准编号（含年份）；(2) 基础编号与输入完全一致；(3) 输入无分册号时，搜索结果也不得是分册。
+
+- **view model 必须承载规范化结果**：`NormativeValidityCheckView` 必须包含 `resolvedTitle`（精确命中时的规范化标题）和 `note`（unknown 时的人工核验原因，或 current+resolved 时的确认说明）。表格主标题优先展示 resolvedTitle（若存在且不同于原始标题）。
+
+- **`_parse_executive_summary()` 防御性过滤**：即使遗留数据仍含"本次结果共覆盖…形成…项审查问题…"类统计句，view model 解析时也必须过滤，不得渗透到前端 narrative。当先前文档或代码中关于 executive summary 的口径与本条冲突时，以本条为准。
+

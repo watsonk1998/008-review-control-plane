@@ -28,8 +28,7 @@ def test_final_report_view_model_builds_sections_and_compact_chapter_matrix():
     packet = FinalReportPacket(
         review_id='r1',
         executive_summary=(
-            '本次审查已由专业主审组件裁决完成，总体评级结论为：**不通过**。 '
-            '本次结果共覆盖 4 个审查模块，形成 9 项审查问题。'
+            '本次审查已由专业主审组件裁决完成，总体评级结论为：**不通过**。'
         ),
         all_findings=[
             FindingItem(
@@ -243,3 +242,127 @@ def test_final_report_view_model_filters_to_selected_modules_and_dedupes_near_du
     assert view_model.sections[0].issues[0].location.startswith('第六章')
     assert view_model.executiveSummaryView.metrics[0].label == '章节完整性'
     assert view_model.executiveSummaryView.metrics[1].label == '工序连贯性'
+
+
+# ---------------------------------------------------------------------------
+# Regression tests (2026-04-15)
+# ---------------------------------------------------------------------------
+
+def test_executive_summary_no_stats_sentence():
+    """Executive summary must NOT contain '本次结果共覆盖' or issue count statistics."""
+    renderer = FinalReportRenderer()
+    packet = FinalReportPacket(
+        review_id='r-stats',
+        executive_summary='本次审查已由专业主审组件裁决完成，总体评级结论为：**需要修改**。',
+        all_findings=[
+            FindingItem(id='X-1', title='测试问题', severity='high', summary='测试',
+                        raw_data={'module_name': 'legality_compliance'}),
+        ],
+    )
+    view_model = renderer.build_view_model(
+        final_packet=packet,
+        support_result={'summary': {'documentType': 'construction_scheme'}, 'issues': [], 'matrices': {}},
+    )
+    assert '本次结果共覆盖' not in view_model.executiveSummary
+    assert '形成' not in view_model.executiveSummary
+    assert '项审查问题' not in view_model.executiveSummary
+    html_output = renderer.render_html(view_model)
+    assert '本次结果共覆盖' not in html_output
+
+
+def test_legacy_executive_summary_with_stats_is_filtered_in_narrative():
+    """Legacy data that still contains the stats sentence should be filtered out
+    from the narrative view via defense-in-depth in _parse_executive_summary."""
+    renderer = FinalReportRenderer()
+    packet = FinalReportPacket(
+        review_id='r-legacy',
+        executive_summary=(
+            '本次审查已由专业主审组件裁决完成，总体评级结论为：**不通过**。'
+            ' 本次结果共覆盖 5 个审查模块（章节完整性、合法合规性、证据验证、参数一致性、工序连贯性），'
+            '形成 103 项审查问题（高风险 48 项，中等风险 47 项，低风险 1 项）。'
+        ),
+        all_findings=[],
+    )
+    view_model = renderer.build_view_model(
+        final_packet=packet,
+        support_result={'summary': {}, 'issues': [], 'matrices': {}},
+    )
+    assert view_model.executiveSummaryView.verdict == '不通过'
+    # The narrative must NOT contain the stats sentence.
+    assert '本次结果共覆盖' not in view_model.executiveSummaryView.narrative
+
+
+def test_normative_validity_unknown_shows_note():
+    """Unknown normative validity items must carry a non-empty note."""
+    renderer = FinalReportRenderer()
+    packet = FinalReportPacket(
+        review_id='r-nv-note',
+        executive_summary='总体评级结论为：**需要修改**。',
+        all_findings=[
+            FindingItem(
+                id='NV-1',
+                title='编制依据现行有效性核验',
+                severity='info',
+                category='evidence_verification',
+                raw_data={
+                    'module_name': 'evidence_validation',
+                    'normativeValidityChecks': [
+                        {
+                            'title': '《电线电缆识别标志方法》GB/T 6995',
+                            'status': 'unknown',
+                            'summary': '原文引用缺少年份或分册版本号，无法唯一映射到具体现行标准，需人工核验。',
+                        },
+                    ],
+                },
+            ),
+        ],
+    )
+    view_model = renderer.build_view_model(
+        final_packet=packet,
+        support_result={'summary': {}, 'issues': [], 'matrices': {}},
+    )
+    assert len(view_model.normativeValidity.checks) == 1
+    check = view_model.normativeValidity.checks[0]
+    assert check.status == 'unknown'
+    assert check.statusLabel == '待人工核验'
+    assert '缺少年份' in check.note or '需人工核验' in check.note
+
+
+def test_normative_validity_current_with_resolved_title():
+    """When a bare standard is uniquely resolved, the display title and note should
+    reflect the resolved versioned standard."""
+    renderer = FinalReportRenderer()
+    packet = FinalReportPacket(
+        review_id='r-nv-resolved',
+        executive_summary='总体评级结论为：**有条件通过**。',
+        all_findings=[
+            FindingItem(
+                id='NV-2',
+                title='编制依据现行有效性核验',
+                severity='info',
+                category='evidence_verification',
+                raw_data={
+                    'module_name': 'evidence_validation',
+                    'normativeValidityChecks': [
+                        {
+                            'title': 'GB/T 50300',
+                            'status': 'current',
+                            'resolvedTitle': 'GB/T 50300-2013 建筑工程施工质量验收统一标准',
+                        },
+                    ],
+                },
+            ),
+        ],
+    )
+    view_model = renderer.build_view_model(
+        final_packet=packet,
+        support_result={'summary': {}, 'issues': [], 'matrices': {}},
+    )
+    check = view_model.normativeValidity.checks[0]
+    assert check.status == 'current'
+    assert check.statusLabel == '现行有效'
+    # Display title should be the resolved versioned title.
+    assert 'GB/T 50300-2013' in check.title
+    assert check.resolvedTitle == 'GB/T 50300-2013 建筑工程施工质量验收统一标准'
+    assert '已确认现行标准' in check.note
+

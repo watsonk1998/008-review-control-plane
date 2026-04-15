@@ -86,3 +86,107 @@ async def test_normative_validity_checker_extracts_only_preparation_basis_normat
         '《中国南方电网有限责任公司电力安全工作规程》Q/CSG 510001-2015',
         '《深圳电网工程安全文明施工标准（2019年版）》',
     ]
+
+
+# ---------------------------------------------------------------------------
+# Regression tests for tightened normative validity rules (2026-04-15)
+# ---------------------------------------------------------------------------
+
+def test_has_precise_version_anchor_with_year():
+    """Standard codes WITH a year suffix should be recognized as precise."""
+    checker = NormativeValidityChecker()
+    assert checker._has_precise_version_anchor('《电力安全工作规程》GB 26860-2011') is True
+    assert checker._has_precise_version_anchor('Q/CSG 510001-2015') is True
+    assert checker._has_precise_version_anchor('GB/T 6995.1-2008') is True
+
+
+def test_has_precise_version_anchor_without_year():
+    """Bare standard codes WITHOUT a year suffix should NOT be precise."""
+    checker = NormativeValidityChecker()
+    assert checker._has_precise_version_anchor('《电线电缆识别标志方法》GB/T 6995') is False
+    assert checker._has_precise_version_anchor('GB/T 2951') is False
+    assert checker._has_precise_version_anchor('《深圳电网工程安全文明施工标准（2019年版）》') is False
+
+
+def test_evidence_resolves_uniquely_same_base_with_year():
+    """Evidence with same base + year should resolve uniquely."""
+    checker = NormativeValidityChecker()
+    assert checker._evidence_resolves_uniquely(
+        'GB/T 50300',
+        'GB/T 50300-2013 建筑工程施工质量验收统一标准',
+    ) is True
+
+
+def test_evidence_resolves_uniquely_family_standard_blocks():
+    """Family standard (no sub-part in input) with sub-part in evidence → NOT unique."""
+    checker = NormativeValidityChecker()
+    assert checker._evidence_resolves_uniquely(
+        '《电线电缆识别标志方法》GB/T 6995',
+        'GB/T 6995.1-2008 电线电缆识别标志方法 第1部分：一般规定',
+    ) is False
+
+
+def test_evidence_resolves_uniquely_no_year_in_evidence():
+    """Evidence without a year suffix → NOT resolved."""
+    checker = NormativeValidityChecker()
+    assert checker._evidence_resolves_uniquely(
+        'GB/T 6995',
+        'GB/T 6995 电线电缆识别标志方法',
+    ) is False
+
+
+async def test_bare_standard_demoted_to_unknown():
+    """A bare standard number that gets 'current' from web should be demoted to 'unknown'
+    when the evidence cannot uniquely resolve to a specific versioned standard."""
+    checker = NormativeValidityChecker()
+    # Simulate the internal flow: _verify_source gets a 'current' result from web
+    # but the input title lacks a year.
+    result = checker._demote_bare_to_manual_review(
+        title='《电线电缆识别标志方法》GB/T 6995',
+        result={
+            'status': 'current',
+            'resolvedBy': 'web',
+            'summary': '联网结果未见废止或替代信号，当前可按现行有效处理。',
+            'evidenceTitle': 'GB/T 6995.1-2008 电线电缆识别标志方法 第1部分',
+            'evidenceUrl': 'https://openstd.samr.gov.cn/...',
+        },
+    )
+    assert result['status'] == 'unknown'
+    assert '缺少年份或分册版本号' in result['summary']
+
+
+async def test_bare_standard_uniquely_resolved_stays_current():
+    """A bare standard number that uniquely resolves to a single versioned standard
+    (same base, not a family) should keep 'current' and get resolvedTitle."""
+    checker = NormativeValidityChecker()
+    result = checker._demote_bare_to_manual_review(
+        title='GB/T 50300',
+        result={
+            'status': 'current',
+            'resolvedBy': 'web',
+            'summary': '联网结果未见废止或替代信号。',
+            'evidenceTitle': 'GB/T 50300-2013 建筑工程施工质量验收统一标准',
+            'evidenceUrl': 'https://openstd.samr.gov.cn/...',
+        },
+    )
+    assert result['status'] == 'current'
+    assert result['resolvedTitle'] == 'GB/T 50300-2013 建筑工程施工质量验收统一标准'
+
+
+async def test_positive_keywords_without_version_anchor_demoted():
+    """Even if web results contain positive keywords like '现行/有效', a bare standard
+    without a precise version anchor must still be demoted to 'unknown'."""
+    checker = NormativeValidityChecker()
+    result = checker._demote_bare_to_manual_review(
+        title='《电线电缆识别标志方法》GB/T 6995',
+        result={
+            'status': 'current',
+            'resolvedBy': 'web',
+            'summary': '现行有效',
+            'evidenceTitle': '电线电缆识别标志方法 现行有效',
+            'evidenceUrl': '',
+        },
+    )
+    assert result['status'] == 'unknown'
+    assert '需人工核验' in result['summary']
+
