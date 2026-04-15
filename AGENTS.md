@@ -186,3 +186,7 @@ All user-visible content in reports, interfaces, and statuses MUST be presented 
 - **`power_outage_operation_chain_reviewer` 禁止声明 `evidence_validation`（HG-19）**：该 reviewer 的 `metadata.review_modules` 只允许包含 `execution_continuity`。将其绑定到 `evidence_validation` 会导致停电链路 finding 混入证据验证模块，与 normative_validity_reviewer / calculation_review_reviewer 的输出混淆。
 
 - **`_build_normative_validity()` 必须用原始 findings 构建表格（HG-20）**：传入 `deduped_findings` 会导致表格被 dedup 吞掉（ID/title 冲突时丢失含 `normativeValidityChecks` 的 finding）。必须传入 `findings`（pre-dedup）以保证表格数据不丢失。
+
+- **模板 JSON 文件禁止包含中文弯引号（HG-21）**：`templates/*.json` 中的字符串值禁止使用中文弯引号（`\u201c` `\u201d` `\u2018` `\u2019`），必须使用书名号（`《》`）或直接去掉。中文弯引号会被 JSON 解析器视为字符串终止符，导致 `model_validate_json` 报 `expected , or }` 错误。`template_registry.load_templates()` 会静默跳过加载失败的模板（只打 warning），这是**静默失败反模式**——模板从未加载 → 从未被选中 → reviewer 从未执行 → 功能完全不可见。
+
+- **模板 JSON 创建/修改后必须执行验证门禁（HG-22）**：任何对 `templates/*.json` 的创建或修改操作完成后，必须立即执行以下验证：`python -c "import json; json.load(open('path/to/template.json'))"` 以及 `python -c "from src.review.hermes.template_models import AgentTemplate; AgentTemplate.model_validate_json(open('path').read())"`。两项均通过后方可提交。
