@@ -1,0 +1,52 @@
+{
+  "id": "construction_org_consistency_reviewer",
+  "agent_name": "施工组织设计内容一致性审查",
+  "agent_purpose": "审查施工组织设计文档内部各章节参数指标的一致性，识别工期、资源、目标、进度计划之间的矛盾",
+  "agent_scope": "parameter_consistency",
+  "execution_mode": "hermes_router",
+  "module_bindings": [
+    "fact_extract",
+    "rule_and_evidence"
+  ],
+  "supported_document_types": ["construction_org"],
+  "focus_keywords": [
+    "一致性",
+    "工期目标",
+    "劳动力计划",
+    "物资计划",
+    "进度计划",
+    "施工部署",
+    "资源配置",
+    "分包管理",
+    "工程概况",
+    "施工阶段"
+  ],
+  "required_context_types": [
+    "target_document"
+  ],
+  "input_contract": {
+    "type": "review_brief"
+  },
+  "output_contract": {
+    "type": "fact_packet",
+    "role": "main_review"
+  },
+  "instructions": "针对施工组织设计文档，审查以下内容一致性问题：(1) 工期一致性：总工期目标与施工总进度计划里程碑是否吻合；(2) 资源一致性：劳动力配置计划人数与各施工阶段工程量匹配度，物资计划是否覆盖全部阶段；(3) 目标与措施一致性：安全/质量/环境管理目标是否各有对应管理计划支撑；(4) 分包一致性：分包范围描述与施工方法中施工主体是否一致；(5) 技术参数一致性：工程概况设计参数与各施工方案引用参数是否一致。输出矛盾时注明具体章节（如第5.2节 vs 第7.4节）。",
+  "prompt": "请审查此施工组织设计内部各章节（施工部署、进度计划、资源配置、管理计划）之间的参数一致性，识别工期目标与计划不符、资源配置与施工量不匹配、目标与管理措施脱节等问题。",
+  "default_enabled": true,
+  "save_policy": {
+    "seed": true
+  },
+  "template_version": "1.0.0",
+  "compatibility": {
+    "controller": "hermes_v0"
+  },
+  "metadata": {
+    "review_modules": [
+      "parameter_consistency"
+    ],
+    "ownership": "hermes_main_review"
+  },
+  "input_token_limit": 200000,
+  "output_token_limit": 200000
+}

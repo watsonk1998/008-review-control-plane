@@ -1,8 +1,8 @@
 {
   "id": "execution_risk_reviewer",
-  "agent_name": "实施风险审查",
-  "agent_purpose": "通过Hermes worker补充实施风险、系统性遗漏、逻辑链路问题",
-  "agent_scope": "execution_risk",
+  "agent_name": "通用技术风险审查",
+  "agent_purpose": "识别方案执行层面的系统性风险、逻辑链路断点与资源协调缺口",
+  "agent_scope": "execution_continuity",
   "execution_mode": "hermes_router",
   "module_bindings": [
     "fact_extract"
@@ -13,8 +13,10 @@
     "实施",
     "逻辑",
     "链路",
-    "一致性",
-    "停送电"
+    "连贯性",
+    "节点",
+    "顺序",
+    "工序"
   ],
   "required_context_types": [
     "target_document",
@@ -27,8 +29,8 @@
     "type": "fact_packet",
     "role": "supplemental"
   },
-  "instructions": "关注系统性风险、执行链路、资源协调和遗漏问题。",
-  "prompt": "请补充识别实施风险和逻辑链路问题。",
+  "instructions": "审查方案技术方案的执行风险：识别工序逻辑断点、关键节点紧张度、资源协调缺口和系统性遗漏问题。不审查参数一致性（由 parameter_consistency_reviewer 负责）。",
+  "prompt": "请识别此方案在技术方案执行层面的系统性风险、工序逻辑问题和资源协调缺口。",
   "default_enabled": true,
   "save_policy": {
     "seed": true
@@ -39,7 +41,6 @@
   },
   "metadata": {
     "review_modules": [
-      "parameter_consistency",
       "execution_continuity"
     ],
     "ownership": "hermes_main_review"

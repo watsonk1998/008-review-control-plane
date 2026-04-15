@@ -36,7 +36,7 @@ REVIEW_MODULE_BINDINGS: dict[str, ReviewModuleBinding] = {
     'parameter_consistency': ReviewModuleBinding(
         module_name='parameter_consistency',
         title='内容一致性',
-        hermes_templates=['execution_risk_reviewer', 'power_outage_operation_chain_reviewer'],
+        hermes_templates=['parameter_consistency_reviewer', 'construction_org_consistency_reviewer'],
         support_capabilities=['fact_extract', 'rule_and_evidence'],
         decision_policy='require_support_for_parameter_conflict',
         result_bucket='parameter_consistency',
@@ -52,7 +52,7 @@ REVIEW_MODULE_BINDINGS: dict[str, ReviewModuleBinding] = {
     'execution_continuity': ReviewModuleBinding(
         module_name='execution_continuity',
         title='技术方案审查',
-        hermes_templates=['execution_risk_reviewer', 'power_outage_operation_chain_reviewer'],
+        hermes_templates=['execution_risk_reviewer', 'power_outage_operation_chain_reviewer', 'construction_org_technical_reviewer'],
         support_capabilities=['fact_extract', 'rule_and_evidence'],
         decision_policy='prefer_conservative_sequence_expression',
         result_bucket='execution_continuity',
