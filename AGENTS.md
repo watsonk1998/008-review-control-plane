@@ -111,3 +111,21 @@ All user-visible content in reports, interfaces, and statuses MUST be presented 
 - The formal report `审查依据文件` list must cover the **actually enabled formal bases** for the current review, including selected pack sources, while hiding both `监理工程师对停电施工方案的审核规则及要点` and `《危险性较大的分部分项工程专项施工方案编制指南》（建办质〔2021〕48号）` from that visible list.
 - `编制依据现行有效性核验` is defined strictly as verification of the reviewed document's own `编制依据/编制说明` section. Built-in review bases are out of scope and must never be shown as the object being verified.
 - When prior docs/tests mention the old `3 秒 1%` progress rule or built-in-basis validity checks, the 2026-04-15 rule above supersedes them.
+
+## Project Corrections Addendum (2026-04-15, PM batch)
+
+> Source: UI/Reliability repair session — assembler module gate + frontend callout removal.
+
+- **首屏状态卡片禁止展示 warning callout**：`manualReviewNeeded` 和 `parserLimited` 的警示信息只能出现在正式报告正文，任务详情页首屏状态卡片禁止渲染"需要人工复核"与"预检与文档解析说明"两块 callout。
+
+- **assembler 模块级门禁是必须的**：`hermes_ok=True`（全局非全部降级）不代表正式报告可以安全输出。若 `enabled_modules` 中某模块的所有**实际被选中运行**的 reviewer 均 degraded，则该模块无法产出有意义结论，必须 fail-closed（返回降级 markdown，`final_packet=None`），不得输出占位为"本模块未发现需要单独提示的问题"的正式报告。
+
+- **模块降级判断必须看"实际运行"reviewer**：`_check_critical_module_blocks` 必须仅考察 `agent_results` 中出现的 reviewer_id（实际被选中运行的），不得用 `binding.hermes_templates` 声明的全部模板集合做 `all()` 判断——未被选中的 reviewer 不参与判断，否则会错误地认为该 reviewer"正常"从而不阻断。
+
+- **`degradedReason` 禁止为空字符串**：任何降级路径都必须写入非空的 `degradedReason`；若 `packet.error=""` 则回退到 `"{agent_id} 审查组件降级，未返回有效结果"`。
+
+- **测试中 `ReviewBrief.review_object_type` 的类型约束**：该字段类型为 `ReviewDocumentType`（文档类型枚举，如 `distribution_network_special_scheme`），不得使用审查结论等级（如 `conditional_pass`），否则 Pydantic 直接抛 ValidationError。
+
+- **`assembler.py` 历史遗漏导入**：`ReviewPacketMetrics` 在 `_merge_hermes_review_outcomes` 中已被使用但原先未导入，属潜在 `NameError`；已在本批次修复。补导入时，务必同步检查同文件其他已使用但未显式导入的类型。
+
+- **测试执行环境**：`hermes-review-agent/apps/api` 项目使用本地虚拟环境，测试命令必须用 `.venv/bin/pytest`，不得假设系统 PATH 中有 `pytest`。

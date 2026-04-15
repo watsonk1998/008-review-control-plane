@@ -1,14 +1,24 @@
+import { redirect } from "next/navigation";
 import { CreateTaskForm } from "@/components/create-task-form";
 import { fetchFixtures, fetchSupportScope } from "@/lib/api";
 
 type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>;
 
 export default async function Home(props: { searchParams: SearchParams }) {
+  const searchParams = await props.searchParams;
+
+  // 建果平台点击已完成的审查项目时传 reviewId，直接跳转到任务详情页
+  const reviewId =
+    (typeof searchParams?.reviewId === "string" ? searchParams.reviewId : undefined) ??
+    (typeof searchParams?.taskId === "string" ? searchParams.taskId : undefined);
+  if (reviewId) {
+    redirect(`/tasks/${reviewId}`);
+  }
+
   // Parallel fetch initial foundation data (eliminating sequential waterfalls)
-  const [fixtures, supportScope, searchParams] = await Promise.all([
+  const [fixtures, supportScope] = await Promise.all([
     fetchFixtures().catch(() => []),
     fetchSupportScope().catch(() => null),
-    props.searchParams,
   ]);
 
   const externalContext = {

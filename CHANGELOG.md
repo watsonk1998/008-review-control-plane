@@ -40,6 +40,17 @@
 - 本轮额外沉淀一条执行纪律：验证阶段先区分“仓库既有 lint 债务”和“本轮新增回归”，避免把全仓历史问题误判为当前交付阻断项。
 - 本轮再补一条更细的 Harness Engineering 纪律：用户可见 summary/card 统计必须来自最终展示 contract，而不是从 prose summary 反解析；如果 contract、assembly、render、result 四层不同源，后面几乎一定会再出重复显示、错计数和定位漂移。
 
+### Fixed (assembler 模块级门禁与首屏 callout 修复)
+- **assembler 模块级门禁**（`assembler.py`）：新增 `_check_critical_module_blocks()`。此前 `hermes_ok`（全局是否全部降级）是唯一阻断门；当仅有一个 reviewer degraded、其余正常时，`hermes_ok=True`，正式报告仍然被输出，该 reviewer 覆盖的模块 findings 为空，被渲染为"本模块未发现需要单独提示的问题"，严重误导用户（异常样本 307075c16a7d）。新增门禁逻辑：在 `hermes_ok=True` 通过后，对每个 `enabled_modules` 中的模块检查其**实际运行**的 reviewer（`agent_results` 中出现的）是否全部 degraded，若是则 fail-closed（返回降级 markdown，`final_packet=None`，写入 `blockedModules / blockDetails / degradedReason`）。
+  - **关键设计**：只看 `agent_results` 中实际运行的 reviewer，未被选中的 reviewer 不计入判断，防止把"未选中但已声明"的 reviewer 误算为正常从而放行。
+- **修复 `ReviewPacketMetrics` 遗漏导入**（`assembler.py`）：`_merge_hermes_review_outcomes` 中已使用该类但原先未导入，属潜在 `NameError`，已一并修复。
+- **修复 `degradedReason` 可能为空字符串**：所有降级路径现在保证输出非空的 `degradedReason`；`packet.error=""` 时回退为 `"{agent_id} 审查组件降级，未返回有效结果"`。
+- **移除首屏两块 warning callout**（`task-detail.tsx`）：按合同冻结规范，`manualReviewNeeded` 和 `parserLimited` 的警示信息从任务详情页首屏状态卡片移除，改为只在正式报告正文中体现，数据字段不删除。
+
+### Added (assembler 模块级门禁)
+- `tests/test_assembler_module_gate.py`：9 个回归 case，覆盖模块级门禁触发、部分降级不阻断、`enabled_modules=None` 旁路、`degradedReason` 非空合同等场景，12/12 pass。
+
+
 ## 2026-04-14
 
 ### Added
