@@ -787,27 +787,30 @@ class FinalReportRenderer:
         template_id = self._clean_text(raw_data.get('template_id'))
         if template_id in self._TEMPLATE_HARD_MODULE:
             return self._TEMPLATE_HARD_MODULE[template_id]
-        module_name = self._clean_text(raw_data.get('module_name'))
-        if module_name in _MODULE_TITLES:
-            return module_name
 
-        # Config-driven keyword routing (generic + domain-specific)
+        # Keyword-based correction — runs BEFORE module_name because
+        # Hermes templates often mis-label findings (e.g. marking
+        # "现场勘察记录缺失" as execution_continuity when it's evidence).
+        # Route order: structure → parameter → compliance → evidence → execution(catch-all)
         title_text = f"{self._clean_text(finding.get('title'))} {self._clean_text(finding.get('summary'))}".lower()
         kw_map = _get_module_keywords(self._document_type)
 
-        # Route order: evidence_validation first (highest precision),
-        # then structure, parameter, legality, execution.
         route_order = [
-            'evidence_validation',
             'structure_completeness',
             'parameter_consistency',
             'legality_compliance',
+            'evidence_validation',
             'execution_continuity',
         ]
         for mod in route_order:
             keywords = kw_map.get(mod, [])
             if any(token in title_text for token in keywords):
                 return mod
+
+        # Hermes module_name as secondary fallback
+        module_name = self._clean_text(raw_data.get('module_name'))
+        if module_name in _MODULE_TITLES:
+            return module_name
 
         # Category-based fallback
         category = self._clean_text(finding.get('category'))
@@ -1300,19 +1303,75 @@ html, body {
 
 @page {
   size: A4 portrait;
-  margin: 14mm;
+  margin: 18mm 16mm;
 }
 
 @page wide {
   size: A4 landscape;
-  margin: 14mm;
+  margin: 18mm 16mm;
 }
 
 @media print {
-  html, body { background: #ffffff !important; }
-  .structured-report { max-width: none; padding: 0; background: #ffffff; }
-  .structured-report__section { box-shadow: none; }
+  html, body {
+    background: #ffffff !important;
+    font-size: 13px;
+  }
+  .structured-report {
+    max-width: none;
+    padding: 0;
+    background: #ffffff;
+  }
+  .structured-report__title {
+    font-size: 24px;
+    margin-bottom: 20px;
+  }
+  .structured-report__section {
+    box-shadow: none;
+    border-radius: 8px;
+    margin-top: 18px;
+    padding: 18px 16px;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .structured-report__section-title {
+    font-size: 17px;
+    padding: 10px 16px;
+    border-radius: 6px;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .structured-report__section-badge {
+    font-size: 11px;
+    padding: 4px 10px;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .structured-report__section-desc {
+    font-size: 12px;
+  }
+  .structured-report__issue-card {
+    margin-top: 12px;
+    padding: 14px 16px;
+    border-radius: 8px;
+    break-inside: avoid;
+    page-break-inside: avoid;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
   .structured-report__issue-card:hover { box-shadow: none; }
+  .structured-report__issue-card-title {
+    font-size: 14px;
+    margin-bottom: 10px;
+  }
+  .structured-report__issue-card-text,
+  .structured-report__issue-card-law-item,
+  .structured-report__basis-list li {
+    font-size: 13px;
+    line-height: 1.7;
+  }
+  .structured-report__issue-card-section-title {
+    font-size: 12px;
+  }
   .structured-report__section-title,
   .structured-report__subsection-title,
   .structured-report__issue-card-title {
@@ -1320,5 +1379,22 @@ html, body {
     page-break-after: avoid;
   }
   .structured-report__matrix-table thead { display: table-header-group; }
+  .structured-report__matrix-table th,
+  .structured-report__matrix-table td {
+    padding: 10px 12px;
+    font-size: 12px;
+  }
+  .structured-report__summary-metrics {
+    gap: 8px;
+  }
+  .structured-report__summary-metric {
+    padding: 10px 12px;
+    border-radius: 8px;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .structured-report__summary-metric-value {
+    font-size: 18px;
+  }
 }
 """
