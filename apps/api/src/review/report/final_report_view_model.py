@@ -713,6 +713,19 @@ class FinalReportRenderer:
         module_name = self._clean_text(raw_data.get('module_name'))
         if module_name in _MODULE_TITLES:
             return module_name
+        # Title keyword fallback — intercepts findings whose category may
+        # be generic ('compliance') but whose topic belongs to a specific
+        # module.  This mirrors agent_runner._resolve_finding_module_name
+        # and ensures cross-template findings are routed correctly.
+        title_text = f"{self._clean_text(finding.get('title'))} {self._clean_text(finding.get('summary'))}".lower()
+        if any(token in title_text for token in ['编制依据', '现行有效', '废止', '过期', '替代', '规范版本', '标准号']):
+            return 'evidence_validation'
+        if any(token in title_text for token in ['计算', '验算', '公式', '算式']):
+            return 'evidence_validation'
+        if any(token in title_text for token in ['停送电', '执行链路', '工序', '连续', '衔接']):
+            return 'execution_continuity'
+        if any(token in title_text for token in ['参数', '荷载', '吨', '重量', '一致']):
+            return 'parameter_consistency'
         category = self._clean_text(finding.get('category'))
         category_map = {
             'chapter_completeness': 'structure_completeness',

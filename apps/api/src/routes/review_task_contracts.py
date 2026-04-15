@@ -295,6 +295,12 @@ def _group_issue_module_fallback(issue: dict[str, Any]) -> str:
     title = f"{issue.get('title', '')} {issue.get('summary', '')}".lower()
     if issue.get('issueKind') in {'visibility_gap', 'evidence_gap'} or issue.get('evidenceMissing') or issue.get('manualReviewNeeded'):
         return 'evidence_validation'
+    # Normative validity / calculation topics MUST route to evidence_validation,
+    # even when they originate from non-ev templates (AGENTS.md HG-15).
+    if any(token in title for token in ['编制依据', '现行有效', '废止', '过期', '替代', '规范版本', '标准号']):
+        return 'evidence_validation'
+    if any(token in title for token in ['计算', '验算', '公式', '算式']):
+        return 'evidence_validation'
     if any(token in title for token in ['参数', 'capacity', '荷载', '吨', '重量', '技术参数', 'consistency']):
         return 'parameter_consistency'
     if any(token in title for token in ['停送电', '流程', '工序', '衔接', '执行', 'sequence', 'continuity']):

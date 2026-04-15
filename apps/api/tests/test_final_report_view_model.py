@@ -800,3 +800,49 @@ def test_calculation_fallback_finding_renders_in_evidence_validation():
     html_output = renderer.render_html(vm)
     assert '\u8ba1\u7b97\u6838\u9a8c' in html_output
     assert '\u8bc1\u636e\u9a8c\u8bc1' in html_output
+
+
+# ---- Regression tests: title keyword routing ----
+
+def test_basis_superseded_finding_routes_to_evidence_validation_by_title_keyword():
+    """A finding titled '编制依据引用已废止/过期企业标准' from structured_review_primary_worker
+    (category=compliance) MUST be routed to evidence_validation, NOT legality_compliance."""
+    renderer = FinalReportRenderer()
+    packet = FinalReportPacket(
+        review_id='r-keyword-route',
+        executive_summary='',
+        all_findings=[
+            FindingItem(
+                id='H-KW-001',
+                title='\u7f16\u5236\u4f9d\u636e\u5f15\u7528\u5df2\u5e9f\u6b62/\u8fc7\u671f\u4f01\u4e1a\u6807\u51c6',
+                severity='medium',
+                category='compliance',
+                summary='\u7f16\u5236\u4f9d\u636e\u4e2d\u5f15\u7528\u7684\u4f01\u4e1a\u6807\u51c6\u5df2\u88ab\u66ff\u4ee3',
+                raw_data={
+                    'template_id': 'structured_review_primary_worker',
+                    'review_modules': ['legality_compliance'],
+                },
+            ),
+            FindingItem(
+                id='H-KW-002',
+                title='\u7f16\u5236\u4f9d\u636e\u5f15\u7528\u7248\u672c\u6ede\u540e\u4e14\u4e0e\u6b63\u6587\u98ce\u9669\u6307\u5357\u7248\u672c\u51b2\u7a81',
+                severity='medium',
+                category='compliance',
+                summary='\u89c4\u8303\u7248\u672c\u5f15\u7528\u6df7\u4e71',
+                raw_data={
+                    'template_id': 'structured_review_primary_worker',
+                },
+            ),
+        ],
+    )
+    vm = renderer.build_view_model(final_packet=packet)
+    # Both findings must be in evidence_validation
+    ev_section = next(s for s in vm.sections if s.key == 'evidence_validation')
+    ev_titles = [issue.title for issue in ev_section.issues]
+    assert any('\u7f16\u5236\u4f9d\u636e' in t for t in ev_titles), f'Expected \u7f16\u5236\u4f9d\u636e in ev titles: {ev_titles}'
+    assert any('\u7248\u672c\u6ede\u540e' in t or '\u7248\u672c\u51b2\u7a81' in t for t in ev_titles)
+    # Must NOT appear in legality_compliance
+    lc_section = next((s for s in vm.sections if s.key == 'legality_compliance'), None)
+    if lc_section:
+        lc_titles = [issue.title for issue in lc_section.issues]
+        assert not any('\u7f16\u5236\u4f9d\u636e' in t for t in lc_titles), f'\u7f16\u5236\u4f9d\u636e leaked to legality_compliance: {lc_titles}'
