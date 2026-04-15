@@ -76,6 +76,9 @@ class HermesController:
         write_binary_artifact,
     ) -> dict[str, Any]:
         hermes_input = dict((plan or {}).get('hermesInput') or {})
+        frontend_selections = dict(hermes_input.get('frontendSelections') or {})
+        review_intent = dict(frontend_selections.get('review_intent') or {})
+        enabled_modules = [module for module in review_intent.get('enabled_modules') or [] if isinstance(module, str)]
         brief = self.task_compiler.compile(
             task,
             source_document_ref=source_document_ref,
@@ -271,6 +274,7 @@ class HermesController:
                 hermes_review_packets=hermes_review_packets,
                 support_result_008=support_result_008,
                 agent_results=agent_results,
+                enabled_modules=enabled_modules,
             )
             enriched.setdefault('hermesController', {})['enabled'] = True
         except Exception as exc:
@@ -337,6 +341,7 @@ class HermesController:
             final_report_view_model = self.final_report_renderer.build_view_model(
                 final_packet=final_packet,
                 support_result=support_result_008,
+                selected_modules=enabled_modules,
             )
             report_html = self.final_report_renderer.render_html(final_report_view_model)
             report_print_css = self.final_report_renderer.render_print_css()

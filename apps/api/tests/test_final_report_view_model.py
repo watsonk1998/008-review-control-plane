@@ -29,8 +29,7 @@ def test_final_report_view_model_builds_sections_and_compact_chapter_matrix():
         review_id='r1',
         executive_summary=(
             '本次审查已由专业主审组件裁决完成，总体评级结论为：**不通过**。 '
-            '底层设施提供事实抽提保障，当前命中 9 个预警指标（其中高危项 2 个，中阶 7 个，浅层瑕疵 0 个）。 '
-            '经综合审阅与交叉校验，主审环节额外标注了 88 个需重点复核的深层风险点。'
+            '本次结果共覆盖 4 个审查模块，形成 9 项审查问题。'
         ),
         all_findings=[
             FindingItem(
@@ -134,7 +133,7 @@ def test_final_report_view_model_builds_sections_and_compact_chapter_matrix():
     view_model = renderer.build_view_model(final_packet=packet, support_result=support_result)
 
     assert view_model.executiveSummaryView.verdict == '不通过'
-    assert view_model.executiveSummaryView.metrics[0].value == '9 项'
+    assert view_model.executiveSummaryView.metrics[0].label == '章节完整性'
     assert '监理工程师对停电施工方案的审核规则及要点' not in view_model.basisFiles
     assert '《危险性较大的分部分项工程专项施工方案编制指南》（建办质〔2021〕48号）' not in ''.join(view_model.basisFiles)
     assert '《中国南方电网公司电网建设工程专项施工方案管理工作指引》（2022）' in view_model.basisFiles
@@ -144,9 +143,14 @@ def test_final_report_view_model_builds_sections_and_compact_chapter_matrix():
     assert not getattr(view_model.chapterCompleteness, 'notes', [])
     assert view_model.normativeValidity.checks[0].statusLabel == '现行有效'
     html = renderer.render_html(view_model)
+    css = renderer.render_print_css()
     assert '问题定位' in html
-    assert '章节完整性矩阵' in html
+    assert '章节完整性矩阵' not in html
     assert '编制依据现行有效性核验' in html
+    assert '相关审查意见' not in html
+    assert 'structured-report__table-wrap--landscape' in html
+    assert '@page wide' in css
+    assert 'size: A4 portrait' in css
     assert '核验方式' not in html
     assert '说明' not in html
     assert '依据来源' not in html
@@ -188,3 +192,54 @@ def test_final_report_view_model_location_fallback_priority():
     assert issue_map['B'].location == '第11章'
     assert issue_map['C'].location.startswith('现场派工名单')
     assert issue_map['D'].location == '未定位到稳定章节，请结合原文复核。'
+
+
+def test_final_report_view_model_filters_to_selected_modules_and_dedupes_near_duplicates():
+    renderer = FinalReportRenderer()
+    packet = FinalReportPacket(
+        review_id='r3',
+        executive_summary='本次审查已由专业主审组件裁决完成，总体评级结论为：**需要修改**。',
+        all_findings=[
+            FindingItem(
+                id='S-1',
+                title='停电施工作业专项章节不完整',
+                severity='high',
+                summary='第六章停电申请审批与用户告知流程缺失。',
+                raw_data={'module_name': 'structure_completeness'},
+            ),
+            FindingItem(
+                id='S-2',
+                title='停电施工作业专项章节存在缺项',
+                severity='high',
+                summary='第六章停电申请审批与用户告知流程缺失，需补齐。',
+                raw_data={'module_name': 'structure_completeness'},
+            ),
+            FindingItem(
+                id='E-1',
+                title='停送电链路闭环不足',
+                severity='medium',
+                summary='第5.1.5节派工闭环不足。',
+                raw_data={'module_name': 'execution_continuity'},
+            ),
+            FindingItem(
+                id='L-1',
+                title='规范依据不完整',
+                severity='medium',
+                summary='依据缺失。',
+                raw_data={'module_name': 'legality_compliance'},
+            ),
+        ],
+        metadata={'selected_review_modules': ['structure_completeness', 'execution_continuity']},
+    )
+
+    view_model = renderer.build_view_model(
+        final_packet=packet,
+        support_result={'summary': {'documentType': 'distribution_network_special_scheme'}, 'issues': [], 'matrices': {}},
+        selected_modules=['structure_completeness', 'execution_continuity'],
+    )
+
+    assert [section.key for section in view_model.sections] == ['structure_completeness', 'execution_continuity']
+    assert len(view_model.sections[0].issues) == 1
+    assert view_model.sections[0].issues[0].location.startswith('第六章')
+    assert view_model.executiveSummaryView.metrics[0].label == '章节完整性'
+    assert view_model.executiveSummaryView.metrics[1].label == '工序连贯性'

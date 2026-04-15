@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import html
 import re
+from difflib import SequenceMatcher
 from typing import Any
 
 from pydantic import BaseModel, Field
@@ -117,6 +118,7 @@ class FinalReportViewModel(BaseModel):
     documentTypeLabel: str
     executiveSummary: str
     executiveSummaryView: ExecutiveSummaryView = Field(default_factory=ExecutiveSummaryView)
+    selectedModules: list[str] = Field(default_factory=list)
     basisFiles: list[str] = Field(default_factory=list)
     chapterCompleteness: ChapterCompletenessView = Field(default_factory=ChapterCompletenessView)
     normativeValidity: NormativeValidityView = Field(default_factory=NormativeValidityView)
@@ -129,30 +131,36 @@ class FinalReportRenderer:
         *,
         final_packet: FinalReportPacket | dict[str, Any],
         support_result: dict[str, Any] | None = None,
+        selected_modules: list[str] | None = None,
     ) -> FinalReportViewModel:
         packet = final_packet.model_dump(mode='json') if isinstance(final_packet, FinalReportPacket) else dict(final_packet or {})
         support = dict(support_result or {})
         summary = dict(support.get('summary') or {})
         document_type = str(summary.get('documentType') or packet.get('metadata', {}).get('document_type') or '')
         document_label = _DOCUMENT_TYPE_LABELS.get(document_type, document_type or '审查文档')
+        effective_modules = self._resolve_selected_modules(packet, selected_modules)
         support_issues = [item for item in support.get('issues', []) if isinstance(item, dict)]
         structure_rows = [item for item in ((support.get('matrices') or {}).get('structureCompleteness') or []) if isinstance(item, dict)]
         section_structure = [item for item in ((support.get('matrices') or {}).get('sectionStructure') or []) if isinstance(item, dict)]
         basis_files = self._collect_basis_files(packet, support_issues, support)
         findings = [item for item in packet.get('all_findings', []) if isinstance(item, dict)]
-        grouped = {module: [] for module in _MODULE_ORDER}
-        deduped_findings = self._dedupe_findings(findings)
+        grouped = {module: [] for module in self._module_order(effective_modules)}
+        deduped_findings = self._dedupe_findings(findings, effective_modules)
         normative_validity = self._build_normative_validity(deduped_findings)
         for finding in deduped_findings:
-            grouped[self._resolve_module(finding)].append(finding)
+            module_name = self._resolve_module(finding)
+            if module_name not in grouped:
+                continue
+            grouped[module_name].append(finding)
 
         sections: list[FinalReportSectionView] = []
-        for module in _MODULE_ORDER:
+        for module in self._module_order(effective_modules):
             issues = [
                 self._build_issue_view(finding, support_issues, structure_rows, section_structure)
                 for finding in grouped[module]
                 if not self._is_normative_validity_summary_finding(finding)
             ]
+            issues = self._dedupe_issue_views(issues)
             sections.append(
                 FinalReportSectionView(
                     key=module,
@@ -162,13 +170,16 @@ class FinalReportRenderer:
             )
 
         executive_summary = self._clean_text(packet.get('executive_summary') or support.get('finalReportMarkdown') or '')
+        executive_summary_view = self._parse_executive_summary(executive_summary)
+        executive_summary_view.metrics = self._build_section_metrics(sections)
         return FinalReportViewModel(
             title=f'{document_label}形式审查报告',
             documentTypeLabel=document_label,
             executiveSummary=executive_summary,
-            executiveSummaryView=self._parse_executive_summary(executive_summary),
+            executiveSummaryView=executive_summary_view,
+            selectedModules=self._module_order(effective_modules),
             basisFiles=basis_files,
-            chapterCompleteness=self._build_chapter_completeness(structure_rows),
+            chapterCompleteness=self._build_chapter_completeness(structure_rows) if 'structure_completeness' in self._module_order(effective_modules) else ChapterCompletenessView(),
             normativeValidity=normative_validity,
             sections=sections,
         )
@@ -250,10 +261,9 @@ class FinalReportRenderer:
         if chapter.tableRows:
             parts.extend([
                 '<div class="structured-report__subsection">',
-                '<h3 class="structured-report__subsection-title">章节完整性矩阵</h3>',
-                '<div class="structured-report__table-wrap">',
+                '<div class="structured-report__table-wrap structured-report__table-wrap--landscape">',
                 '<table class="structured-report__matrix-table">',
-                '<thead><tr><th>序号</th><th>规范要求</th><th>规范依据</th><th>文档对应章节</th><th>结构判定</th><th>相关审查意见</th></tr></thead>',
+                '<thead><tr><th>序号</th><th>规范要求</th><th>规范依据</th><th>文档对应章节</th><th>结构判定</th></tr></thead>',
                 '<tbody>',
             ])
             for row in chapter.tableRows:
@@ -264,7 +274,6 @@ class FinalReportRenderer:
                     f'<td>{html.escape(row.basis)}</td>'
                     f'<td>{html.escape(row.matchedSection)}</td>'
                     f'<td>{html.escape(row.statusLabel)}</td>'
-                    f'<td>{html.escape(row.note)}</td>'
                     '</tr>'
                 )
             parts.extend(['</tbody>', '</table>', '</div>', '</div>'])
@@ -494,6 +503,16 @@ class FinalReportRenderer:
             if precise:
                 return precise
 
+        for value in [
+            finding.get('summary'),
+            (support_issue or {}).get('summary'),
+            finding.get('suggestion'),
+            '；'.join((support_issue or {}).get('recommendation') or []) if isinstance((support_issue or {}).get('recommendation'), list) else '',
+        ]:
+            precise = self._format_location_candidate(self._extract_locator_phrase(self._clean_text(value)))
+            if precise:
+                return precise
+
         candidates: list[str] = []
         for source in [raw_data, support_issue or {}, finding]:
             for evidence in source.get('docEvidence') or []:
@@ -558,6 +577,21 @@ class FinalReportRenderer:
         if len(value) <= 60:
             return value
         return f'{value[:56].rstrip()}…'
+
+    def _extract_locator_phrase(self, text: str) -> str:
+        if not text:
+            return ''
+        locator_patterns = [
+            r'((?:第[一二三四五六七八九十百零〇两0-9]+章)(?:[0-9A-Za-z\u4e00-\u9fa5\.\-、，,\s]{0,20})?)',
+            r'((?:第[一二三四五六七八九十百零〇两0-9]+节)(?:[0-9A-Za-z\u4e00-\u9fa5\.\-、，,\s]{0,20})?)',
+            r'((?:第[一二三四五六七八九十百零〇两0-9]+部分)(?:[0-9A-Za-z\u4e00-\u9fa5\.\-、，,\s]{0,20})?)',
+            r'((?:第[一二三四五六七八九十百零〇两0-9]+章)?(?:\d+\.)+\d+节?)',
+        ]
+        for pattern in locator_patterns:
+            match = re.search(pattern, text)
+            if match:
+                return self._clean_text(match.group(1))
+        return ''
 
     def _collect_basis_lines(self, finding: dict[str, Any], support_issue: dict[str, Any] | None) -> list[str]:
         lines: list[str] = []
@@ -654,10 +688,14 @@ class FinalReportRenderer:
         }
         return category_map.get(category, 'legality_compliance')
 
-    def _dedupe_findings(self, findings: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    def _dedupe_findings(self, findings: list[dict[str, Any]], selected_modules: list[str]) -> list[dict[str, Any]]:
+        allowed = set(selected_modules or [])
         seen_keys: set[tuple[str, str]] = set()
         deduped: list[dict[str, Any]] = []
         for finding in findings:
+            module_name = self._resolve_module(finding)
+            if allowed and module_name not in allowed:
+                continue
             item_id = self._clean_text(finding.get('id'))
             title = self._clean_text(finding.get('title')).lower()
             key = (item_id, title)
@@ -699,7 +737,6 @@ class FinalReportRenderer:
     def _parse_executive_summary(self, summary: str) -> ExecutiveSummaryView:
         text = self._clean_text(summary)
         verdict = ''
-        metrics: list[ExecutiveSummaryMetricView] = []
         verdict_match = re.search(r'总体评级结论为：\*\*(.+?)\*\*', summary or '')
         if verdict_match:
             verdict = self._clean_text(verdict_match.group(1))
@@ -707,20 +744,6 @@ class FinalReportRenderer:
             fallback_match = re.search(r'总体评级(?:结论)?[:：]\s*([^。；]+)', text)
             if fallback_match:
                 verdict = self._clean_text(fallback_match.group(1))
-
-        indicator_match = re.search(r'当前命中\s*(\d+)\s*个预警指标（其中高危项\s*(\d+)\s*个，中阶\s*(\d+)\s*个，浅层瑕疵\s*(\d+)\s*个）', text)
-        if indicator_match:
-            total, high, medium, low = indicator_match.groups()
-            metrics.extend([
-                ExecutiveSummaryMetricView(label='预警指标', value=f'{total} 项', tone='neutral'),
-                ExecutiveSummaryMetricView(label='高危项', value=f'{high} 项', tone='high'),
-                ExecutiveSummaryMetricView(label='中阶项', value=f'{medium} 项', tone='medium'),
-                ExecutiveSummaryMetricView(label='浅层瑕疵', value=f'{low} 项', tone='low'),
-            ])
-
-        deep_match = re.search(r'主审环节额外标注了\s*(\d+)\s*个需重点复核的深层风险点', text)
-        if deep_match:
-            metrics.append(ExecutiveSummaryMetricView(label='深层风险点', value=f'{deep_match.group(1)} 项', tone='medium'))
 
         narrative_parts = []
         cleaned_text = text.replace('**', '')
@@ -732,7 +755,80 @@ class FinalReportRenderer:
                 continue
             narrative_parts.append(sentence)
         narrative = ' '.join(narrative_parts)
-        return ExecutiveSummaryView(verdict=verdict, narrative=narrative, metrics=metrics)
+        return ExecutiveSummaryView(verdict=verdict, narrative=narrative, metrics=[])
+
+    def _resolve_selected_modules(self, packet: dict[str, Any], selected_modules: list[str] | None) -> list[str]:
+        if selected_modules:
+            return [module for module in selected_modules if module in _MODULE_ORDER]
+        metadata = dict(packet.get('metadata') or {})
+        explicit = [
+            module
+            for module in metadata.get('selected_review_modules') or metadata.get('executed_review_modules') or []
+            if isinstance(module, str) and module in _MODULE_ORDER
+        ]
+        return explicit or list(_MODULE_ORDER)
+
+    def _module_order(self, selected_modules: list[str]) -> list[str]:
+        requested = [module for module in selected_modules if module in _MODULE_ORDER]
+        return requested or list(_MODULE_ORDER)
+
+    def _build_section_metrics(self, sections: list[FinalReportSectionView]) -> list[ExecutiveSummaryMetricView]:
+        tone_map = {
+            'structure_completeness': 'medium',
+            'parameter_consistency': 'medium',
+            'legality_compliance': 'high',
+            'execution_continuity': 'medium',
+            'evidence_validation': 'low',
+        }
+        return [
+            ExecutiveSummaryMetricView(
+                label=section.title,
+                value=f'{len(section.issues)} 项',
+                tone=tone_map.get(section.key, 'neutral'),
+            )
+            for section in sections
+        ]
+
+    def _dedupe_issue_views(self, issues: list[FinalReportIssueView]) -> list[FinalReportIssueView]:
+        deduped: list[FinalReportIssueView] = []
+        for issue in issues:
+            matched_index = next(
+                (index for index, existing in enumerate(deduped) if self._issue_views_near_duplicate(existing, issue)),
+                None,
+            )
+            if matched_index is None:
+                deduped.append(issue)
+                continue
+            deduped[matched_index] = self._prefer_issue_view(deduped[matched_index], issue)
+        return deduped
+
+    def _issue_views_near_duplicate(self, left: FinalReportIssueView, right: FinalReportIssueView) -> bool:
+        if left.severity != right.severity:
+            return False
+        title_similarity = self._similarity(self._normalize_compare_text(left.title), self._normalize_compare_text(right.title))
+        description_similarity = self._similarity(
+            self._normalize_compare_text(left.description),
+            self._normalize_compare_text(right.description),
+        )
+        location_overlap = bool(left.location and right.location and (left.location in right.location or right.location in left.location))
+        return title_similarity >= 0.72 and (description_similarity >= 0.68 or location_overlap)
+
+    def _prefer_issue_view(self, left: FinalReportIssueView, right: FinalReportIssueView) -> FinalReportIssueView:
+        def score(item: FinalReportIssueView) -> tuple[int, int, int]:
+            return (
+                1 if item.location and '未定位到稳定章节' not in item.location else 0,
+                len(item.description),
+                len(item.recommendation),
+            )
+        return right if score(right) > score(left) else left
+
+    def _normalize_compare_text(self, text: str) -> str:
+        return re.sub(r'[\W_]+', '', self._clean_text(text).lower())
+
+    def _similarity(self, left: str, right: str) -> float:
+        if not left or not right:
+            return 0.0
+        return SequenceMatcher(None, left, right).ratio()
 
     def _extract_section_locators(self, text: str) -> list[str]:
         value = self._clean_text(text)
@@ -932,6 +1028,12 @@ html, body {
   background: #ffffff;
 }
 
+.structured-report__table-wrap--landscape {
+  page: wide;
+  break-before: page;
+  page-break-before: always;
+}
+
 .structured-report__matrix-table {
   width: 100%;
   border-collapse: collapse;
@@ -997,6 +1099,11 @@ html, body {
 }
 
 @page {
+  size: A4 portrait;
+  margin: 14mm;
+}
+
+@page wide {
   size: A4 landscape;
   margin: 14mm;
 }

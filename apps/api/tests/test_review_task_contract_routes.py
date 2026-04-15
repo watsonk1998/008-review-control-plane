@@ -418,3 +418,63 @@ def test_module_bucketing_prefers_execution_metadata_over_heuristics():
     payload = review_task_contracts.build_review_task_result(task, [])
     assert payload.modules['legality_compliance'].findings[0]['id'] == 'ISSUE-META-1'
     assert payload.modules['execution_continuity'].findings == []
+
+
+def test_review_task_result_hides_unselected_modules_even_if_packet_contains_findings():
+    now = datetime.now(timezone.utc)
+    task = TaskRecord(
+        id='task-selected-only-1',
+        taskType='structured_review',
+        capabilityMode='auto',
+        query='query',
+        sourceDocumentRef=SourceDocumentRef(refId='r1', sourceType='upload', fileName='target.md', fileType='md', storagePath='/tmp/target.md', displayName='target.md'),
+        documentType='distribution_network_special_scheme',
+        disciplineTags=[],
+        strictMode=True,
+        policyPackIds=[],
+        status='succeeded',
+        plan={'hermesInput': {'frontendSelections': {'review_intent': {'enabled_modules': ['structure_completeness'], 'disabled_modules': []}}}},
+        result={
+            'issues': [],
+            'finalReportPacket': {
+                'executive_summary': '需要修改',
+                'all_findings': [
+                    {
+                        'id': 'ISSUE-1',
+                        'title': '章节缺失',
+                        'severity': 'high',
+                        'summary': '缺少章节',
+                        'suggestion': '补齐章节',
+                        'raw_data': {'module_name': 'structure_completeness', 'ownership': 'support_material'},
+                    },
+                    {
+                        'id': 'ISSUE-2',
+                        'title': '停送电链路存在遗漏',
+                        'severity': 'medium',
+                        'summary': '链路闭环不足',
+                        'suggestion': '补充闭环',
+                        'raw_data': {'module_name': 'execution_continuity', 'ownership': 'hermes_main_review'},
+                    },
+                ],
+                'key_findings': [
+                    {
+                        'id': 'ISSUE-1',
+                        'title': '章节缺失',
+                        'severity': 'high',
+                        'summary': '缺少章节',
+                        'suggestion': '补齐章节',
+                        'raw_data': {'module_name': 'structure_completeness', 'ownership': 'support_material'},
+                    }
+                ],
+            },
+            'hermesController': {'mainReviewOutcomes': []},
+        },
+        createdAt=now,
+        updatedAt=now,
+    )
+
+    payload = review_task_contracts.build_review_task_result(task, [])
+    assert list(payload.modules.keys()) == ['structure_completeness']
+    assert payload.summary.key_counts['issues'] == 1
+    assert payload.summary.key_metrics['high'] == 1
+    assert payload.key_findings[0]['id'] == 'ISSUE-1'

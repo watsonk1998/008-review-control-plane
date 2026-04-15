@@ -275,8 +275,12 @@ def _build_export_links(task: TaskRecord, artifacts: list[TaskArtifact]) -> Revi
     links = ReviewTaskExportLinks()
     for artifact in artifacts:
         name = artifact.fileName.lower()
+        if name.endswith('.md') and links.markdown is None:
+            links.markdown = artifact.downloadUrl
         if name.endswith('.pdf') and links.pdf is None:
             links.pdf = artifact.downloadUrl
+        if name.endswith('.html') and links.html is None:
+            links.html = artifact.downloadUrl
     return links
 
 
@@ -440,6 +444,12 @@ def _decision_module_findings(final_packet: dict[str, Any]) -> dict[str, list[di
     return grouped
 
 
+def _module_order(enabled_modules: set[str], disabled_modules: set[str]) -> list[str]:
+    if enabled_modules:
+        return [module for module in MODULE_TITLES if module in enabled_modules and module not in disabled_modules]
+    return [module for module in MODULE_TITLES if module not in disabled_modules]
+
+
 def _severity_counts(findings: list[dict[str, Any]]) -> dict[str, int]:
     return {
         level: sum(1 for item in findings if item.get('severity') == level)
@@ -469,6 +479,7 @@ def build_review_task_result(task: TaskRecord, artifacts: list[TaskArtifact], in
     disabled_modules = set(review_intent.get('disabled_modules') or [])
     enabled_modules = set(review_intent.get('enabled_modules') or [])
     key_findings, _, all_decision_findings = _decision_finding_lists(final_packet)
+    visible_modules = _module_order(enabled_modules, disabled_modules)
     module_by_id, module_by_title = _build_module_indices(
         decision_findings=all_decision_findings,
         main_review_outcomes=main_review_outcomes,
@@ -477,24 +488,27 @@ def build_review_task_result(task: TaskRecord, artifacts: list[TaskArtifact], in
 
     modules: dict[str, ReviewTaskModuleResult] = {}
     covered_issue_ids = {str(item.get('id')) for item in all_decision_findings if item.get('id')}
-    for module_name, title in MODULE_TITLES.items():
+    filtered_decision_findings = [
+        finding for finding in all_decision_findings if finding.get('module_name') in visible_modules
+    ]
+    filtered_issues = []
+    for issue in issues:
+        issue_module = _resolve_issue_module(issue, module_by_id=module_by_id, module_by_title=module_by_title)
+        if issue_module in visible_modules:
+            filtered_issues.append({**issue, 'module_name': issue_module})
+
+    for module_name in visible_modules:
+        title = MODULE_TITLES[module_name]
         module_findings = list(grouped_decision_findings.get(module_name) or [])
-        for issue in issues:
-            issue_module = _resolve_issue_module(issue, module_by_id=module_by_id, module_by_title=module_by_title)
+        for issue in filtered_issues:
+            issue_module = issue.get('module_name')
             if issue_module != module_name:
                 continue
             if issue.get('id') and str(issue.get('id')) in covered_issue_ids:
                 continue
-            module_findings.append({**issue, 'module_name': module_name})
+            module_findings.append(issue)
         severity_summary = _severity_counts(module_findings)
-        if module_name in disabled_modules:
-            status = 'not_applicable'
-        elif enabled_modules and module_name not in enabled_modules and not module_findings:
-            status = 'not_applicable'
-        elif module_findings:
-            status = 'available'
-        else:
-            status = 'partial'
+        status = 'available' if module_findings else 'partial'
         modules[module_name] = ReviewTaskModuleResult(
             title=title,
             findings=module_findings,
@@ -503,12 +517,13 @@ def build_review_task_result(task: TaskRecord, artifacts: list[TaskArtifact], in
             status=status,
         )
 
+    key_findings = [finding for finding in key_findings if finding.get('module_name') in visible_modules]
     if not key_findings:
-        key_findings = sorted(issues, key=lambda item: RISK_ORDER.get(str(item.get('severity')), 0), reverse=True)[:5]
+        key_findings = sorted(filtered_issues, key=lambda item: RISK_ORDER.get(str(item.get('severity')), 0), reverse=True)[:5]
 
     recommendations = _merge_unique([
         recommendation
-        for issue in (all_decision_findings or issues)
+        for issue in (filtered_decision_findings or filtered_issues)
         for recommendation in (
             issue.get('recommendation', [])
             if isinstance(issue.get('recommendation'), list)
@@ -517,7 +532,7 @@ def build_review_task_result(task: TaskRecord, artifacts: list[TaskArtifact], in
         if isinstance(recommendation, str) and recommendation.strip()
     ])
 
-    risk_source = all_decision_findings or issues
+    risk_source = filtered_decision_findings or filtered_issues
     severity_counts = {
         level: sum(1 for issue in risk_source if issue.get('severity') == level)
         for level in ['high', 'medium', 'low']
@@ -541,8 +556,8 @@ def build_review_task_result(task: TaskRecord, artifacts: list[TaskArtifact], in
             overall_conclusion=final_packet.get('executive_summary') or summary.get('overallConclusion') or result.get('finalAnswer') or '',
             risk_level=risk_level,
             key_counts={
-                'issues': len(all_decision_findings or issues),
-                'manual_review_needed': sum(1 for issue in (all_decision_findings or issues) if issue.get('manualReviewNeeded') or issue.get('manual_review_needed')),
+                'issues': len(risk_source),
+                'manual_review_needed': sum(1 for issue in risk_source if issue.get('manualReviewNeeded') or issue.get('manual_review_needed')),
             },
             key_metrics={
                 'high': severity_counts['high'],

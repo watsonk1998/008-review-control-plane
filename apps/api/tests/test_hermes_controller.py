@@ -189,6 +189,7 @@ async def test_hermes_controller_selects_agents_generates_candidate_and_reports(
         assert result['artifactIndex'][0]['fileName'] == 'hermes-controller-final-report.pdf'
         assert result['finalReportPacket']['metadata']['decision_owner'] == 'hermes'
         assert result['finalReportPacket']['metadata']['support_owner'] == 'structured_review_capability_facade'
+        assert result['finalReportPacket']['metadata']['selected_review_modules'] == []
     else:
         assert isinstance(result['artifactIndex'], list)
 

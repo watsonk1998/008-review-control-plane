@@ -67,7 +67,7 @@ async def _render_html_pdf_via_playwright(
             await page.pdf(
                 path=str(output_path),
                 format='A4',
-                landscape=True,
+                landscape=False,
                 print_background=True,
                 prefer_css_page_size=True,
                 display_header_footer=False,

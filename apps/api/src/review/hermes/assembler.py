@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Any
 
-from src.review.contracts import FactPacket, FinalReportPacket, FindingItem, ReviewPacketMetrics, ReviewBrief
+from src.review.contracts import FactPacket, FinalReportPacket, FindingItem, ReviewBrief
 from src.review.final_report_merger import FinalReportMerger
 
 _GRADE_LABELS = {
@@ -34,6 +34,7 @@ class HermesReviewAssembler:
         hermes_review_packets: list[FactPacket],
         support_result_008: dict[str, Any] | None,
         agent_results: list[dict[str, Any]],
+        enabled_modules: list[str] | None = None,
     ) -> tuple[dict[str, Any], FinalReportPacket | None]:
         
         hermes_ok = bool(hermes_review_packets and not all(p.degraded for p in hermes_review_packets))
@@ -73,6 +74,8 @@ class HermesReviewAssembler:
             support_packet_008=support_packet_008,
             hermes_review_packet=merged_hermes_main_review,
         )
+        support_packet_008 = self._filter_packet_by_enabled_modules(support_packet_008, enabled_modules)
+        merged_hermes_main_review = self._filter_packet_by_enabled_modules(merged_hermes_main_review, enabled_modules)
         final_packet = self._build_final_decision_packet(
             brief=brief,
             support_packet_008=support_packet_008,  # type: ignore
@@ -85,6 +88,12 @@ class HermesReviewAssembler:
             'decision_owner': 'hermes',
             'support_owner': 'structured_review_capability_facade',
             'final_output_entrypoint': 'hermes_review_assembler',
+            'selected_review_modules': list(enabled_modules or []),
+            'executed_review_modules': self._executed_modules(
+                support_packet_008=support_packet_008,
+                hermes_review_packet=merged_hermes_main_review,
+                enabled_modules=enabled_modules,
+            ),
         }
         
         # SUCCESS PATH: Build payload from assembler contract — NOT from support_result_008.
@@ -218,9 +227,12 @@ class HermesReviewAssembler:
         top_risks = [item for item in all_findings if item.severity == 'high']
         final_grade = self._decide_grade(all_findings)
         executive_summary = self._decide_executive_summary(
-            metrics=support_packet_008.summary_metrics,
-            hermes_packet=hermes_review_packet,
-            supplemental_count=len(supplemental_findings),
+            all_findings=all_findings,
+            executed_modules=self._executed_modules(
+                support_packet_008=support_packet_008,
+                hermes_review_packet=hermes_review_packet,
+                enabled_modules=None,
+            ),
             grade=final_grade
         )
 
@@ -255,6 +267,75 @@ class HermesReviewAssembler:
         )
         return packet
 
+    def _filter_packet_by_enabled_modules(
+        self,
+        packet: FactPacket | None,
+        enabled_modules: list[str] | None,
+    ) -> FactPacket | None:
+        if packet is None or not enabled_modules:
+            return packet
+        allowed = {module for module in enabled_modules if module}
+        filtered = packet.model_copy(deep=True)
+        filtered.findings = [
+            finding
+            for finding in filtered.findings
+            if self._finding_in_enabled_modules(finding, allowed)
+        ]
+        filtered.summary_metrics = ReviewPacketMetrics(
+            total_findings=len(filtered.findings),
+            high_severity=sum(1 for finding in filtered.findings if finding.severity == 'high'),
+            medium_severity=sum(1 for finding in filtered.findings if finding.severity == 'medium'),
+            low_severity=sum(1 for finding in filtered.findings if finding.severity == 'low'),
+        )
+        filtered.metadata = {
+            **filtered.metadata,
+            'selected_review_modules': list(enabled_modules),
+            'executed_review_modules': self._packet_review_modules(filtered, allowed),
+        }
+        return filtered
+
+    def _finding_in_enabled_modules(self, finding: FindingItem, allowed: set[str]) -> bool:
+        raw_data = dict(finding.raw_data or {})
+        module_name = raw_data.get('module_name')
+        if isinstance(module_name, str) and module_name in allowed:
+            return True
+        review_modules = raw_data.get('review_modules') or []
+        return any(isinstance(module, str) and module in allowed for module in review_modules)
+
+    def _packet_review_modules(self, packet: FactPacket, allowed: set[str] | None = None) -> list[str]:
+        modules: list[str] = []
+        for finding in packet.findings:
+            raw_data = dict(finding.raw_data or {})
+            candidates = []
+            if isinstance(raw_data.get('module_name'), str):
+                candidates.append(raw_data['module_name'])
+            for module in raw_data.get('review_modules') or []:
+                if isinstance(module, str):
+                    candidates.append(module)
+            for module in candidates:
+                if allowed and module not in allowed:
+                    continue
+                if module not in modules:
+                    modules.append(module)
+        return modules
+
+    def _executed_modules(
+        self,
+        *,
+        support_packet_008: FactPacket | None,
+        hermes_review_packet: FactPacket | None,
+        enabled_modules: list[str] | None,
+    ) -> list[str]:
+        allowed = {module for module in enabled_modules or [] if module} or None
+        modules: list[str] = []
+        for packet in [support_packet_008, hermes_review_packet]:
+            if packet is None:
+                continue
+            for module in self._packet_review_modules(packet, allowed):
+                if module not in modules:
+                    modules.append(module)
+        return modules
+
     def _decide_grade(self, all_findings: list[FindingItem]) -> str:
         high = sum(1 for finding in all_findings if finding.severity == 'high')
         medium = sum(1 for finding in all_findings if finding.severity == 'medium')
@@ -266,17 +347,25 @@ class HermesReviewAssembler:
 
     def _decide_executive_summary(
         self,
-        metrics: ReviewPacketMetrics,
-        hermes_packet: FactPacket | None,
-        supplemental_count: int,
+        all_findings: list[FindingItem],
+        executed_modules: list[str],
         grade: str,
     ) -> str:
+        high_count = sum(1 for finding in all_findings if finding.severity == 'high')
+        medium_count = sum(1 for finding in all_findings if finding.severity == 'medium')
+        low_count = sum(1 for finding in all_findings if finding.severity == 'low')
+        module_labels = {
+            'structure_completeness': '章节完整性',
+            'parameter_consistency': '参数一致性',
+            'legality_compliance': '合法合规性',
+            'execution_continuity': '工序连贯性',
+            'evidence_validation': '证据验证',
+        }
+        covered_modules = '、'.join(module_labels.get(module, module) for module in executed_modules[:5])
         lines = [
             f"本次审查已由专业主审组件裁决完成，总体评级结论为：**{_GRADE_LABELS.get(grade, grade)}**。",
-            f"底层设施提供事实抽提保障，当前命中 {metrics.total_findings} 个预警指标（其中高危项 {metrics.high_severity} 个，中阶 {metrics.medium_severity} 个，浅层瑕疵 {metrics.low_severity} 个）。",
+            f"本次结果共覆盖 {len(executed_modules)} 个审查模块{f'（{covered_modules}）' if covered_modules else ''}，形成 {len(all_findings)} 项审查问题（高风险 {high_count} 项，中等风险 {medium_count} 项，低风险 {low_count} 项）。",
         ]
-        if hermes_packet and not hermes_packet.degraded:
-            lines.append(f"经综合审阅与交叉校验，主审环节额外标注了 {supplemental_count} 个需重点复核的深层风险点。")
         return ' '.join(lines)
 
     def _render_markdown(

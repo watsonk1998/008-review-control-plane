@@ -68,7 +68,7 @@ class TaskService:
             file_name = task.sourceDocumentRef.fileName
         
         from src.services.external_callbacks import trigger_task_created_callback
-        trigger_task_created_callback(task.id, file_name, request.externalContext)
+        asyncio.create_task(trigger_task_created_callback(task.id, file_name, request.externalContext))
         
         return task
 
