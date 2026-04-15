@@ -6,6 +6,13 @@
 
 ## 2026-04-15
 
+### Fixed (证据验证模块回归修复 — 晚间批次)
+- **修复模板 JSON 中文弯引号导致加载失败（HG-21/22，根因）**：`normative_validity_reviewer.json` 和 `calculation_review_reviewer.json` 中的中文弯引号（`\u201c\u201d`）被 JSON 解析器视为字符串终止符，`model_validate_json` 报错后被 `load_templates()` 静默跳过。模板从未加载 → 从未选中 → reviewer 从未执行 → 功能完全不可见。修复：统一替换为书名号（`《》`）。
+- **修复前端默认启用模块缺失（HG-18）**：`review-acceptance-page.tsx` 的 `enabledModules` 初始值仅含 3 个模块，缺少 `evidence_validation` 和 `parameter_consistency`。修复：对齐 `create-task-form.tsx`，默认启用全部 5 个模块。
+- **新增标题关键词路由层**：`_resolve_module()` 和 `_group_issue_module_fallback()` 在 `category_map` 之前增加标题关键词拦截，将"编制依据/废止/过期/规范版本"类 finding 强制路由到 `evidence_validation`，即使 `category=compliance`。
+- **新增 calculation reviewer 确定性 fallback（HG-17）**：`hermes_router` 返回 0 个 findings 时，自动注入保守型 fallback finding `H-CALC-FALLBACK-001`，确保计算核验功能在前端始终可见。
+- **AGENTS.md 追加 HG-15~22 硬约束规则**：涵盖模板硬归属、跨模块声明禁令、normative table 原始数据源、JSON 模板验证门禁等。
+
 ### Changed
 - 收口首页与任务详情的前端文案与视觉表达：将审查入口统一为“建果AI方案审查”，去除首页副标题、任务编号、长连接状态、执行时间线、审查器名字列表与英文事件残留，左侧导航同步改为“发起审查 / 审查任务”。
 - 将任务详情页的运行反馈重构为“审查进度 + 审查时间 + 转圈动画”的单锚点模式，并把进度条改为阶段感知：在“生成最终正式报告”阶段最高仅显示 96%，避免用户误判为已完成但系统卡死。
