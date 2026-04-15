@@ -170,3 +170,19 @@ All user-visible content in reports, interfaces, and statuses MUST be presented 
 - **calculation_review_reviewer 保守约束**：该模板负责计算式/验算/参数/公式审查，归属 evidence_validation。未见计算书/验算过程时，**禁止臆造计算错误**，只能输出"证据不足，需人工补充复核"类保守表达。
 
 - **测试文件内嵌中文书名号陷阱（HG-16）**：Python 字符串内嵌 `》` 时若外层引号同向会触发 SyntaxError: unterminated string literal。写入后必须执行语法验证：`python -c "import ast; ast.parse(open('file.py').read())"`，不得假设工具写入一定正确。
+
+## Project Corrections Addendum (2026-04-15, evidence_validation execution plan + calc fallback)
+
+> Source: User-reported evidence_validation module completely missing in reports — reviewer never selected + calculation reviewer invisible.
+
+- **前端默认启用模块必须包含全部 5 个模块（HG-18）**：`review-acceptance-page.tsx` 的 `enabledModules` 初始值必须与 `create-task-form.tsx` 保持一致，即同时包含 `structure_completeness`、`parameter_consistency`、`legality_compliance`、`execution_continuity`、`evidence_validation`。遗漏任何模块会导致对应 reviewer 不进入 `enabledAgents`，进而被 `template_registry.select_templates()` 的 `continue` 分支跳过。
+
+- **`template_registry.select_templates()` 的 enabled 过滤是硬门禁**：当 `enabledAgents` 非空时，不在列表中的 template **一律 `continue`**（L66-71），不会被 `default_enabled`、`document_type_match` 或 `focus_keywords` 救回。因此任何新增 reviewer 必须确保其 template_id 被 `module_template_ids()` 正确返回。
+
+- **calculation_review_reviewer 必须有确定性 fallback（HG-17）**：当 `hermes_router` 返回 0 个 findings 时，`agent_runner` 必须自动注入一条 `severity=info` 的保守型 finding（`H-CALC-FALLBACK-001`），文案为"未见计算书或验算过程，需人工补充复核"。这确保"计算核验"功能在前端始终可见，不会出现"模板存在但功能不存在"的用户体验。
+
+- **`_TEMPLATE_HARD_MODULE` 双层硬归属是必须的（HG-15 强化）**：`agent_runner._annotate_finding_ownership` 和 `final_report_view_model._resolve_module` 必须**同时维护** `_TEMPLATE_HARD_MODULE` 映射。两者缺一不可：runner 侧保证写入时正确，view_model 侧保证读取时不被 category/keyword fallback 覆盖。
+
+- **`power_outage_operation_chain_reviewer` 禁止声明 `evidence_validation`（HG-19）**：该 reviewer 的 `metadata.review_modules` 只允许包含 `execution_continuity`。将其绑定到 `evidence_validation` 会导致停电链路 finding 混入证据验证模块，与 normative_validity_reviewer / calculation_review_reviewer 的输出混淆。
+
+- **`_build_normative_validity()` 必须用原始 findings 构建表格（HG-20）**：传入 `deduped_findings` 会导致表格被 dedup 吞掉（ID/title 冲突时丢失含 `normativeValidityChecks` 的 finding）。必须传入 `findings`（pre-dedup）以保证表格数据不丢失。

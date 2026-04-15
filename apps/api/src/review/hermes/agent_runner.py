@@ -66,6 +66,26 @@ class HermesAgentRunner:
                 'input_token_limit': template.input_token_limit,
                 'output_token_limit': template.output_token_limit,
             }
+            # Calculation reviewer deterministic fallback: if the LLM router
+            # produced zero findings, inject a conservative "evidence insufficient"
+            # finding so the module is always visible in the report (AGENTS.md HG-17).
+            if template.id == 'calculation_review_reviewer' and not packet.findings:
+                packet.findings.append(
+                    FindingItem(
+                        id='H-CALC-FALLBACK-001',
+                        title='计算核验：未见计算书或验算过程',
+                        severity='info',
+                        category='evidence_verification',
+                        finding_type='calculation_review_insufficient_evidence',
+                        evidence_status='evidence_gap',
+                        summary='被审方案中未识别到计算式、验算过程或参数取值依据，无法完成计算核验。',
+                        suggestion='如方案涉及荷载、安全系数、电气参数等验算需求，请补充计算书或验算过程后重新审查。',
+                        source_engine='hermes',
+                        raw_data={'module_name': 'evidence_validation'},
+                    )
+                )
+                self._annotate_finding_ownership(template, packet.findings[-1])
+                packet.overall_assessment = '未见计算书或验算过程，计算核验功能已就绪但证据不足。'
         else:
             if template.id == 'normative_validity_reviewer':
                 packet = await self._build_normative_validity_packet(template=template, workspace=workspace)

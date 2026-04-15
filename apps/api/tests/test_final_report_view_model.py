@@ -732,3 +732,71 @@ def test_normative_validity_table_from_raw_findings_not_lost_by_dedup():
     # Even though dedup would keep only one finding, the table must be built from raw findings
     assert len(vm.normativeValidity.checks) >= 1
     assert any('GB 50168-2018' in c.title for c in vm.normativeValidity.checks)
+
+
+# ---- Regression tests: execution plan / enabledAgents ----
+
+def test_evidence_validation_module_template_ids_include_all_reviewers():
+    """module_template_ids(['evidence_validation']) must include normative, calculation, and visibility reviewers."""
+    from src.review.hermes.module_bindings import module_template_ids
+    template_ids = module_template_ids(['evidence_validation'])
+    assert 'normative_validity_reviewer' in template_ids
+    assert 'calculation_review_reviewer' in template_ids
+    assert 'visibility_gap_reviewer' in template_ids
+
+
+def test_all_five_modules_produce_complete_template_set():
+    """When all 5 modules are enabled, all expected reviewers must be in the template set."""
+    from src.review.hermes.module_bindings import module_template_ids
+    all_modules = [
+        'structure_completeness',
+        'parameter_consistency',
+        'legality_compliance',
+        'execution_continuity',
+        'evidence_validation',
+    ]
+    template_ids = module_template_ids(all_modules)
+    # evidence_validation reviewers must be present
+    assert 'normative_validity_reviewer' in template_ids
+    assert 'calculation_review_reviewer' in template_ids
+    assert 'visibility_gap_reviewer' in template_ids
+    # other core reviewers must also be present
+    assert 'structure_completeness_reviewer' in template_ids
+    assert 'policy_compliance_reviewer' in template_ids
+
+
+# ---- Regression tests: calculation reviewer minimum visible output ----
+
+def test_calculation_fallback_finding_renders_in_evidence_validation():
+    """When calculation reviewer produces the fallback finding (no calculation content),
+    it must appear in the evidence_validation section of the final report."""
+    renderer = FinalReportRenderer()
+    packet = FinalReportPacket(
+        review_id='r-calc-fallback',
+        executive_summary='',
+        all_findings=[
+            FindingItem(
+                id='H-CALC-FALLBACK-001',
+                title='\u8ba1\u7b97\u6838\u9a8c\uff1a\u672a\u89c1\u8ba1\u7b97\u4e66\u6216\u9a8c\u7b97\u8fc7\u7a0b',
+                severity='info',
+                category='evidence_verification',
+                summary='\u88ab\u5ba1\u65b9\u6848\u4e2d\u672a\u8bc6\u522b\u5230\u8ba1\u7b97\u5f0f\u3001\u9a8c\u7b97\u8fc7\u7a0b\u6216\u53c2\u6570\u53d6\u503c\u4f9d\u636e\uff0c\u65e0\u6cd5\u5b8c\u6210\u8ba1\u7b97\u6838\u9a8c\u3002',
+                raw_data={
+                    'template_id': 'calculation_review_reviewer',
+                    'module_name': 'evidence_validation',
+                },
+            ),
+        ],
+    )
+    vm = renderer.build_view_model(final_packet=packet)
+    ev_section = next(s for s in vm.sections if s.key == 'evidence_validation')
+    # Fallback finding must be visible in evidence_validation
+    assert any('\u8ba1\u7b97\u6838\u9a8c' in issue.title for issue in ev_section.issues)
+    # Must NOT be in any other section
+    other_sections = [s for s in vm.sections if s.key != 'evidence_validation']
+    for section in other_sections:
+        assert not any('\u8ba1\u7b97\u6838\u9a8c' in issue.title for issue in section.issues)
+    # HTML must also contain the finding
+    html_output = renderer.render_html(vm)
+    assert '\u8ba1\u7b97\u6838\u9a8c' in html_output
+    assert '\u8bc1\u636e\u9a8c\u8bc1' in html_output
