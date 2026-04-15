@@ -183,6 +183,7 @@ export function TaskDetail({ taskId }: { taskId: string }) {
   const pollingTimerRef = useRef<number | null>(null);
   const reconnectTimerRef = useRef<number | null>(null);
   const pollingFailureCountRef = useRef(0);
+  const progressTaskIdRef = useRef<string | null>(null);
   const transportModeRef = useRef<"connecting" | "sse" | "polling">("connecting");
   const reconnectStreamRef = useRef<() => void>(() => {});
   const mountedRef = useRef(false);
@@ -190,10 +191,6 @@ export function TaskDetail({ taskId }: { taskId: string }) {
   useEffect(() => {
     transportModeRef.current = transportMode;
   }, [transportMode]);
-
-  useEffect(() => {
-    setProgressViewStartedAt(Date.now());
-  }, [taskId]);
 
   const clearPolling = useCallback(() => {
     if (pollingTimerRef.current) {
@@ -226,6 +223,10 @@ export function TaskDetail({ taskId }: { taskId: string }) {
       eventData: TaskEvent[];
       artifactData: TaskArtifact[];
     }) => {
+      if (progressTaskIdRef.current !== taskData.id) {
+        progressTaskIdRef.current = taskData.id;
+        setProgressViewStartedAt(Date.now());
+      }
       setTask(taskData);
       setEvents(eventData);
       setArtifacts(artifactData);
