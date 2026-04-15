@@ -103,3 +103,11 @@ All user-visible content in reports, interfaces, and statuses MUST be presented 
 
 ## Archive Strategy
 - Historically deprecated code, outdated scripts, unlinked tests, and obsolete experimentation artifacts MUST be moved to the `archive/` directory instead of being permanently deleted immediately. This ensures a clean active tree while retaining history for manual confirmation.
+
+
+## Project Corrections Addendum (2026-04-15)
+
+- Task detail simulated progress is a **detail-view experience contract**, not a task-age replay. It must start from 0% when the detail page is entered, then advance at 1% per 4 seconds, cap at 90% while non-terminal, and only switch to 100% on terminal completion.
+- The formal report `审查依据文件` list must cover the **actually enabled formal bases** for the current review, including selected pack sources, while hiding both `监理工程师对停电施工方案的审核规则及要点` and `《危险性较大的分部分项工程专项施工方案编制指南》（建办质〔2021〕48号）` from that visible list.
+- `编制依据现行有效性核验` is defined strictly as verification of the reviewed document's own `编制依据/编制说明` section. Built-in review bases are out of scope and must never be shown as the object being verified.
+- When prior docs/tests mention the old `3 秒 1%` progress rule or built-in-basis validity checks, the 2026-04-15 rule above supersedes them.

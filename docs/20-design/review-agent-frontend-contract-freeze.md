@@ -14,6 +14,8 @@
 - `GET /api/review-tasks/{task_id}`
 - 作用：返回前端冻结后的状态与进度字段
 
+> 前端展示规则补充：任务详情页的模拟进度必须在进入详情页时从 `0%` 起步，并按 `4 秒 1%` 推进；非终态最多 `90%`，终态才显示 `100%`。不得因任务后台已运行一段时间而在页面首屏瞬时跳高。
+
 ### SSE 进度
 - `GET /api/review-tasks/{task_id}/events`
 - 作用：输出 `task_created / progress / artifact_ready / completed / failed` 五类事件
@@ -21,6 +23,8 @@
 ### 最终结果
 - `GET /api/review-tasks/{task_id}/result`
 - 作用：返回冻结后的 `summary / modules / key_findings / recommendations / export_links / metadata / raw`
+
+> 正式报告展示补充：网页预览与 PDF 导出必须同源消费 Hermes controller 生成的正式展示层（如 `finalReportViewModel / reportHtml / reportPrintCss`）。前端不得再单独拼接一套网页报告，同时下载旧的 support-layer PDF。
 
 ### 反馈
 - `POST /api/review-reports/{report_id}/feedback`
@@ -211,3 +215,11 @@ npm run dev -- --hostname 127.0.0.1 --port 3018
 - basis：最小 `basis.md`
 - context：最小 `context.txt`
 - 页面截图：`/var/folders/x8/cmk3pv794cl1lvp_q508s1mc0000gn/T/playwright-mcp-output/1775896132802/page-2026-04-11T08-31-04-123Z.png`
+
+
+## 6. 有效性核验补充（2026-04-15 supersede）
+
+- “证据验证”中的有效性核验对象，指 **被审方案 `编制依据/编制说明` 章节中的规范性依据**，不是系统内置审查 basis。
+- 表格冻结为三列：`序号 / 规范名称 / 核验状态`。
+- `核验状态` 仅允许：`现行有效 / 疑似废止或替代 / 待人工核验`。
+- 合同、委托函、图纸、技术资料、审批资料等非规范性条目不得进入该表。

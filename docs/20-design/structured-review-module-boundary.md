@@ -48,6 +48,12 @@ The facade returns normalized JSON-ready payloads, not executor-native objects.
 
 The `normalized_result` is the facade-owned compatibility surface for controller/assembler consumption. It may preserve current keys such as `summary`, `visibility`, `issues`, `artifactIndex`, `reportMarkdown`, `reportHtml`, `reportPrintCss`, `resolvedProfile`, `matrices`, and `unresolvedFacts`, but the controller must treat this object as a facade contract rather than as executor-native structure.
 
+## Controller-side presentation rule
+
+- `StructuredReviewCapabilityFacade` may continue to expose support-layer `reportHtml / reportPrintCss / artifactIndex`, but these are **not** the final user-facing report by default.
+- When Hermes formal review succeeds, the controller must build a controller-owned final presentation layer (for example `finalReportViewModel`, canonical `reportHtml / reportPrintCss`, and the formal final PDF artifact) from the authoritative `FinalReportPacket` plus support-layer matrices/position evidence.
+- Web preview and PDF export must consume the **same** controller-owned final presentation output. It is forbidden to let the web preview read Hermes final markdown while the PDF download still points at a support-layer PDF artifact.
+
 ## Degradation and error contract
 
 - Incremental methods may raise if the underlying capability fails before producing a valid intermediate state.
@@ -70,3 +76,10 @@ Hermes-side callers must not:
 - `StructuredReviewCapabilityFacade`: normalized module boundary into 008 capabilities
 - `HermesController`: template selection and orchestration
 - `HermesReviewAssembler`: external final result protocol
+
+
+## Normative-validity supplemental worker boundary
+
+- The `normative_validity_reviewer` supplemental worker is allowed to read the normalized document parse result in order to extract normative references from the reviewed document's `编制依据/编制说明` sections.
+- It must not treat executor-selected basis packs or support-layer policy clauses as the object being verified. Those remain system governance inputs, not user-document references.
+- Its display-layer output must remain a compact evidence-validation view (`title + status` as the minimal stable contract), while richer resolver metadata may stay internal for traceability.
