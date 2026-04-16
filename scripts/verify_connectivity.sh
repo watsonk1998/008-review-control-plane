@@ -7,8 +7,7 @@ VERIFY_DIR="$ROOT/artifacts/verification"
 mkdir -p "$VERIFY_DIR"
 export REVIEW_CONTROL_PLANE_ROOT="$ROOT"
 
-export DEEPTUTOR_BASE_URL="${DEEPTUTOR_BASE_URL:-http://127.0.0.1:8121}"
-export GPT_RESEARCHER_EXTERNAL_PATH="${GPT_RESEARCHER_EXTERNAL_PATH:-/tmp/008-discovery/gpt-researcher}"
+
 export FASTGPT_VERIFICATION_DATASET_ID="${FASTGPT_VERIFICATION_DATASET_ID:-6984435295a6ce02e80696a1}"
 
 cd "$API_DIR"
@@ -17,9 +16,7 @@ source .venv/bin/activate
 python - <<PY
 import asyncio, json, os, pathlib, requests, time
 from src.adapters.fastgpt_adapter import FastGPTAdapter, FastGPTResponseParseError
-from src.adapters.gpt_researcher_adapter import GPTResearcherAdapter
 from src.adapters.llm_gateway import LLMGateway
-from src.adapters.deeptutor_adapter import DeepTutorAdapter
 
 ROOT = pathlib.Path(os.environ["REVIEW_CONTROL_PLANE_ROOT"])
 VERIFY_DIR = ROOT / "artifacts" / "verification"
@@ -30,8 +27,6 @@ DATASET_ID = os.getenv("FASTGPT_VERIFICATION_DATASET_ID", "6984435295a6ce02e8069
 async def main():
     llm = LLMGateway()
     fast = FastGPTAdapter()
-    deeptutor = DeepTutorAdapter(os.getenv("DEEPTUTOR_BASE_URL", "http://127.0.0.1:8121"))
-    gptr = GPTResearcherAdapter()
 
     llm_health = await llm.health_check()
     (VERIFY_DIR / "llm-health.json").write_text(json.dumps(llm_health, ensure_ascii=False, indent=2), encoding="utf-8")
@@ -49,22 +44,11 @@ async def main():
     else:
         (VERIFY_DIR / "fast-mode-b.md").write_text("Skipped: FASTGPT_VERIFICATION_COLLECTION_ID not provided.", encoding="utf-8")
 
-    dt_health = await deeptutor.health_check()
-    dt_answer = await deeptutor.ask_knowledge_question("施工组织设计中的安全管理章节通常包含哪些内容？")
-    (VERIFY_DIR / "deeptutor-connectivity.json").write_text(json.dumps({"health": dt_health, "sample": dt_answer}, ensure_ascii=False, indent=2), encoding="utf-8")
 
-    gptr_health = await gptr.health_check()
-    gptr_payload = {"health": gptr_health}
-    try:
-        local_report = await gptr.run_local_docs_research("请基于该施工组织设计文档提炼项目概况和关键风险。", [DOC])
-        gptr_payload["localDocs"] = {"meta": local_report.get("meta"), "reportPreview": local_report.get("report", "")[:3000]}
-    except Exception as exc:
-        gptr_payload["localDocsError"] = str(exc)
-    (VERIFY_DIR / "gpt-researcher-connectivity.json").write_text(json.dumps(gptr_payload, ensure_ascii=False, indent=2), encoding="utf-8")
 
     created = requests.post(f"{API_BASE}/api/tasks", json={
         "taskType": "knowledge_qa",
-        "capabilityMode": "deeptutor",
+        "capabilityMode": "llm_only",
         "query": "施工组织设计中安全管理应关注哪些核心点？",
         "datasetId": DATASET_ID,
         "debug": True,

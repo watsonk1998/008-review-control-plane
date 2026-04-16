@@ -5,7 +5,6 @@ from datetime import datetime, timezone
 from pathlib import Path
 from types import SimpleNamespace
 
-from src.adapters.gpt_researcher_adapter import GPTResearcherAdapter
 from src.domain.models import SourceDocumentRef, TaskRecord
 from src.orchestrator.deepresearch_runtime import DeepResearchRuntime
 from src.repositories.sqlite_store import SQLiteTaskStore
@@ -74,20 +73,7 @@ class FakeFast:
         raise AssertionError('collection mode should not be used in this test')
 
 
-class FakeGPTResearcher:
-    async def run_deep_research(self, query, *, use_web, source_urls=None):
-        return {
-            'report': f'RESEARCH::{query}::{use_web}',
-            'sources': [{'title': 'source'}],
-            'meta': {'reportType': 'deep'},
-        }
 
-    async def run_local_docs_research(self, query, document_paths):
-        return {
-            'report': f'LOCAL::{query}::{len(document_paths)}',
-            'sources': [{'path': document_paths[0]}],
-            'meta': {'reportType': 'detailed_report'},
-        }
 
 
 
@@ -120,16 +106,6 @@ class FakeHermesEngine(HermesReviewEngine):
         )
 
 
-class FakeDeepTutor:
-    async def ask_with_context(self, query, context_chunks):
-        return {
-            'answer': f'DEEPTUTOR::{query}::{len(context_chunks)}',
-            'sources': {'rag': []},
-            'transcript': [],
-        }
-
-
-
 def build_fixture_manifest(tmp_path: Path) -> Path:
     fixture_dir = tmp_path / 'fixtures'
     fixture_dir.mkdir()
@@ -152,17 +128,20 @@ def build_fixture_manifest(tmp_path: Path) -> Path:
 
 
 
-def build_runtime(tmp_path: Path, deeptutor=None) -> tuple[DeepResearchRuntime, SQLiteTaskStore]:
+def build_runtime(tmp_path: Path) -> tuple[DeepResearchRuntime, SQLiteTaskStore]:
     manifest_path = build_fixture_manifest(tmp_path)
     store = SQLiteTaskStore(tmp_path / 'runtime.sqlite')
     llm = FakeLLM()
     executor = StructuredReviewExecutor(document_loader=DocumentLoader(), llm_gateway=llm, fast_adapter=FakeFast())
+    from unittest.mock import AsyncMock
     controller = HermesController(
         task_compiler=TaskCompiler(),
         fact_packet_adapter=FactPacketAdapter(),
         capability_facade=StructuredReviewCapabilityFacade(structured_review_executor=executor),
         hermes_engine=FakeHermesEngine(),
         llm_gateway=llm,
+        basis_pack_resolver=AsyncMock(),
+        support_packet_builder=AsyncMock(),
         seed_template_dir=Path('/Users/lucas/repos/review/008-review-control-plane/apps/api/src/review/hermes/templates'),
         runtime_template_dir=tmp_path / 'runtime_agent_templates',
     )
@@ -171,9 +150,6 @@ def build_runtime(tmp_path: Path, deeptutor=None) -> tuple[DeepResearchRuntime, 
         fixture_service=FixtureService(manifest_path),
         document_loader=DocumentLoader(),
         llm_gateway=llm,
-        fast_adapter=FakeFast(),
-        gpt_researcher=FakeGPTResearcher(),
-        deeptutor=deeptutor,
         hermes_engine=FakeHermesEngine(),
         hermes_controller=controller,
         tasks_dir=tmp_path / 'artifacts',
@@ -207,106 +183,14 @@ def create_task(**overrides) -> TaskRecord:
     return TaskRecord(**payload)
 
 
-async def test_runtime_knowledge_qa_fast_mode_uses_llm_summary(tmp_path: Path):
-    runtime, store = build_runtime(tmp_path, deeptutor=None)
-    task = create_task(capabilityMode='fast')
-    store.create_task(task)
-
-    await runtime.execute_task(task.id)
-
-    saved = store.get_task(task.id)
-    assert saved is not None
-    assert saved.status == 'succeeded'
-    assert saved.result is not None
-    assert saved.result['capabilitiesUsed'] == ['fast', 'llm_gateway']
-    assert saved.result['finalAnswer'].startswith('SUMMARY::')
-    assert saved.result['sources'][0]['label'] == 'demo-source'
-    assert len(store.list_events(task.id)) >= 4
 
 
-async def test_runtime_review_assist_aggregates_fixture_and_deeptutor(tmp_path: Path):
-    runtime, store = build_runtime(tmp_path, deeptutor=FakeDeepTutor())
-    task = create_task(
-        id='task-2',
-        taskType='review_assist',
-        capabilityMode='auto',
-        query='请辅助审查该监理规划是否覆盖安全控制要点',
-        fixtureId='sample-doc',
-    )
-    store.create_task(task)
-
-    await runtime.execute_task(task.id)
-
-    saved = store.get_task(task.id)
-    assert saved is not None
-    assert saved.status == 'succeeded'
-    assert saved.result is not None
-    assert 'deeptutor' in saved.result['capabilitiesUsed']
-    assert 'llm_gateway' in saved.result['capabilitiesUsed']
-    assert saved.result['notice'].startswith('这是辅助审查结果')
-    assert len(saved.result['artifacts']) >= 2
 
 
-class FakeSourceURLResearcher:
-    last_instance = None
-
-    def __init__(self, **kwargs):
-        self.kwargs = kwargs
-        self.conduct_called = False
-        self.ext_context = None
-        FakeSourceURLResearcher.last_instance = self
-
-    async def conduct_research(self):
-        self.conduct_called = True
-
-    async def write_report(self, ext_context=None):
-        self.ext_context = ext_context
-        return f"REPORT::{self.kwargs['report_type']}::{self.kwargs['report_source']}"
-
-    def get_research_sources(self):
-        return [{'title': 'live-source'}]
-
-
-async def test_gpt_researcher_source_urls_use_static_context(monkeypatch):
-    adapter = GPTResearcherAdapter(external_path='/tmp/unused')
-
-    def fake_prepare_import():
-        return (
-            FakeSourceURLResearcher,
-            SimpleNamespace(
-                ResearchReport=SimpleNamespace(value='research_report'),
-                DeepResearch=SimpleNamespace(value='deep_research'),
-            ),
-            SimpleNamespace(
-                Static=SimpleNamespace(value='static'),
-                Web=SimpleNamespace(value='web'),
-            ),
-            SimpleNamespace(Analytical='analytical'),
-        )
-
-    async def fake_build_source_url_context(source_urls):
-        assert source_urls == ['https://example.com/a']
-        return 'STATIC_CONTEXT', [{'url': source_urls[0], 'preview': 'demo'}]
-
-    monkeypatch.setattr(adapter, '_prepare_import', fake_prepare_import)
-    monkeypatch.setattr(adapter, '_build_source_url_context', fake_build_source_url_context)
-
-    result = await adapter.run_deep_research(
-        '比较三种能力的角色差异',
-        use_web=False,
-        source_urls=['https://example.com/a'],
-    )
-
-    assert result['meta']['reportSource'] == 'static_source_urls'
-    assert result['meta']['sourceUrlCount'] == 1
-    assert result['sources'][0]['url'] == 'https://example.com/a'
-    assert FakeSourceURLResearcher.last_instance is not None
-    assert FakeSourceURLResearcher.last_instance.conduct_called is False
-    assert FakeSourceURLResearcher.last_instance.ext_context == 'STATIC_CONTEXT'
 
 
 async def test_runtime_structured_review_generates_formal_result(tmp_path: Path):
-    runtime, store = build_runtime(tmp_path, deeptutor=None)
+    runtime, store = build_runtime(tmp_path)
     task = create_task(
         id='task-3',
         taskType='structured_review',
@@ -354,7 +238,7 @@ async def test_runtime_structured_review_generates_formal_result(tmp_path: Path)
 
 
 async def test_runtime_structured_review_accepts_source_document_ref_without_fixture(tmp_path: Path):
-    runtime, store = build_runtime(tmp_path, deeptutor=None)
+    runtime, store = build_runtime(tmp_path)
     source_document = tmp_path / 'uploaded-structured-review.md'
     source_document.write_text(
         '# 施工组织设计\n\n'
@@ -396,7 +280,7 @@ async def test_runtime_structured_review_accepts_source_document_ref_without_fix
 
 
 async def test_runtime_structured_review_fixture_and_upload_paths_are_contract_equivalent(tmp_path: Path):
-    runtime, store = build_runtime(tmp_path, deeptutor=None)
+    runtime, store = build_runtime(tmp_path)
     fixture_task = create_task(
         id='task-fixture-parity',
         taskType='structured_review',
