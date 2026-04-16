@@ -7,7 +7,12 @@ from types import SimpleNamespace
 
 from fastapi.testclient import TestClient
 
-from src.domain.models import CreateTaskRequest, SourceDocumentRef, TaskArtifact, TaskRecord
+from src.domain.models import (
+    CreateTaskRequest,
+    SourceDocumentRef,
+    TaskArtifact,
+    TaskRecord,
+)
 from src.main import app
 from src.repositories.sqlite_store import SQLiteTaskStore
 from src.routes import tasks as tasks_route
@@ -27,262 +32,296 @@ class StubRuntime:
 
 
 def test_task_service_persists_structured_review_fields_and_artifacts(tmp_path: Path):
-    store = SQLiteTaskStore(tmp_path / 'service.sqlite')
-    runtime = StubRuntime(tmp_path / 'artifacts')
+    store = SQLiteTaskStore(tmp_path / "service.sqlite")
+    runtime = StubRuntime(tmp_path / "artifacts")
     service = TaskService(store, runtime, runtime.tasks_dir)
 
     task = service.create_task(
         CreateTaskRequest(
-            taskType='structured_review',
-            capabilityMode='auto',
-            query='执行危大专项方案正式审查',
-            fixtureId='fixture-hz',
-            documentType='hazardous_special_scheme',
-            disciplineTags=['lifting_operations'],
-            policyPackIds=['hazardous_special_scheme.base'],
+            taskType="structured_review",
+            capabilityMode="auto",
+            query="执行危大专项方案正式审查",
+            fixtureId="fixture-hz",
+            documentType="hazardous_special_scheme",
+            disciplineTags=["lifting_operations"],
+            policyPackIds=["hazardous_special_scheme.base"],
         )
     )
 
     saved = store.get_task(task.id)
     assert saved is not None
-    assert saved.documentType == 'hazardous_special_scheme'
-    assert saved.disciplineTags == ['lifting_operations']
-    assert saved.policyPackIds == ['hazardous_special_scheme.base']
+    assert saved.documentType == "hazardous_special_scheme"
+    assert saved.disciplineTags == ["lifting_operations"]
+    assert saved.policyPackIds == ["hazardous_special_scheme.base"]
     assert saved.strictMode is True
 
     artifact_dir = runtime.tasks_dir / task.id
     artifact_dir.mkdir(parents=True, exist_ok=True)
-    artifact_path = artifact_dir / 'structured-review-report.md'
-    artifact_path.write_text('# report', encoding='utf-8')
+    artifact_path = artifact_dir / "structured-review-report.md"
+    artifact_path.write_text("# report", encoding="utf-8")
 
     artifacts = service.list_task_artifacts(task.id)
     assert len(artifacts) == 1
-    assert artifacts[0].downloadUrl == f'/api/tasks/{task.id}/artifacts/structured-review-report.md'
-    assert service.resolve_task_artifact(task.id, '../structured-review-report.md') == artifact_path.resolve()
+    assert (
+        artifacts[0].downloadUrl
+        == f"/api/tasks/{task.id}/artifacts/structured-review-report.md"
+    )
+    assert (
+        service.resolve_task_artifact(task.id, "../structured-review-report.md")
+        == artifact_path.resolve()
+    )
 
 
-def test_task_service_prefers_result_artifact_catalog_over_directory_scan(tmp_path: Path):
-    store = SQLiteTaskStore(tmp_path / 'service.sqlite')
-    runtime = StubRuntime(tmp_path / 'artifacts')
+def test_task_service_prefers_result_artifact_catalog_over_directory_scan(
+    tmp_path: Path,
+):
+    store = SQLiteTaskStore(tmp_path / "service.sqlite")
+    runtime = StubRuntime(tmp_path / "artifacts")
     service = TaskService(store, runtime, runtime.tasks_dir)
 
     task = service.create_task(
         CreateTaskRequest(
-            taskType='structured_review',
-            capabilityMode='auto',
-            query='执行正式结构化审查',
-            fixtureId='fixture-1',
-            documentType='construction_org',
+            taskType="structured_review",
+            capabilityMode="auto",
+            query="执行正式结构化审查",
+            fixtureId="fixture-1",
+            documentType="construction_org",
         )
     )
 
     task_dir = runtime.tasks_dir / task.id
     task_dir.mkdir(parents=True, exist_ok=True)
-    (task_dir / 'unexpected-debug.json').write_text('{"debug": true}', encoding='utf-8')
+    (task_dir / "unexpected-debug.json").write_text('{"debug": true}', encoding="utf-8")
     catalog_artifact = {
-        'name': 'report',
-        'fileName': 'structured-review-report.md',
-        'mediaType': 'text/markdown',
-        'sizeBytes': 12,
-        'downloadUrl': f'/api/tasks/{task.id}/artifacts/structured-review-report.md',
-        'category': 'report',
-        'stage': 'report',
-        'primary': True,
+        "name": "report",
+        "fileName": "structured-review-report.md",
+        "mediaType": "text/markdown",
+        "sizeBytes": 12,
+        "downloadUrl": f"/api/tasks/{task.id}/artifacts/structured-review-report.md",
+        "category": "report",
+        "stage": "report",
+        "primary": True,
     }
-    store.update_task(task.id, result={'artifactIndex': [catalog_artifact]})
+    store.update_task(task.id, result={"artifactIndex": [catalog_artifact]})
 
     artifacts = service.list_task_artifacts(task.id)
-    assert [artifact.fileName for artifact in artifacts] == ['structured-review-report.md']
-    assert artifacts[0].category == 'report'
+    assert [artifact.fileName for artifact in artifacts] == [
+        "structured-review-report.md"
+    ]
+    assert artifacts[0].category == "report"
     assert artifacts[0].primary is True
 
 
-def test_task_service_treats_explicit_empty_artifact_index_as_authoritative(tmp_path: Path):
-    store = SQLiteTaskStore(tmp_path / 'service.sqlite')
-    runtime = StubRuntime(tmp_path / 'artifacts')
+def test_task_service_treats_explicit_empty_artifact_index_as_authoritative(
+    tmp_path: Path,
+):
+    store = SQLiteTaskStore(tmp_path / "service.sqlite")
+    runtime = StubRuntime(tmp_path / "artifacts")
     service = TaskService(store, runtime, runtime.tasks_dir)
 
     task = service.create_task(
         CreateTaskRequest(
-            taskType='structured_review',
-            capabilityMode='auto',
-            query='执行正式结构化审查',
-            fixtureId='fixture-1',
-            documentType='construction_org',
+            taskType="structured_review",
+            capabilityMode="auto",
+            query="执行正式结构化审查",
+            fixtureId="fixture-1",
+            documentType="construction_org",
         )
     )
 
     task_dir = runtime.tasks_dir / task.id
     task_dir.mkdir(parents=True, exist_ok=True)
-    (task_dir / 'unexpected-debug.json').write_text('{"debug": true}', encoding='utf-8')
-    store.update_task(task.id, result={'artifactIndex': []})
+    (task_dir / "unexpected-debug.json").write_text('{"debug": true}', encoding="utf-8")
+    store.update_task(task.id, result={"artifactIndex": []})
 
     artifacts = service.list_task_artifacts(task.id)
     assert artifacts == []
 
 
 def test_task_service_derives_consistent_reviewer_task_state(tmp_path: Path):
-    store = SQLiteTaskStore(tmp_path / 'service.sqlite')
-    runtime = StubRuntime(tmp_path / 'artifacts')
+    store = SQLiteTaskStore(tmp_path / "service.sqlite")
+    runtime = StubRuntime(tmp_path / "artifacts")
     service = TaskService(store, runtime, runtime.tasks_dir)
 
     task = service.create_task(
         CreateTaskRequest(
-            taskType='structured_review',
-            capabilityMode='auto',
-            query='执行正式结构化审查',
-            fixtureId='fixture-1',
-            documentType='construction_org',
+            taskType="structured_review",
+            capabilityMode="auto",
+            query="执行正式结构化审查",
+            fixtureId="fixture-1",
+            documentType="construction_org",
         )
     )
     store.update_task(
         task.id,
         result={
-            'summary': {
-                'overallConclusion': 'demo',
-                'documentType': 'construction_org',
-                'selectedPacks': ['construction_org.base'],
-                'manualReviewNeeded': True,
-                'issueCount': 1,
-                'layerCounts': {'L1': 1},
-                'stats': {},
-                'visibilitySummary': {
-                    'attachmentCount': 1,
-                    'counts': {'attachment_unparsed': 1},
-                    'duplicateSectionTitles': [],
-                    'parseWarnings': [],
-                    'reasonCounts': {'title_detected_without_attachment_body': 1},
-                    'manualReviewNeeded': True,
+            "summary": {
+                "overallConclusion": "demo",
+                "documentType": "construction_org",
+                "selectedPacks": ["construction_org.base"],
+                "manualReviewNeeded": True,
+                "issueCount": 1,
+                "layerCounts": {"L1": 1},
+                "stats": {},
+                "visibilitySummary": {
+                    "attachmentCount": 1,
+                    "counts": {"attachment_unparsed": 1},
+                    "duplicateSectionTitles": [],
+                    "parseWarnings": [],
+                    "reasonCounts": {"title_detected_without_attachment_body": 1},
+                    "manualReviewNeeded": True,
                 },
             },
-            'visibility': {
-                'attachmentCount': 1,
-                'counts': {'attachment_unparsed': 1},
-                'duplicateSectionTitles': [],
-                'parseWarnings': [],
-                'reasonCounts': {'title_detected_without_attachment_body': 1},
-                'manualReviewNeeded': True,
-                'parserLimited': False,
-                'fileType': 'md',
+            "visibility": {
+                "attachmentCount": 1,
+                "counts": {"attachment_unparsed": 1},
+                "duplicateSectionTitles": [],
+                "parseWarnings": [],
+                "reasonCounts": {"title_detected_without_attachment_body": 1},
+                "manualReviewNeeded": True,
+                "parserLimited": False,
+                "fileType": "md",
             },
-            'resolvedProfile': {
-                'requestedDocumentType': 'construction_org',
-                'requestedDisciplineTags': [],
-                'requestedPolicyPackIds': [],
-                'documentType': 'construction_org',
-                'disciplineTags': [],
-                'policyPackIds': ['construction_org.base'],
-                'strictMode': True,
+            "resolvedProfile": {
+                "requestedDocumentType": "construction_org",
+                "requestedDisciplineTags": [],
+                "requestedPolicyPackIds": [],
+                "documentType": "construction_org",
+                "disciplineTags": [],
+                "policyPackIds": ["construction_org.base"],
+                "strictMode": True,
             },
-            'issues': [
+            "issues": [
                 {
-                    'id': 'ISSUE-001',
-                    'title': '附件处于可视域缺口，需人工复核原件',
-                    'layer': 'L1',
-                    'severity': 'medium',
-                    'findingType': 'visibility_gap',
-                    'summary': '附件处于可视域缺口，需人工复核原件',
-                    'manualReviewNeeded': True,
-                    'evidenceMissing': True,
-                    'manualReviewReason': 'visibility_gap',
-                    'docEvidence': [],
-                    'policyEvidence': [],
-                    'recommendation': [],
-                    'confidence': 'medium',
+                    "id": "ISSUE-001",
+                    "title": "附件处于可视域缺口，需人工复核原件",
+                    "layer": "L1",
+                    "severity": "medium",
+                    "findingType": "visibility_gap",
+                    "summary": "附件处于可视域缺口，需人工复核原件",
+                    "manualReviewNeeded": True,
+                    "evidenceMissing": True,
+                    "manualReviewReason": "visibility_gap",
+                    "docEvidence": [],
+                    "policyEvidence": [],
+                    "recommendation": [],
+                    "confidence": "medium",
                 }
             ],
-            'matrices': {
-                'hazardIdentification': {'values': {}},
-                'ruleHits': [],
-                'conflicts': {'values': {}},
-                'attachmentVisibility': [
+            "matrices": {
+                "hazardIdentification": {"values": {}},
+                "ruleHits": [],
+                "conflicts": {"values": {}},
+                "attachmentVisibility": [
                     {
-                        'id': 'attachment-1',
-                        'attachmentNumber': '1',
-                        'title': '附件1',
-                        'visibility': 'attachment_unparsed',
-                        'parseState': 'attachment_unparsed',
-                        'manualReviewNeeded': True,
-                        'reason': 'title_detected_without_attachment_body',
-                        'referenceBlockIds': [],
-                        'titleBlockId': None,
+                        "id": "attachment-1",
+                        "attachmentNumber": "1",
+                        "title": "附件1",
+                        "visibility": "attachment_unparsed",
+                        "parseState": "attachment_unparsed",
+                        "manualReviewNeeded": True,
+                        "reason": "title_detected_without_attachment_body",
+                        "referenceBlockIds": [],
+                        "titleBlockId": None,
                     }
                 ],
-                'sectionStructure': [],
-                'issueLayerCounts': {'L1': 1},
+                "sectionStructure": [],
+                "issueLayerCounts": {"L1": 1},
             },
-            'artifactIndex': [],
-            'reportMarkdown': '# demo',
-            'artifacts': [],
-            'unresolvedFacts': [],
-            'capabilitiesUsed': ['llm_gateway'],
-            'finalAnswer': 'demo',
+            "artifactIndex": [],
+            "reportMarkdown": "# demo",
+            "artifacts": [],
+            "unresolvedFacts": [],
+            "capabilitiesUsed": ["llm_gateway"],
+            "finalAnswer": "demo",
         },
     )
 
     rejected = service.update_reviewer_decision(
         task.id,
         {
-            'taskState': 'accepted',
-            'note': 'checked',
-            'issues': [{'issueId': 'ISSUE-001', 'state': 'confirmed', 'note': 'real defect'}],
-            'attachments': [{'attachmentId': 'attachment-1', 'state': 'needs_attachment', 'note': 'need original'}],
+            "taskState": "accepted",
+            "note": "checked",
+            "issues": [
+                {"issueId": "ISSUE-001", "state": "confirmed", "note": "real defect"}
+            ],
+            "attachments": [
+                {
+                    "attachmentId": "attachment-1",
+                    "state": "needs_attachment",
+                    "note": "need original",
+                }
+            ],
         },
     )
     assert rejected.reviewerDecision is not None
-    assert rejected.reviewerDecision.taskState == 'rejected'
+    assert rejected.reviewerDecision.taskState == "rejected"
 
     needs_attachment = service.update_reviewer_decision(
         task.id,
         {
-            'taskState': 'accepted',
-            'note': 'checked',
-            'issues': [{'issueId': 'ISSUE-001', 'state': 'dismissed', 'note': 'not applicable'}],
-            'attachments': [{'attachmentId': 'attachment-1', 'state': 'needs_attachment', 'note': 'need original'}],
+            "taskState": "accepted",
+            "note": "checked",
+            "issues": [
+                {"issueId": "ISSUE-001", "state": "dismissed", "note": "not applicable"}
+            ],
+            "attachments": [
+                {
+                    "attachmentId": "attachment-1",
+                    "state": "needs_attachment",
+                    "note": "need original",
+                }
+            ],
         },
     )
     assert needs_attachment.reviewerDecision is not None
-    assert needs_attachment.reviewerDecision.taskState == 'needs_attachment'
+    assert needs_attachment.reviewerDecision.taskState == "needs_attachment"
 
     accepted = service.update_reviewer_decision(
         task.id,
         {
-            'taskState': 'pending',
-            'note': 'checked',
-            'issues': [{'issueId': 'ISSUE-001', 'state': 'dismissed', 'note': 'not applicable'}],
-            'attachments': [{'attachmentId': 'attachment-1', 'state': 'dismissed', 'note': 'seen'}],
+            "taskState": "pending",
+            "note": "checked",
+            "issues": [
+                {"issueId": "ISSUE-001", "state": "dismissed", "note": "not applicable"}
+            ],
+            "attachments": [
+                {"attachmentId": "attachment-1", "state": "dismissed", "note": "seen"}
+            ],
         },
     )
     assert accepted.reviewerDecision is not None
-    assert accepted.reviewerDecision.taskState == 'accepted'
+    assert accepted.reviewerDecision.taskState == "accepted"
 
 
-def test_sqlite_store_tolerates_malformed_structured_review_json_columns(tmp_path: Path):
-    store = SQLiteTaskStore(tmp_path / 'service.sqlite')
-    runtime = StubRuntime(tmp_path / 'artifacts')
+def test_sqlite_store_tolerates_malformed_structured_review_json_columns(
+    tmp_path: Path,
+):
+    store = SQLiteTaskStore(tmp_path / "service.sqlite")
+    runtime = StubRuntime(tmp_path / "artifacts")
     service = TaskService(store, runtime, runtime.tasks_dir)
 
     task = service.create_task(
         CreateTaskRequest(
-            taskType='structured_review',
-            capabilityMode='auto',
-            query='执行正式结构化审查',
-            fixtureId='fixture-1',
-            documentType='construction_org',
+            taskType="structured_review",
+            capabilityMode="auto",
+            query="执行正式结构化审查",
+            fixtureId="fixture-1",
+            documentType="construction_org",
         )
     )
 
     with store._connect() as conn:  # noqa: SLF001 - targeted persistence compatibility test
         conn.execute(
-            '''
+            """
             UPDATE tasks
             SET source_document_ref_json = ?, reviewer_decision_json = ?, plan_json = ?
             WHERE id = ?
-            ''',
+            """,
             (
                 '{"refId":',
                 '{"taskState":"accepted","issues":"oops"}',
-                '{bad-json',
+                "{bad-json",
                 task.id,
             ),
         )
@@ -294,10 +333,12 @@ def test_sqlite_store_tolerates_malformed_structured_review_json_columns(tmp_pat
     assert restored.plan is None
 
 
-def test_task_routes_legacy_structured_review_result_keeps_read_only_compatibility(monkeypatch, tmp_path: Path):
+def test_task_routes_legacy_structured_review_result_keeps_read_only_compatibility(
+    monkeypatch, tmp_path: Path
+):
     now = datetime.now(timezone.utc)
-    artifact_path = tmp_path / 'report.json'
-    artifact_path.write_text('{"ok": true}', encoding='utf-8')
+    artifact_path = tmp_path / "report.json"
+    artifact_path.write_text('{"ok": true}', encoding="utf-8")
 
     class FakeService:
         def __init__(self):
@@ -306,7 +347,7 @@ def test_task_routes_legacy_structured_review_result_keeps_read_only_compatibili
         def create_task(self, request):
             self.last_request = request
             return TaskRecord(
-                id='task-route-1',
+                id="task-route-1",
                 taskType=request.taskType,
                 capabilityMode=request.capabilityMode,
                 query=request.query,
@@ -317,7 +358,7 @@ def test_task_routes_legacy_structured_review_result_keeps_read_only_compatibili
                 disciplineTags=request.disciplineTags or [],
                 strictMode=request.strictMode,
                 policyPackIds=request.policyPackIds or [],
-                status='created',
+                status="created",
                 createdAt=now,
                 updatedAt=now,
             )
@@ -328,95 +369,99 @@ def test_task_routes_legacy_structured_review_result_keeps_read_only_compatibili
         def get_task(self, task_id: str):
             return TaskRecord(
                 id=task_id,
-                taskType='structured_review',
-                capabilityMode='auto',
-                query='query',
-                fixtureId='fixture-1',
+                taskType="structured_review",
+                capabilityMode="auto",
+                query="query",
+                fixtureId="fixture-1",
                 sourceDocumentRef=SourceDocumentRef(
-                    refId='fixture-1',
-                    sourceType='fixture',
-                    fileName='fixture.docx',
-                    fileType='docx',
-                    storagePath='/tmp/fixture.docx',
-                    fixtureId='fixture-1',
+                    refId="fixture-1",
+                    sourceType="fixture",
+                    fileName="fixture.docx",
+                    fileType="docx",
+                    storagePath="/tmp/fixture.docx",
+                    fixtureId="fixture-1",
                 ),
                 sourceUrls=[],
-                documentType='construction_org',
-                disciplineTags=['lifting_operations'],
+                documentType="construction_org",
+                disciplineTags=["lifting_operations"],
                 strictMode=True,
-                policyPackIds=['construction_org.base'],
-                status='succeeded',
+                policyPackIds=["construction_org.base"],
+                status="succeeded",
                 result={
-                    'summary': {
-                        'overallConclusion': 'demo',
-                        'documentType': 'construction_org',
-                        'selectedPacks': ['construction_org.base'],
-                        'manualReviewNeeded': True,
-                        'issueCount': 1,
-                        'layerCounts': {'L1': 1},
-                        'stats': {},
-                        'visibilitySummary': {
-                            'attachmentCount': 1,
-                            'counts': {'attachment_unparsed': 1},
-                            'duplicateSectionTitles': [],
-                            'parseWarnings': [],
-                            'reasonCounts': {'title_detected_without_attachment_body': 1},
-                            'manualReviewNeeded': True,
+                    "summary": {
+                        "overallConclusion": "demo",
+                        "documentType": "construction_org",
+                        "selectedPacks": ["construction_org.base"],
+                        "manualReviewNeeded": True,
+                        "issueCount": 1,
+                        "layerCounts": {"L1": 1},
+                        "stats": {},
+                        "visibilitySummary": {
+                            "attachmentCount": 1,
+                            "counts": {"attachment_unparsed": 1},
+                            "duplicateSectionTitles": [],
+                            "parseWarnings": [],
+                            "reasonCounts": {
+                                "title_detected_without_attachment_body": 1
+                            },
+                            "manualReviewNeeded": True,
                         },
                     },
-                    'resolvedProfile': {
-                        'requestedDocumentType': 'construction_org',
-                        'requestedDisciplineTags': ['lifting_operations'],
-                        'requestedPolicyPackIds': ['construction_org.base'],
-                        'documentType': 'construction_org',
-                        'disciplineTags': ['lifting_operations'],
-                        'policyPackIds': ['construction_org.base'],
-                        'strictMode': True,
+                    "resolvedProfile": {
+                        "requestedDocumentType": "construction_org",
+                        "requestedDisciplineTags": ["lifting_operations"],
+                        "requestedPolicyPackIds": ["construction_org.base"],
+                        "documentType": "construction_org",
+                        "disciplineTags": ["lifting_operations"],
+                        "policyPackIds": ["construction_org.base"],
+                        "strictMode": True,
                     },
-                    'issues': [
+                    "issues": [
                         {
-                            'id': 'ISSUE-001',
-                            'title': '附件处于可视域缺口，需人工复核原件',
-                            'layer': 'L1',
-                            'severity': 'medium',
-                            'findingType': 'visibility_gap',
-                            'summary': '附件处于可视域缺口，需人工复核原件',
-                            'manualReviewNeeded': True,
-                            'evidenceMissing': True,
-                            'manualReviewReason': 'visibility_gap',
-                            'issueKind': 'visibility_gap',
-                            'applicabilityState': 'blocked_by_visibility',
-                            'docEvidence': [],
-                            'policyEvidence': [],
-                            'recommendation': [],
-                            'confidence': 'medium',
+                            "id": "ISSUE-001",
+                            "title": "附件处于可视域缺口，需人工复核原件",
+                            "layer": "L1",
+                            "severity": "medium",
+                            "findingType": "visibility_gap",
+                            "summary": "附件处于可视域缺口，需人工复核原件",
+                            "manualReviewNeeded": True,
+                            "evidenceMissing": True,
+                            "manualReviewReason": "visibility_gap",
+                            "issueKind": "visibility_gap",
+                            "applicabilityState": "blocked_by_visibility",
+                            "docEvidence": [],
+                            "policyEvidence": [],
+                            "recommendation": [],
+                            "confidence": "medium",
                         }
                     ],
-                    'matrices': {
-                        'hazardIdentification': {'values': {}},
-                        'ruleHits': [],
-                        'conflicts': {'values': {}},
-                        'attachmentVisibility': [],
-                        'sectionStructure': [],
-                        'issueLayerCounts': {'L1': 1},
+                    "matrices": {
+                        "hazardIdentification": {"values": {}},
+                        "ruleHits": [],
+                        "conflicts": {"values": {}},
+                        "attachmentVisibility": [],
+                        "sectionStructure": [],
+                        "issueLayerCounts": {"L1": 1},
                     },
-                    'artifactIndex': [
+                    "artifactIndex": [
                         {
-                            'name': 'report',
-                            'fileName': 'report.json',
-                            'mediaType': 'application/json',
-                            'sizeBytes': artifact_path.stat().st_size,
-                            'downloadUrl': f'/api/tasks/{task_id}/artifacts/report.json',
-                            'category': 'result',
-                            'stage': 'result',
-                            'primary': True,
+                            "name": "report",
+                            "fileName": "report.json",
+                            "mediaType": "application/json",
+                            "sizeBytes": artifact_path.stat().st_size,
+                            "downloadUrl": f"/api/tasks/{task_id}/artifacts/report.json",
+                            "category": "result",
+                            "stage": "result",
+                            "primary": True,
+                            "artifactRole": None,
+                            "label": None,
                         }
                     ],
-                    'reportMarkdown': '# demo',
-                    'artifacts': ['report.json'],
-                    'unresolvedFacts': [],
-                    'capabilitiesUsed': ['llm_gateway'],
-                    'finalAnswer': 'demo',
+                    "reportMarkdown": "# demo",
+                    "artifacts": ["report.json"],
+                    "unresolvedFacts": [],
+                    "capabilitiesUsed": ["llm_gateway"],
+                    "finalAnswer": "demo",
                 },
                 createdAt=now,
                 updatedAt=now,
@@ -428,166 +473,175 @@ def test_task_routes_legacy_structured_review_result_keeps_read_only_compatibili
         def list_task_artifacts(self, task_id: str):
             return [
                 TaskArtifact(
-                    name='report',
-                    fileName='report.json',
-                    mediaType='application/json',
+                    name="report",
+                    fileName="report.json",
+                    mediaType="application/json",
                     sizeBytes=artifact_path.stat().st_size,
-                    downloadUrl=f'/api/tasks/{task_id}/artifacts/report.json',
-                    category='result',
-                    stage='result',
+                    downloadUrl=f"/api/tasks/{task_id}/artifacts/report.json",
+                    category="result",
+                    stage="result",
                     primary=True,
+                    artifactRole=None,
+                    label=None,
                 )
             ]
 
         def resolve_task_artifact(self, task_id: str, artifact_name: str):
-            assert artifact_name == 'report.json'
+            assert artifact_name == "report.json"
             return artifact_path
 
     fake_service = FakeService()
-    monkeypatch.setattr(tasks_route, 'get_task_service', lambda: fake_service)
+    monkeypatch.setattr(tasks_route, "get_task_service", lambda: fake_service)
     client = TestClient(app)
 
     response = client.post(
-        '/api/tasks',
+        "/api/tasks",
         json={
-            'taskType': 'structured_review',
-            'capabilityMode': 'auto',
-            'query': '执行正式结构化审查',
-            'fixtureId': 'fixture-1',
-            'documentType': 'construction_org',
-            'disciplineTags': ['lifting_operations'],
-            'strictMode': True,
-            'policyPackIds': ['construction_org.base'],
+            "taskType": "structured_review",
+            "capabilityMode": "auto",
+            "query": "执行正式结构化审查",
+            "fixtureId": "fixture-1",
+            "documentType": "construction_org",
+            "disciplineTags": ["lifting_operations"],
+            "strictMode": True,
+            "policyPackIds": ["construction_org.base"],
         },
     )
     assert response.status_code == 200
     payload = response.json()
-    assert payload['documentType'] == 'construction_org'
-    assert payload['disciplineTags'] == ['lifting_operations']
-    assert payload['policyPackIds'] == ['construction_org.base']
+    assert payload["documentType"] == "construction_org"
+    assert payload["disciplineTags"] == ["lifting_operations"]
+    assert payload["policyPackIds"] == ["construction_org.base"]
     assert fake_service.last_request is not None
-    assert fake_service.last_request.documentType == 'construction_org'
-    assert payload['sourceDocumentRef'] is None
+    assert fake_service.last_request.documentType == "construction_org"
+    assert payload["sourceDocumentRef"] is None
 
-    artifacts_response = client.get('/api/tasks/task-route-1/artifacts')
+    artifacts_response = client.get("/api/tasks/task-route-1/artifacts")
     assert artifacts_response.status_code == 200
-    assert artifacts_response.json()[0]['downloadUrl'].endswith('/report.json')
+    assert artifacts_response.json()[0]["downloadUrl"].endswith("/report.json")
 
-    download_response = client.get('/api/tasks/task-route-1/artifacts/report.json')
+    download_response = client.get("/api/tasks/task-route-1/artifacts/report.json")
     assert download_response.status_code == 200
     assert download_response.text == '{"ok": true}'
 
-    result_response = client.get('/api/tasks/task-route-1/result')
+    result_response = client.get("/api/tasks/task-route-1/result")
     assert result_response.status_code == 200
-    result_payload = result_response.json()['result']
-    assert result_payload['visibility']['parseMode'] is None
-    assert result_payload['visibility']['attachmentCount'] == 1
-    assert result_payload['visibility']['parseWarnings'] == []
-    assert result_payload['visibility']['manualReviewReason'] is None
-    assert result_payload['issues'][0]['manualReviewNeeded'] is True
-    assert result_payload['issues'][0]['whetherManualReviewNeeded'] is True
-    assert 'finalReportMarkdown' not in result_payload
-    assert 'finalReportPacket' not in result_payload
-    assert result_payload['artifactIndex'] == artifacts_response.json()
+    result_payload = result_response.json()["result"]
+    assert result_payload["visibility"]["parseMode"] is None
+    assert result_payload["visibility"]["attachmentCount"] == 1
+    assert result_payload["visibility"]["parseWarnings"] == []
+    assert result_payload["visibility"]["manualReviewReason"] is None
+    assert result_payload["issues"][0]["manualReviewNeeded"] is True
+    assert result_payload["issues"][0]["whetherManualReviewNeeded"] is True
+    assert "finalReportMarkdown" not in result_payload
+    assert "finalReportPacket" not in result_payload
+    assert result_payload["artifactIndex"] == artifacts_response.json()
 
 
-def test_task_routes_fresh_structured_review_result_does_not_synthesize_canonical_final_fields(monkeypatch):
+def test_task_routes_fresh_structured_review_result_does_not_synthesize_canonical_final_fields(
+    monkeypatch,
+):
     now = datetime.now(timezone.utc)
 
     class FakeService:
         def get_task(self, task_id: str):
             return TaskRecord(
                 id=task_id,
-                taskType='structured_review',
-                capabilityMode='auto',
-                query='query',
-                fixtureId='fixture-1',
+                taskType="structured_review",
+                capabilityMode="auto",
+                query="query",
+                fixtureId="fixture-1",
                 sourceDocumentRef=None,
                 sourceUrls=[],
-                documentType='construction_org',
-                disciplineTags=['lifting_operations'],
+                documentType="construction_org",
+                disciplineTags=["lifting_operations"],
                 strictMode=True,
-                policyPackIds=['construction_org.base'],
-                status='succeeded',
+                policyPackIds=["construction_org.base"],
+                status="succeeded",
                 result={
-                    'summary': {
-                        'overallConclusion': 'demo',
-                        'documentType': 'construction_org',
-                        'selectedPacks': ['construction_org.base'],
-                        'manualReviewNeeded': True,
-                        'issueCount': 1,
-                        'layerCounts': {'L1': 1},
-                        'stats': {},
-                        'visibilitySummary': {
-                            'attachmentCount': 1,
-                            'counts': {'attachment_unparsed': 1},
-                            'duplicateSectionTitles': [],
-                            'parseWarnings': ['legacy-summary-warning'],
-                            'reasonCounts': {'title_detected_without_attachment_body': 1},
-                            'manualReviewNeeded': True,
+                    "summary": {
+                        "overallConclusion": "demo",
+                        "documentType": "construction_org",
+                        "selectedPacks": ["construction_org.base"],
+                        "manualReviewNeeded": True,
+                        "issueCount": 1,
+                        "layerCounts": {"L1": 1},
+                        "stats": {},
+                        "visibilitySummary": {
+                            "attachmentCount": 1,
+                            "counts": {"attachment_unparsed": 1},
+                            "duplicateSectionTitles": [],
+                            "parseWarnings": ["legacy-summary-warning"],
+                            "reasonCounts": {
+                                "title_detected_without_attachment_body": 1
+                            },
+                            "manualReviewNeeded": True,
                         },
                     },
-                    'visibility': {
-                        'parseMode': 'docx_structured',
-                        'attachmentCount': 1,
-                        'counts': {'attachment_unparsed': 1},
-                        'duplicateSectionTitles': [],
-                        'parseWarnings': ['canonical-visibility-warning'],
-                        'reasonCounts': {'title_detected_without_attachment_body': 1},
-                        'manualReviewNeeded': True,
-                        'manualReviewReason': 'title_detected_without_attachment_body',
-                        'parserLimited': False,
-                        'fileType': 'docx',
-                        'preflight': {
-                            'gateDecision': 'manual_review_required',
-                            'blockingReasons': ['attachment_unparsed'],
-                            'checklist': [],
-                            'parserLimitations': [],
-                            'attachmentTaxonomySummary': {'attachmentCount': 1, 'counts': {'attachment_unparsed': 1}},
+                    "visibility": {
+                        "parseMode": "docx_structured",
+                        "attachmentCount": 1,
+                        "counts": {"attachment_unparsed": 1},
+                        "duplicateSectionTitles": [],
+                        "parseWarnings": ["canonical-visibility-warning"],
+                        "reasonCounts": {"title_detected_without_attachment_body": 1},
+                        "manualReviewNeeded": True,
+                        "manualReviewReason": "title_detected_without_attachment_body",
+                        "parserLimited": False,
+                        "fileType": "docx",
+                        "preflight": {
+                            "gateDecision": "manual_review_required",
+                            "blockingReasons": ["attachment_unparsed"],
+                            "checklist": [],
+                            "parserLimitations": [],
+                            "attachmentTaxonomySummary": {
+                                "attachmentCount": 1,
+                                "counts": {"attachment_unparsed": 1},
+                            },
                         },
                     },
-                    'resolvedProfile': {
-                        'requestedDocumentType': 'construction_org',
-                        'requestedDisciplineTags': ['lifting_operations'],
-                        'requestedPolicyPackIds': ['construction_org.base'],
-                        'documentType': 'construction_org',
-                        'disciplineTags': ['lifting_operations'],
-                        'policyPackIds': ['construction_org.base'],
-                        'strictMode': True,
+                    "resolvedProfile": {
+                        "requestedDocumentType": "construction_org",
+                        "requestedDisciplineTags": ["lifting_operations"],
+                        "requestedPolicyPackIds": ["construction_org.base"],
+                        "documentType": "construction_org",
+                        "disciplineTags": ["lifting_operations"],
+                        "policyPackIds": ["construction_org.base"],
+                        "strictMode": True,
                     },
-                    'issues': [
+                    "issues": [
                         {
-                            'id': 'ISSUE-001',
-                            'title': '附件处于可视域缺口，需人工复核原件',
-                            'layer': 'L1',
-                            'severity': 'medium',
-                            'findingType': 'visibility_gap',
-                            'summary': '附件处于可视域缺口，需人工复核原件',
-                            'manualReviewNeeded': True,
-                            'evidenceMissing': True,
-                            'manualReviewReason': 'visibility_gap',
-                            'issueKind': 'visibility_gap',
-                            'applicabilityState': 'blocked_by_visibility',
-                            'docEvidence': [],
-                            'policyEvidence': [],
-                            'recommendation': [],
-                            'confidence': 'medium',
+                            "id": "ISSUE-001",
+                            "title": "附件处于可视域缺口，需人工复核原件",
+                            "layer": "L1",
+                            "severity": "medium",
+                            "findingType": "visibility_gap",
+                            "summary": "附件处于可视域缺口，需人工复核原件",
+                            "manualReviewNeeded": True,
+                            "evidenceMissing": True,
+                            "manualReviewReason": "visibility_gap",
+                            "issueKind": "visibility_gap",
+                            "applicabilityState": "blocked_by_visibility",
+                            "docEvidence": [],
+                            "policyEvidence": [],
+                            "recommendation": [],
+                            "confidence": "medium",
                         }
                     ],
-                    'matrices': {
-                        'hazardIdentification': {'values': {}},
-                        'ruleHits': [],
-                        'conflicts': {'values': {}},
-                        'attachmentVisibility': [],
-                        'sectionStructure': [],
-                        'issueLayerCounts': {'L1': 1},
+                    "matrices": {
+                        "hazardIdentification": {"values": {}},
+                        "ruleHits": [],
+                        "conflicts": {"values": {}},
+                        "attachmentVisibility": [],
+                        "sectionStructure": [],
+                        "issueLayerCounts": {"L1": 1},
                     },
-                    'artifactIndex': [],
-                    'reportMarkdown': '# demo',
-                    'artifacts': [],
-                    'unresolvedFacts': [],
-                    'capabilitiesUsed': ['llm_gateway'],
-                    'finalAnswer': 'demo',
+                    "artifactIndex": [],
+                    "reportMarkdown": "# demo",
+                    "artifacts": [],
+                    "unresolvedFacts": [],
+                    "capabilitiesUsed": ["llm_gateway"],
+                    "finalAnswer": "demo",
                 },
                 createdAt=now,
                 updatedAt=now,
@@ -599,21 +653,31 @@ def test_task_routes_fresh_structured_review_result_does_not_synthesize_canonica
         def list_task_artifacts(self, task_id: str):
             return []
 
-    monkeypatch.setattr(tasks_route, 'get_task_service', lambda: FakeService())
+    monkeypatch.setattr(tasks_route, "get_task_service", lambda: FakeService())
     client = TestClient(app)
 
-    result_response = client.get('/api/tasks/task-fresh/result')
+    result_response = client.get("/api/tasks/task-fresh/result")
     assert result_response.status_code == 200
-    result_payload = result_response.json()['result']
-    assert result_payload['visibility']['parseMode'] == 'docx_structured'
-    assert result_payload['visibility']['parseWarnings'] == ['canonical-visibility-warning']
-    assert result_payload['visibility']['manualReviewReason'] == 'title_detected_without_attachment_body'
-    assert result_payload['visibility']['preflight']['gateDecision'] == 'manual_review_required'
-    assert result_payload['visibility']['preflight']['blockingReasons'] == ['attachment_unparsed']
-    assert result_payload['reportMarkdown'] == '# demo'
-    assert 'finalReportMarkdown' not in result_payload
-    assert 'finalReportPacket' not in result_payload
-    assert 'whetherManualReviewNeeded' not in result_payload['issues'][0]
+    result_payload = result_response.json()["result"]
+    assert result_payload["visibility"]["parseMode"] == "docx_structured"
+    assert result_payload["visibility"]["parseWarnings"] == [
+        "canonical-visibility-warning"
+    ]
+    assert (
+        result_payload["visibility"]["manualReviewReason"]
+        == "title_detected_without_attachment_body"
+    )
+    assert (
+        result_payload["visibility"]["preflight"]["gateDecision"]
+        == "manual_review_required"
+    )
+    assert result_payload["visibility"]["preflight"]["blockingReasons"] == [
+        "attachment_unparsed"
+    ]
+    assert result_payload["reportMarkdown"] == "# demo"
+    assert "finalReportMarkdown" not in result_payload
+    assert "finalReportPacket" not in result_payload
+    assert "whetherManualReviewNeeded" not in result_payload["issues"][0]
 
 
 def test_task_routes_update_reviewer_decision(monkeypatch):
@@ -627,146 +691,174 @@ def test_task_routes_update_reviewer_decision(monkeypatch):
             self.last_payload = payload
             return TaskRecord(
                 id=task_id,
-                taskType='structured_review',
-                capabilityMode='auto',
-                query='query',
-                fixtureId='fixture-1',
+                taskType="structured_review",
+                capabilityMode="auto",
+                query="query",
+                fixtureId="fixture-1",
                 sourceDocumentRef=None,
                 sourceUrls=[],
-                documentType='construction_org',
-                disciplineTags=['lifting_operations'],
+                documentType="construction_org",
+                disciplineTags=["lifting_operations"],
                 strictMode=True,
-                policyPackIds=['construction_org.base'],
+                policyPackIds=["construction_org.base"],
                 reviewerDecision={
-                    'taskState': 'accepted',
-                    'note': 'checked',
-                    'issues': [
-                        {'issueId': 'ISSUE-001', 'state': 'confirmed', 'note': 'ok'},
+                    "taskState": "accepted",
+                    "note": "checked",
+                    "issues": [
+                        {"issueId": "ISSUE-001", "state": "confirmed", "note": "ok"},
                     ],
-                    'attachments': [
-                        {'attachmentId': 'attachment-1', 'state': 'needs_attachment', 'note': 'need original'},
+                    "attachments": [
+                        {
+                            "attachmentId": "attachment-1",
+                            "state": "needs_attachment",
+                            "note": "need original",
+                        },
                     ],
-                    'updatedAt': now.isoformat(),
+                    "updatedAt": now.isoformat(),
                 },
-                status='succeeded',
+                status="succeeded",
                 result={
-                    'summary': {
-                        'overallConclusion': 'demo',
-                        'documentType': 'construction_org',
-                        'selectedPacks': ['construction_org.base'],
-                        'manualReviewNeeded': True,
-                        'issueCount': 1,
-                        'layerCounts': {'L1': 1},
-                        'stats': {},
-                        'visibilitySummary': {
-                            'attachmentCount': 1,
-                            'counts': {'attachment_unparsed': 1},
-                            'duplicateSectionTitles': [],
-                            'parseWarnings': [],
-                            'reasonCounts': {'title_detected_without_attachment_body': 1},
-                            'manualReviewNeeded': True,
+                    "summary": {
+                        "overallConclusion": "demo",
+                        "documentType": "construction_org",
+                        "selectedPacks": ["construction_org.base"],
+                        "manualReviewNeeded": True,
+                        "issueCount": 1,
+                        "layerCounts": {"L1": 1},
+                        "stats": {},
+                        "visibilitySummary": {
+                            "attachmentCount": 1,
+                            "counts": {"attachment_unparsed": 1},
+                            "duplicateSectionTitles": [],
+                            "parseWarnings": [],
+                            "reasonCounts": {
+                                "title_detected_without_attachment_body": 1
+                            },
+                            "manualReviewNeeded": True,
                         },
                     },
-                    'visibility': {
-                        'attachmentCount': 1,
-                        'counts': {'attachment_unparsed': 1},
-                        'duplicateSectionTitles': [],
-                        'parseWarnings': [],
-                        'reasonCounts': {'title_detected_without_attachment_body': 1},
-                        'manualReviewNeeded': True,
-                        'parserLimited': False,
-                        'fileType': 'docx',
+                    "visibility": {
+                        "attachmentCount": 1,
+                        "counts": {"attachment_unparsed": 1},
+                        "duplicateSectionTitles": [],
+                        "parseWarnings": [],
+                        "reasonCounts": {"title_detected_without_attachment_body": 1},
+                        "manualReviewNeeded": True,
+                        "parserLimited": False,
+                        "fileType": "docx",
                     },
-                    'resolvedProfile': {
-                        'requestedDocumentType': 'construction_org',
-                        'requestedDisciplineTags': ['lifting_operations'],
-                        'requestedPolicyPackIds': [],
-                        'documentType': 'construction_org',
-                        'disciplineTags': ['lifting_operations'],
-                        'policyPackIds': ['construction_org.base'],
-                        'strictMode': True,
+                    "resolvedProfile": {
+                        "requestedDocumentType": "construction_org",
+                        "requestedDisciplineTags": ["lifting_operations"],
+                        "requestedPolicyPackIds": [],
+                        "documentType": "construction_org",
+                        "disciplineTags": ["lifting_operations"],
+                        "policyPackIds": ["construction_org.base"],
+                        "strictMode": True,
                     },
-                    'issues': [
+                    "issues": [
                         {
-                            'id': 'ISSUE-001',
-                            'title': '附件处于可视域缺口，需人工复核原件',
-                            'layer': 'L1',
-                            'severity': 'medium',
-                            'findingType': 'visibility_gap',
-                            'summary': '附件处于可视域缺口，需人工复核原件',
-                            'manualReviewNeeded': True,
-                            'evidenceMissing': True,
-                            'manualReviewReason': 'visibility_gap',
-                            'issueKind': 'visibility_gap',
-                            'applicabilityState': 'blocked_by_visibility',
-                            'docEvidence': [],
-                            'policyEvidence': [],
-                            'recommendation': [],
-                            'confidence': 'medium',
+                            "id": "ISSUE-001",
+                            "title": "附件处于可视域缺口，需人工复核原件",
+                            "layer": "L1",
+                            "severity": "medium",
+                            "findingType": "visibility_gap",
+                            "summary": "附件处于可视域缺口，需人工复核原件",
+                            "manualReviewNeeded": True,
+                            "evidenceMissing": True,
+                            "manualReviewReason": "visibility_gap",
+                            "issueKind": "visibility_gap",
+                            "applicabilityState": "blocked_by_visibility",
+                            "docEvidence": [],
+                            "policyEvidence": [],
+                            "recommendation": [],
+                            "confidence": "medium",
                         }
                     ],
-                    'matrices': {
-                        'hazardIdentification': {'values': {}},
-                        'ruleHits': [],
-                        'conflicts': {'values': {}},
-                        'attachmentVisibility': [
+                    "matrices": {
+                        "hazardIdentification": {"values": {}},
+                        "ruleHits": [],
+                        "conflicts": {"values": {}},
+                        "attachmentVisibility": [
                             {
-                                'id': 'attachment-1',
-                                'attachmentNumber': '1',
-                                'title': '附件1',
-                                'visibility': 'attachment_unparsed',
-                                'parseState': 'attachment_unparsed',
-                                'manualReviewNeeded': True,
-                                'reason': 'title_detected_without_attachment_body',
-                                'referenceBlockIds': [],
-                                'titleBlockId': None,
+                                "id": "attachment-1",
+                                "attachmentNumber": "1",
+                                "title": "附件1",
+                                "visibility": "attachment_unparsed",
+                                "parseState": "attachment_unparsed",
+                                "manualReviewNeeded": True,
+                                "reason": "title_detected_without_attachment_body",
+                                "referenceBlockIds": [],
+                                "titleBlockId": None,
                             }
                         ],
-                        'sectionStructure': [],
-                        'issueLayerCounts': {'L1': 1},
+                        "sectionStructure": [],
+                        "issueLayerCounts": {"L1": 1},
                     },
-                    'artifactIndex': [],
-                    'reportMarkdown': '# demo',
-                    'artifacts': [],
-                    'unresolvedFacts': [],
-                    'capabilitiesUsed': ['llm_gateway'],
-                    'finalAnswer': 'demo',
+                    "artifactIndex": [],
+                    "reportMarkdown": "# demo",
+                    "artifacts": [],
+                    "unresolvedFacts": [],
+                    "capabilitiesUsed": ["llm_gateway"],
+                    "finalAnswer": "demo",
                 },
                 createdAt=now,
                 updatedAt=now,
             )
 
     fake_service = FakeService()
-    monkeypatch.setattr(tasks_route, 'get_task_service', lambda: fake_service)
+    monkeypatch.setattr(tasks_route, "get_task_service", lambda: fake_service)
     client = TestClient(app)
 
     response = client.put(
-        '/api/tasks/task-route-1/reviewer-decision',
+        "/api/tasks/task-route-1/reviewer-decision",
         json={
-            'taskState': 'accepted',
-            'note': 'checked',
-            'issues': [{'issueId': 'ISSUE-001', 'state': 'confirmed', 'note': 'ok'}],
-            'attachments': [{'attachmentId': 'attachment-1', 'state': 'needs_attachment', 'note': 'need original'}],
+            "taskState": "accepted",
+            "note": "checked",
+            "issues": [{"issueId": "ISSUE-001", "state": "confirmed", "note": "ok"}],
+            "attachments": [
+                {
+                    "attachmentId": "attachment-1",
+                    "state": "needs_attachment",
+                    "note": "need original",
+                }
+            ],
         },
     )
     assert response.status_code == 200
     payload = response.json()
     assert fake_service.last_payload is not None
-    assert payload['reviewerDecision']['taskState'] == 'rejected'
-    assert payload['reviewerDecision']['issues'][0]['issueId'] == 'ISSUE-001'
-    assert payload['reviewPreparation']['truthTier'] == 'internal_reviewed_preparation'
-    assert payload['reviewPreparation']['readyForPromotion'] is False
-    assert 'visibility_manual_review_required' in payload['reviewPreparation']['blockingReasons']
-    assert 'pending_attachment_review' in payload['reviewPreparation']['blockingReasons']
-    assert 'issue_not_promotable_visibility_gap' in payload['reviewPreparation']['issueBlockingReasons']['ISSUE-001']
-    assert 'issue_not_promotable_blocked_by_visibility' in payload['reviewPreparation']['issueBlockingReasons']['ISSUE-001']
-    assert 'issue_not_promotable_manual_review' in payload['reviewPreparation']['issueBlockingReasons']['ISSUE-001']
-    assert payload['reviewPreparation']['attachmentBlockingReasons']['attachment-1'] == [
-        'pending_attachment_review',
-        'attachment_requires_attachment_review',
+    assert payload["reviewerDecision"]["taskState"] == "rejected"
+    assert payload["reviewerDecision"]["issues"][0]["issueId"] == "ISSUE-001"
+    assert payload["reviewPreparation"]["truthTier"] == "internal_reviewed_preparation"
+    assert payload["reviewPreparation"]["readyForPromotion"] is False
+    assert (
+        "visibility_manual_review_required"
+        in payload["reviewPreparation"]["blockingReasons"]
+    )
+    assert (
+        "pending_attachment_review" in payload["reviewPreparation"]["blockingReasons"]
+    )
+    assert (
+        "issue_not_promotable_visibility_gap"
+        in payload["reviewPreparation"]["issueBlockingReasons"]["ISSUE-001"]
+    )
+    assert (
+        "issue_not_promotable_blocked_by_visibility"
+        in payload["reviewPreparation"]["issueBlockingReasons"]["ISSUE-001"]
+    )
+    assert (
+        "issue_not_promotable_manual_review"
+        in payload["reviewPreparation"]["issueBlockingReasons"]["ISSUE-001"]
+    )
+    assert payload["reviewPreparation"]["attachmentBlockingReasons"][
+        "attachment-1"
+    ] == [
+        "pending_attachment_review",
+        "attachment_requires_attachment_review",
     ]
-    assert payload['reviewPreparation']['provenance']['sourceTier'] == 'runtime_only'
-    assert payload['reviewPreparation']['rejectedAttachmentIds'] == []
+    assert payload["reviewPreparation"]["provenance"]["sourceTier"] == "runtime_only"
+    assert payload["reviewPreparation"]["rejectedAttachmentIds"] == []
 
 
 def test_task_routes_expose_review_preparation_asset(monkeypatch):
@@ -776,591 +868,703 @@ def test_task_routes_expose_review_preparation_asset(monkeypatch):
         def get_task(self, task_id: str):
             return TaskRecord(
                 id=task_id,
-                taskType='structured_review',
-                capabilityMode='auto',
-                query='query',
-                fixtureId='fixture-1',
+                taskType="structured_review",
+                capabilityMode="auto",
+                query="query",
+                fixtureId="fixture-1",
                 sourceDocumentRef=SourceDocumentRef(
-                    refId='fixture-1',
-                    sourceType='fixture',
-                    fileName='fixture.docx',
-                    fileType='docx',
-                    storagePath='/tmp/fixture.docx',
-                    fixtureId='fixture-1',
+                    refId="fixture-1",
+                    sourceType="fixture",
+                    fileName="fixture.docx",
+                    fileType="docx",
+                    storagePath="/tmp/fixture.docx",
+                    fixtureId="fixture-1",
                 ),
                 sourceUrls=[],
-                documentType='construction_org',
-                disciplineTags=['lifting_operations'],
+                documentType="construction_org",
+                disciplineTags=["lifting_operations"],
                 strictMode=True,
-                policyPackIds=['construction_org.base'],
+                policyPackIds=["construction_org.base"],
                 reviewerDecision={
-                    'taskState': 'accepted',
-                    'note': 'checked by reviewer',
-                    'issues': [{'issueId': 'ISSUE-001', 'state': 'dismissed', 'note': 'not confirmed'}],
-                    'attachments': [{'attachmentId': 'attachment-1', 'state': 'dismissed', 'note': 'checked original'}],
-                    'updatedAt': now.isoformat(),
-                },
-                status='succeeded',
-                result={
-                    'summary': {
-                        'overallConclusion': 'demo',
-                        'documentType': 'construction_org',
-                        'selectedPacks': ['construction_org.base'],
-                        'manualReviewNeeded': False,
-                        'issueCount': 1,
-                        'layerCounts': {'L1': 1},
-                        'stats': {},
-                        'visibilitySummary': {
-                            'attachmentCount': 1,
-                            'counts': {'parsed': 1},
-                            'duplicateSectionTitles': [],
-                            'parseWarnings': [],
-                            'reasonCounts': {'attachment_body_visible': 1},
-                            'manualReviewNeeded': False,
-                        },
-                    },
-                    'visibility': {
-                        'parseMode': 'docx_structured',
-                        'attachmentCount': 1,
-                        'counts': {'parsed': 1},
-                        'reasonCounts': {'attachment_body_visible': 1},
-                        'duplicateSectionTitles': [],
-                        'parseWarnings': [],
-                        'manualReviewNeeded': False,
-                        'manualReviewReason': None,
-                        'parserLimited': False,
-                        'fileType': 'docx',
-                        'preflight': {
-                            'gateDecision': 'ready',
-                            'blockingReasons': [],
-                            'checklist': [],
-                            'parserLimitations': [],
-                            'attachmentTaxonomySummary': {'attachmentCount': 1, 'counts': {'parsed': 1}},
-                        },
-                    },
-                    'resolvedProfile': {
-                        'requestedDocumentType': 'construction_org',
-                        'requestedDisciplineTags': ['lifting_operations'],
-                        'requestedPolicyPackIds': [],
-                        'documentType': 'construction_org',
-                        'disciplineTags': ['lifting_operations'],
-                        'policyPackIds': ['construction_org.base'],
-                        'strictMode': True,
-                    },
-                    'issues': [
+                    "taskState": "accepted",
+                    "note": "checked by reviewer",
+                    "issues": [
                         {
-                            'id': 'ISSUE-001',
-                            'title': '附件处于可视域缺口，需人工复核原件',
-                            'layer': 'L1',
-                            'severity': 'medium',
-                            'findingType': 'visibility_gap',
-                            'summary': '附件处于可视域缺口，需人工复核原件',
-                            'manualReviewNeeded': True,
-                            'evidenceMissing': True,
-                            'manualReviewReason': 'visibility_gap',
-                            'issueKind': 'visibility_gap',
-                            'applicabilityState': 'blocked_by_visibility',
-                            'missingFactKeys': [],
-                            'blockingReasons': ['attachment_visibility_gap'],
-                            'docEvidence': [],
-                            'policyEvidence': [],
-                            'recommendation': [],
-                            'confidence': 'medium',
+                            "issueId": "ISSUE-001",
+                            "state": "dismissed",
+                            "note": "not confirmed",
                         }
                     ],
-                    'matrices': {
-                        'hazardIdentification': {'values': {}},
-                        'ruleHits': [],
-                        'conflicts': {'values': {}},
-                        'attachmentVisibility': [
+                    "attachments": [
+                        {
+                            "attachmentId": "attachment-1",
+                            "state": "dismissed",
+                            "note": "checked original",
+                        }
+                    ],
+                    "updatedAt": now.isoformat(),
+                },
+                status="succeeded",
+                result={
+                    "summary": {
+                        "overallConclusion": "demo",
+                        "documentType": "construction_org",
+                        "selectedPacks": ["construction_org.base"],
+                        "manualReviewNeeded": False,
+                        "issueCount": 1,
+                        "layerCounts": {"L1": 1},
+                        "stats": {},
+                        "visibilitySummary": {
+                            "attachmentCount": 1,
+                            "counts": {"parsed": 1},
+                            "duplicateSectionTitles": [],
+                            "parseWarnings": [],
+                            "reasonCounts": {"attachment_body_visible": 1},
+                            "manualReviewNeeded": False,
+                        },
+                    },
+                    "visibility": {
+                        "parseMode": "docx_structured",
+                        "attachmentCount": 1,
+                        "counts": {"parsed": 1},
+                        "reasonCounts": {"attachment_body_visible": 1},
+                        "duplicateSectionTitles": [],
+                        "parseWarnings": [],
+                        "manualReviewNeeded": False,
+                        "manualReviewReason": None,
+                        "parserLimited": False,
+                        "fileType": "docx",
+                        "preflight": {
+                            "gateDecision": "ready",
+                            "blockingReasons": [],
+                            "checklist": [],
+                            "parserLimitations": [],
+                            "attachmentTaxonomySummary": {
+                                "attachmentCount": 1,
+                                "counts": {"parsed": 1},
+                            },
+                        },
+                    },
+                    "resolvedProfile": {
+                        "requestedDocumentType": "construction_org",
+                        "requestedDisciplineTags": ["lifting_operations"],
+                        "requestedPolicyPackIds": [],
+                        "documentType": "construction_org",
+                        "disciplineTags": ["lifting_operations"],
+                        "policyPackIds": ["construction_org.base"],
+                        "strictMode": True,
+                    },
+                    "issues": [
+                        {
+                            "id": "ISSUE-001",
+                            "title": "附件处于可视域缺口，需人工复核原件",
+                            "layer": "L1",
+                            "severity": "medium",
+                            "findingType": "visibility_gap",
+                            "summary": "附件处于可视域缺口，需人工复核原件",
+                            "manualReviewNeeded": True,
+                            "evidenceMissing": True,
+                            "manualReviewReason": "visibility_gap",
+                            "issueKind": "visibility_gap",
+                            "applicabilityState": "blocked_by_visibility",
+                            "missingFactKeys": [],
+                            "blockingReasons": ["attachment_visibility_gap"],
+                            "docEvidence": [],
+                            "policyEvidence": [],
+                            "recommendation": [],
+                            "confidence": "medium",
+                        }
+                    ],
+                    "matrices": {
+                        "hazardIdentification": {"values": {}},
+                        "ruleHits": [],
+                        "conflicts": {"values": {}},
+                        "attachmentVisibility": [
                             {
-                                'id': 'attachment-1',
-                                'attachmentNumber': '1',
-                                'title': '附件1',
-                                'visibility': 'parsed',
-                                'parseState': 'parsed',
-                                'manualReviewNeeded': False,
-                                'reason': 'attachment_body_visible',
-                                'referenceBlockIds': [],
-                                'titleBlockId': None,
+                                "id": "attachment-1",
+                                "attachmentNumber": "1",
+                                "title": "附件1",
+                                "visibility": "parsed",
+                                "parseState": "parsed",
+                                "manualReviewNeeded": False,
+                                "reason": "attachment_body_visible",
+                                "referenceBlockIds": [],
+                                "titleBlockId": None,
                             }
                         ],
-                        'sectionStructure': [],
-                        'issueLayerCounts': {'L1': 1},
+                        "sectionStructure": [],
+                        "issueLayerCounts": {"L1": 1},
                     },
-                    'artifactIndex': [
+                    "artifactIndex": [
                         {
-                            'name': 'structured-review-result',
-                            'fileName': 'structured-review-result.json',
-                            'mediaType': 'application/json',
-                            'sizeBytes': 12,
-                            'downloadUrl': f'/api/tasks/{task_id}/artifacts/structured-review-result.json',
-                            'category': 'result',
-                            'stage': 'report',
-                            'primary': True,
+                            "name": "structured-review-result",
+                            "fileName": "structured-review-result.json",
+                            "mediaType": "application/json",
+                            "sizeBytes": 12,
+                            "downloadUrl": f"/api/tasks/{task_id}/artifacts/structured-review-result.json",
+                            "category": "result",
+                            "stage": "report",
+                            "primary": True,
                         }
                     ],
-                    'reportMarkdown': '# demo',
-                    'artifacts': [f'/api/tasks/{task_id}/artifacts/structured-review-result.json'],
-                    'unresolvedFacts': [],
-                    'capabilitiesUsed': ['structured_review_executor'],
-                    'finalAnswer': 'demo',
+                    "reportMarkdown": "# demo",
+                    "artifacts": [
+                        f"/api/tasks/{task_id}/artifacts/structured-review-result.json"
+                    ],
+                    "unresolvedFacts": [],
+                    "capabilitiesUsed": ["structured_review_executor"],
+                    "finalAnswer": "demo",
                 },
                 createdAt=now,
                 updatedAt=now,
             )
 
     fake_service = FakeService()
-    monkeypatch.setattr(tasks_route, 'get_task_service', lambda: fake_service)
+    monkeypatch.setattr(tasks_route, "get_task_service", lambda: fake_service)
     client = TestClient(app)
 
-    response = client.get('/api/tasks/task-route-1/review-preparation')
+    response = client.get("/api/tasks/task-route-1/review-preparation")
     assert response.status_code == 200
     payload = response.json()
-    assert payload['truthTier'] == 'internal_reviewed_preparation'
-    assert payload['taskId'] == 'task-route-1'
-    assert payload['readyForPromotion'] is True
-    assert payload['issueDecisions'][0]['issueId'] == 'ISSUE-001'
-    assert payload['issueDecisions'][0]['disposition'] == 'rejected'
-    assert payload['issueDecisions'][0]['promotionBlockingReasons'] == []
-    assert payload['issueDecisions'][0]['issueKind'] == 'visibility_gap'
-    assert payload['attachmentDecisions'][0]['attachmentId'] == 'attachment-1'
-    assert payload['attachmentDecisions'][0]['disposition'] == 'eligible'
-    assert payload['attachmentDecisions'][0]['promotionBlockingReasons'] == []
-    assert payload['provenance']['sourceTier'] == 'runtime_only'
-    assert payload['provenance']['resultArtifactPrimary'] == 'structured-review-result'
-    assert payload['provenance']['usesRuntimeReviewerDecision'] is True
+    assert payload["truthTier"] == "internal_reviewed_preparation"
+    assert payload["taskId"] == "task-route-1"
+    assert payload["readyForPromotion"] is True
+    assert payload["issueDecisions"][0]["issueId"] == "ISSUE-001"
+    assert payload["issueDecisions"][0]["disposition"] == "rejected"
+    assert payload["issueDecisions"][0]["promotionBlockingReasons"] == []
+    assert payload["issueDecisions"][0]["issueKind"] == "visibility_gap"
+    assert payload["attachmentDecisions"][0]["attachmentId"] == "attachment-1"
+    assert payload["attachmentDecisions"][0]["disposition"] == "eligible"
+    assert payload["attachmentDecisions"][0]["promotionBlockingReasons"] == []
+    assert payload["provenance"]["sourceTier"] == "runtime_only"
+    assert payload["provenance"]["resultArtifactPrimary"] == "structured-review-result"
+    assert payload["provenance"]["usesRuntimeReviewerDecision"] is True
 
 
-def test_task_routes_expose_review_preparation_case_provenance_from_review_eval(monkeypatch):
+def test_task_routes_expose_review_preparation_case_provenance_from_review_eval(
+    monkeypatch,
+):
     now = datetime.now(timezone.utc)
 
     class FakeService:
         def get_task(self, task_id: str):
             return TaskRecord(
                 id=task_id,
-                taskType='structured_review',
-                capabilityMode='auto',
-                query='query',
-                fixtureId='cn_hz_attachment_missing_ci',
+                taskType="structured_review",
+                capabilityMode="auto",
+                query="query",
+                fixtureId="cn_hz_attachment_missing_ci",
                 sourceDocumentRef=SourceDocumentRef(
-                    refId='cn_hz_attachment_missing_ci',
-                    sourceType='fixture',
-                    fileName='source.md',
-                    fileType='md',
-                    storagePath='/tmp/runtime/source.md',
-                    fixtureId='cn_hz_attachment_missing_ci',
+                    refId="cn_hz_attachment_missing_ci",
+                    sourceType="fixture",
+                    fileName="source.md",
+                    fileType="md",
+                    storagePath="/tmp/runtime/source.md",
+                    fixtureId="cn_hz_attachment_missing_ci",
                 ),
                 sourceUrls=[],
-                documentType='hazardous_special_scheme',
-                disciplineTags=['lifting_operations'],
+                documentType="hazardous_special_scheme",
+                disciplineTags=["lifting_operations"],
                 strictMode=True,
-                policyPackIds=['hazardous_special_scheme.base', 'lifting_operations.base'],
+                policyPackIds=[
+                    "hazardous_special_scheme.base",
+                    "lifting_operations.base",
+                ],
                 reviewerDecision={
-                    'taskState': 'accepted',
-                    'note': 'checked by reviewer',
-                    'issues': [{'issueId': 'ISSUE-001', 'state': 'dismissed', 'note': 'not confirmed'}],
-                    'attachments': [{'attachmentId': 'attachment-1', 'state': 'dismissed', 'note': 'checked original'}],
-                    'updatedAt': now.isoformat(),
-                },
-                status='succeeded',
-                result={
-                    'summary': {
-                        'overallConclusion': 'demo',
-                        'documentType': 'hazardous_special_scheme',
-                        'selectedPacks': ['hazardous_special_scheme.base', 'lifting_operations.base'],
-                        'manualReviewNeeded': False,
-                        'issueCount': 1,
-                        'layerCounts': {'L1': 1},
-                        'stats': {},
-                        'visibilitySummary': {
-                            'attachmentCount': 1,
-                            'counts': {'parsed': 1},
-                            'duplicateSectionTitles': [],
-                            'parseWarnings': [],
-                            'reasonCounts': {'attachment_body_visible': 1},
-                            'manualReviewNeeded': False,
-                        },
-                    },
-                    'visibility': {
-                        'parseMode': 'markdown_text',
-                        'attachmentCount': 1,
-                        'counts': {'parsed': 1},
-                        'reasonCounts': {'attachment_body_visible': 1},
-                        'duplicateSectionTitles': [],
-                        'parseWarnings': [],
-                        'manualReviewNeeded': False,
-                        'manualReviewReason': None,
-                        'parserLimited': False,
-                        'fileType': 'md',
-                        'preflight': {
-                            'gateDecision': 'ready',
-                            'blockingReasons': [],
-                            'checklist': [],
-                            'parserLimitations': [],
-                            'attachmentTaxonomySummary': {'attachmentCount': 1, 'counts': {'parsed': 1}},
-                        },
-                    },
-                    'resolvedProfile': {
-                        'requestedDocumentType': 'hazardous_special_scheme',
-                        'requestedDisciplineTags': ['lifting_operations'],
-                        'requestedPolicyPackIds': [],
-                        'documentType': 'hazardous_special_scheme',
-                        'disciplineTags': ['lifting_operations'],
-                        'policyPackIds': ['hazardous_special_scheme.base', 'lifting_operations.base'],
-                        'strictMode': True,
-                    },
-                    'issues': [
+                    "taskState": "accepted",
+                    "note": "checked by reviewer",
+                    "issues": [
                         {
-                            'id': 'ISSUE-001',
-                            'title': '专项方案附件处于可视域缺口，需人工复核原件',
-                            'layer': 'L1',
-                            'severity': 'medium',
-                            'findingType': 'visibility_gap',
-                            'summary': '专项方案附件处于可视域缺口，需人工复核原件',
-                            'manualReviewNeeded': True,
-                            'evidenceMissing': False,
-                            'manualReviewReason': 'visibility_gap',
-                            'issueKind': 'visibility_gap',
-                            'applicabilityState': 'blocked_by_visibility',
-                            'missingFactKeys': [],
-                            'blockingReasons': ['visibility_gap'],
-                            'docEvidence': [],
-                            'policyEvidence': [],
-                            'recommendation': [],
-                            'confidence': 'medium',
+                            "issueId": "ISSUE-001",
+                            "state": "dismissed",
+                            "note": "not confirmed",
                         }
                     ],
-                    'matrices': {
-                        'hazardIdentification': {'values': {}},
-                        'ruleHits': [],
-                        'conflicts': {'values': {}},
-                        'attachmentVisibility': [
+                    "attachments": [
+                        {
+                            "attachmentId": "attachment-1",
+                            "state": "dismissed",
+                            "note": "checked original",
+                        }
+                    ],
+                    "updatedAt": now.isoformat(),
+                },
+                status="succeeded",
+                result={
+                    "summary": {
+                        "overallConclusion": "demo",
+                        "documentType": "hazardous_special_scheme",
+                        "selectedPacks": [
+                            "hazardous_special_scheme.base",
+                            "lifting_operations.base",
+                        ],
+                        "manualReviewNeeded": False,
+                        "issueCount": 1,
+                        "layerCounts": {"L1": 1},
+                        "stats": {},
+                        "visibilitySummary": {
+                            "attachmentCount": 1,
+                            "counts": {"parsed": 1},
+                            "duplicateSectionTitles": [],
+                            "parseWarnings": [],
+                            "reasonCounts": {"attachment_body_visible": 1},
+                            "manualReviewNeeded": False,
+                        },
+                    },
+                    "visibility": {
+                        "parseMode": "markdown_text",
+                        "attachmentCount": 1,
+                        "counts": {"parsed": 1},
+                        "reasonCounts": {"attachment_body_visible": 1},
+                        "duplicateSectionTitles": [],
+                        "parseWarnings": [],
+                        "manualReviewNeeded": False,
+                        "manualReviewReason": None,
+                        "parserLimited": False,
+                        "fileType": "md",
+                        "preflight": {
+                            "gateDecision": "ready",
+                            "blockingReasons": [],
+                            "checklist": [],
+                            "parserLimitations": [],
+                            "attachmentTaxonomySummary": {
+                                "attachmentCount": 1,
+                                "counts": {"parsed": 1},
+                            },
+                        },
+                    },
+                    "resolvedProfile": {
+                        "requestedDocumentType": "hazardous_special_scheme",
+                        "requestedDisciplineTags": ["lifting_operations"],
+                        "requestedPolicyPackIds": [],
+                        "documentType": "hazardous_special_scheme",
+                        "disciplineTags": ["lifting_operations"],
+                        "policyPackIds": [
+                            "hazardous_special_scheme.base",
+                            "lifting_operations.base",
+                        ],
+                        "strictMode": True,
+                    },
+                    "issues": [
+                        {
+                            "id": "ISSUE-001",
+                            "title": "专项方案附件处于可视域缺口，需人工复核原件",
+                            "layer": "L1",
+                            "severity": "medium",
+                            "findingType": "visibility_gap",
+                            "summary": "专项方案附件处于可视域缺口，需人工复核原件",
+                            "manualReviewNeeded": True,
+                            "evidenceMissing": False,
+                            "manualReviewReason": "visibility_gap",
+                            "issueKind": "visibility_gap",
+                            "applicabilityState": "blocked_by_visibility",
+                            "missingFactKeys": [],
+                            "blockingReasons": ["visibility_gap"],
+                            "docEvidence": [],
+                            "policyEvidence": [],
+                            "recommendation": [],
+                            "confidence": "medium",
+                        }
+                    ],
+                    "matrices": {
+                        "hazardIdentification": {"values": {}},
+                        "ruleHits": [],
+                        "conflicts": {"values": {}},
+                        "attachmentVisibility": [
                             {
-                                'id': 'attachment-1',
-                                'attachmentNumber': '1',
-                                'title': '附件1',
-                                'visibility': 'parsed',
-                                'parseState': 'parsed',
-                                'manualReviewNeeded': False,
-                                'reason': 'attachment_body_visible',
-                                'referenceBlockIds': [],
-                                'titleBlockId': None,
+                                "id": "attachment-1",
+                                "attachmentNumber": "1",
+                                "title": "附件1",
+                                "visibility": "parsed",
+                                "parseState": "parsed",
+                                "manualReviewNeeded": False,
+                                "reason": "attachment_body_visible",
+                                "referenceBlockIds": [],
+                                "titleBlockId": None,
                             }
                         ],
-                        'sectionStructure': [],
-                        'issueLayerCounts': {'L1': 1},
+                        "sectionStructure": [],
+                        "issueLayerCounts": {"L1": 1},
                     },
-                    'artifactIndex': [],
-                    'reportMarkdown': '# demo',
-                    'artifacts': [],
-                    'unresolvedFacts': [],
-                    'capabilitiesUsed': ['structured_review_executor'],
-                    'finalAnswer': 'demo',
+                    "artifactIndex": [],
+                    "reportMarkdown": "# demo",
+                    "artifacts": [],
+                    "unresolvedFacts": [],
+                    "capabilitiesUsed": ["structured_review_executor"],
+                    "finalAnswer": "demo",
                 },
                 createdAt=now,
                 updatedAt=now,
             )
 
-    monkeypatch.setattr(tasks_route, 'get_task_service', lambda: FakeService())
+    monkeypatch.setattr(tasks_route, "get_task_service", lambda: FakeService())
     client = TestClient(app)
 
-    task_response = client.get('/api/tasks/task-route-2')
+    task_response = client.get("/api/tasks/task-route-2")
     assert task_response.status_code == 200
     task_payload = task_response.json()
-    assert task_payload['reviewPreparation']['provenance']['sourceTier'] == 'ci_stage_gate'
-    assert task_payload['reviewPreparation']['provenance']['caseId'] == 'cn_hz_attachment_missing_ci'
-    assert task_payload['reviewPreparation']['provenance']['caseVersion'] == 'v0.1.0-ci-stage-gate'
+    assert (
+        task_payload["reviewPreparation"]["provenance"]["sourceTier"] == "ci_stage_gate"
+    )
+    assert (
+        task_payload["reviewPreparation"]["provenance"]["caseId"]
+        == "cn_hz_attachment_missing_ci"
+    )
+    assert (
+        task_payload["reviewPreparation"]["provenance"]["caseVersion"]
+        == "v0.1.0-ci-stage-gate"
+    )
 
-    asset_response = client.get('/api/tasks/task-route-2/review-preparation')
+    asset_response = client.get("/api/tasks/task-route-2/review-preparation")
     assert asset_response.status_code == 200
     asset_payload = asset_response.json()
-    assert asset_payload['provenance']['sourceTier'] == 'ci_stage_gate'
-    assert asset_payload['provenance']['caseId'] == 'cn_hz_attachment_missing_ci'
-    assert asset_payload['provenance']['caseVersion'] == 'v0.1.0-ci-stage-gate'
-    assert asset_payload['provenance']['labelStatus'] == 'stage_gate_curated'
-    assert asset_payload['provenance']['truthLevel'] == 'repo_runtime_aligned'
-    assert asset_payload['provenance']['usesRuntimeStructuredReviewResult'] is True
+    assert asset_payload["provenance"]["sourceTier"] == "ci_stage_gate"
+    assert asset_payload["provenance"]["caseId"] == "cn_hz_attachment_missing_ci"
+    assert asset_payload["provenance"]["caseVersion"] == "v0.1.0-ci-stage-gate"
+    assert asset_payload["provenance"]["labelStatus"] == "stage_gate_curated"
+    assert asset_payload["provenance"]["truthLevel"] == "repo_runtime_aligned"
+    assert asset_payload["provenance"]["usesRuntimeStructuredReviewResult"] is True
 
 
-def test_task_routes_review_preparation_keeps_source_path_only_matches_runtime_only(monkeypatch):
+def test_task_routes_review_preparation_keeps_source_path_only_matches_runtime_only(
+    monkeypatch,
+):
     now = datetime.now(timezone.utc)
     versioned_source_path = (
         REPO_ROOT
-        / 'fixtures'
-        / 'review_eval'
-        / 'hazardous_special_scheme'
-        / 'ci'
-        / 'cn_hz_attachment_missing_ci'
-        / 'v0.1.0-ci-stage-gate'
-        / 'source.md'
+        / "fixtures"
+        / "review_eval"
+        / "hazardous_special_scheme"
+        / "ci"
+        / "cn_hz_attachment_missing_ci"
+        / "v0.1.0-ci-stage-gate"
+        / "source.md"
     ).resolve()
 
     class FakeService:
         def get_task(self, task_id: str):
             return TaskRecord(
                 id=task_id,
-                taskType='structured_review',
-                capabilityMode='auto',
-                query='query',
+                taskType="structured_review",
+                capabilityMode="auto",
+                query="query",
                 fixtureId=None,
                 sourceDocumentRef=SourceDocumentRef(
-                    refId='runtime-upload-1',
-                    sourceType='upload',
-                    fileName='source.md',
-                    fileType='md',
+                    refId="runtime-upload-1",
+                    sourceType="upload",
+                    fileName="source.md",
+                    fileType="md",
                     storagePath=str(versioned_source_path),
-                    displayName='source.md',
+                    displayName="source.md",
                     fixtureId=None,
                 ),
                 sourceUrls=[],
-                documentType='hazardous_special_scheme',
-                disciplineTags=['lifting_operations'],
+                documentType="hazardous_special_scheme",
+                disciplineTags=["lifting_operations"],
                 strictMode=True,
-                policyPackIds=['hazardous_special_scheme.base', 'lifting_operations.base'],
+                policyPackIds=[
+                    "hazardous_special_scheme.base",
+                    "lifting_operations.base",
+                ],
                 reviewerDecision={
-                    'taskState': 'accepted',
-                    'note': 'checked by reviewer',
-                    'issues': [],
-                    'attachments': [],
-                    'updatedAt': now.isoformat(),
+                    "taskState": "accepted",
+                    "note": "checked by reviewer",
+                    "issues": [],
+                    "attachments": [],
+                    "updatedAt": now.isoformat(),
                 },
-                status='succeeded',
+                status="succeeded",
                 result={
-                    'summary': {
-                        'overallConclusion': 'demo',
-                        'documentType': 'hazardous_special_scheme',
-                        'selectedPacks': ['hazardous_special_scheme.base', 'lifting_operations.base'],
-                        'manualReviewNeeded': False,
-                        'issueCount': 0,
-                        'layerCounts': {},
-                        'stats': {},
-                        'visibilitySummary': {
-                            'attachmentCount': 0,
-                            'counts': {'parsed': 0, 'attachment_unparsed': 0, 'referenced_only': 0, 'missing': 0, 'unknown': 0},
-                            'duplicateSectionTitles': [],
-                            'parseWarnings': [],
-                            'reasonCounts': {},
-                            'manualReviewNeeded': False,
+                    "summary": {
+                        "overallConclusion": "demo",
+                        "documentType": "hazardous_special_scheme",
+                        "selectedPacks": [
+                            "hazardous_special_scheme.base",
+                            "lifting_operations.base",
+                        ],
+                        "manualReviewNeeded": False,
+                        "issueCount": 0,
+                        "layerCounts": {},
+                        "stats": {},
+                        "visibilitySummary": {
+                            "attachmentCount": 0,
+                            "counts": {
+                                "parsed": 0,
+                                "attachment_unparsed": 0,
+                                "referenced_only": 0,
+                                "missing": 0,
+                                "unknown": 0,
+                            },
+                            "duplicateSectionTitles": [],
+                            "parseWarnings": [],
+                            "reasonCounts": {},
+                            "manualReviewNeeded": False,
                         },
                     },
-                    'visibility': {
-                        'parseMode': 'markdown_text',
-                        'attachmentCount': 0,
-                        'counts': {'parsed': 0, 'attachment_unparsed': 0, 'referenced_only': 0, 'missing': 0, 'unknown': 0},
-                        'reasonCounts': {},
-                        'duplicateSectionTitles': [],
-                        'parseWarnings': [],
-                        'manualReviewNeeded': False,
-                        'manualReviewReason': None,
-                        'parserLimited': False,
-                        'fileType': 'md',
-                        'preflight': {
-                            'gateDecision': 'ready',
-                            'blockingReasons': [],
-                            'checklist': [],
-                            'parserLimitations': [],
-                            'attachmentTaxonomySummary': {'attachmentCount': 0, 'counts': {'parsed': 0}},
+                    "visibility": {
+                        "parseMode": "markdown_text",
+                        "attachmentCount": 0,
+                        "counts": {
+                            "parsed": 0,
+                            "attachment_unparsed": 0,
+                            "referenced_only": 0,
+                            "missing": 0,
+                            "unknown": 0,
+                        },
+                        "reasonCounts": {},
+                        "duplicateSectionTitles": [],
+                        "parseWarnings": [],
+                        "manualReviewNeeded": False,
+                        "manualReviewReason": None,
+                        "parserLimited": False,
+                        "fileType": "md",
+                        "preflight": {
+                            "gateDecision": "ready",
+                            "blockingReasons": [],
+                            "checklist": [],
+                            "parserLimitations": [],
+                            "attachmentTaxonomySummary": {
+                                "attachmentCount": 0,
+                                "counts": {"parsed": 0},
+                            },
                         },
                     },
-                    'resolvedProfile': {
-                        'requestedDocumentType': 'hazardous_special_scheme',
-                        'requestedDisciplineTags': ['lifting_operations'],
-                        'requestedPolicyPackIds': [],
-                        'documentType': 'hazardous_special_scheme',
-                        'disciplineTags': ['lifting_operations'],
-                        'policyPackIds': ['hazardous_special_scheme.base', 'lifting_operations.base'],
-                        'strictMode': True,
+                    "resolvedProfile": {
+                        "requestedDocumentType": "hazardous_special_scheme",
+                        "requestedDisciplineTags": ["lifting_operations"],
+                        "requestedPolicyPackIds": [],
+                        "documentType": "hazardous_special_scheme",
+                        "disciplineTags": ["lifting_operations"],
+                        "policyPackIds": [
+                            "hazardous_special_scheme.base",
+                            "lifting_operations.base",
+                        ],
+                        "strictMode": True,
                     },
-                    'issues': [],
-                    'matrices': {
-                        'hazardIdentification': {'values': {}},
-                        'ruleHits': [],
-                        'conflicts': {'values': {}},
-                        'attachmentVisibility': [],
-                        'sectionStructure': [],
-                        'issueLayerCounts': {},
+                    "issues": [],
+                    "matrices": {
+                        "hazardIdentification": {"values": {}},
+                        "ruleHits": [],
+                        "conflicts": {"values": {}},
+                        "attachmentVisibility": [],
+                        "sectionStructure": [],
+                        "issueLayerCounts": {},
                     },
-                    'artifactIndex': [],
-                    'reportMarkdown': '# demo',
-                    'artifacts': [],
-                    'unresolvedFacts': [],
-                    'capabilitiesUsed': ['structured_review_executor'],
-                    'finalAnswer': 'demo',
+                    "artifactIndex": [],
+                    "reportMarkdown": "# demo",
+                    "artifacts": [],
+                    "unresolvedFacts": [],
+                    "capabilitiesUsed": ["structured_review_executor"],
+                    "finalAnswer": "demo",
                 },
                 createdAt=now,
                 updatedAt=now,
             )
 
-    monkeypatch.setattr(tasks_route, 'get_task_service', lambda: FakeService())
+    monkeypatch.setattr(tasks_route, "get_task_service", lambda: FakeService())
     client = TestClient(app)
 
-    task_response = client.get('/api/tasks/runtime-source-path-match')
+    task_response = client.get("/api/tasks/runtime-source-path-match")
     assert task_response.status_code == 200
     task_payload = task_response.json()
-    assert task_payload['reviewPreparation']['provenance']['sourceTier'] == 'runtime_only'
-    assert task_payload['reviewPreparation']['provenance']['caseId'] is None
-    assert task_payload['reviewPreparation']['provenance']['caseVersion'] is None
+    assert (
+        task_payload["reviewPreparation"]["provenance"]["sourceTier"] == "runtime_only"
+    )
+    assert task_payload["reviewPreparation"]["provenance"]["caseId"] is None
+    assert task_payload["reviewPreparation"]["provenance"]["caseVersion"] is None
 
-    asset_response = client.get('/api/tasks/runtime-source-path-match/review-preparation')
+    asset_response = client.get(
+        "/api/tasks/runtime-source-path-match/review-preparation"
+    )
     assert asset_response.status_code == 200
     asset_payload = asset_response.json()
-    assert asset_payload['provenance']['sourceTier'] == 'runtime_only'
-    assert asset_payload['provenance']['caseId'] is None
-    assert asset_payload['provenance']['caseVersion'] is None
+    assert asset_payload["provenance"]["sourceTier"] == "runtime_only"
+    assert asset_payload["provenance"]["caseId"] is None
+    assert asset_payload["provenance"]["caseVersion"] is None
 
 
-def test_task_routes_review_preparation_defers_confirmed_evidence_gap_issue(monkeypatch):
+def test_task_routes_review_preparation_defers_confirmed_evidence_gap_issue(
+    monkeypatch,
+):
     now = datetime.now(timezone.utc)
 
     class FakeService:
         def get_task(self, task_id: str):
             return TaskRecord(
                 id=task_id,
-                taskType='structured_review',
-                capabilityMode='auto',
-                query='query',
-                fixtureId='fixture-evidence-gap',
+                taskType="structured_review",
+                capabilityMode="auto",
+                query="query",
+                fixtureId="fixture-evidence-gap",
                 sourceDocumentRef=SourceDocumentRef(
-                    refId='fixture-evidence-gap',
-                    sourceType='fixture',
-                    fileName='fixture.md',
-                    fileType='md',
-                    storagePath='/tmp/fixture-evidence-gap.md',
-                    fixtureId='fixture-evidence-gap',
+                    refId="fixture-evidence-gap",
+                    sourceType="fixture",
+                    fileName="fixture.md",
+                    fileType="md",
+                    storagePath="/tmp/fixture-evidence-gap.md",
+                    fixtureId="fixture-evidence-gap",
                 ),
                 sourceUrls=[],
-                documentType='construction_org',
+                documentType="construction_org",
                 disciplineTags=[],
                 strictMode=True,
-                policyPackIds=['construction_org.base'],
+                policyPackIds=["construction_org.base"],
                 reviewerDecision={
-                    'taskState': 'accepted',
-                    'note': 'checked by reviewer',
-                    'issues': [{'issueId': 'ISSUE-001', 'state': 'confirmed', 'note': 'keep'}],
-                    'attachments': [{'attachmentId': 'attachment-1', 'state': 'dismissed', 'note': 'checked original'}],
-                    'updatedAt': now.isoformat(),
-                },
-                status='succeeded',
-                result={
-                    'summary': {
-                        'overallConclusion': 'demo',
-                        'documentType': 'construction_org',
-                        'selectedPacks': ['construction_org.base'],
-                        'manualReviewNeeded': False,
-                        'issueCount': 1,
-                        'layerCounts': {'L2': 1},
-                        'stats': {},
-                        'visibilitySummary': {
-                            'attachmentCount': 1,
-                            'counts': {'parsed': 1},
-                            'duplicateSectionTitles': [],
-                            'parseWarnings': [],
-                            'reasonCounts': {'attachment_body_visible': 1},
-                            'manualReviewNeeded': False,
-                        },
-                    },
-                    'visibility': {
-                        'parseMode': 'markdown_text',
-                        'attachmentCount': 1,
-                        'counts': {'parsed': 1},
-                        'reasonCounts': {'attachment_body_visible': 1},
-                        'duplicateSectionTitles': [],
-                        'parseWarnings': [],
-                        'manualReviewNeeded': False,
-                        'manualReviewReason': None,
-                        'parserLimited': False,
-                        'fileType': 'md',
-                        'preflight': {
-                            'gateDecision': 'ready',
-                            'blockingReasons': [],
-                            'checklist': [],
-                            'parserLimitations': [],
-                            'attachmentTaxonomySummary': {'attachmentCount': 1, 'counts': {'parsed': 1}},
-                        },
-                    },
-                    'resolvedProfile': {
-                        'requestedDocumentType': 'construction_org',
-                        'requestedDisciplineTags': [],
-                        'requestedPolicyPackIds': [],
-                        'documentType': 'construction_org',
-                        'disciplineTags': [],
-                        'policyPackIds': ['construction_org.base'],
-                        'strictMode': True,
-                    },
-                    'issues': [
+                    "taskState": "accepted",
+                    "note": "checked by reviewer",
+                    "issues": [
+                        {"issueId": "ISSUE-001", "state": "confirmed", "note": "keep"}
+                    ],
+                    "attachments": [
                         {
-                            'id': 'ISSUE-001',
-                            'title': '应急预案针对性不足',
-                            'layer': 'L2',
-                            'severity': 'medium',
-                            'findingType': 'hard_evidence',
-                            'summary': '应急预案针对性不足',
-                            'manualReviewNeeded': True,
-                            'evidenceMissing': True,
-                            'manualReviewReason': 'manual_confirmation_required',
-                            'issueKind': 'evidence_gap',
-                            'applicabilityState': 'blocked_by_missing_fact',
-                            'missingFactKeys': ['emergency.planTitles'],
-                            'blockingReasons': ['missing_fact', 'issue_not_closed'],
-                            'docEvidence': [],
-                            'policyEvidence': [],
-                            'recommendation': [],
-                            'confidence': 'medium',
+                            "attachmentId": "attachment-1",
+                            "state": "dismissed",
+                            "note": "checked original",
                         }
                     ],
-                    'matrices': {
-                        'hazardIdentification': {'values': {}},
-                        'ruleHits': [],
-                        'conflicts': {'values': {}},
-                        'attachmentVisibility': [
+                    "updatedAt": now.isoformat(),
+                },
+                status="succeeded",
+                result={
+                    "summary": {
+                        "overallConclusion": "demo",
+                        "documentType": "construction_org",
+                        "selectedPacks": ["construction_org.base"],
+                        "manualReviewNeeded": False,
+                        "issueCount": 1,
+                        "layerCounts": {"L2": 1},
+                        "stats": {},
+                        "visibilitySummary": {
+                            "attachmentCount": 1,
+                            "counts": {"parsed": 1},
+                            "duplicateSectionTitles": [],
+                            "parseWarnings": [],
+                            "reasonCounts": {"attachment_body_visible": 1},
+                            "manualReviewNeeded": False,
+                        },
+                    },
+                    "visibility": {
+                        "parseMode": "markdown_text",
+                        "attachmentCount": 1,
+                        "counts": {"parsed": 1},
+                        "reasonCounts": {"attachment_body_visible": 1},
+                        "duplicateSectionTitles": [],
+                        "parseWarnings": [],
+                        "manualReviewNeeded": False,
+                        "manualReviewReason": None,
+                        "parserLimited": False,
+                        "fileType": "md",
+                        "preflight": {
+                            "gateDecision": "ready",
+                            "blockingReasons": [],
+                            "checklist": [],
+                            "parserLimitations": [],
+                            "attachmentTaxonomySummary": {
+                                "attachmentCount": 1,
+                                "counts": {"parsed": 1},
+                            },
+                        },
+                    },
+                    "resolvedProfile": {
+                        "requestedDocumentType": "construction_org",
+                        "requestedDisciplineTags": [],
+                        "requestedPolicyPackIds": [],
+                        "documentType": "construction_org",
+                        "disciplineTags": [],
+                        "policyPackIds": ["construction_org.base"],
+                        "strictMode": True,
+                    },
+                    "issues": [
+                        {
+                            "id": "ISSUE-001",
+                            "title": "应急预案针对性不足",
+                            "layer": "L2",
+                            "severity": "medium",
+                            "findingType": "hard_evidence",
+                            "summary": "应急预案针对性不足",
+                            "manualReviewNeeded": True,
+                            "evidenceMissing": True,
+                            "manualReviewReason": "manual_confirmation_required",
+                            "issueKind": "evidence_gap",
+                            "applicabilityState": "blocked_by_missing_fact",
+                            "missingFactKeys": ["emergency.planTitles"],
+                            "blockingReasons": ["missing_fact", "issue_not_closed"],
+                            "docEvidence": [],
+                            "policyEvidence": [],
+                            "recommendation": [],
+                            "confidence": "medium",
+                        }
+                    ],
+                    "matrices": {
+                        "hazardIdentification": {"values": {}},
+                        "ruleHits": [],
+                        "conflicts": {"values": {}},
+                        "attachmentVisibility": [
                             {
-                                'id': 'attachment-1',
-                                'attachmentNumber': '1',
-                                'title': '附件1',
-                                'visibility': 'parsed',
-                                'parseState': 'parsed',
-                                'manualReviewNeeded': False,
-                                'reason': 'attachment_body_visible',
-                                'referenceBlockIds': [],
-                                'titleBlockId': None,
+                                "id": "attachment-1",
+                                "attachmentNumber": "1",
+                                "title": "附件1",
+                                "visibility": "parsed",
+                                "parseState": "parsed",
+                                "manualReviewNeeded": False,
+                                "reason": "attachment_body_visible",
+                                "referenceBlockIds": [],
+                                "titleBlockId": None,
                             }
                         ],
-                        'sectionStructure': [],
-                        'issueLayerCounts': {'L2': 1},
+                        "sectionStructure": [],
+                        "issueLayerCounts": {"L2": 1},
                     },
-                    'artifactIndex': [],
-                    'reportMarkdown': '# demo',
-                    'artifacts': [],
-                    'unresolvedFacts': [],
-                    'capabilitiesUsed': ['structured_review_executor'],
-                    'finalAnswer': 'demo',
+                    "artifactIndex": [],
+                    "reportMarkdown": "# demo",
+                    "artifacts": [],
+                    "unresolvedFacts": [],
+                    "capabilitiesUsed": ["structured_review_executor"],
+                    "finalAnswer": "demo",
                 },
                 createdAt=now,
                 updatedAt=now,
             )
 
-    monkeypatch.setattr(tasks_route, 'get_task_service', lambda: FakeService())
+    monkeypatch.setattr(tasks_route, "get_task_service", lambda: FakeService())
     client = TestClient(app)
 
-    task_response = client.get('/api/tasks/task-evidence-gap')
+    task_response = client.get("/api/tasks/task-evidence-gap")
     assert task_response.status_code == 200
     task_payload = task_response.json()
-    assert task_payload['reviewPreparation']['readyForPromotion'] is False
-    assert task_payload['reviewPreparation']['eligibleIssueIds'] == []
-    assert task_payload['reviewPreparation']['deferredIssueIds'] == ['ISSUE-001']
-    assert 'issue_not_promotable_evidence_gap' in task_payload['reviewPreparation']['issueBlockingReasons']['ISSUE-001']
-    assert 'issue_not_promotable_blocked_by_missing_fact' in task_payload['reviewPreparation']['issueBlockingReasons']['ISSUE-001']
-    assert 'issue_not_promotable_manual_review' in task_payload['reviewPreparation']['issueBlockingReasons']['ISSUE-001']
-    assert 'issue_not_promotable_evidence_missing' in task_payload['reviewPreparation']['issueBlockingReasons']['ISSUE-001']
+    assert task_payload["reviewPreparation"]["readyForPromotion"] is False
+    assert task_payload["reviewPreparation"]["eligibleIssueIds"] == []
+    assert task_payload["reviewPreparation"]["deferredIssueIds"] == ["ISSUE-001"]
+    assert (
+        "issue_not_promotable_evidence_gap"
+        in task_payload["reviewPreparation"]["issueBlockingReasons"]["ISSUE-001"]
+    )
+    assert (
+        "issue_not_promotable_blocked_by_missing_fact"
+        in task_payload["reviewPreparation"]["issueBlockingReasons"]["ISSUE-001"]
+    )
+    assert (
+        "issue_not_promotable_manual_review"
+        in task_payload["reviewPreparation"]["issueBlockingReasons"]["ISSUE-001"]
+    )
+    assert (
+        "issue_not_promotable_evidence_missing"
+        in task_payload["reviewPreparation"]["issueBlockingReasons"]["ISSUE-001"]
+    )
 
-    asset_response = client.get('/api/tasks/task-evidence-gap/review-preparation')
+    asset_response = client.get("/api/tasks/task-evidence-gap/review-preparation")
     assert asset_response.status_code == 200
     asset_payload = asset_response.json()
-    assert asset_payload['readyForPromotion'] is False
-    assert asset_payload['issueDecisions'][0]['disposition'] == 'deferred'
-    assert 'issue_not_promotable_evidence_gap' in asset_payload['issueDecisions'][0]['promotionBlockingReasons']
-    assert 'issue_not_promotable_blocked_by_missing_fact' in asset_payload['issueDecisions'][0]['promotionBlockingReasons']
+    assert asset_payload["readyForPromotion"] is False
+    assert asset_payload["issueDecisions"][0]["disposition"] == "deferred"
+    assert (
+        "issue_not_promotable_evidence_gap"
+        in asset_payload["issueDecisions"][0]["promotionBlockingReasons"]
+    )
+    assert (
+        "issue_not_promotable_blocked_by_missing_fact"
+        in asset_payload["issueDecisions"][0]["promotionBlockingReasons"]
+    )
 
 
 def test_task_routes_accept_source_document_ref_without_fixture(monkeypatch):
@@ -1373,7 +1577,7 @@ def test_task_routes_accept_source_document_ref_without_fixture(monkeypatch):
         def create_task(self, request):
             self.last_request = request
             return TaskRecord(
-                id='task-route-upload-1',
+                id="task-route-upload-1",
                 taskType=request.taskType,
                 capabilityMode=request.capabilityMode,
                 query=request.query,
@@ -1384,7 +1588,7 @@ def test_task_routes_accept_source_document_ref_without_fixture(monkeypatch):
                 disciplineTags=request.disciplineTags or [],
                 strictMode=request.strictMode,
                 policyPackIds=request.policyPackIds or [],
-                status='created',
+                status="created",
                 createdAt=now,
                 updatedAt=now,
             )
@@ -1393,33 +1597,33 @@ def test_task_routes_accept_source_document_ref_without_fixture(monkeypatch):
             return None
 
     fake_service = FakeService()
-    monkeypatch.setattr(tasks_route, 'get_task_service', lambda: fake_service)
+    monkeypatch.setattr(tasks_route, "get_task_service", lambda: fake_service)
     client = TestClient(app)
 
     response = client.post(
-        '/api/tasks',
+        "/api/tasks",
         json={
-            'taskType': 'structured_review',
-            'capabilityMode': 'auto',
-            'query': '执行上传文档正式结构化审查',
-            'sourceDocumentRef': {
-                'refId': 'upload-ref-1',
-                'sourceType': 'upload',
-                'fileName': 'sample.md',
-                'fileType': 'md',
-                'storagePath': '/tmp/sample.md',
-                'displayName': 'sample.md',
+            "taskType": "structured_review",
+            "capabilityMode": "auto",
+            "query": "执行上传文档正式结构化审查",
+            "sourceDocumentRef": {
+                "refId": "upload-ref-1",
+                "sourceType": "upload",
+                "fileName": "sample.md",
+                "fileType": "md",
+                "storagePath": "/tmp/sample.md",
+                "displayName": "sample.md",
             },
-            'documentType': 'construction_org',
-            'disciplineTags': ['lifting_operations'],
-            'strictMode': True,
-            'policyPackIds': ['construction_org.base'],
+            "documentType": "construction_org",
+            "disciplineTags": ["lifting_operations"],
+            "strictMode": True,
+            "policyPackIds": ["construction_org.base"],
         },
     )
     assert response.status_code == 200
     payload = response.json()
-    assert payload['fixtureId'] is None
-    assert payload['sourceDocumentRef']['sourceType'] == 'upload'
+    assert payload["fixtureId"] is None
+    assert payload["sourceDocumentRef"]["sourceType"] == "upload"
     assert fake_service.last_request is not None
     assert fake_service.last_request.sourceDocumentRef is not None
     assert fake_service.last_request.fixtureId is None
@@ -1428,14 +1632,14 @@ def test_task_routes_accept_source_document_ref_without_fixture(monkeypatch):
 def test_task_routes_reject_disable_visibility_check_public_field():
     client = TestClient(app)
     response = client.post(
-        '/api/tasks',
+        "/api/tasks",
         json={
-            'taskType': 'structured_review',
-            'capabilityMode': 'auto',
-            'query': '执行正式结构化审查',
-            'fixtureId': 'fixture-1',
-            'documentType': 'construction_org',
-            'disable_visibility_check': True,
+            "taskType": "structured_review",
+            "capabilityMode": "auto",
+            "query": "执行正式结构化审查",
+            "fixtureId": "fixture-1",
+            "documentType": "construction_org",
+            "disable_visibility_check": True,
         },
     )
     assert response.status_code == 422
@@ -1443,139 +1647,176 @@ def test_task_routes_reject_disable_visibility_check_public_field():
 
 def test_support_scope_route_returns_official_and_placeholder_scope():
     client = TestClient(app)
-    response = client.get('/api/tasks/support-scope')
+    response = client.get("/api/tasks/support-scope")
     assert response.status_code == 200
     payload = response.json()
-    document_types = {item['documentType']: item['readiness'] for item in payload['documentTypes']}
-    assert document_types['construction_org'] == 'official'
-    assert document_types['hazardous_special_scheme'] == 'official'
-    assert document_types['distribution_network_special_scheme'] == 'experimental'
-    assert document_types['construction_scheme'] == 'experimental'
-    assert document_types['supervision_plan'] == 'experimental'
-    assert document_types['review_support_material'] == 'experimental'
-    packs = {item['packId']: item for item in payload['packs']}
-    assert packs['construction_org.base']['readiness'] == 'ready'
-    assert packs['construction_org.base']['label'] == '施工组织设计审查'
-    assert packs['construction_org.base']['role'] == 'base'
-    assert packs['construction_org.base']['familyKey'] == 'construction_org'
-    assert packs['construction_org.base']['tier'] == '1-object'
-    assert packs['construction_org.base']['promotionCriteria']['testsReady'] is True
-    assert packs['construction_scheme.base']['readiness'] == 'ready'
-    assert packs['construction_scheme.base']['role'] == 'base'
-    assert packs['construction_scheme.base']['familyKey'] == 'construction_scheme'
-    assert packs['construction_scheme.base']['tier'] == '1-object'
-    assert packs['construction_scheme.base']['promotionCriteria']['versionedCasesReady'] is True
-    assert packs['supervision_plan.base']['readiness'] == 'ready'
-    assert packs['supervision_plan.base']['role'] == 'base'
-    assert packs['supervision_plan.base']['familyKey'] == 'supervision_plan'
-    assert packs['review_support_material.base']['readiness'] == 'ready'
-    assert packs['review_support_material.base']['role'] == 'base'
-    assert packs['review_support_material.base']['familyKey'] == 'review_support_material'
-    assert packs['gas_area_ops.base']['readiness'] == 'ready'
-    assert packs['gas_area_ops.base']['role'] == 'cross_cutting'
-    assert packs['gas_area_ops.base']['familyKey'] is None
-    assert packs['gas_area_ops.base']['tier'] is None
-    assert packs['foundation_pit.base']['readiness'] == 'ready'
-    assert packs['foundation_pit.base']['role'] == 'third_level'
-    assert packs['foundation_pit.base']['familyKey'] == 'hazardous_special_scheme'
-    assert packs['foundation_pit.base']['tier'] == '3'
-    assert packs['formwork_support.base']['readiness'] == 'ready'
-    assert packs['lifting_installation_removal.base']['readiness'] == 'ready'
-    assert packs['hazardous_special_scheme.base']['readiness'] == 'ready'
-    assert packs['hazardous_special_scheme.base']['role'] == 'base'
-    assert packs['hazardous_special_scheme.base']['familyKey'] == 'hazardous_special_scheme'
-    assert packs['hazardous_special_scheme.base']['tier'] == '2-family'
-    assert packs['distribution_network_special_scheme.base']['readiness'] == 'ready'
-    assert packs['distribution_network_special_scheme.base']['role'] == 'base'
-    assert packs['distribution_network_special_scheme.base']['familyKey'] == 'distribution_network_special_scheme'
-    assert packs['distribution_network_special_scheme.base']['tier'] == '2-family'
-    assert packs['power_outage_work.base']['readiness'] == 'ready'
-    assert packs['power_outage_work.base']['role'] == 'third_level'
-    assert packs['power_outage_work.base']['familyKey'] == 'distribution_network_special_scheme'
-    assert packs['power_outage_work.base']['tier'] == '3'
-    assert packs['scaffold.base']['readiness'] == 'ready'
-    assert packs['demolition.base']['readiness'] == 'ready'
-    assert packs['underground_excavation.base']['readiness'] == 'ready'
-    assert packs['curtain_wall_installation.base']['readiness'] == 'ready'
-    assert packs['manual_bored_pile.base']['readiness'] == 'ready'
-    assert packs['steel_structure_installation.base']['readiness'] == 'ready'
-    capability_tree = {item['entryKey']: item for item in payload['capabilityTree']}
-    assert 'special_scheme_review' in capability_tree
-    assert 'general_management_review' in capability_tree
-    hazardous_families = {item['documentType']: item for item in capability_tree['special_scheme_review']['families']}
-    assert hazardous_families['hazardous_special_scheme']['label'] == '危大工程专项施工方案'
-    hazardous_children = {item['tag'] for item in hazardous_families['hazardous_special_scheme']['children']}
-    assert 'foundation_pit' in hazardous_children
-    assert 'steel_structure_installation' in hazardous_children
-    general_families = {item['documentType']: item for item in capability_tree['general_management_review']['families']}
-    assert general_families['distribution_network_special_scheme']['label'] == '配电配网工程（停电施工专项）'
-    distribution_children = {item['tag'] for item in general_families['distribution_network_special_scheme']['children']}
-    assert distribution_children == {'power_outage_work'}
-    cross_modules = {item['tag'] for item in capability_tree['general_management_review']['crossCuttingModules']}
-    assert 'temporary_power' in cross_modules
-    assert 'hot_work' in cross_modules
-    assert 'gas_area_ops' in cross_modules
-    assert any(item['readiness'] == 'placeholder' for item in packs.values())
+    document_types = {
+        item["documentType"]: item["readiness"] for item in payload["documentTypes"]
+    }
+    assert document_types["construction_org"] == "official"
+    assert document_types["hazardous_special_scheme"] == "official"
+    assert document_types["distribution_network_special_scheme"] == "experimental"
+    assert document_types["construction_scheme"] == "experimental"
+    assert document_types["supervision_plan"] == "experimental"
+    assert document_types["review_support_material"] == "experimental"
+    packs = {item["packId"]: item for item in payload["packs"]}
+    assert packs["construction_org.base"]["readiness"] == "ready"
+    assert packs["construction_org.base"]["label"] == "施工组织设计审查"
+    assert packs["construction_org.base"]["role"] == "base"
+    assert packs["construction_org.base"]["familyKey"] == "construction_org"
+    assert packs["construction_org.base"]["tier"] == "1-object"
+    assert packs["construction_org.base"]["promotionCriteria"]["testsReady"] is True
+    assert packs["construction_scheme.base"]["readiness"] == "ready"
+    assert packs["construction_scheme.base"]["role"] == "base"
+    assert packs["construction_scheme.base"]["familyKey"] == "construction_scheme"
+    assert packs["construction_scheme.base"]["tier"] == "1-object"
+    assert (
+        packs["construction_scheme.base"]["promotionCriteria"]["versionedCasesReady"]
+        is True
+    )
+    assert packs["supervision_plan.base"]["readiness"] == "ready"
+    assert packs["supervision_plan.base"]["role"] == "base"
+    assert packs["supervision_plan.base"]["familyKey"] == "supervision_plan"
+    assert packs["review_support_material.base"]["readiness"] == "ready"
+    assert packs["review_support_material.base"]["role"] == "base"
+    assert (
+        packs["review_support_material.base"]["familyKey"] == "review_support_material"
+    )
+    assert packs["gas_area_ops.base"]["readiness"] == "ready"
+    assert packs["gas_area_ops.base"]["role"] == "cross_cutting"
+    assert packs["gas_area_ops.base"]["familyKey"] is None
+    assert packs["gas_area_ops.base"]["tier"] is None
+    assert packs["foundation_pit.base"]["readiness"] == "ready"
+    assert packs["foundation_pit.base"]["role"] == "third_level"
+    assert packs["foundation_pit.base"]["familyKey"] == "hazardous_special_scheme"
+    assert packs["foundation_pit.base"]["tier"] == "3"
+    assert packs["formwork_support.base"]["readiness"] == "ready"
+    assert packs["lifting_installation_removal.base"]["readiness"] == "ready"
+    assert packs["hazardous_special_scheme.base"]["readiness"] == "ready"
+    assert packs["hazardous_special_scheme.base"]["role"] == "base"
+    assert (
+        packs["hazardous_special_scheme.base"]["familyKey"]
+        == "hazardous_special_scheme"
+    )
+    assert packs["hazardous_special_scheme.base"]["tier"] == "2-family"
+    assert packs["distribution_network_special_scheme.base"]["readiness"] == "ready"
+    assert packs["distribution_network_special_scheme.base"]["role"] == "base"
+    assert (
+        packs["distribution_network_special_scheme.base"]["familyKey"]
+        == "distribution_network_special_scheme"
+    )
+    assert packs["distribution_network_special_scheme.base"]["tier"] == "2-family"
+    assert packs["power_outage_work.base"]["readiness"] == "ready"
+    assert packs["power_outage_work.base"]["role"] == "third_level"
+    assert (
+        packs["power_outage_work.base"]["familyKey"]
+        == "distribution_network_special_scheme"
+    )
+    assert packs["power_outage_work.base"]["tier"] == "3"
+    assert packs["scaffold.base"]["readiness"] == "ready"
+    assert packs["demolition.base"]["readiness"] == "ready"
+    assert packs["underground_excavation.base"]["readiness"] == "ready"
+    assert packs["curtain_wall_installation.base"]["readiness"] == "ready"
+    assert packs["manual_bored_pile.base"]["readiness"] == "ready"
+    assert packs["steel_structure_installation.base"]["readiness"] == "ready"
+    capability_tree = {item["entryKey"]: item for item in payload["capabilityTree"]}
+    assert "special_scheme_review" in capability_tree
+    assert "general_management_review" in capability_tree
+    hazardous_families = {
+        item["documentType"]: item
+        for item in capability_tree["special_scheme_review"]["families"]
+    }
+    assert (
+        hazardous_families["hazardous_special_scheme"]["label"]
+        == "危大工程专项施工方案"
+    )
+    hazardous_children = {
+        item["tag"]
+        for item in hazardous_families["hazardous_special_scheme"]["children"]
+    }
+    assert "foundation_pit" in hazardous_children
+    assert "steel_structure_installation" in hazardous_children
+    general_families = {
+        item["documentType"]: item
+        for item in capability_tree["general_management_review"]["families"]
+    }
+    assert (
+        general_families["distribution_network_special_scheme"]["label"]
+        == "配电配网工程（停电施工专项）"
+    )
+    distribution_children = {
+        item["tag"]
+        for item in general_families["distribution_network_special_scheme"]["children"]
+    }
+    assert distribution_children == {"power_outage_work"}
+    cross_modules = {
+        item["tag"]
+        for item in capability_tree["general_management_review"]["crossCuttingModules"]
+    }
+    assert "temporary_power" in cross_modules
+    assert "hot_work" in cross_modules
+    assert "gas_area_ops" in cross_modules
+    assert any(item["readiness"] == "placeholder" for item in packs.values())
 
 
 def test_upload_route_returns_source_document_ref(monkeypatch, tmp_path: Path):
     monkeypatch.setattr(
         uploads_route,
-        'get_settings',
+        "get_settings",
         lambda: SimpleNamespace(uploads_dir=tmp_path),
     )
     client = TestClient(app)
 
     response = client.post(
-        '/api/uploads/documents',
-        files={'file': ('uploaded.md', b'# demo\n\ncontent\n', 'text/markdown')},
+        "/api/uploads/documents",
+        files={"file": ("uploaded.md", b"# demo\n\ncontent\n", "text/markdown")},
     )
     assert response.status_code == 200
     payload = response.json()
-    assert payload['sourceType'] == 'upload'
-    assert payload['fileType'] == 'md'
-    assert payload['file_id'] == payload['refId']
-    assert payload['file_name'] == payload['fileName']
-    stored_path = Path(payload['storagePath'])
+    assert payload["sourceType"] == "upload"
+    assert payload["fileType"] == "md"
+    assert payload["file_id"] == payload["refId"]
+    assert payload["file_name"] == payload["fileName"]
+    stored_path = Path(payload["storagePath"])
     assert stored_path.exists()
-    assert stored_path.read_text(encoding='utf-8') == '# demo\n\ncontent\n'
+    assert stored_path.read_text(encoding="utf-8") == "# demo\n\ncontent\n"
 
 
 def test_upload_route_rejects_missing_content_type(monkeypatch, tmp_path: Path):
     monkeypatch.setattr(
         uploads_route,
-        'get_settings',
+        "get_settings",
         lambda: SimpleNamespace(uploads_dir=tmp_path),
     )
     client = TestClient(app)
 
     response = client.post(
-        '/api/uploads/documents',
-        files={'file': ('uploaded.md', b'# demo\n\ncontent\n', '')},
+        "/api/uploads/documents",
+        files={"file": ("uploaded.md", b"# demo\n\ncontent\n", "")},
     )
     assert response.status_code == 400
-    assert response.json()['detail'] == {
-        'code': 'missing_content_type',
-        'message': 'Missing content type for .md upload',
+    assert response.json()["detail"] == {
+        "code": "missing_content_type",
+        "message": "Missing content type for .md upload",
     }
 
 
 def test_upload_route_rejects_suffix_mime_mismatch(monkeypatch, tmp_path: Path):
     monkeypatch.setattr(
         uploads_route,
-        'get_settings',
+        "get_settings",
         lambda: SimpleNamespace(uploads_dir=tmp_path),
     )
     client = TestClient(app)
 
     response = client.post(
-        '/api/uploads/documents',
-        files={'file': ('uploaded.md', b'# demo\n\ncontent\n', 'application/pdf')},
+        "/api/uploads/documents",
+        files={"file": ("uploaded.md", b"# demo\n\ncontent\n", "application/pdf")},
     )
     assert response.status_code == 400
-    assert response.json()['detail'] == {
-        'code': 'content_type_mismatch',
-        'message': 'Unexpected content type for .md upload: application/pdf',
+    assert response.json()["detail"] == {
+        "code": "content_type_mismatch",
+        "message": "Unexpected content type for .md upload: application/pdf",
     }
 
 
@@ -1590,48 +1831,48 @@ def test_task_routes_list_recent_tasks(monkeypatch):
             self.last_limit = limit
             return [
                 TaskRecord(
-                    id='task-2',
-                    taskType='structured_review',
-                    capabilityMode='auto',
-                    query='最近任务 2',
-                    fixtureId='fixture-b',
+                    id="task-2",
+                    taskType="structured_review",
+                    capabilityMode="auto",
+                    query="最近任务 2",
+                    fixtureId="fixture-b",
                     sourceUrls=[],
-                    documentType='hazardous_special_scheme',
+                    documentType="hazardous_special_scheme",
                     disciplineTags=[],
                     strictMode=True,
                     policyPackIds=[],
-                    status='running',
+                    status="running",
                     createdAt=now,
                     updatedAt=now,
                 ),
                 TaskRecord(
-                    id='task-1',
-                    taskType='knowledge_qa',
-                    capabilityMode='fast',
-                    query='最近任务 1',
+                    id="task-1",
+                    taskType="structured_review",
+                    capabilityMode="fast",
+                    query="最近任务 1",
                     fixtureId=None,
                     sourceUrls=[],
                     documentType=None,
                     disciplineTags=[],
                     strictMode=None,
                     policyPackIds=[],
-                    status='succeeded',
+                    status="succeeded",
                     createdAt=now,
                     updatedAt=now,
                 ),
             ]
 
     fake_service = FakeService()
-    monkeypatch.setattr(tasks_route, 'get_task_service', lambda: fake_service)
+    monkeypatch.setattr(tasks_route, "get_task_service", lambda: fake_service)
     client = TestClient(app)
 
-    response = client.get('/api/tasks?limit=2')
+    response = client.get("/api/tasks?limit=2")
     assert response.status_code == 200
     payload = response.json()
     assert fake_service.last_limit == 2
-    assert [item['id'] for item in payload] == ['task-2', 'task-1']
-    assert payload[0]['documentType'] == 'hazardous_special_scheme'
-    assert payload[1]['capabilityMode'] == 'fast'
+    assert [item["id"] for item in payload] == ["task-2", "task-1"]
+    assert payload[0]["documentType"] == "hazardous_special_scheme"
+    assert payload[1]["capabilityMode"] == "fast"
 
 
 def test_task_stream_returns_snapshot_and_heartbeat(monkeypatch, tmp_path: Path):
@@ -1645,16 +1886,16 @@ def test_task_stream_returns_snapshot_and_heartbeat(monkeypatch, tmp_path: Path)
             self.task_call_count += 1
             return TaskRecord(
                 id=task_id,
-                taskType='structured_review',
-                capabilityMode='auto',
-                query='stream task',
-                fixtureId='fixture-1',
+                taskType="structured_review",
+                capabilityMode="auto",
+                query="stream task",
+                fixtureId="fixture-1",
                 sourceUrls=[],
-                documentType='construction_org',
-                disciplineTags=['lifting_operations'],
+                documentType="construction_org",
+                disciplineTags=["lifting_operations"],
                 strictMode=True,
-                policyPackIds=['construction_org.base'],
-                status='running' if self.task_call_count == 1 else 'succeeded',
+                policyPackIds=["construction_org.base"],
+                status="running" if self.task_call_count == 1 else "succeeded",
                 createdAt=now,
                 updatedAt=now,
             )
@@ -1665,33 +1906,33 @@ def test_task_stream_returns_snapshot_and_heartbeat(monkeypatch, tmp_path: Path)
         def list_task_artifacts(self, task_id: str):
             return [
                 TaskArtifact(
-                    name='report',
-                    fileName='report.json',
-                    mediaType='application/json',
+                    name="report",
+                    fileName="report.json",
+                    mediaType="application/json",
                     sizeBytes=12,
-                    downloadUrl=f'/api/tasks/{task_id}/artifacts/report.json',
+                    downloadUrl=f"/api/tasks/{task_id}/artifacts/report.json",
                 )
             ]
 
     fake_service = FakeService()
-    monkeypatch.setattr(tasks_route, 'get_task_service', lambda: fake_service)
-    monkeypatch.setattr(tasks_route, 'TASK_STREAM_POLL_SECONDS', 0.01)
-    monkeypatch.setattr(tasks_route, 'TASK_STREAM_HEARTBEAT_SECONDS', 0.01)
+    monkeypatch.setattr(tasks_route, "get_task_service", lambda: fake_service)
+    monkeypatch.setattr(tasks_route, "TASK_STREAM_POLL_SECONDS", 0.01)
+    monkeypatch.setattr(tasks_route, "TASK_STREAM_HEARTBEAT_SECONDS", 0.01)
     client = TestClient(app)
 
-    with client.stream('GET', '/api/tasks/task-stream-1/stream') as response:
+    with client.stream("GET", "/api/tasks/task-stream-1/stream") as response:
         assert response.status_code == 200
         chunks: list[str] = []
         for chunk in response.iter_text():
             if not chunk:
                 continue
             chunks.append(chunk)
-            merged = ''.join(chunks)
-            if 'event: snapshot' in merged and 'event: heartbeat' in merged:
+            merged = "".join(chunks)
+            if "event: snapshot" in merged and "event: heartbeat" in merged:
                 break
 
-    payload = ''.join(chunks)
-    assert 'event: snapshot' in payload
-    assert 'event: heartbeat' in payload
+    payload = "".join(chunks)
+    assert "event: snapshot" in payload
+    assert "event: heartbeat" in payload
     assert '"id": "task-stream-1"' in payload
-    assert json.dumps('/api/tasks/task-stream-1/artifacts/report.json') in payload
+    assert json.dumps("/api/tasks/task-stream-1/artifacts/report.json") in payload

@@ -6,14 +6,26 @@ import mimetypes
 from pathlib import Path
 import uuid
 
-from src.domain.models import CreateTaskRequest, ReviewerDecisionUpdateRequest, SourceDocumentRef, TaskArtifact, TaskRecord
+from src.domain.models import (
+    CreateTaskRequest,
+    ReviewerDecisionUpdateRequest,
+    SourceDocumentRef,
+    TaskArtifact,
+    TaskRecord,
+)
 from src.orchestrator.deepresearch_runtime import DeepResearchRuntime
 from src.repositories.sqlite_store import SQLiteTaskStore
 from src.review.reviewer_decision import merge_reviewer_decision
 
 
 class TaskService:
-    def __init__(self, store: SQLiteTaskStore, runtime: DeepResearchRuntime, tasks_dir: Path | None = None, fixture_service=None):
+    def __init__(
+        self,
+        store: SQLiteTaskStore,
+        runtime: DeepResearchRuntime,
+        tasks_dir: Path | None = None,
+        fixture_service=None,
+    ):
         self.store = store
         self.runtime = runtime
         self.tasks_dir = tasks_dir or runtime.tasks_dir
@@ -23,15 +35,20 @@ class TaskService:
     def create_task(self, request: CreateTaskRequest) -> TaskRecord:
         now = datetime.now(timezone.utc)
         strict_mode = request.strictMode
-        if request.taskType == 'structured_review' and strict_mode is None:
+        if request.taskType == "structured_review" and strict_mode is None:
             strict_mode = True
         source_document_ref = request.sourceDocumentRef
-        if request.taskType == 'structured_review' and source_document_ref is None and request.fixtureId and self.fixture_service is not None:
+        if (
+            request.taskType == "structured_review"
+            and source_document_ref is None
+            and request.fixtureId
+            and self.fixture_service is not None
+        ):
             fixture = self.fixture_service.get_fixture(request.fixtureId)
             if fixture is not None:
                 source_document_ref = SourceDocumentRef(
                     refId=fixture.id,
-                    sourceType='fixture',
+                    sourceType="fixture",
                     fileName=Path(fixture.copiedPath).name,
                     fileType=fixture.fileType,
                     storagePath=fixture.copiedPath,
@@ -57,23 +74,34 @@ class TaskService:
             policyPackIds=request.policyPackIds or [],
             rulePackIds=request.rulePackIds or [],
             externalContext=request.externalContext,
-            status='created',
+            status="created",
             createdAt=now,
             updatedAt=now,
         )
         self.store.create_task(task)
-        
+
         file_name = "未知文件"
         if task.sourceDocumentRef:
             file_name = task.sourceDocumentRef.fileName
-        
+
         from src.services.external_callbacks import trigger_task_created_callback
-        asyncio.create_task(trigger_task_created_callback(task.id, file_name, request.externalContext))
-        
+
+        try:
+            loop = asyncio.get_running_loop()
+            loop.create_task(
+                trigger_task_created_callback(
+                    task.id, file_name, request.externalContext
+                )
+            )
+        except RuntimeError:
+            pass
+
         return task
 
     def schedule_task(self, task_id: str):
-        self._running_tasks[task_id] = asyncio.create_task(self.runtime.execute_task(task_id))
+        self._running_tasks[task_id] = asyncio.create_task(
+            self.runtime.execute_task(task_id)
+        )
 
     def get_task(self, task_id: str):
         return self.store.get_task(task_id)
@@ -90,19 +118,30 @@ class TaskService:
             return None
         return task.result
 
-    def update_reviewer_decision(self, task_id: str, payload: ReviewerDecisionUpdateRequest) -> TaskRecord:
+    def update_reviewer_decision(
+        self, task_id: str, payload: ReviewerDecisionUpdateRequest
+    ) -> TaskRecord:
         task = self.store.get_task(task_id)
         if task is None:
-            raise KeyError(f'Task not found: {task_id}')
-        if task.taskType != 'structured_review':
-            raise ValueError('reviewer decision is only supported for structured_review tasks')
+            raise KeyError(f"Task not found: {task_id}")
+        if task.taskType != "structured_review":
+            raise ValueError(
+                "reviewer decision is only supported for structured_review tasks"
+            )
         decision = merge_reviewer_decision(task, payload)
         return self.store.update_task(task_id, reviewerDecision=decision)
 
-    def submit_report_feedback(self, *, report_id: str, feedback_type: str, comment: str | None = None, source: str | None = None) -> dict:
+    def submit_report_feedback(
+        self,
+        *,
+        report_id: str,
+        feedback_type: str,
+        comment: str | None = None,
+        source: str | None = None,
+    ) -> dict:
         task = self.store.get_task(report_id)
         if task is None:
-            raise KeyError(f'Report not found: {report_id}')
+            raise KeyError(f"Report not found: {report_id}")
         feedback_id = uuid.uuid4().hex
         return self.store.append_report_feedback(
             feedback_id=feedback_id,
@@ -117,9 +156,15 @@ class TaskService:
     def list_task_artifacts(self, task_id: str) -> list[TaskArtifact]:
         task = self.store.get_task(task_id)
         if task is None:
-            raise KeyError(f'Task not found: {task_id}')
-        has_artifact_index = isinstance(task.result, dict) and 'artifactIndex' in task.result
-        artifact_index = (task.result or {}).get('artifactIndex') if isinstance(task.result, dict) else None
+            raise KeyError(f"Task not found: {task_id}")
+        has_artifact_index = (
+            isinstance(task.result, dict) and "artifactIndex" in task.result
+        )
+        artifact_index = (
+            (task.result or {}).get("artifactIndex")
+            if isinstance(task.result, dict)
+            else None
+        )
         catalog = [self._coerce_artifact(item) for item in (artifact_index or [])]
         catalog = [item for item in catalog if item is not None]
         if has_artifact_index:
@@ -136,12 +181,12 @@ class TaskService:
                 TaskArtifact(
                     name=path.stem,
                     fileName=path.name,
-                    mediaType=media_type or 'application/octet-stream',
+                    mediaType=media_type or "application/octet-stream",
                     sizeBytes=path.stat().st_size,
-                    downloadUrl=f'/api/tasks/{task_id}/artifacts/{path.name}',
+                    downloadUrl=f"/api/tasks/{task_id}/artifacts/{path.name}",
                     category=self._infer_artifact_category(path.name),
-                    stage='generated',
-                    primary=path.suffix == '.md',
+                    stage="generated",
+                    primary=path.suffix == ".md",
                 )
             )
         return artifacts
@@ -149,7 +194,7 @@ class TaskService:
     def resolve_task_artifact(self, task_id: str, artifact_name: str) -> Path:
         task = self.store.get_task(task_id)
         if task is None:
-            raise KeyError(f'Task not found: {task_id}')
+            raise KeyError(f"Task not found: {task_id}")
         safe_name = Path(artifact_name).name
         path = (self.tasks_dir / task_id / safe_name).resolve()
         task_dir = (self.tasks_dir / task_id).resolve()
@@ -165,18 +210,18 @@ class TaskService:
         return TaskArtifact.model_validate(item)
 
     def _infer_artifact_category(self, file_name: str) -> str:
-        if 'parse' in file_name:
-            return 'parse'
-        if 'fact' in file_name:
-            return 'facts'
-        if 'rule' in file_name:
-            return 'rule_hits'
-        if 'candidate' in file_name:
-            return 'candidates'
-        if 'matrix' in file_name:
-            return 'matrices'
-        if file_name.endswith('.md') or file_name.endswith('.pdf'):
-            return 'report'
-        if 'result' in file_name:
-            return 'result'
-        return 'generic'
+        if "parse" in file_name:
+            return "parse"
+        if "fact" in file_name:
+            return "facts"
+        if "rule" in file_name:
+            return "rule_hits"
+        if "candidate" in file_name:
+            return "candidates"
+        if "matrix" in file_name:
+            return "matrices"
+        if file_name.endswith(".md") or file_name.endswith(".pdf"):
+            return "report"
+        if "result" in file_name:
+            return "result"
+        return "generic"

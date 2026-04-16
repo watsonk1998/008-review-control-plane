@@ -1117,8 +1117,6 @@ html, body {
   border: 1px solid #e5e7eb;
   box-shadow: 0 1px 3px rgba(0,0,0,0.04);
   contain: layout style;
-  content-visibility: auto;
-  contain-intrinsic-size: auto 600px;
 }
 
 .structured-report__section-header {
@@ -1283,6 +1281,7 @@ html, body {
 
 .structured-report__table-wrap {
   overflow-x: auto;
+  overscroll-behavior-x: contain;
   border-radius: 12px;
   border: 1px solid #d1d5db;
   background: #ffffff;
@@ -1444,7 +1443,7 @@ html, body {
     page-break-after: avoid;
   }
   .structured-report__table-wrap--landscape {
-    page: wide;
+    /* landscape rotation removed: page:wide forces a page break */
   }
   .structured-report__matrix-table thead { display: table-header-group; }
   .structured-report__matrix-table tr {
