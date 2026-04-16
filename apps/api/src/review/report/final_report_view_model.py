@@ -1237,7 +1237,19 @@ class FinalReportRenderer:
                 len(item.recommendation),
             )
 
-        return right if score(right) > score(left) else left
+        winner = right if score(right) > score(left) else left
+        loser = left if winner is right else right
+
+        # Merge hallucination risk and evidence span IDs
+        winner.hallucination_risk = left.hallucination_risk or right.hallucination_risk
+
+        # Merge span IDs and deduplicate
+        combined_spans = list(
+            dict.fromkeys(left.evidence_span_ids + right.evidence_span_ids)
+        )
+        winner.evidence_span_ids = combined_spans
+
+        return winner
 
     def _normalize_compare_text(self, text: str) -> str:
         return re.sub(r"[\W_]+", "", self._clean_text(text).lower())
