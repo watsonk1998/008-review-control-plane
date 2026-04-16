@@ -289,3 +289,14 @@ All user-visible content in reports, interfaces, and statuses MUST be presented 
 pipe-row 提取改为 cell-by-cell（最终版，上方旧 HG-26 的"按噪音抛弃"已被此方案取代）：
 1. 按 `|` 分割为单元格；2. 过滤表头标签；3. 保留含标准代号或 `《` 的 cell；4. 禁止 `findall(code)` 只提取裸代号。
 
+
+## Project Corrections Addendum (2026-04-16, Technical Debt Eradication & Harness Purity)
+
+> Source: Technical debt eradication session — removing OpenContracts, DeepTutor, GPT Researcher, and DeepResearchAgent legacy adapters.
+
+### Harness Engineering & System Purity Contract
+- **核心引擎纯净原则（Harness Purity）**：`hermes-review-agent` 已完全转向以 `hermes-agent` 为核心的闭环架构。严禁将项目重新变回“多能力编排底座”或“文档标注与语料管理平台”。
+- **废弃适配器永久隔离（HG-29）**：`DeepTutor`、`GPT Researcher`、`DeepResearchAgent` 相关的适配器代码（如 `gpt_researcher_adapter.py`、`deeptutor_adapter.py`、`planner.py`）已被彻底移除。**禁止在未来重新引入或恢复这些适配器及外部依赖（如 `gpt-researcher`、`arxiv` 库）**。唯一的例外是 `duckduckgo-search` 作为底层检索组件被保留。
+- **架构概念纠偏**：`DeepResearchRuntime` 已重命名为 `ReviewRuntime`，以彻底消除“深度研究（Deep Research）”带来的认知混乱。任何新功能的开发必须在 `HermesReviewEngine` 与 `HermesController` 的语义下进行。
+- **OpenContracts 思想吸收边界**：虽然我们摒弃了 OpenContracts 的产品壳和技术栈，但**必须深度保留其“对象模型意识（annotation, relationship, provenance）”**。系统的核心路线是强化证据溯源（evidence traceability），将所有发现锚定到具体的原文段落和法规条文上，禁止单纯的聊天对话模式。
+- **高熵资产清理纪律**：在确认历史资产（如 `archive/` 废件堆、过期的 `docs/90-archive/` 及 `scratch/` 实验代码）已经完成历史使命时，应果断物理删除以降低项目熵值，而非永久堆积。但**包含业务价值的测试集标签（如 `fixtures/review_eval/` 中基于 Gemini-deepresearch 的 Seed Labels）必须严格保留**。本条规则优先于早期关于“必须归档到 `archive/` 而非永久删除”的软性建议。

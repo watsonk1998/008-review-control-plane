@@ -706,7 +706,7 @@ main.shell {
   width: 100%;
   max-width: 100%;
   overflow-x: auto;
-  overscroll-behavior: contain;
+  overscroll-behavior-x: contain;
   background: transparent;
 }
 

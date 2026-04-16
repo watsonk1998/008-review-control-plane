@@ -171,6 +171,9 @@ function StructuredReportHtml({ htmlContent, printCss }: { htmlContent: string; 
     ? printCss
         .replace(/break-inside:\s*avoid;?/gi, "")
         .replace(/page-break-inside:\s*avoid;?/gi, "")
+        .replace(/content-visibility:\s*[^;]+;?/gi, "")
+        .replace(/contain-intrinsic-size:\s*[^;]+;?/gi, "")
+        .replace(/transition:\s*[^;]*box-shadow[^;]*;?/gi, "")
     : "";
 
   return (

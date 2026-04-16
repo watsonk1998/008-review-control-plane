@@ -13,7 +13,7 @@ from src.domain.models import (
     TaskArtifact,
     TaskRecord,
 )
-from src.orchestrator.deepresearch_runtime import DeepResearchRuntime
+from src.orchestrator.review_runtime import ReviewRuntime
 from src.repositories.sqlite_store import SQLiteTaskStore
 from src.review.reviewer_decision import merge_reviewer_decision
 
@@ -22,7 +22,7 @@ class TaskService:
     def __init__(
         self,
         store: SQLiteTaskStore,
-        runtime: DeepResearchRuntime,
+        runtime: ReviewRuntime,
         tasks_dir: Path | None = None,
         fixture_service=None,
     ):

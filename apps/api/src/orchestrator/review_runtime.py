@@ -15,7 +15,7 @@ from src.services.document_loader import DocumentLoader
 from src.services.fixture_service import FixtureService
 
 
-class DeepResearchRuntime:
+class ReviewRuntime:
     def __init__(
         self,
         *,

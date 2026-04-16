@@ -1,4 +1,14 @@
-# Changelog
+
+## [Unreleased] - 2026-04-16 (Technical Debt Eradication)
+### Removed
+- 彻底删除了大型无用第三方依赖 `gpt-researcher` 和 `arxiv`，仅保留轻量级 `duckduckgo-search`。
+- 移除了历史遗留的环境变量污染（如 `DEEPTUTOR_BRIDGE_PORT`、`GPT_RESEARCHER_MAX_ITERATIONS` 等 8 个无用配置）。
+- 物理删除了高熵历史资产：清空了 `archive/` 中 50+ 个历史废件、删除了过期的 `docs/90-archive/` 和 `scratch/` 实验目录，大幅降低了项目环境的熵值。
+
+### Changed
+- **核心引擎认知纠偏**：将 `apps/api/src/orchestrator/deepresearch_runtime.py` 重命名为 `review_runtime.py`，并将全局类名 `DeepResearchRuntime` 重构为 `ReviewRuntime`，彻底消除了旧有“深度研究”方向带来的认知混乱，与 `Hermes` 核心架构语境对齐。
+- **明确 Harness 边界**：正式在 `AGENTS.md` 中确立了废弃适配器永久隔离规则（HG-29），禁止重新引入 DeepTutor、GPT Researcher 等遗留平台代码。同时确立了对 OpenContracts 架构思想的吸收边界（保留证据溯源意识，拒绝产品壳迁移）。
+\n# Changelog
 
 本文件记录仓库层面的重要更新，重点保留对产品定位、正式审查契约、文档治理和交付入口有影响的变更。
 
