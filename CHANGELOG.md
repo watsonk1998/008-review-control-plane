@@ -39,6 +39,11 @@
 - **HG-24 新增规则**：工具写入多字节 JSON 字段后不可信，必须逐文件单独验证，批量验证会掩盖报错顺序；验证失败时改用 `write_to_file` 完整重写，不得重复 patch。
 - **剩余档级 3（合约层）未执行**：`domain/models.py` 中 `TaskType` 枚举的 4 个废弃类型（`knowledge_qa`、`deep_research` 等）待确认外部平台是否仍在使用后再处理。
 
+### Ops (CVE 修复与回调预期对齐 - 傍晚批次)
+
+- **修复 CVE-2026-25645（requests 中危漏洞）**：虽然系统未直接暴露受该漏洞波及的 `extract_zipped_paths()` 调用点，仍显式地将 `pyproject.toml` 中的 `requests` 依赖更新为 `>=2.33.0`，并在通过 `docker exec` 的形式对生产容器内依赖予以硬修复，坚持 Harness Engineering “零已知隐患”之原则，做实供应链安全防御纵深。
+- **澄清内源验证流水线隔离契约（回调免发功能）**：深入溯源了“Weknora 内部页面发起审查但在外部建果 AI 记录不可见”的情况，判定此系**明确设计的合理契约**：所有缺乏完整 `externalContext`（`agentId` / `callBackUrl`）入参的内部流均会被系统网关判定为测试或内部流而被切断向上游 Callbacks 通知，起到了内外部测试脏数据物理防泄漏的作用。
+
 ## 2026-04-15
 
 ### Fixed (证据验证模块回归修复 — 晚间批次)
