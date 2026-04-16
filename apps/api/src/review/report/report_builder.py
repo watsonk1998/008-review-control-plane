@@ -192,8 +192,10 @@ html, body {
   border-radius: 8px;
   padding: 20px;
   margin-bottom: 20px;
-  page-break-inside: avoid;
-  break-inside: avoid;
+  /* break-inside/page-break-inside intentionally omitted from screen styles:
+     these properties trigger forced reflow on every scroll event in long
+     reports (30+ cards), causing blank-screen hangs.  Print-only rules live
+     in @media print below. */
 }
 
 .structured-report__issue-card-title {
@@ -255,8 +257,7 @@ html, body {
   border-radius: 6px;
   padding: 16px;
   margin-bottom: 16px;
-  page-break-inside: avoid;
-  break-inside: avoid;
+  /* break-inside/page-break-inside: see issue-card comment above */
 }
 
 .structured-report__gap-item-title,

@@ -153,6 +153,19 @@ class NormativeValidityChecker:
         value = self._clean_text(text)
         if not value:
             return []
+
+        # Gate: skip markdown table rows before splitting.
+        # PDF/DOCX extractors sometimes produce table content as text blocks with
+        # pipe-separated cells (e.g. "| 序号 | 名称 | 编号 | …").  These should
+        # never enter normative-title extraction because they contain no actual
+        # standard references — they are header/body rows of a table that lists
+        # standards, not the standard references themselves.
+        # Heuristic: if the trimmed text starts with '|' OR contains ≥ 2 pipe
+        # characters, treat the whole block as a table row and return empty.
+        pipe_count = value.count('|')
+        if value.lstrip().startswith('|') or pipe_count >= 2:
+            return []
+
         normalized = re.sub(r'^[（(]?\d+[)）.、]\s*', '', value)
         return [part.strip('；;。 ') for part in re.split(r'[；;]', normalized) if part.strip('；;。 ')]
 

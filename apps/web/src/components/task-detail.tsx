@@ -414,9 +414,13 @@ export function TaskDetail({ taskId }: { taskId: string }) {
       ? debugCompletedAgents
       : completedAgentEvents.length;
     const stage = latestEvent?.stage || "";
+    // Use the task's actual creation time as the elapsed baseline so that
+    // navigating to a task that has been running for several minutes does NOT
+    // reset the simulated progress back to 0%.
+    const taskStartMs = task?.createdAt ? new Date(task.createdAt).getTime() : progressViewStartedAt;
     const elapsedSeconds = TERMINAL_STATES.has((task?.status || "").trim().toLowerCase())
       ? 0
-      : Math.max(0, Math.floor((now - progressViewStartedAt) / 1000));
+      : Math.max(0, Math.floor((now - taskStartMs) / 1000));
     const realPercent = estimateRealReviewProgress({
       totalAgents,
       completedAgents,
@@ -424,6 +428,13 @@ export function TaskDetail({ taskId }: { taskId: string }) {
       status: task?.status,
     });
     const simulatedPercent = estimateSimulatedProgress(elapsedSeconds);
+    // Use the higher of time-simulated vs stage-based estimates.
+    // This ensures that (a) users who open the page mid-run see a sensible
+    // percent immediately, and (b) explicit stage signals (agent_running → 60%+)
+    // always win over the slow time-ramp.
+    const effectivePercent = TERMINAL_STATES.has((task?.status || "").trim().toLowerCase())
+      ? 100
+      : Math.max(simulatedPercent, realPercent);
     return {
       latestEvent,
       currentStage: STAGE_LABELS[stage] || "审查执行中",
@@ -431,11 +442,9 @@ export function TaskDetail({ taskId }: { taskId: string }) {
       completedAgents,
       simulatedPercent,
       realPercent,
-      progressPercent: TERMINAL_STATES.has((task?.status || "").trim().toLowerCase())
-        ? 100
-        : simulatedPercent,
+      progressPercent: effectivePercent,
     };
-  }, [events, structuredResult, task?.status, now, progressViewStartedAt]);
+  }, [events, structuredResult, task?.status, task?.createdAt, now, progressViewStartedAt]);
 
   const reviewElapsedSeconds = useMemo(() => {
     if (!task) return 0;
