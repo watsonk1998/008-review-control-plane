@@ -6,6 +6,12 @@
 
 ## 2026-04-16
 
+### Fixed（傍晚批次 - 隔离机制与历史制品防御修复）
+
+- **Fixed (Core)**: 修复 `HermesTemplateRegistry` 中 `supported_document_types` 的越界污染漏洞。将文档类型支持由“加分项（Soft Score）”更改为“硬性门禁（Hard Gate）”，彻底解决因 `explicitly_enabled` (100分) 导致“施组专属”审查器错误穿透至其他方案审查的隔离机制失效问题。
+- **Fixed (Web)**: 为前端 `StructuredReportHtml` 组件追加针对历史任务 `reportPrintCss` 的深度防御清洗。通过正则全局剔除 `break-inside: avoid`，彻底解决读取旧任务快照时由于样式污染导致屏幕滚动出现 `O(n)` 强制重排、页面卡死白屏的回归问题（防御旧数据的 HG-25 违例）。
+- **Fixed (Tests)**: 修复由于重构和接口变更导致的 3 个过期测试用例。移除了已废弃的 `final_grade` 与 `report_markdown` 字段断言，并将 `primary_support_review` 产生的 `_advisory_note` 免责字段从严格模式校验（`==`）中 `.pop()`，确保测试架构容忍无害副作用。
+
 ### Fixed（下午批次 - UI 体验回归修复）
 
 #### 进度条逻辑重构（HG-26，第二次犯同一错误）

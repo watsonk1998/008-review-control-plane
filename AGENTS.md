@@ -193,6 +193,19 @@ All user-visible content in reports, interfaces, and statuses MUST be presented 
 
 - **前端及正式报告禁止出现 Emoji 表情符号（HG-23）**：所有用户可见内容——包括正式报告 HTML/PDF、前端页面、状态提示、模块标题——禁止使用任何 Emoji（Unicode Emoji 序列、Emoji_Presentation 字符）。如需视觉标识，使用 SVG 图标或纯 CSS 实现。此规则覆盖 `apps/web/`、`_FINAL_REPORT_CSS`、`FinalReportRenderer` 和所有 view model 输出。
 
+## Project Corrections Addendum (2026-04-16, Evening batch - Hard Gates & CSS Sanitization)
+
+> Source: Agent cross-contamination due to soft scoring, historical CSS causing frontend UI freezes, and test fragility post-refactoring.
+
+### Agent Routing Hard Gate Contract
+- **`supported_document_types` 必须作为硬性门禁（Hard Gate）**：在 `HermesTemplateRegistry` 路由筛选中，如果模板指定了 `supported_document_types` 且当前任务不匹配，必须提前 `continue` 剔除，严禁使用软性加分（Soft Score）机制。否则会被 `explicitly_enabled` (100分) 强势穿透，导致"施组专属审查"越界污染"配网工程方案"。
+
+### Frontend CSS Sanitization Contract
+- **针对历史脏数据的深度防御（防御 HG-25 污染）**：即使后端已修复新生成的报告 CSS（移除了全局的 `break-inside: avoid`），前端的 `StructuredReportHtml` 依然**必须**对提取自历史持久化任务的 `printCss` 进行正则表达式清洗（剔除 `break-inside` 和 `page-break-inside`）。绝不能盲目相信静态快照 payload 是安全的，防止老数据导致新版页面出现 `O(n)` 强制重排卡死。
+
+### Test Assertion Maintainability
+- **规避含有副作用字段的全局断言**：如果组件接口增加了如 `_advisory_note` 等具有免责/提示副作用的临时注入字段，对应的老测试应当主动剔除（如 `.pop("_advisory_note", None)`）此字段后再进行断言对比，严禁过度脆弱的全局字典相等断言（`==`）。同时，废弃字段（如 `final_grade`、`report_markdown`）的断言必须及时清理。
+
 ## Project Corrections Addendum (2026-04-16, 施组接入 + Agent 拆分 + 技术债务清理)
 
 > Source: 施工组织设计文档类型全量接入、内容一致性/技术方案 reviewer 粒度拆分、早期集成项目代码清理（commit 91f87fa）。

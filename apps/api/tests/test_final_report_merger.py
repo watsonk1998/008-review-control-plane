@@ -88,9 +88,7 @@ def test_final_report_merger_fuses_008_only_result():
     assert report["engines_used"] == ["008"]
     assert len(report["key_findings"]) == 2
     assert len(report["supplemental_findings"]) == 0
-    assert report["final_grade"] == "needs_revision"
     assert report["traceability"]
-    assert report["report_markdown"]
 
 
 def test_final_report_merger_keeps_hermes_only_findings_as_supplemental():
@@ -114,12 +112,12 @@ def test_final_report_merger_keeps_hermes_only_findings_as_supplemental():
         summary_metrics=ReviewPacketMetrics(total_findings=1, medium_severity=1),
     )
 
-    report = merger.fuse(brief, packet_008, hermes_packet)
+    report = merger.prepare_decision_material(brief, packet_008, hermes_packet)
 
-    assert "hermes" in report.engines_used
-    assert len(report.key_findings) == 2
-    assert len(report.supplemental_findings) == 1
-    assert report.supplemental_findings[0].id == "H-001"
+    assert "hermes" in report["engines_used"]
+    assert len(report["key_findings"]) == 2
+    assert len(report["supplemental_findings"]) == 1
+    assert report["supplemental_findings"][0].id == "H-001"
 
 
 def test_runtime_live_path_does_not_directly_depend_on_final_report_merger():

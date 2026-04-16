@@ -125,12 +125,18 @@ async def test_structured_review_capability_facade_primary_review_matches_execut
     )
     assert result["issues"][0]["supportModules"] == ["structure_completeness"]
     assert primary["module_id"] == "primary_support_review"
-    assert workspace["structured_support_result_008"]["summary"] == direct["summary"]
+
+    ws_summary = dict(workspace["structured_support_result_008"]["summary"])
+    ws_summary.pop("_advisory_note", None)
+    assert ws_summary == direct["summary"]
+
     assert primary["support_packet"]["engine"] == "008"
-    assert (
+
+    ps_summary = dict(
         PrimarySupportReviewOutput.model_validate(primary).support_result["summary"]
-        == direct["summary"]
     )
+    ps_summary.pop("_advisory_note", None)
+    assert ps_summary == direct["summary"]
 
 
 def test_structured_review_capability_facade_exposes_incremental_capabilities(
