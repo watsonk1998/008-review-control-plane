@@ -192,3 +192,39 @@ All user-visible content in reports, interfaces, and statuses MUST be presented 
 - **模板 JSON 创建/修改后必须执行验证门禁（HG-22）**：任何对 `templates/*.json` 的创建或修改操作完成后，必须立即执行以下验证：`python -c "import json; json.load(open('path/to/template.json'))"` 以及 `python -c "from src.review.hermes.template_models import AgentTemplate; AgentTemplate.model_validate_json(open('path').read())"`。两项均通过后方可提交。
 
 - **前端及正式报告禁止出现 Emoji 表情符号（HG-23）**：所有用户可见内容——包括正式报告 HTML/PDF、前端页面、状态提示、模块标题——禁止使用任何 Emoji（Unicode Emoji 序列、Emoji_Presentation 字符）。如需视觉标识，使用 SVG 图标或纯 CSS 实现。此规则覆盖 `apps/web/`、`_FINAL_REPORT_CSS`、`FinalReportRenderer` 和所有 view model 输出。
+
+## Project Corrections Addendum (2026-04-16, 施组接入 + Agent 拆分 + 技术债务清理)
+
+> Source: 施工组织设计文档类型全量接入、内容一致性/技术方案 reviewer 粒度拆分、早期集成项目代码清理（commit 91f87fa）。
+
+### 施工组织设计（construction_org）接入规则
+
+- **新增文档类型必须走四层流程**：L1 分类（前端 taxonomy）→ basis_registry.yaml → pack_registry.yaml → Hermes template JSON → module_bindings.py。缺任何一层都会导致 reviewer 不被选中或依据文件不加载，属于静默失败（无报错，功能不可见）。
+
+- **施组专属审查依据文件的 truth source 是 `knowledge/review_basis/`**：禁止直接从 `fixtures/` 读取作为正式审查依据；`fixtures/` 仅用于开发调试。迁移新标准时必须同步更新 `basis_registry.yaml` 条目。
+
+- **`supported_document_types` 是 reviewer 隔离的唯一机制**：施组专属 reviewer 必须设置 `supported_document_types: ["construction_org"]`，否则该 reviewer 会对所有文档类型生效，污染配网/危大方案审查结果。通用 reviewer 设置 `supported_document_types: []`（空数组）表示适用所有类型。
+
+### Agent 粒度拆分规则
+
+- **单 reviewer 禁止同时挂载 `parameter_consistency` 和 `execution_continuity` 两个模块**：参数矛盾与执行逻辑断点是不同职责，混在一个 reviewer 会导致 prompt 语义模糊、findings 归模块随机。
+
+- **`execution_risk_reviewer` 的职责已收窄为 `execution_continuity` 单模块**：其历史遗留的 `parameter_consistency` 职责已迁移至 `parameter_consistency_reviewer`（2026-04-16）。修改该文件时不得重新添加 `parameter_consistency` 声明。
+
+- **`module_bindings.py` 是 module → templates 的唯一映射层**：新建或拆分 reviewer 时，必须同步更新 `REVIEW_MODULE_BINDINGS` 中对应模块的 `hermes_templates` 列表，否则该 reviewer 永远不被任何模块选中。
+
+### JSON 模板写入硬门禁（HG-24，升级 HG-21/22）
+
+- **工具写入 JSON 不可信原则（HG-24）**：`multi_replace_file_content`/`replace_file_content` 对多字节中文字符的写入结果不可信，可能静默写入非 ASCII 替换字符（如「葶」代替「紧」）或中文弯引号（`\u201c\u201d`）。写入后必须**逐文件单独验证**，不能批量验证掩盖报错顺序：`python -c "import json; json.load(open('path.json'))" && echo OK || echo FAIL`。若验证失败，使用 `write_to_file（Overwrite: true）` 完整重写，不要再次用 patch 工具。
+
+- **HG-21 补充**：除 `\u201c\u201d`（中文弯双引号）外，`\u2018\u2019`（弯单引号）亦在禁止范围内，一律改用书名号（`《》`）或删除。
+
+### 技术债务清理规则
+
+- **DeepResearchRuntime 唯一支持的 task type 是 `structured_review`**：`knowledge_qa`、`deep_research`、`document_research`、`review_assist` 四个 task type 的执行路径已从 `deepresearch_runtime.py` 删除（2026-04-16，commit `91f87fa`）。引入新 task type 时必须在该文件显式添加分支，不得假设历史方法仍存在。
+
+- **FastGPT 向量知识库适配器保留**：`adapters/fastgpt_adapter.py` 和 `config/fastgpt.py` 具备独立扩展价值（向量知识库对接）。禁止在下次技术债务清理中删除这两个文件。
+
+- **已删除的 adapter 清单（禁止重新引入）**：`adapters/deeptutor_adapter.py`（DeepTutor WebSocket 客户端）、`adapters/gpt_researcher_adapter.py`（GPT Researcher HTTP 客户端）、`orchestrator/planner.py`（DeepResearchAgent capability chain 规划器）。
+
+- **根目录只存放配置文件和项目说明**：一次性 migration 脚本、调试脚本、工具脚本和截图禁止放在根目录，必须归档到 `archive/` 或移入 `scripts/`。
