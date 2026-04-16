@@ -167,9 +167,15 @@ function StructuredReportMarkdown({ markdown }: { markdown: string }) {
 }
 
 function StructuredReportHtml({ htmlContent, printCss }: { htmlContent: string; printCss?: string }) {
+  const safeCss = printCss 
+    ? printCss
+        .replace(/break-inside:\s*avoid;?/gi, "")
+        .replace(/page-break-inside:\s*avoid;?/gi, "")
+    : "";
+
   return (
     <div className="structured-report-host">
-      {printCss ? <style>{printCss}</style> : null}
+      {safeCss ? <style>{safeCss}</style> : null}
       <div dangerouslySetInnerHTML={{ __html: htmlContent }} />
     </div>
   );
