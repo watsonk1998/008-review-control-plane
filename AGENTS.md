@@ -228,3 +228,13 @@ All user-visible content in reports, interfaces, and statuses MUST be presented 
 - **已删除的 adapter 清单（禁止重新引入）**：`adapters/deeptutor_adapter.py`（DeepTutor WebSocket 客户端）、`adapters/gpt_researcher_adapter.py`（GPT Researcher HTTP 客户端）、`orchestrator/planner.py`（DeepResearchAgent capability chain 规划器）。
 
 - **根目录只存放配置文件和项目说明**：一次性 migration 脚本、调试脚本、工具脚本和截图禁止放在根目录，必须归档到 `archive/` 或移入 `scripts/`。
+
+## Project Corrections Addendum (2026-04-16, UI performance & extraction noise)
+
+> Source: Resolving Weknora frontend crashes, progress bar logic, markdown table extraction noise, and English key leakage.
+
+- **全局 CSS 禁止使用强制重排属性（HG-25）**：`break-inside: avoid` 和 `page-break-inside: avoid` 绝对禁止出现在全局（屏幕）CSS 中。它们只能被包裹在 `@media print { ... }` 块内。在几十张卡片的长列表中，这些属性会在滚动时引发 `O(n)` 的强制重排，导致浏览器白屏卡死。
+- **任务进度条必须以真实创建时间为基准**：前端 `task-detail.tsx` 的进度计时起点必须用 `task.createdAt`。禁止使用 `Date.now()`（页面打开时间），否则中途导航进入的长期运行任务会导致进度回退到 1%（时间差重置）。
+- **`progressPercent` 必须采信后端真实 stage 估值**：最终渲染的进度百分比必须 `Math.max(simulatedPercent, realPercent)`。当后端明确上报已完成多轮 agent 审查（`realPercent > 60%`）时，绝不允许被单纯基于时间推演的低进度（`simulatedPercent`）所覆盖。
+- **Markdown 表格提取免疫（HG-26）**：针对 PDF 等格式的识别缺陷（会把表格渲染为带竖线的 markdown 行），在 `_split_reference_candidates` 提取规范依据时增加硬提取门禁：任何首字符为 `|` 或单句含 `>=2` 个 `|` 的片段，直接按噪音抛弃。禁止使用简单的符号 split 导致整块表格被识别为一个标准名称。
+- **内部状态键必须做展现层隔离（HG-27）**：像 `title_detected_without_attachment_body` 等内部引擎状态 key，绝对禁止通过 `finding.summary` 渗透至最终正式审查报告中展示给用户。此类变量应始终在到达视图模型（View Model）前经 `_INTERNAL_DESCRIPTION_KEY_LABELS` 之类的字典实行收口翻译。
