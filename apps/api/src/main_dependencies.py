@@ -2,9 +2,7 @@ from __future__ import annotations
 
 from functools import lru_cache
 
-from src.adapters.deeptutor_adapter import DeepTutorAdapter
 from src.adapters.fastgpt_adapter import FastGPTAdapter
-from src.adapters.gpt_researcher_adapter import GPTResearcherAdapter
 from src.adapters.hermes_llm_adapter import HermesLLMAdapter
 from src.adapters.hermes_external_adapter import HermesExternalAdapter
 from src.adapters.hermes_router_adapter import HermesRouterAdapter
@@ -24,13 +22,16 @@ from src.services.task_service import TaskService
 from src.repositories.governance_store import SQLiteGovernanceStore
 from src.services.admin.governance_service import GovernanceService
 
+
 @lru_cache(maxsize=1)
 def get_governance_store() -> SQLiteGovernanceStore:
     return SQLiteGovernanceStore(get_settings().database_path)
 
+
 @lru_cache(maxsize=1)
 def get_governance_service() -> GovernanceService:
     return GovernanceService(get_governance_store())
+
 
 @lru_cache(maxsize=1)
 def get_store() -> SQLiteTaskStore:
@@ -58,20 +59,6 @@ def get_fast_adapter() -> FastGPTAdapter:
 
 
 @lru_cache(maxsize=1)
-def get_gpt_researcher_adapter() -> GPTResearcherAdapter:
-    return GPTResearcherAdapter(get_settings().gpt_researcher_external_path)
-
-
-@lru_cache(maxsize=1)
-def get_deeptutor_adapter() -> DeepTutorAdapter | None:
-    base_url = get_settings().deeptutor_base_url
-    if not base_url:
-        return None
-    return DeepTutorAdapter(base_url)
-
-
-
-@lru_cache(maxsize=1)
 def get_structured_review_executor() -> StructuredReviewExecutor:
     return StructuredReviewExecutor(
         document_loader=get_document_loader(),
@@ -80,12 +67,12 @@ def get_structured_review_executor() -> StructuredReviewExecutor:
     )
 
 
-
 @lru_cache(maxsize=1)
 def get_structured_review_capability_facade() -> StructuredReviewCapabilityFacade:
     return StructuredReviewCapabilityFacade(
         structured_review_executor=get_structured_review_executor(),
     )
+
 
 @lru_cache(maxsize=1)
 def get_fact_packet_adapter() -> FactPacketAdapter:
@@ -124,11 +111,9 @@ def get_hermes_controller() -> HermesController:
         runtime_template_dir=get_settings().tasks_dir / '_runtime_agent_templates',
     )
 
+
 @lru_cache(maxsize=1)
 def get_hermes_engine() -> HermesReviewEngine:
-    from src.adapters.hermes_external_adapter import HermesExternalAdapter
-    from src.adapters.hermes_llm_adapter import HermesLLMAdapter
-    from src.adapters.hermes_router_adapter import HermesRouterAdapter
     """
     Returns the hermes review engine instance.
     Per AGENTS.md, local kernel is NOT wired into the default production chain.
@@ -136,7 +121,6 @@ def get_hermes_engine() -> HermesReviewEngine:
     endpoint = get_settings().hermes_external_endpoint
     external = HermesExternalAdapter(endpoint=endpoint)
     llm = HermesLLMAdapter(llm_gateway=get_llm_gateway())
-
     return HermesRouterAdapter(None, external, llm)
 
 
@@ -147,9 +131,6 @@ def get_runtime() -> DeepResearchRuntime:
         fixture_service=get_fixture_service(),
         document_loader=get_document_loader(),
         llm_gateway=get_llm_gateway(),
-        fast_adapter=get_fast_adapter(),
-        gpt_researcher=get_gpt_researcher_adapter(),
-        deeptutor=get_deeptutor_adapter(),
         hermes_engine=get_hermes_engine(),
         hermes_controller=get_hermes_controller(),
         tasks_dir=get_settings().tasks_dir,
@@ -162,13 +143,10 @@ def get_task_service() -> TaskService:
 
 
 async def get_capability_health():
-    results = [
-        {'name': 'deepresearch_runtime', 'available': True, 'mode': 'local-compat-runtime', 'detail': 'planner/router/coordinator inside 008 API'},
-    ]
+    results: list[dict] = []
     for name, getter in [
         ('llm_gateway', get_llm_gateway),
         ('fastgpt', get_fast_adapter),
-        ('gpt_researcher', get_gpt_researcher_adapter),
         ('hermes_engine', get_hermes_engine),
     ]:
         try:
@@ -177,14 +155,4 @@ async def get_capability_health():
             results.append(result)
         except Exception as exc:
             results.append({'name': name, 'available': False, 'mode': 'error', 'detail': str(exc)})
-    deeptutor = get_deeptutor_adapter()
-    if deeptutor is None:
-        results.append({'name': 'deeptutor', 'available': False, 'mode': 'not-configured', 'detail': 'DEEPTUTOR_BASE_URL is not set'})
-    else:
-        try:
-            result = await deeptutor.health_check()
-            result['name'] = 'deeptutor'
-            results.append(result)
-        except Exception as exc:
-            results.append({'name': 'deeptutor', 'available': False, 'mode': 'error', 'detail': str(exc)})
     return results
