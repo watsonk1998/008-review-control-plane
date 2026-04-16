@@ -35,21 +35,4 @@ services:
       - .env
     environment:
       - PYTHONUNBUFFERED=1
-      - DEEPTUTOR_BASE_URL=http://deeptutor-bridge:8121
-    depends_on:
-      - deeptutor-bridge
 
-  deeptutor-bridge:
-    build:
-      context: .
-      dockerfile: Dockerfile.api
-    container_name: 008-deeptutor-bridge
-    restart: unless-stopped
-    volumes:
-      - .:/app
-      - /root/control/secrets/api-keys:/root/control/secrets/api-keys
-    env_file:
-      - .env
-    environment:
-      - PYTHONUNBUFFERED=1
-    command: python /app/scripts/run_deeptutor_bridge.py --host 0.0.0.0 --port 8121
