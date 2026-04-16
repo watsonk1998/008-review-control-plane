@@ -27,6 +27,7 @@ type TaxonomyGroup = {
 const ENTRY_LABEL_OVERRIDES: Record<string, string> = {
   special_scheme_review: "危大工程专项方案类",
   general_management_review: "一般专项与管理体系类",
+  construction_org_review: "施工组织设计审查",
 };
 
 const DOCUMENT_LABEL_OVERRIDES: Partial<Record<ReviewDocumentType, string>> = {
@@ -43,6 +44,13 @@ const TAG_LABEL_OVERRIDES: Record<string, string> = {
 };
 
 const FALLBACK_TAXONOMY: TaxonomyGroup[] = [
+  {
+    l1Key: "construction_org_review",
+    l1Label: "施工组织设计审查",
+    families: [
+      { documentType: "construction_org", label: "施工组织设计", tags: [] },
+    ],
+  },
   {
     l1Key: "special_scheme_review",
     l1Label: "危大工程专项方案类",

@@ -13,11 +13,11 @@ import type {
 } from "@/types/control-plane";
 
 const MODULE_OPTIONS: Array<{ key: keyof ModuleState; value: ReviewModuleName; label: string }> = [
-  { key: "docIntegrity", value: "structure_completeness", label: "章节完整性" },
-  { key: "paramConsistency", value: "parameter_consistency", label: "参数一致性" },
-  { key: "compliance", value: "legality_compliance", label: "合法合规性" },
-  { key: "flowContinuity", value: "execution_continuity", label: "工序连贯性" },
-  { key: "evidenceVerification", value: "evidence_validation", label: "证据验证" },
+  { key: "docIntegrity", value: "structure_completeness", label: "文档完整性" },
+  { key: "paramConsistency", value: "parameter_consistency", label: "内容一致性" },
+  { key: "compliance", value: "legality_compliance", label: "合规审查" },
+  { key: "flowContinuity", value: "execution_continuity", label: "技术方案审查" },
+  { key: "evidenceVerification", value: "evidence_validation", label: "依据与验证" },
 ];
 
 type ModuleState = {

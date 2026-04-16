@@ -1,0 +1,60 @@
+{
+  "id": "construction_org_technical_reviewer",
+  "agent_name": "施工组织设计技术方案审查",
+  "agent_purpose": "审查施工组织设计的技术方案合理性，包括施工方法可行性、工序逻辑、危大工程管控、季节性措施和应急预案",
+  "agent_scope": "execution_continuity",
+  "execution_mode": "hermes_router",
+  "module_bindings": [
+    "fact_extract",
+    "rule_and_evidence"
+  ],
+  "supported_document_types": ["construction_org"],
+  "focus_keywords": [
+    "施工方法",
+    "主要施工方案",
+    "施工工艺",
+    "工序",
+    "施工顺序",
+    "施工流程",
+    "危险性较大",
+    "危大工程",
+    "专项施工方案",
+    "季节性施工",
+    "冬雨期施工",
+    "应急预案",
+    "应急响应",
+    "脚手架",
+    "起重吊装",
+    "地基基础",
+    "主体结构",
+    "装修装饰"
+  ],
+  "required_context_types": [
+    "target_document"
+  ],
+  "input_contract": {
+    "type": "review_brief"
+  },
+  "output_contract": {
+    "type": "fact_packet",
+    "role": "main_review"
+  },
+  "instructions": "对施工组织设计的技术方案进行实质性审查：\n1. **施工方法可行性**：主要分部分项工程（地基基础、主体结构、装修装饰、机电安装）所提出的施工方法是否具体可操作，是否适合工程规模和现场条件\n2. **工序逻辑合理性**：施工顺序是否符合工程建设客观规律（地基→主体→装饰→机电），流水段划分是否清晰，各工序衔接是否合理\n3. **危大工程管控**：是否明确识别本工程涉及的危险性较大的分部分项工程，是否制定专项施工方案编制计划（含深基坑、高大模板、起重吊装、脚手架等）\n4. **季节性施工措施**：是否针对工程所在地气候特点（冬期、雨期）制定具体施工措施，措施是否有针对性\n5. **应急预案充分性**：应急预案是否覆盖本工程主要风险（如坍塌、高处坠落、触电、火灾等），应急响应流程是否具体\n6. **新技术新工艺**：提到采用新技术新工艺时，是否有相应的技术资料和论证支撑\n\n输出时引用对应的 GB/T 50502-2009 条款（如 5.5.1、5.5.2、7.4 等）。",
+  "prompt": "请审查此施工组织设计的技术方案合理性，重点检查主要施工方法的可行性、施工工序逻辑、危大工程专项方案计划、季节性施工措施和应急预案的充分性。",
+  "default_enabled": true,
+  "save_policy": {
+    "seed": true
+  },
+  "template_version": "1.0.0",
+  "compatibility": {
+    "controller": "hermes_v0"
+  },
+  "metadata": {
+    "review_modules": [
+      "execution_continuity"
+    ],
+    "ownership": "hermes_main_review"
+  },
+  "input_token_limit": 200000,
+  "output_token_limit": 200000
+}

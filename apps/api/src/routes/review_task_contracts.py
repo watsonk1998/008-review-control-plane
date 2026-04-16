@@ -284,27 +284,36 @@ def _build_export_links(task: TaskRecord, artifacts: list[TaskArtifact]) -> Revi
     return links
 
 
-def _group_issue_module_fallback(issue: dict[str, Any]) -> str:
+def _group_issue_module_fallback(issue: dict[str, Any], document_type: str = '') -> str:
     """Legacy heuristic fallback only.
 
     The canonical path prefers explicit module metadata emitted by Hermes review packets,
     decision packets, and support-material annotations. This function exists only for
     orphan support issues that still lack execution metadata.
+
+    Keywords are loaded from config/module_routing.yaml (shared with FinalReportRenderer).
     """
+    from src.review.report.final_report_view_model import _get_module_keywords
 
     title = f"{issue.get('title', '')} {issue.get('summary', '')}".lower()
     if issue.get('issueKind') in {'visibility_gap', 'evidence_gap'} or issue.get('evidenceMissing') or issue.get('manualReviewNeeded'):
         return 'evidence_validation'
-    # Normative validity / calculation topics MUST route to evidence_validation,
-    # even when they originate from non-ev templates (AGENTS.md HG-15).
-    if any(token in title for token in ['编制依据', '现行有效', '废止', '过期', '替代', '规范版本', '标准号']):
-        return 'evidence_validation'
-    if any(token in title for token in ['计算', '验算', '公式', '算式']):
-        return 'evidence_validation'
-    if any(token in title for token in ['参数', 'capacity', '荷载', '吨', '重量', '技术参数', 'consistency']):
-        return 'parameter_consistency'
-    if any(token in title for token in ['停送电', '流程', '工序', '衔接', '执行', 'sequence', 'continuity']):
-        return 'execution_continuity'
+
+    # Config-driven keyword routing
+    kw_map = _get_module_keywords(document_type)
+    route_order = [
+        'evidence_validation',
+        'structure_completeness',
+        'parameter_consistency',
+        'legality_compliance',
+        'execution_continuity',
+    ]
+    for mod in route_order:
+        keywords = kw_map.get(mod, [])
+        if any(token in title for token in keywords):
+            return mod
+
+    # Layer-based fallback for legacy support issues
     if issue.get('layer') == 'L1':
         return 'structure_completeness'
     if issue.get('layer') == 'L2':

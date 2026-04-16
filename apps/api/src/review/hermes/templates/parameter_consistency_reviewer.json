@@ -1,0 +1,53 @@
+{
+  "id": "parameter_consistency_reviewer",
+  "agent_name": "内容一致性审查",
+  "agent_purpose": "审查文档内部数据与参数的一致性，检测方案各章节之间的矛盾和前后不符",
+  "agent_scope": "parameter_consistency",
+  "execution_mode": "hermes_router",
+  "module_bindings": [
+    "fact_extract",
+    "rule_and_evidence"
+  ],
+  "supported_document_types": [],
+  "focus_keywords": [
+    "一致性",
+    "参数",
+    "矛盾",
+    "冲突",
+    "不符",
+    "目标",
+    "指标",
+    "数量",
+    "规模",
+    "清单",
+    "图纸"
+  ],
+  "required_context_types": [
+    "target_document"
+  ],
+  "input_contract": {
+    "type": "review_brief"
+  },
+  "output_contract": {
+    "type": "fact_packet",
+    "role": "main_review"
+  },
+  "instructions": "审查文档内部参数一致性，重点识别：(1) 工程规模/数量参数在不同章节前后不一致；(2) 人员/资质描述与实际安排矛盾；(3) 施工目标与具体计划不匹配；(4) 附图/附表参数与正文冲突；(5) 引用文件版本与正文适用性不符。输出时注明矛盾出现的章节位置。",
+  "prompt": "请审查此方案文档内部各章节参数的一致性，识别数据矛盾、目标与计划不匹配、人员清单与方案安排冲突等问题。",
+  "default_enabled": true,
+  "save_policy": {
+    "seed": true
+  },
+  "template_version": "1.0.0",
+  "compatibility": {
+    "controller": "hermes_v0"
+  },
+  "metadata": {
+    "review_modules": [
+      "parameter_consistency"
+    ],
+    "ownership": "hermes_main_review"
+  },
+  "input_token_limit": 200000,
+  "output_token_limit": 200000
+}

@@ -1,0 +1,61 @@
+{
+  "id": "construction_org_structure_reviewer",
+  "agent_name": "施工组织设计章节完整性审查",
+  "agent_purpose": "依据《建筑施工组织设计规范》GB/T 50502-2009，审核施工组织设计必备章节的覆盖完整性",
+  "agent_scope": "structure_completeness",
+  "execution_mode": "hermes_router",
+  "module_bindings": [
+    "primary_support_review",
+    "profile_and_packs"
+  ],
+  "supported_document_types": ["construction_org"],
+  "focus_keywords": [
+    "施工组织设计",
+    "施工组织总设计",
+    "总体部署",
+    "施工部署",
+    "进度计划",
+    "施工总进度",
+    "资源配置",
+    "劳动力配置",
+    "物资配置",
+    "主要施工方法",
+    "施工现场平面布置",
+    "施工总平面",
+    "管理计划",
+    "安全管理计划",
+    "质量管理计划",
+    "环境管理计划",
+    "成本管理计划",
+    "应急预案",
+    "编制依据"
+  ],
+  "required_context_types": [
+    "target_document"
+  ],
+  "input_contract": {
+    "type": "review_brief"
+  },
+  "output_contract": {
+    "type": "fact_packet",
+    "role": "main_review"
+  },
+  "instructions": "依据《建筑施工组织设计规范》GB/T 50502-2009 第3至第7章的要求，审查施工组织设计文档是否完整覆盖以下必备章节：\n1. 编制依据（相关法律法规、合同、设计文件等）\n2. 工程概况（工程主要情况、施工条件）\n3. 施工部署（施工目标、进度安排、空间组织、管理组织机构）\n4. 施工进度计划（横道图或网络图）\n5. 施工准备与资源配置计划（技术准备、现场准备、劳动力、物资）\n6. 主要施工方法（主要分部分项工程施工方法）\n7. 施工现场平面布置（各阶段平面布置图）\n8. 主要施工管理计划（进度、质量、安全、环境、成本管理计划）\n\n对于缺失或严重简化的章节，输出具体的不符合条款（如：3.0.4、5.2、7.4等）。",
+  "prompt": "请根据《建筑施工组织设计规范》GB/T 50502-2009 的规定，审核此施工组织设计文档的章节结构完整性，并指出缺失或不符合要求的章节及对应的规范条款。",
+  "default_enabled": true,
+  "save_policy": {
+    "seed": true
+  },
+  "template_version": "1.0.0",
+  "compatibility": {
+    "controller": "hermes_v0"
+  },
+  "metadata": {
+    "review_modules": [
+      "structure_completeness"
+    ],
+    "ownership": "hermes_main_review"
+  },
+  "input_token_limit": 200000,
+  "output_token_limit": 200000
+}

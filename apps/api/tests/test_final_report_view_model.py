@@ -132,7 +132,7 @@ def test_final_report_view_model_builds_sections_and_compact_chapter_matrix():
     view_model = renderer.build_view_model(final_packet=packet, support_result=support_result)
 
     assert view_model.executiveSummaryView.verdict == '不通过'
-    assert view_model.executiveSummaryView.metrics[0].label == '章节完整性'
+    assert view_model.executiveSummaryView.metrics[0].label == '文档完整性'
     assert '监理工程师对停电施工方案的审核规则及要点' not in view_model.basisFiles
     assert '《危险性较大的分部分项工程专项施工方案编制指南》（建办质〔2021〕48号）' not in ''.join(view_model.basisFiles)
     assert '《中国南方电网公司电网建设工程专项施工方案管理工作指引》（2022）' in view_model.basisFiles
@@ -144,7 +144,7 @@ def test_final_report_view_model_builds_sections_and_compact_chapter_matrix():
     html = renderer.render_html(view_model)
     css = renderer.render_print_css()
     assert '问题定位' in html
-    assert '章节完整性矩阵' not in html
+    assert '文档完整性矩阵' not in html
     assert '编制依据现行有效性核验' in html
     assert '相关审查意见' not in html
     assert 'structured-report__table-wrap--landscape' in html
@@ -240,8 +240,8 @@ def test_final_report_view_model_filters_to_selected_modules_and_dedupes_near_du
     assert [section.key for section in view_model.sections] == ['structure_completeness', 'execution_continuity']
     assert len(view_model.sections[0].issues) == 1
     assert view_model.sections[0].issues[0].location.startswith('第六章')
-    assert view_model.executiveSummaryView.metrics[0].label == '章节完整性'
-    assert view_model.executiveSummaryView.metrics[1].label == '工序连贯性'
+    assert view_model.executiveSummaryView.metrics[0].label == '文档完整性'
+    assert view_model.executiveSummaryView.metrics[1].label == '技术方案审查'
 
 
 # ---------------------------------------------------------------------------
@@ -278,7 +278,7 @@ def test_legacy_executive_summary_with_stats_is_filtered_in_narrative():
         review_id='r-legacy',
         executive_summary=(
             '本次审查已由专业主审组件裁决完成，总体评级结论为：**不通过**。'
-            ' 本次结果共覆盖 5 个审查模块（章节完整性、合法合规性、证据验证、参数一致性、工序连贯性），'
+            ' 本次结果共覆盖 5 个审查模块（文档完整性、合规审查、依据与验证、内容一致性、技术方案审查），'
             '形成 103 项审查问题（高风险 48 项，中等风险 47 项，低风险 1 项）。'
         ),
         all_findings=[],
@@ -547,7 +547,7 @@ def test_normative_validity_table_appears_in_evidence_validation_html():
     assert 'GB 50303-2015' in html_output
     assert 'DL/T 5161.1-2013' in html_output
     # Must be in evidence_validation section
-    assert '\u8bc1\u636e\u9a8c\u8bc1' in html_output
+    assert '依据与验证' in html_output
 
 
 def test_calculation_finding_only_in_evidence_validation():
@@ -799,7 +799,7 @@ def test_calculation_fallback_finding_renders_in_evidence_validation():
     # HTML must also contain the finding
     html_output = renderer.render_html(vm)
     assert '\u8ba1\u7b97\u6838\u9a8c' in html_output
-    assert '\u8bc1\u636e\u9a8c\u8bc1' in html_output
+    assert '依据与验证' in html_output
 
 
 # ---- Regression tests: title keyword routing ----

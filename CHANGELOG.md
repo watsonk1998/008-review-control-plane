@@ -4,6 +4,41 @@
 
 > 说明：本次按 2026-03 至 2026-04 的时间窗进行了核查。当前仓库可确认的主线变更集中在 `2026-04-02` 至 `2026-04-13`；若无对应 repo 事实，不为 3 月单独虚构条目。
 
+## 2026-04-16
+
+### Added (施工组织设计审查接入)
+
+- **新增 `construction_org` 文档类型**（施工组织设计审查）：完成从知识库到前端的全链路接入。
+  - 将 7 个施组审查依据文件从 `fixtures/construction/` 迁移至 `knowledge/review_basis/`（国家标准、行业标准、法律法规三类）。
+  - `basis_registry.yaml` 新增 6 个条目（`construction_org_safety_major_hazard_2024`、`construction_org_safety_hazardous_notification_2018` 等），`pack_registry.yaml` 的 `construction_org.base` pack 覆盖全部 7 个依据文件。
+  - 前端 `structured-review-form.tsx` 新增"施工组织设计审查"L1 分类，与危大方案、配网专项并列。
+  - 新建施组专属 Hermes reviewer 模板 4 个：`construction_org_structure_reviewer`（文档结构完整性）、`construction_org_compliance_reviewer`（合规审查）、`construction_org_consistency_reviewer`（内容一致性）、`construction_org_technical_reviewer`（技术方案审查）。
+
+### Refactored (Agent 粒度拆分)
+
+- **拆分内容一致性与技术方案审查 agent**（所有文档类型均受益）：
+  - 新建通用 `parameter_consistency_reviewer`：专职审查文档内部参数矛盾（工程规模/数量/目标在各章节前后不一致）。
+  - `execution_risk_reviewer` 职责收窄至 `execution_continuity` 单模块（工序逻辑断点、资源协调缺口），移除其兼职的 `parameter_consistency` 职责。
+  - `module_bindings.py` 同步更新：`parameter_consistency` 模块由 `parameter_consistency_reviewer` + `construction_org_consistency_reviewer` 承接；`execution_continuity` 模块增加 `construction_org_technical_reviewer`。
+  - 施组场景专属 agent 合计 4 个，与 7 个通用 agent 并存，通过 `supported_document_types` 隔离，无交叉污染。
+
+### Chore (技术债务清理 — 早期集成项目残留)
+
+- **删除 DeepTutor、GPT Researcher、DeepResearchAgent 遗留代码**（625 行净削减，commit `91f87fa`）：
+  - 删除文件：`adapters/deeptutor_adapter.py`、`adapters/gpt_researcher_adapter.py`、`orchestrator/planner.py`。
+  - `orchestrator/deepresearch_runtime.py`：393 行 → 185 行，删除 `_run_knowledge_qa`、`_run_deep_research`、`_run_document_research`、`_run_review_assist`、`_retrieve_fast_chunks` 5 个废弃方法，内联 `_build_plan` 替代已删除的 planner.py，`__init__` 移除 `fast_adapter`、`gpt_researcher`、`deeptutor` 三个废弃依赖参数。
+  - `orchestrator/router.py`：删除 `infer_default_dataset()`（FastGPT dataset 路由）和 `choose_capability_chain()`（legacy capability chain），两者已无调用方。
+  - `main_dependencies.py`：191 行 → 135 行，删除 `get_deeptutor_adapter()`、`get_gpt_researcher_adapter()`，精简 `get_runtime()` 签名，`get_capability_health()` 仅保留 `llm_gateway`、`fastgpt`、`hermes_engine` 三项活跃组件。
+  - `config/settings.py`：移除 `gpt_researcher_external_path`、`deeptutor_base_url` 两个废弃字段。
+  - 根目录 migration 脚本、调试脚本和截图归档至 `archive/root_scripts/`。
+- **保留 FastGPT 向量知识库适配器**：`adapters/fastgpt_adapter.py` + `config/fastgpt.py` 具备独立扩展价值（向量知识库 RAG 对接能力），不在本轮清理范围内。
+
+### Notes
+
+- 本轮 Harness Engineering 执行纪律：(1) 改 module_bindings.py 之前必须确认 template JSON 已验证通过；(2) 删除文件前必须确认所有 import 调用方已同步清除；(3) 625 行净删除以"35 tests passed, 0 failed"作为阶段性交付证据。
+- **HG-24 新增规则**：工具写入多字节 JSON 字段后不可信，必须逐文件单独验证，批量验证会掩盖报错顺序；验证失败时改用 `write_to_file` 完整重写，不得重复 patch。
+- **剩余档级 3（合约层）未执行**：`domain/models.py` 中 `TaskType` 枚举的 4 个废弃类型（`knowledge_qa`、`deep_research` 等）待确认外部平台是否仍在使用后再处理。
+
 ## 2026-04-15
 
 ### Fixed (证据验证模块回归修复 — 晚间批次)

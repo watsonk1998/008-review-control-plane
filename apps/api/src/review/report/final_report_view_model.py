@@ -3,20 +3,78 @@ from __future__ import annotations
 import html
 import re
 from difflib import SequenceMatcher
+from pathlib import Path
 from typing import Any
 
+import yaml
 from pydantic import BaseModel, Field
 
 from src.review.contracts import FinalReportPacket
 from src.review.evidence.packs import get_evidence_pack_registry
 
 
+# ---------------------------------------------------------------------------
+# Module routing configuration (loaded from config/module_routing.yaml)
+# ---------------------------------------------------------------------------
+_MODULE_ROUTING_CONFIG: dict[str, Any] | None = None
+_CONFIG_PATH = Path(__file__).resolve().parents[5] / 'config' / 'module_routing.yaml'
+
+
+def _load_module_routing_config() -> dict[str, Any]:
+    """Load and cache module routing keyword configuration."""
+    global _MODULE_ROUTING_CONFIG
+    if _MODULE_ROUTING_CONFIG is not None:
+        return _MODULE_ROUTING_CONFIG
+    if _CONFIG_PATH.exists():
+        with open(_CONFIG_PATH, encoding='utf-8') as f:
+            _MODULE_ROUTING_CONFIG = yaml.safe_load(f) or {}
+    else:
+        _MODULE_ROUTING_CONFIG = {}
+    return _MODULE_ROUTING_CONFIG
+
+
+def _get_module_keywords(document_type: str = '') -> dict[str, list[str]]:
+    """Return merged keyword lists per module: generic + domain-specific."""
+    cfg = _load_module_routing_config()
+    generic = dict(cfg.get('generic', {}))
+    domain = cfg.get('document_types', {}).get(document_type, {})
+    merged: dict[str, list[str]] = {}
+    for module in _MODULE_TITLES:
+        base = list(generic.get(module, []))
+        extra = list(domain.get(module, []))
+        merged[module] = base + extra
+    return merged
+
+
 _MODULE_TITLES = {
-    'structure_completeness': '章节完整性',
-    'parameter_consistency': '参数一致性',
-    'legality_compliance': '合法合规性',
-    'execution_continuity': '工序连贯性',
-    'evidence_validation': '证据验证',
+    'structure_completeness': '文档完整性',
+    'parameter_consistency': '内容一致性',
+    'legality_compliance': '合规审查',
+    'execution_continuity': '技术方案审查',
+    'evidence_validation': '依据与验证',
+}
+
+_MODULE_META: dict[str, dict[str, str]] = {
+    'structure_completeness': {
+        'scope': '审查方案是否覆盖规范要求的必备章节、目录项和大纲结构',
+        'theme': 'blue',
+    },
+    'parameter_consistency': {
+        'scope': '核验方案中数值、名称、人员配置、编号等信息在各处引用是否前后统一',
+        'theme': 'purple',
+    },
+    'legality_compliance': {
+        'scope': '审查方案内容是否符合现行法律法规、强制性条文和行业安全规程的要求',
+        'theme': 'red',
+    },
+    'execution_continuity': {
+        'scope': '审查施工技术措施、安全防护措施、工艺方案和应急预案的充分性与合理性',
+        'theme': 'amber',
+    },
+    'evidence_validation': {
+        'scope': '核验编制依据的现行有效性、计算过程的正确性和佐证材料的充分性',
+        'theme': 'green',
+    },
 }
 
 _MODULE_ORDER = [
@@ -128,6 +186,7 @@ class FinalReportViewModel(BaseModel):
 
 
 class FinalReportRenderer:
+    _document_type: str = ''
     def build_view_model(
         self,
         *,
@@ -139,6 +198,7 @@ class FinalReportRenderer:
         support = dict(support_result or {})
         summary = dict(support.get('summary') or {})
         document_type = str(summary.get('documentType') or packet.get('metadata', {}).get('document_type') or '')
+        self._document_type = document_type
         document_label = _DOCUMENT_TYPE_LABELS.get(document_type, document_type or '审查文档')
         effective_modules = self._resolve_selected_modules(packet, selected_modules)
         support_issues = [item for item in support.get('issues', []) if isinstance(item, dict)]
@@ -192,7 +252,7 @@ class FinalReportRenderer:
         parts = [
             '<article class="structured-report structured-report--final">',
             f'<h1 class="structured-report__title">{html.escape(view_model.title)}</h1>',
-            '<section class="structured-report__section">',
+            '<section class="structured-report__section structured-report__section--overview">',
             '<h2 class="structured-report__section-title">第一部分：审查结论与审查依据</h2>',
             '<div class="structured-report__subsection">',
             '<h3 class="structured-report__subsection-title">1. 总体审查结论</h3>',
@@ -254,16 +314,44 @@ class FinalReportRenderer:
                 parts.append('<p class="structured-report__summary">本次未生成可展示的综合结论。</p>')
         return parts
 
+    def _render_section_header(self, section_number: int, section: FinalReportSectionView) -> list[str]:
+        """Render a themed section header with scope description and stats badge."""
+        meta = _MODULE_META.get(section.key, {})
+        theme = meta.get('theme', 'blue')
+        scope = meta.get('scope', '')
+        parts = [
+            f'<section class="structured-report__section structured-report__section--{theme}">',
+            f'<div class="structured-report__section-header">',
+            f'<h2 class="structured-report__section-title structured-report__section-title--{theme}">第{_number_to_cn(section_number)}部分：{html.escape(section.title)}</h2>',
+        ]
+        # Stats badges
+        total = len(section.issues)
+        high_count = sum(1 for i in section.issues if i.severity == 'high')
+        medium_count = sum(1 for i in section.issues if i.severity == 'medium')
+        if total > 0:
+            badge_parts = [f'{total}项']
+            if high_count:
+                badge_parts.append(f'高危{high_count}')
+            if medium_count:
+                badge_parts.append(f'中危{medium_count}')
+            parts.append(f'<span class="structured-report__section-badge structured-report__section-badge--{theme}">{" / ".join(badge_parts)}</span>')
+        parts.append('</div>')  # close section-header
+        if scope:
+            parts.append(
+                f'<div class="structured-report__section-scope">'
+                f'<span class="structured-report__section-scope-label">审查范围</span>'
+                f'<span class="structured-report__section-scope-text">{html.escape(scope)}</span>'
+                f'</div>'
+            )
+        return parts
+
     def _render_chapter_completeness_section(
         self,
         section_number: int,
         section: FinalReportSectionView,
         chapter: ChapterCompletenessView,
     ) -> list[str]:
-        parts = [
-            '<section class="structured-report__section">',
-            f'<h2 class="structured-report__section-title">第{_number_to_cn(section_number)}部分：{html.escape(section.title)}</h2>',
-        ]
+        parts = self._render_section_header(section_number, section)
         if chapter.tableRows:
             parts.extend([
                 '<div class="structured-report__subsection">',
@@ -301,10 +389,7 @@ class FinalReportRenderer:
         section: FinalReportSectionView,
         normative_validity: NormativeValidityView,
     ) -> list[str]:
-        parts = [
-            '<section class="structured-report__section">',
-            f'<h2 class="structured-report__section-title">第{_number_to_cn(section_number)}部分：{html.escape(section.title)}</h2>',
-        ]
+        parts = self._render_section_header(section_number, section)
         if normative_validity.checks:
             parts.extend([
                 '<div class="structured-report__subsection">',
@@ -346,10 +431,7 @@ class FinalReportRenderer:
         return parts
 
     def _render_issue_section(self, section_number: int, section: FinalReportSectionView) -> list[str]:
-        parts = [
-            '<section class="structured-report__section">',
-            f'<h2 class="structured-report__section-title">第{_number_to_cn(section_number)}部分：{html.escape(section.title)}</h2>',
-        ]
+        parts = self._render_section_header(section_number, section)
         if section.issues:
             parts.extend(self._render_issue_cards(section.issues))
         else:
@@ -710,27 +792,37 @@ class FinalReportRenderer:
         template_id = self._clean_text(raw_data.get('template_id'))
         if template_id in self._TEMPLATE_HARD_MODULE:
             return self._TEMPLATE_HARD_MODULE[template_id]
+
+        # Keyword-based correction — runs BEFORE module_name because
+        # Hermes templates often mis-label findings (e.g. marking
+        # "现场勘察记录缺失" as execution_continuity when it's evidence).
+        # Route order: structure → parameter → compliance → evidence → execution(catch-all)
+        title_text = f"{self._clean_text(finding.get('title'))} {self._clean_text(finding.get('summary'))}".lower()
+        kw_map = _get_module_keywords(self._document_type)
+
+        route_order = [
+            'structure_completeness',
+            'parameter_consistency',
+            'legality_compliance',
+            'evidence_validation',
+            'execution_continuity',
+        ]
+        for mod in route_order:
+            keywords = kw_map.get(mod, [])
+            if any(token in title_text for token in keywords):
+                return mod
+
+        # Hermes module_name as secondary fallback
         module_name = self._clean_text(raw_data.get('module_name'))
         if module_name in _MODULE_TITLES:
             return module_name
-        # Title keyword fallback — intercepts findings whose category may
-        # be generic ('compliance') but whose topic belongs to a specific
-        # module.  This mirrors agent_runner._resolve_finding_module_name
-        # and ensures cross-template findings are routed correctly.
-        title_text = f"{self._clean_text(finding.get('title'))} {self._clean_text(finding.get('summary'))}".lower()
-        if any(token in title_text for token in ['编制依据', '现行有效', '废止', '过期', '替代', '规范版本', '标准号']):
-            return 'evidence_validation'
-        if any(token in title_text for token in ['计算', '验算', '公式', '算式']):
-            return 'evidence_validation'
-        if any(token in title_text for token in ['停送电', '执行链路', '工序', '连续', '衔接']):
-            return 'execution_continuity'
-        if any(token in title_text for token in ['参数', '荷载', '吨', '重量', '一致']):
-            return 'parameter_consistency'
+
+        # Category-based fallback
         category = self._clean_text(finding.get('category'))
         category_map = {
             'chapter_completeness': 'structure_completeness',
             'structure': 'structure_completeness',
-            'visibility': 'structure_completeness',
+            'visibility': 'evidence_validation',
             'parameter_consistency': 'parameter_consistency',
             'compliance': 'legality_compliance',
             'safety': 'legality_compliance',
@@ -949,7 +1041,7 @@ def _number_to_cn(value: int) -> str:
 
 _FINAL_REPORT_CSS = """
 html, body {
-  background: #ffffff !important;
+  background: #f8f9fb !important;
   margin: 0;
   padding: 0;
   -webkit-print-color-adjust: exact;
@@ -961,8 +1053,8 @@ html, body {
 .structured-report {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 28px;
-  background: #ffffff;
+  padding: 32px;
+  background: #f8f9fb;
 }
 
 .structured-report * {
@@ -974,36 +1066,112 @@ html, body {
 }
 
 .structured-report__title {
-  margin: 0 0 24px;
+  margin: 0 0 28px;
   text-align: center;
-  font-size: 30px;
+  font-size: 28px;
   line-height: 1.3;
-  color: #172033;
+  color: #111827;
+  font-weight: 700;
+  letter-spacing: 0.02em;
 }
 
+/* --- Module section base --- */
 .structured-report__section {
-  margin-top: 24px;
-  padding: 24px;
-  border-radius: 24px;
+  margin-top: 28px;
+  padding: 28px;
+  border-radius: 16px;
   background: #ffffff;
   border: 1px solid #e5e7eb;
-  break-inside: avoid;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+
+.structured-report__section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
 .structured-report__section-title {
-  margin: 0 0 16px;
-  padding: 16px 20px;
-  background: #f3f4f6;
-  border-left: 6px solid #2563eb;
-  color: #172033;
-  font-size: 22px;
+  margin: 0;
+  padding: 14px 20px;
+  border-radius: 10px;
+  color: #ffffff;
+  font-size: 20px;
+  font-weight: 700;
+  flex-grow: 1;
 }
 
-.structured-report__subsection { margin-top: 18px; }
+/* --- Per-module theme colors --- */
+.structured-report__section-title--blue   { background: linear-gradient(135deg, #2563eb, #3b82f6); }
+.structured-report__section-title--purple { background: linear-gradient(135deg, #7c3aed, #8b5cf6); }
+.structured-report__section-title--red    { background: linear-gradient(135deg, #dc2626, #ef4444); }
+.structured-report__section-title--amber  { background: linear-gradient(135deg, #d97706, #f59e0b); }
+.structured-report__section-title--green  { background: linear-gradient(135deg, #059669, #10b981); }
+
+.structured-report__section--blue   { border-left: 5px solid #2563eb; }
+.structured-report__section--purple { border-left: 5px solid #7c3aed; }
+.structured-report__section--red    { border-left: 5px solid #dc2626; }
+.structured-report__section--amber  { border-left: 5px solid #d97706; }
+.structured-report__section--green  { border-left: 5px solid #059669; }
+.structured-report__section--overview { border-left: 5px solid #374151; }
+
+/* Stats badge */
+.structured-report__section-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.structured-report__section-badge--blue   { background: #dbeafe; color: #1e40af; }
+.structured-report__section-badge--purple { background: #ede9fe; color: #5b21b6; }
+.structured-report__section-badge--red    { background: #fee2e2; color: #991b1b; }
+.structured-report__section-badge--amber  { background: #fef3c7; color: #92400e; }
+.structured-report__section-badge--green  { background: #d1fae5; color: #065f46; }
+
+/* Module scope (审查范围) */
+.structured-report__section-scope {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin: 14px 0 0;
+  padding: 10px 14px;
+  background: #f9fafb;
+  border-radius: 8px;
+  border: 1px solid #f3f4f6;
+}
+
+.structured-report__section-scope-label {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 4px;
+  background: #e5e7eb;
+  color: #374151;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  letter-spacing: 0.04em;
+  flex-shrink: 0;
+}
+
+.structured-report__section-scope-text {
+  font-size: 14px;
+  color: #6b7280;
+  line-height: 1.6;
+}
+
+.structured-report__subsection { margin-top: 20px; }
 .structured-report__subsection-title {
   margin: 0 0 12px;
-  font-size: 18px;
+  font-size: 17px;
   color: #172033;
+  font-weight: 600;
 }
 
 .structured-report__summary,
@@ -1012,8 +1180,10 @@ html, body {
 .structured-report__issue-card-law-item,
 .structured-report__basis-list li {
   font-size: 15px;
-  line-height: 1.9;
+  line-height: 1.85;
 }
+
+.structured-report__muted { color: #9ca3af; }
 
 .structured-report__verdict-row {
   display: flex;
@@ -1031,11 +1201,12 @@ html, body {
 .structured-report__verdict-badge {
   display: inline-flex;
   align-items: center;
-  padding: 6px 14px;
+  padding: 6px 16px;
   border-radius: 999px;
   background: #fee2e2;
   color: #991b1b;
   font-weight: 700;
+  font-size: 15px;
 }
 
 .structured-report__summary-metrics {
@@ -1047,7 +1218,7 @@ html, body {
 
 .structured-report__summary-metric {
   border: 1px solid #e5e7eb;
-  border-radius: 16px;
+  border-radius: 12px;
   padding: 14px 16px;
   background: #ffffff;
 }
@@ -1076,7 +1247,7 @@ html, body {
 
 .structured-report__table-wrap {
   overflow-x: auto;
-  border-radius: 18px;
+  border-radius: 12px;
   border: 1px solid #d1d5db;
   background: #ffffff;
 }
@@ -1095,11 +1266,11 @@ html, body {
 
 .structured-report__matrix-table th,
 .structured-report__matrix-table td {
-  padding: 16px;
+  padding: 14px 16px;
   border-bottom: 1px solid #e5e7eb;
   text-align: left;
   vertical-align: top;
-  font-size: 15px;
+  font-size: 14px;
   line-height: 1.7;
 }
 
@@ -1110,60 +1281,132 @@ html, body {
 }
 
 .structured-report__matrix-table tbody tr:last-child td { border-bottom: none; }
+.structured-report__matrix-table tbody tr:nth-child(even) { background: #fafbfc; }
 
+/* --- Issue cards --- */
 .structured-report__issue-card {
-  margin-top: 18px;
-  padding: 24px 28px;
-  border-radius: 18px;
+  margin-top: 16px;
+  padding: 22px 24px;
+  border-radius: 12px;
   border: 1px solid #e5e7eb;
   background: #ffffff;
-  break-inside: avoid;
-  page-break-inside: avoid;
+  transition: box-shadow 0.15s ease;
 }
 
+.structured-report__issue-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+
 .structured-report__issue-card--high {
-  border-left: 6px solid #dc2626;
-  background: rgba(254, 242, 242, 0.75);
+  border-left: 5px solid #dc2626;
+  background: #fef8f8;
 }
 
 .structured-report__issue-card--medium {
-  border-left: 6px solid #d97706;
-  background: rgba(255, 247, 237, 0.78);
+  border-left: 5px solid #d97706;
+  background: #fffcf5;
 }
 
 .structured-report__issue-card--low,
 .structured-report__issue-card--info {
-  border-left: 6px solid #2563eb;
-  background: rgba(239, 246, 255, 0.7);
+  border-left: 5px solid #2563eb;
+  background: #f8faff;
 }
 
 .structured-report__issue-card-title {
   margin: 0 0 14px;
-  font-size: 18px;
-  color: #172033;
+  font-size: 16px;
+  color: #111827;
+  font-weight: 600;
 }
 
-.structured-report__issue-card-section { margin-top: 14px; }
+.structured-report__issue-card-section { margin-top: 12px; }
 .structured-report__issue-card-section-title {
-  margin-bottom: 8px;
-  font-size: 15px;
+  margin-bottom: 6px;
+  font-size: 14px;
   font-weight: 700;
   color: #9f1239;
 }
 
 @page {
   size: A4 portrait;
-  margin: 14mm;
+  margin: 18mm 16mm;
 }
 
 @page wide {
   size: A4 landscape;
-  margin: 14mm;
+  margin: 18mm 16mm;
 }
 
 @media print {
-  html, body { background: #ffffff !important; }
-  .structured-report { max-width: none; padding: 0; }
+  html, body {
+    background: #ffffff !important;
+    font-size: 13px;
+  }
+  .structured-report {
+    max-width: none;
+    padding: 0;
+    background: #ffffff;
+  }
+  .structured-report__title {
+    font-size: 24px;
+    margin-bottom: 20px;
+  }
+  .structured-report__section {
+    box-shadow: none;
+    border-radius: 8px;
+    margin-top: 18px;
+    padding: 18px 16px;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .structured-report__section-title {
+    font-size: 17px;
+    padding: 10px 16px;
+    border-radius: 6px;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .structured-report__section-badge {
+    font-size: 11px;
+    padding: 4px 10px;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .structured-report__section-scope {
+    padding: 8px 12px;
+    margin-top: 10px;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .structured-report__section-scope-label {
+    font-size: 10px;
+    padding: 2px 8px;
+  }
+  .structured-report__section-scope-text {
+    font-size: 12px;
+  }
+  .structured-report__issue-card {
+    margin-top: 12px;
+    padding: 14px 16px;
+    border-radius: 8px;
+    break-inside: avoid;
+    page-break-inside: avoid;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .structured-report__issue-card:hover { box-shadow: none; }
+  .structured-report__issue-card-title {
+    font-size: 14px;
+    margin-bottom: 10px;
+  }
+  .structured-report__issue-card-text,
+  .structured-report__issue-card-law-item,
+  .structured-report__basis-list li {
+    font-size: 13px;
+    line-height: 1.7;
+  }
+  .structured-report__issue-card-section-title {
+    font-size: 12px;
+  }
   .structured-report__section-title,
   .structured-report__subsection-title,
   .structured-report__issue-card-title {
@@ -1171,5 +1414,22 @@ html, body {
     page-break-after: avoid;
   }
   .structured-report__matrix-table thead { display: table-header-group; }
+  .structured-report__matrix-table th,
+  .structured-report__matrix-table td {
+    padding: 10px 12px;
+    font-size: 12px;
+  }
+  .structured-report__summary-metrics {
+    gap: 8px;
+  }
+  .structured-report__summary-metric {
+    padding: 10px 12px;
+    border-radius: 8px;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .structured-report__summary-metric-value {
+    font-size: 18px;
+  }
 }
 """
