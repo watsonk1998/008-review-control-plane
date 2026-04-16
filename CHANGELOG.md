@@ -1,4 +1,20 @@
 
+## [Unreleased] - 2026-04-16 夜间批次 (Provenance Tracking + Kilo Worktree 治理)
+
+### Added
+- **证据溯源（Provenance）部分落地**：`contracts.py` 新增 `hallucination_risk` / `evidence_span_ids` 字段；`support_packet_builder.py` 实现 `_register_span()` 和 `provenance_registry` 构建；`assembler.py` 重构模块级门禁和合并逻辑。
+- **AGENTS.md 新增 HG-30（Kilo Code Worktree 硬门禁）**：禁止 Kilo 的"立即应用"处理 5+ 文件变更；记录脏合并状态修复 SOP（`git merge --abort` 四连）和 worktree 清理命令。
+- **AGENTS.md 新增 HG-31（CSS 清洗深度合同）**：固化前端 `StructuredReportHtml` 的 5 条 CSS 清洗规则，覆盖旧版 2 条简化版本。
+
+### Fixed
+- 解决 Kilo Code Agent Manager 的 worktree patch-apply 在 `report-visual-upgrade` 分支上引发的 6 文件合并冲突和不可恢复的脏 merge index 状态。
+- `sqlite_store.py` 被 Kilo patch 从 558 行破坏性截断至 320 行（丢失全部 CRUD 方法），已恢复 HEAD 原始版本。
+
+### Deployed
+- 完成向 weknora 服务器的 SOP 部署（backup → rsync → docker compose up -d --build api web），008-review-api 和 008-review-web 容器正常运行。
+
+---
+
 ## [Unreleased] - 2026-04-16 (Technical Debt Eradication)
 ### Removed
 - 彻底删除了大型无用第三方依赖 `gpt-researcher` 和 `arxiv`，仅保留轻量级 `duckduckgo-search`。
