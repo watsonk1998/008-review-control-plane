@@ -52,25 +52,18 @@ function estimateStageFloor({
   totalAgents,
   completedAgents,
   stage,
-  status,
 }: {
   totalAgents: number;
   completedAgents: number;
   stage?: string;
   status?: string;
 }) {
-  const normalizedStatus = (status || "").trim().toLowerCase();
-  if (["succeeded", "accepted"].includes(normalizedStatus)) return 100;
-  if (["failed", "partial", "rejected", "needs_attachment"].includes(normalizedStatus)) return 96;
   if (stage === "finalize") return 95;
   if (stage === "report") return 88;
-  if (stage === "hermes_controller") return 80;
-  if (["agent_select", "agent_running", "agent_done"].includes(stage || "")) {
+  if (["agent_select", "agent_running", "agent_done", "rules", "evidence", "hermes_controller"].includes(stage || "")) {
     if (!totalAgents) return 25;
-    // Scale 25-75% based on agent completion ratio
-    return Math.max(25, Math.min(75, Math.round(25 + (Math.min(completedAgents, totalAgents) / totalAgents) * 50)));
+    return Math.round(25 + (Math.min(completedAgents, totalAgents) / totalAgents) * 50);
   }
-  if (stage === "rules" || stage === "evidence") return 18;
   if (stage === "extract") return 12;
   if (stage === "dispatch" || stage === "parse") return 6;
   if (stage === "planning") return 3;
@@ -177,7 +170,7 @@ function StructuredReportHtml({ htmlContent, printCss }: { htmlContent: string; 
     : "";
 
   return (
-    <div className="structured-report-host">
+    <div className="structured-report-host" style={{ overscrollBehaviorX: 'contain' }}>
       {safeCss ? <style>{safeCss}</style> : null}
       <div dangerouslySetInnerHTML={{ __html: htmlContent }} />
     </div>
@@ -429,10 +422,7 @@ export function TaskDetail({ taskId }: { taskId: string }) {
       ? debugCompletedAgents
       : completedAgentEvents.length;
     const stage = latestEvent?.stage || "";
-    // Use the task's actual creation time as the elapsed baseline so that
-    // navigating to a task that has been running for several minutes does NOT
-    // reset the simulated progress back to 0%.
-    const taskStartMs = task?.createdAt ? new Date(task.createdAt).getTime() : progressViewStartedAt;
+    const taskStartMs = progressViewStartedAt;
     const elapsedSeconds = TERMINAL_STATES.has((task?.status || "").trim().toLowerCase())
       ? 0
       : Math.max(0, Math.floor((now - taskStartMs) / 1000));
@@ -443,13 +433,11 @@ export function TaskDetail({ taskId }: { taskId: string }) {
       status: task?.status,
     });
     const simulatedPercent = estimateSimulatedProgress(elapsedSeconds);
-    // Time-based simulation is the PRIMARY driver (smooth ramp-up).
-    // Stage signals only provide a FLOOR — they guarantee the bar never
-    // drops below a sensible minimum for the current pipeline stage,
-    // but do NOT jump ahead of the time-based ramp.
+    // Terminal states set to 100%.
+    // Otherwise, ONLY simulatedPercent is used to avoid jumps and ensure 0% on entry.
     const effectivePercent = TERMINAL_STATES.has((task?.status || "").trim().toLowerCase())
       ? 100
-      : Math.max(simulatedPercent, stageFloor);
+      : simulatedPercent;
     return {
       latestEvent,
       currentStage: STAGE_LABELS[stage] || "审查执行中",
