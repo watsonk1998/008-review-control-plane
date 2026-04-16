@@ -193,6 +193,19 @@ All user-visible content in reports, interfaces, and statuses MUST be presented 
 
 - **前端及正式报告禁止出现 Emoji 表情符号（HG-23）**：所有用户可见内容——包括正式报告 HTML/PDF、前端页面、状态提示、模块标题——禁止使用任何 Emoji（Unicode Emoji 序列、Emoji_Presentation 字符）。如需视觉标识，使用 SVG 图标或纯 CSS 实现。此规则覆盖 `apps/web/`、`_FINAL_REPORT_CSS`、`FinalReportRenderer` 和所有 view model 输出。
 
+## Project Corrections Addendum (2026-04-16, Evening batch - Hard Gates & CSS Sanitization)
+
+> Source: Agent cross-contamination due to soft scoring, historical CSS causing frontend UI freezes, and test fragility post-refactoring.
+
+### Agent Routing Hard Gate Contract
+- **`supported_document_types` 必须作为硬性门禁（Hard Gate）**：在 `HermesTemplateRegistry` 路由筛选中，如果模板指定了 `supported_document_types` 且当前任务不匹配，必须提前 `continue` 剔除，严禁使用软性加分（Soft Score）机制。否则会被 `explicitly_enabled` (100分) 强势穿透，导致"施组专属审查"越界污染"配网工程方案"。
+
+### Frontend CSS Sanitization Contract
+- **针对历史脏数据的深度防御（防御 HG-25 污染）**：即使后端已修复新生成的报告 CSS（移除了全局的 `break-inside: avoid`），前端的 `StructuredReportHtml` 依然**必须**对提取自历史持久化任务的 `printCss` 进行正则表达式清洗（剔除 `break-inside` 和 `page-break-inside`）。绝不能盲目相信静态快照 payload 是安全的，防止老数据导致新版页面出现 `O(n)` 强制重排卡死。
+
+### Test Assertion Maintainability
+- **规避含有副作用字段的全局断言**：如果组件接口增加了如 `_advisory_note` 等具有免责/提示副作用的临时注入字段，对应的老测试应当主动剔除（如 `.pop("_advisory_note", None)`）此字段后再进行断言对比，严禁过度脆弱的全局字典相等断言（`==`）。同时，废弃字段（如 `final_grade`、`report_markdown`）的断言必须及时清理。
+
 ## Project Corrections Addendum (2026-04-16, 施组接入 + Agent 拆分 + 技术债务清理)
 
 > Source: 施工组织设计文档类型全量接入、内容一致性/技术方案 reviewer 粒度拆分、早期集成项目代码清理（commit 91f87fa）。
@@ -228,3 +241,62 @@ All user-visible content in reports, interfaces, and statuses MUST be presented 
 - **已删除的 adapter 清单（禁止重新引入）**：`adapters/deeptutor_adapter.py`（DeepTutor WebSocket 客户端）、`adapters/gpt_researcher_adapter.py`（GPT Researcher HTTP 客户端）、`orchestrator/planner.py`（DeepResearchAgent capability chain 规划器）。
 
 - **根目录只存放配置文件和项目说明**：一次性 migration 脚本、调试脚本、工具脚本和截图禁止放在根目录，必须归档到 `archive/` 或移入 `scripts/`。
+
+## Project Corrections Addendum (2026-04-16, UI performance & extraction noise)
+
+> Source: Resolving Weknora frontend crashes, progress bar logic, markdown table extraction noise, and English key leakage.
+
+- **全局 CSS 禁止使用强制重排属性（HG-25）**：`break-inside: avoid` 和 `page-break-inside: avoid` 绝对禁止出现在全局（屏幕）CSS 中。它们只能被包裹在 `@media print { ... }` 块内。在几十张卡片的长列表中，这些属性会在滚动时引发 `O(n)` 的强制重排，导致浏览器白屏卡死。
+- **任务进度条必须以真实创建时间为基准**：前端 `task-detail.tsx` 的进度计时起点必须用 `task.createdAt`。禁止使用 `Date.now()`（页面打开时间），否则中途导航进入的长期运行任务会导致进度回退到 1%（时间差重置）。
+- **`progressPercent` 必须采信后端真实 stage 估值**：最终渲染的进度百分比必须 `Math.max(simulatedPercent, realPercent)`。当后端明确上报已完成多轮 agent 审查（`realPercent > 60%`）时，绝不允许被单纯基于时间推演的低进度（`simulatedPercent`）所覆盖。
+- **Markdown 表格提取免疫（HG-26）**：针对 PDF 等格式的识别缺陷（会把表格渲染为带竖线的 markdown 行），在 `_split_reference_candidates` 提取规范依据时增加硬提取门禁：任何首字符为 `|` 或单句含 `>=2` 个 `|` 的片段，直接按噪音抛弃。禁止使用简单的符号 split 导致整块表格被识别为一个标准名称。
+- **内部状态键必须做展现层隔离（HG-27）**：像 `title_detected_without_attachment_body` 等内部引擎状态 key，绝对禁止通过 `finding.summary` 渗透至最终正式审查报告中展示给用户。此类变量应始终在到达视图模型（View Model）前经 `_INTERNAL_DESCRIPTION_KEY_LABELS` 之类的字典实行收口翻译。
+
+## Project Corrections Addendum (2026-04-16, 下午批次 — UI 体验回归修复)
+
+> Source: 用户截图报告 5 个生产回归——进度条瞬跳卡死、PDF 页面割裂空白、编制依据识别不全、网页滚动卡顿白屏、鼠标滚轮触发浏览器回退。
+
+### 进度条 stage floor 合同（修订，与上方旧规则冲突时以本条为准）
+
+**进度条设计最终合同**：
+- 时间驱动（`estimateSimulatedProgress`，1%/6s，上限 90%）为**唯一主驱动**。
+- stage 信号通过 `estimateStageFloor()` 只提供**下界保证（floor）**，不是跳跃目标值。
+- `effectivePercent = Math.max(simulatedPercent, stageFloor)`。
+- **`stageFloor` 值域上限约束（任何修改必须遵守，违反即回退）**：
+  - `agent_running`（无 totalAgents）：`≤ 25%`
+  - `agent_running`（有数据）：`25 + completedRatio * 50`，范围 `[25%, 75%]`
+  - `report`：`≤ 88%`；`finalize`：`≤ 95%`
+- 上方 HG-25 addendum 中"`progressPercent` 必须采信后端真实 stage 估值"的表述与本条冲突，以本条为准：stage 值只是 floor，**不是最终决定者**。
+
+### CSS 打印样式禁止事项
+
+- **`page: wide` 禁止在报告 CSS 中使用**（`@media print` 内亦禁止）：切换页面尺寸（portrait→landscape）需要从新页开始，即使包在 print block 内也会在元素前产生强制分页，导致报告空白页。宽表格应 `overflow-x: auto` 在屏幕水平滚动，PDF 自然断页。
+- **`content-visibility: auto` 禁止在报告 section 上使用**：快速滚动时未渲染 section 出现白屏占位块，副作用大于性能收益。
+- **`transition: box-shadow` 禁止用于长列表 issue-card**：hover 过渡在大量 card 时触发持续 composite 重绘，是滚动卡顿的主要 CSS 原因。
+
+### 横向滚动容器 overscroll 合同（HG-28）
+
+任何使用 `overflow-x: auto/scroll` 的报告/详情页容器，**必须**同时声明 `overscroll-behavior-x: contain`。
+- 不声明时 Mac trackpad/鼠标横向滚到边界后事件"穿透"给浏览器触发历史导航（后退）。
+- 受此约束：`.structured-report-host`（`theme.css`）、`.structured-report__table-wrap`（`final_report_view_model.py`）。
+- 新增任何横向滚动容器时，`overscroll-behavior-x: contain` 为**必须项**。
+
+### 标准代号提取 regex 覆盖合同（更新 normative_validity.py 维护规则）
+
+`_NORMATIVE_CODE_PATTERN` 覆盖的前缀集合（变更 normative_validity.py 时必须确认完整）：
+`GB / GB/T / GBJ / DL/T / DL / NB/T / NB / AQ / DB / DBJ / DGJ / JGJ / YD/T / SL / GA / CECS / TSG / HG / CJJ / SH/T / YB / JB / CJ / YS / SY / HJ / TB / LB / MZ / Q/CSG / Q/GDW / Q/SH / Q/BGJ`
+
+pipe-row 提取改为 cell-by-cell（最终版，上方旧 HG-26 的"按噪音抛弃"已被此方案取代）：
+1. 按 `|` 分割为单元格；2. 过滤表头标签；3. 保留含标准代号或 `《` 的 cell；4. 禁止 `findall(code)` 只提取裸代号。
+
+
+## Project Corrections Addendum (2026-04-16, Technical Debt Eradication & Harness Purity)
+
+> Source: Technical debt eradication session — removing OpenContracts, DeepTutor, GPT Researcher, and DeepResearchAgent legacy adapters.
+
+### Harness Engineering & System Purity Contract
+- **核心引擎纯净原则（Harness Purity）**：`hermes-review-agent` 已完全转向以 `hermes-agent` 为核心的闭环架构。严禁将项目重新变回“多能力编排底座”或“文档标注与语料管理平台”。
+- **废弃适配器永久隔离（HG-29）**：`DeepTutor`、`GPT Researcher`、`DeepResearchAgent` 相关的适配器代码（如 `gpt_researcher_adapter.py`、`deeptutor_adapter.py`、`planner.py`）已被彻底移除。**禁止在未来重新引入或恢复这些适配器及外部依赖（如 `gpt-researcher`、`arxiv` 库）**。唯一的例外是 `duckduckgo-search` 作为底层检索组件被保留。
+- **架构概念纠偏**：`DeepResearchRuntime` 已重命名为 `ReviewRuntime`，以彻底消除“深度研究（Deep Research）”带来的认知混乱。任何新功能的开发必须在 `HermesReviewEngine` 与 `HermesController` 的语义下进行。
+- **OpenContracts 思想吸收边界**：虽然我们摒弃了 OpenContracts 的产品壳和技术栈，但**必须深度保留其“对象模型意识（annotation, relationship, provenance）”**。系统的核心路线是强化证据溯源（evidence traceability），将所有发现锚定到具体的原文段落和法规条文上，禁止单纯的聊天对话模式。
+- **高熵资产清理纪律**：在确认历史资产（如 `archive/` 废件堆、过期的 `docs/90-archive/` 及 `scratch/` 实验代码）已经完成历史使命时，应果断物理删除以降低项目熵值，而非永久堆积。但**包含业务价值的测试集标签（如 `fixtures/review_eval/` 中基于 Gemini-deepresearch 的 Seed Labels）必须严格保留**。本条规则优先于早期关于“必须归档到 `archive/` 而非永久删除”的软性建议。

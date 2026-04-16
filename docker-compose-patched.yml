@@ -1,0 +1,39 @@
+services:
+  web:
+    image: node:20.18-alpine
+    container_name: 008-review-web
+    restart: unless-stopped
+    ports:
+      - "81:3000"
+      - "23031:3000"
+    volumes:
+      - .:/app
+    working_dir: /app/apps/web
+    environment:
+      - PORT=3000
+      - HOSTNAME=0.0.0.0
+      - BACKEND_API_BASE=http://api:8018
+    command: >
+      sh -c "npm config set registry https://registry.npmmirror.com &&
+             npm install -g pnpm &&
+             pnpm config set registry https://registry.npmmirror.com &&
+             pnpm install &&
+             pnpm build &&
+             pnpm start"
+    depends_on:
+      - api
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: 008-review-api
+    restart: unless-stopped
+    volumes:
+      - .:/app
+      - /root/control/secrets/api-keys:/root/control/secrets/api-keys
+    env_file:
+      - .env
+    environment:
+      - PYTHONUNBUFFERED=1
+

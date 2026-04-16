@@ -52,7 +52,7 @@ export default function TasksPage() {
   }, []);
 
   const reviewTasks = useMemo(
-    () => tasks.filter((task) => (task.taskType || "structured_review") === "structured_review" && Boolean(task.sourceDocumentRef)),
+    () => tasks.filter((task) => (task.taskType || "structured_review") === "structured_review"),
     [tasks],
   );
 

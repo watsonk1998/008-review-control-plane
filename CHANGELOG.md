@@ -1,10 +1,82 @@
-# Changelog
+
+## [Unreleased] - 2026-04-16 (Technical Debt Eradication)
+### Removed
+- 彻底删除了大型无用第三方依赖 `gpt-researcher` 和 `arxiv`，仅保留轻量级 `duckduckgo-search`。
+- 移除了历史遗留的环境变量污染（如 `DEEPTUTOR_BRIDGE_PORT`、`GPT_RESEARCHER_MAX_ITERATIONS` 等 8 个无用配置）。
+- 物理删除了高熵历史资产：清空了 `archive/` 中 50+ 个历史废件、删除了过期的 `docs/90-archive/` 和 `scratch/` 实验目录，大幅降低了项目环境的熵值。
+
+### Changed
+- **核心引擎认知纠偏**：将 `apps/api/src/orchestrator/deepresearch_runtime.py` 重命名为 `review_runtime.py`，并将全局类名 `DeepResearchRuntime` 重构为 `ReviewRuntime`，彻底消除了旧有“深度研究”方向带来的认知混乱，与 `Hermes` 核心架构语境对齐。
+- **明确 Harness 边界**：正式在 `AGENTS.md` 中确立了废弃适配器永久隔离规则（HG-29），禁止重新引入 DeepTutor、GPT Researcher 等遗留平台代码。同时确立了对 OpenContracts 架构思想的吸收边界（保留证据溯源意识，拒绝产品壳迁移）。
+\n# Changelog
 
 本文件记录仓库层面的重要更新，重点保留对产品定位、正式审查契约、文档治理和交付入口有影响的变更。
 
 > 说明：本次按 2026-03 至 2026-04 的时间窗进行了核查。当前仓库可确认的主线变更集中在 `2026-04-02` 至 `2026-04-13`；若无对应 repo 事实，不为 3 月单独虚构条目。
 
 ## 2026-04-16
+
+### Fixed（傍晚批次 - 隔离机制与历史制品防御修复）
+
+- **Fixed (Core)**: 修复 `HermesTemplateRegistry` 中 `supported_document_types` 的越界污染漏洞。将文档类型支持由“加分项（Soft Score）”更改为“硬性门禁（Hard Gate）”，彻底解决因 `explicitly_enabled` (100分) 导致“施组专属”审查器错误穿透至其他方案审查的隔离机制失效问题。
+- **Fixed (Web)**: 为前端 `StructuredReportHtml` 组件追加针对历史任务 `reportPrintCss` 的深度防御清洗。通过正则全局剔除 `break-inside: avoid`，彻底解决读取旧任务快照时由于样式污染导致屏幕滚动出现 `O(n)` 强制重排、页面卡死白屏的回归问题（防御旧数据的 HG-25 违例）。
+- **Fixed (Tests)**: 修复由于重构和接口变更导致的 3 个过期测试用例。移除了已废弃的 `final_grade` 与 `report_markdown` 字段断言，并将 `primary_support_review` 产生的 `_advisory_note` 免责字段从严格模式校验（`==`）中 `.pop()`，确保测试架构容忍无害副作用。
+
+### Fixed（下午批次 - UI 体验回归修复）
+
+#### 进度条逻辑重构（HG-26，第二次犯同一错误）
+
+- **根因**：`estimateRealReviewProgress()` 在 `agent_running` 阶段无 totalAgents 时返回 `68`，有数据时高达 `60-89%`。`effectivePercent = Math.max(simulated, real)` 逻辑使得 stage 信号一到立即跳至 60%+，时间驱动的慢速爬升完全被压制，进度条从此卡死。**这是同一错误第二次出现**，应彻底消灭此模式。
+- **修复**（`apps/web/src/components/task-detail.tsx`）：
+  - 函数重命名为 `estimateStageFloor()`，语义从"目标值"变为"下界保证"
+  - stage 值大幅降低：`agent_running` 无数据=`25%`（原 `68%`），有数据时按完成比例缩放至 `25-75%`（原 `60-89%`）
+  - 时间驱动（1%/6s，90% 上限）为主驱动；stage 信号仅保证不低于当前阶段最低合理值
+  - `effectivePercent = Math.max(simulatedPercent, stageFloor)`——逻辑未变，但 stageFloor 值域已正确
+
+> [!WARNING] HG-26 约束（进度条 stage 值域）
+> `estimateStageFloor()` 的返回值代表"阶段最低保证"，**不是目标值也不是跳跃点**。`agent_running` 阶段 floor 不得超过 30%；`report` 阶段同理不超过 88%。任何增大 floor 的修改都会使进度条在该阶段瞬跳，破坏时间驱动主导原则。
+
+#### PDF 报告布局割裂
+
+- **根因**：`@media print` 中 `.structured-report__table-wrap--landscape { page: wide; }` 声明切换页面尺寸（portrait→landscape），PDF 引擎在该元素前强制分页，产生大段空白页。
+- **修复**（`apps/api/src/review/report/final_report_view_model.py`）：移除 `page: wide`（以注释保留说明），放弃横向翻转，让宽表格依靠自然流式断页；同时移除 `.structured-report__section` 的 `content-visibility: auto`（会导致快速滑动章节白屏）。
+
+> [!CAUTION] CSS `page: wide` 禁止用于屏幕/PDF 双用途样式
+> `page: wide` 仅在 `@media print` 内有效，但即使包在 print 块内，它也会在该元素前触发强制分页（因为要切换页面尺寸）。宽表格应使用 `overflow-x: auto` + 水平滚动在屏幕呈现，PDF 允许自然截断。禁止在正式报告 CSS 中使用 `page: wide`。
+
+#### 编制依据提取不完整
+
+- **根因（双重）**：(1) `_NORMATIVE_CODE_PATTERN` 缺少 TSG/DGJ/Q·BGJ/HG/CJJ/SH·T/GBJ/YB 等行业标准前缀；(2) pipe-row 路径仅用 `findall()` 提取裸代号，表格中的完整标准名称（含《》）全部丢失。
+- **修复**（`apps/api/src/review/hermes/normative_validity.py`）：
+  - `_NORMATIVE_CODE_PATTERN` 新增 16 个前缀：`GBJ / Q/BGJ / DGJ / TSG / HG / CJJ / SH/T / YB / JB / CJ / YS / SY / HJ / TB / LB / MZ`
+  - `_split_reference_candidates()` pipe-row 路径改为 cell-by-cell 提取：分割每个 `|` 单元格，过滤表头（序号/名称/编号），保留含标准代号或 `《` 的 cell 作为候选
+  - 验证：`pytest -k normative` 20 passed
+
+#### 网页滚动卡顿与白屏
+
+- **根因**：大量 `.structured-report__issue-card` 的 `transition: box-shadow 0.15s ease` 在快速滚动时触发持续 composite 层重绘；`content-visibility: auto` 导致章节内容快速滑动时出现白屏占位块。
+- **修复**（`apps/api/src/review/report/final_report_view_model.py`）：
+  - 移除 issue-card 的 hover `box-shadow` 过渡动画
+  - issue-card 和 section 增加 `contain: layout style`（CSS 渲染边界隔离）
+  - 移除 `content-visibility: auto` + `contain-intrinsic-size`（副作用大于收益）
+
+#### 鼠标横向滚动触发浏览器回退
+
+- **根因**：`.structured-report-host` 和 `.structured-report__table-wrap` 使用 `overflow-x: auto` 但无 `overscroll-behavior`，当 Mac trackpad/鼠标横向滚动到边界时事件"穿透"，触发浏览器历史后退导航。
+- **修复**：
+  - `apps/web/src/app/theme.css`：`.structured-report-host` 增加 `overscroll-behavior: contain`
+  - `apps/api/src/review/report/final_report_view_model.py`：`.structured-report__table-wrap` 增加 `overscroll-behavior-x: contain`
+
+> [!NOTE] HG-27 约束（横向滚动容器必须声明 overscroll-behavior）
+> 任何使用 `overflow-x: auto/scroll` 的报告容器，必须同时声明 `overscroll-behavior-x: contain`，防止横向滚轮事件触发浏览器导航。这是 Weknora 报告页面的标配。
+
+### Notes（下午批次）
+
+- 本批次全部修复属于用户发现的生产回归，非新增能力。
+- HG-26 完整进度条约束已与"4 秒 1%"规则（AGENTS.md 2026-04-15 corrections addendum）合并形成最终合同：时间驱动为主，stage 只提供 floor。
+- 两个失败测试（`test_final_report_merger` / `test_hermes_boundary_enforcement`）为历史预存，非本轮引入。
+
+
 
 ### Added (施工组织设计审查接入)
 
@@ -38,6 +110,11 @@
 - 本轮 Harness Engineering 执行纪律：(1) 改 module_bindings.py 之前必须确认 template JSON 已验证通过；(2) 删除文件前必须确认所有 import 调用方已同步清除；(3) 625 行净删除以"35 tests passed, 0 failed"作为阶段性交付证据。
 - **HG-24 新增规则**：工具写入多字节 JSON 字段后不可信，必须逐文件单独验证，批量验证会掩盖报错顺序；验证失败时改用 `write_to_file` 完整重写，不得重复 patch。
 - **剩余档级 3（合约层）未执行**：`domain/models.py` 中 `TaskType` 枚举的 4 个废弃类型（`knowledge_qa`、`deep_research` 等）待确认外部平台是否仍在使用后再处理。
+
+### Ops (CVE 修复与回调预期对齐 - 傍晚批次)
+
+- **修复 CVE-2026-25645（requests 中危漏洞）**：虽然系统未直接暴露受该漏洞波及的 `extract_zipped_paths()` 调用点，仍显式地将 `pyproject.toml` 中的 `requests` 依赖更新为 `>=2.33.0`，并在通过 `docker exec` 的形式对生产容器内依赖予以硬修复，坚持 Harness Engineering “零已知隐患”之原则，做实供应链安全防御纵深。
+- **澄清内源验证流水线隔离契约（回调免发功能）**：深入溯源了“Weknora 内部页面发起审查但在外部建果 AI 记录不可见”的情况，判定此系**明确设计的合理契约**：所有缺乏完整 `externalContext`（`agentId` / `callBackUrl`）入参的内部流均会被系统网关判定为测试或内部流而被切断向上游 Callbacks 通知，起到了内外部测试脏数据物理防泄漏的作用。
 
 ## 2026-04-15
 

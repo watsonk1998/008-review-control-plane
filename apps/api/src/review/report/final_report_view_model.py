@@ -114,6 +114,32 @@ _VALIDITY_STATUS_LABELS = {
     'unknown': '待人工核验',
 }
 
+# Mapping of internal English reason/status keys to Chinese labels.
+# These keys originate from attachment_indexer.py, normative_validity.py,
+# and other pipeline modules. They must NEVER appear verbatim in the final
+# report — this dict provides the authoritative translation fallback.
+_INTERNAL_DESCRIPTION_KEY_LABELS: dict[str, str] = {
+    'title_detected_without_attachment_body': '正文提到了附件，但本次未识别到附件正文内容，需结合原件核对。',
+    'title_detected_but_body_not_reliably_parsed': '正文提到了附件，但本次未能稳定识别附件正文内容，需结合原件核对。',
+    'reference_detected_in_limited_parser': '正文引用了附件，但当前未能稳定识别附件内容，需结合原件核对。',
+    'reference_detected_without_attachment_body': '正文提到了附件，但本次未取得附件正文内容，需结合原件核对。',
+    'attachment_unparsed': '附件内容尚未识别完整，需结合原件核对。',
+    'referenced_only': '正文引用了附件，但本次未取得附件正文内容，需结合原件核对。',
+    'visibility_unknown': '当前无法确认附件或附图的可视状态。',
+    'parser_limited_pdf_requires_manual_review': '当前 PDF 仅完成基础文本识别，建议结合原件人工复核。',
+    'weak_section_structure_signal': '关键章节或附件边界重复，正式定位结果不稳定。',
+    'visibility_gap': '当前问题受附件可视域限制，需人工核验原件。',
+    'drawing_visibility_gap': '相关图纸或节点详图未稳定进入当前可视域，需结合原件人工复核。',
+    'complex_calculation_requires_manual_confirmation': '当前仅能识别存在复杂验算主题，尚不足以自动判断其充分性或正确性。',
+    'forbidden_condition_requires_manual_confirmation': '当前仅识别到禁用条件信号，需结合地质、水文和现场条件人工确认。',
+    'type_specific_attachment_visibility_gap': '类型专属图纸或附件未稳定进入当前可视域，需结合原件人工复核。',
+    'manual_confirmation_required': '当前问题仍需人工确认。',
+    # normative validity statuses (occasionally surface as raw summaries)
+    'current': '现行有效。',
+    'superseded': '疑似已废止或被替代标准，请核实最新版本。',
+    'unknown': '当前有效性状态待人工核验。',
+}
+
 class ExecutiveSummaryMetricView(BaseModel):
     label: str
     value: str
@@ -575,6 +601,13 @@ class FinalReportRenderer:
         for value in [finding.get('summary'), (support_issue or {}).get('summary')]:
             cleaned = self._clean_text(value)
             if cleaned:
+                # Translate internal English keys to Chinese before surfacing.
+                # Some pipeline modules (e.g. attachment_indexer) store English
+                # reason strings as the summary. These must not appear verbatim
+                # in the report — map them to the authoritative Chinese label.
+                translated = _INTERNAL_DESCRIPTION_KEY_LABELS.get(cleaned)
+                if translated:
+                    return translated
                 return cleaned
         return '当前未提取到更详细的问题描述，请结合原文复核。'
 
@@ -1083,6 +1116,7 @@ html, body {
   background: #ffffff;
   border: 1px solid #e5e7eb;
   box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  contain: layout style;
 }
 
 .structured-report__section-header {
@@ -1247,15 +1281,14 @@ html, body {
 
 .structured-report__table-wrap {
   overflow-x: auto;
+  overscroll-behavior-x: contain;
   border-radius: 12px;
   border: 1px solid #d1d5db;
   background: #ffffff;
 }
 
 .structured-report__table-wrap--landscape {
-  page: wide;
-  break-before: page;
-  page-break-before: always;
+  /* page/break properties are print-only; see @media print below */
 }
 
 .structured-report__matrix-table {
@@ -1290,10 +1323,8 @@ html, body {
   border-radius: 12px;
   border: 1px solid #e5e7eb;
   background: #ffffff;
-  transition: box-shadow 0.15s ease;
+  contain: layout style;
 }
-
-.structured-report__issue-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
 
 .structured-report__issue-card--high {
   border-left: 5px solid #dc2626;
@@ -1355,8 +1386,6 @@ html, body {
     border-radius: 8px;
     margin-top: 18px;
     padding: 18px 16px;
-    break-inside: avoid;
-    page-break-inside: avoid;
   }
   .structured-report__section-title {
     font-size: 17px;
@@ -1413,7 +1442,14 @@ html, body {
     break-after: avoid;
     page-break-after: avoid;
   }
+  .structured-report__table-wrap--landscape {
+    /* landscape rotation removed: page:wide forces a page break */
+  }
   .structured-report__matrix-table thead { display: table-header-group; }
+  .structured-report__matrix-table tr {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
   .structured-report__matrix-table th,
   .structured-report__matrix-table td {
     padding: 10px 12px;
@@ -1425,11 +1461,17 @@ html, body {
   .structured-report__summary-metric {
     padding: 10px 12px;
     border-radius: 8px;
+    break-inside: avoid;
+    page-break-inside: avoid;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
   .structured-report__summary-metric-value {
     font-size: 18px;
+  }
+  .report-item {
+    break-inside: avoid;
+    page-break-inside: avoid;
   }
 }
 """

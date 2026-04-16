@@ -8,7 +8,7 @@ from src.adapters.hermes_external_adapter import HermesExternalAdapter
 from src.adapters.hermes_router_adapter import HermesRouterAdapter
 from src.adapters.llm_gateway import LLMGateway
 from src.config.settings import get_settings
-from src.orchestrator.deepresearch_runtime import DeepResearchRuntime
+from src.orchestrator.review_runtime import ReviewRuntime
 from src.repositories.sqlite_store import SQLiteTaskStore
 from src.review.fact_packet_adapter import FactPacketAdapter
 from src.review.hermes_controller import HermesController
@@ -125,8 +125,8 @@ def get_hermes_engine() -> HermesReviewEngine:
 
 
 @lru_cache(maxsize=1)
-def get_runtime() -> DeepResearchRuntime:
-    return DeepResearchRuntime(
+def get_runtime() -> ReviewRuntime:
+    return ReviewRuntime(
         store=get_store(),
         fixture_service=get_fixture_service(),
         document_loader=get_document_loader(),

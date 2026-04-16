@@ -6,102 +6,133 @@ from typing import Any, Literal, Union
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-TaskType = Literal['knowledge_qa', 'deep_research', 'document_research', 'review_assist', 'structured_review']
-CapabilityMode = Literal['auto', 'fast', 'llm_only']
-TaskStatus = Literal['created', 'planned', 'running', 'waiting_external', 'succeeded', 'failed', 'partial']
-EventStatus = Literal['started', 'completed', 'failed', 'info']
-ReviewTaskStatus = Literal['created', 'compiling', 'running', 'assembling', 'completed', 'failed', 'degraded']
-ReviewTaskProgressStage = Literal[
-    'review_brief_compiling',
-    'assets_loading',
-    'agents_running',
-    'modules_running',
-    'report_assembling',
-    'done',
+TaskType = Literal["structured_review"]
+CapabilityMode = Literal["auto", "fast", "llm_only"]
+TaskStatus = Literal[
+    "created",
+    "planned",
+    "running",
+    "waiting_external",
+    "succeeded",
+    "failed",
+    "partial",
 ]
-ReviewTaskEventType = Literal['task_created', 'progress', 'artifact_ready', 'completed', 'failed']
-ReviewFeedbackType = Literal['helpful', 'inaccurate', 'missing', 'save_as_template']
-ReviewerTaskState = Literal['pending', 'accepted', 'rejected', 'needs_attachment']
-ReviewerItemState = Literal['pending', 'confirmed', 'dismissed', 'needs_attachment']
-ReviewPreparationDisposition = Literal['eligible', 'deferred', 'rejected']
-IssueKind = Literal['hard_defect', 'visibility_gap', 'evidence_gap', 'enhancement']
-ApplicabilityState = Literal['applies', 'partial', 'blocked_by_visibility', 'blocked_by_missing_fact']
+EventStatus = Literal["started", "completed", "failed", "info"]
+ReviewTaskStatus = Literal[
+    "created", "compiling", "running", "assembling", "completed", "failed", "degraded"
+]
+ReviewTaskProgressStage = Literal[
+    "review_brief_compiling",
+    "assets_loading",
+    "agents_running",
+    "modules_running",
+    "report_assembling",
+    "done",
+]
+ReviewTaskEventType = Literal[
+    "task_created", "progress", "artifact_ready", "completed", "failed"
+]
+ReviewFeedbackType = Literal["helpful", "inaccurate", "missing", "save_as_template"]
+ReviewerTaskState = Literal["pending", "accepted", "rejected", "needs_attachment"]
+ReviewerItemState = Literal["pending", "confirmed", "dismissed", "needs_attachment"]
+ReviewPreparationDisposition = Literal["eligible", "deferred", "rejected"]
+IssueKind = Literal["hard_defect", "visibility_gap", "evidence_gap", "enhancement"]
+ApplicabilityState = Literal[
+    "applies", "partial", "blocked_by_visibility", "blocked_by_missing_fact"
+]
 ReviewPreparationSourceTier = Literal[
-    'runtime_only',
-    'seed',
-    'bootstrap_seed',
-    'ci_stage_gate',
-    'internal_reviewed',
-    'expert_golden',
+    "runtime_only",
+    "seed",
+    "bootstrap_seed",
+    "ci_stage_gate",
+    "internal_reviewed",
+    "expert_golden",
 ]
 ReviewDocumentType = Literal[
-    'construction_org',
-    'construction_scheme',
-    'hazardous_special_scheme',
-    'distribution_network_special_scheme',
-    'supervision_plan',
-    'review_support_material',
+    "construction_org",
+    "construction_scheme",
+    "hazardous_special_scheme",
+    "distribution_network_special_scheme",
+    "supervision_plan",
+    "review_support_material",
 ]
 
 
 class AttachmentVisibility(str, Enum):
-    parsed = 'parsed'
-    attachment_unparsed = 'attachment_unparsed'
-    referenced_only = 'referenced_only'
-    missing = 'missing'
-    unknown = 'unknown'
+    parsed = "parsed"
+    attachment_unparsed = "attachment_unparsed"
+    referenced_only = "referenced_only"
+    missing = "missing"
+    unknown = "unknown"
 
 
 class ReviewLayer(str, Enum):
-    L1 = 'L1'
-    L2 = 'L2'
-    L3 = 'L3'
+    L1 = "L1"
+    L2 = "L2"
+    L3 = "L3"
 
 
 class FindingType(str, Enum):
-    hard_evidence = 'hard_evidence'
-    engineering_inference = 'engineering_inference'
-    visibility_gap = 'visibility_gap'
-    suggestion_enhancement = 'suggestion_enhancement'
+    hard_evidence = "hard_evidence"
+    engineering_inference = "engineering_inference"
+    visibility_gap = "visibility_gap"
+    suggestion_enhancement = "suggestion_enhancement"
 
 
 class ConfidenceLevel(str, Enum):
-    low = 'low'
-    medium = 'medium'
-    high = 'high'
+    low = "low"
+    medium = "medium"
+    high = "high"
 
 
-ArtifactCategory = Literal['parse', 'facts', 'rule_hits', 'candidates', 'result', 'matrix', 'matrices', 'report', 'generic']
-SourceDocumentType = Literal['fixture', 'upload']
+ArtifactCategory = Literal[
+    "parse",
+    "facts",
+    "rule_hits",
+    "candidates",
+    "result",
+    "matrix",
+    "matrices",
+    "report",
+    "generic",
+]
+SourceDocumentType = Literal["fixture", "upload"]
 
 
 class BlockLocator(BaseModel):
     blockId: str
     sectionId: str | None = None
+    span_id: str | None = None
 
 
 class TableLocator(BaseModel):
     tableId: str
     sectionId: str | None = None
+    span_id: str | None = None
 
 
 class AttachmentLocator(BaseModel):
     attachmentId: str
+    span_id: str | None = None
 
 
 class ClauseLocator(BaseModel):
     clauseId: str
+    span_id: str | None = None
 
 
 class SectionLocator(BaseModel):
     sectionId: str
+    span_id: str | None = None
 
 
-EvidenceLocator = Union[BlockLocator, TableLocator, AttachmentLocator, ClauseLocator, SectionLocator]
+EvidenceLocator = Union[
+    BlockLocator, TableLocator, AttachmentLocator, ClauseLocator, SectionLocator
+]
 
 
 class SourceDocumentRef(BaseModel):
-    model_config = ConfigDict(extra='ignore')
+    model_config = ConfigDict(extra="ignore")
 
     refId: str
     sourceType: SourceDocumentType
@@ -122,10 +153,10 @@ class ExternalIntegrationContext(BaseModel):
 
 
 class CreateTaskRequest(BaseModel):
-    model_config = ConfigDict(extra='forbid')
+    model_config = ConfigDict(extra="forbid")
 
     taskType: TaskType
-    capabilityMode: CapabilityMode = 'auto'
+    capabilityMode: CapabilityMode = "auto"
     query: str = ""
     datasetId: str | None = None
     collectionId: str | None = None
@@ -139,44 +170,70 @@ class CreateTaskRequest(BaseModel):
     strictMode: bool | None = None
     policyPackIds: list[str] | None = None
     rulePackIds: list[str] | None = None
-    reviewIntent: 'ReviewTaskIntent | None' = None
+    reviewIntent: "ReviewTaskIntent | None" = None
     externalContext: ExternalIntegrationContext | None = None
 
-    @model_validator(mode='after')
+    @model_validator(mode="after")
     def _validate_structured_review_source(self):
-        if self.taskType != 'structured_review':
+        if self.taskType != "structured_review":
             return self
         if bool(self.fixtureId) == bool(self.sourceDocumentRef):
-            raise ValueError('structured_review requires exactly one of fixtureId or sourceDocumentRef')
+            raise ValueError(
+                "structured_review requires exactly one of fixtureId or sourceDocumentRef"
+            )
         return self
 
 
 class EvidenceSpan(BaseModel):
-    sourceType: Literal['document', 'policy', 'artifact']
+    span_id: str | None = None
+    sourceType: Literal["document", "policy", "artifact"]
     sourceId: str
     locator: EvidenceLocator
     excerpt: str
     visibility: AttachmentVisibility | None = None
     confidence: ConfidenceLevel = ConfidenceLevel.medium
     clauseTitle: str | None = None
-    forceLevel: Literal['must', 'should', 'guidance'] | None = None
+    forceLevel: Literal["must", "should", "guidance"] | None = None
     applicability: str | None = None
     sourceProvenance: str | None = None
     evidenceGapReason: str | None = None
+
+
+class AnnotatedFact(BaseModel):
+    fact_key: str
+    span_id: str
+    evidence_span_ids: list[str] = Field(default_factory=list)
+    provenance_ids: list[str] = Field(default_factory=list)
+    value: Any = None
+    confidence: ConfidenceLevel = ConfidenceLevel.medium
+    is_derived: bool = False
+    relationship_type: Literal["primary", "derived", "contextual"] = "primary"
+
+
+class FactRelationship(BaseModel):
+    relationship_id: str
+    from_fact_key: str
+    to_fact_key: str
+    relationship_type: Literal[
+        "depends_on", "contradicts", "supports", "derives_from", "context_of"
+    ]
+    strength: float = 1.0
+    span_id: str | None = None
+    provenance_ids: list[str] = Field(default_factory=list)
 
 
 class ReviewIssue(BaseModel):
     id: str
     title: str
     layer: ReviewLayer
-    severity: Literal['high', 'medium', 'low', 'info']
+    severity: Literal["high", "medium", "low", "info"]
     findingType: FindingType
     summary: str
     manualReviewNeeded: bool = False
     evidenceMissing: bool = False
     manualReviewReason: str | None = None
-    issueKind: IssueKind = 'hard_defect'
-    applicabilityState: ApplicabilityState = 'applies'
+    issueKind: IssueKind = "hard_defect"
+    applicabilityState: ApplicabilityState = "applies"
 
 
 class TaskArtifact(BaseModel):
@@ -205,18 +262,18 @@ class TaskEvent(BaseModel):
 
 class ReviewerIssueDecision(BaseModel):
     issueId: str
-    state: ReviewerItemState = 'pending'
+    state: ReviewerItemState = "pending"
     note: str | None = None
 
 
 class ReviewerAttachmentDecision(BaseModel):
     attachmentId: str
-    state: ReviewerItemState = 'pending'
+    state: ReviewerItemState = "pending"
     note: str | None = None
 
 
 class ReviewerDecision(BaseModel):
-    taskState: ReviewerTaskState = 'pending'
+    taskState: ReviewerTaskState = "pending"
     note: str | None = None
     issues: list[ReviewerIssueDecision] = Field(default_factory=list)
     attachments: list[ReviewerAttachmentDecision] = Field(default_factory=list)
@@ -224,14 +281,14 @@ class ReviewerDecision(BaseModel):
 
 
 class ReviewerDecisionUpdateRequest(BaseModel):
-    taskState: ReviewerTaskState = 'pending'
+    taskState: ReviewerTaskState = "pending"
     note: str | None = None
     issues: list[ReviewerIssueDecision] = Field(default_factory=list)
     attachments: list[ReviewerAttachmentDecision] = Field(default_factory=list)
 
 
 class ReviewPreparationProvenance(BaseModel):
-    sourceTier: ReviewPreparationSourceTier = 'runtime_only'
+    sourceTier: ReviewPreparationSourceTier = "runtime_only"
     caseId: str | None = None
     caseVersion: str | None = None
     labelStatus: str | None = None
@@ -247,7 +304,9 @@ class ReviewPreparationProvenance(BaseModel):
 
 
 class ReviewPreparationSummary(BaseModel):
-    truthTier: Literal['runtime_only', 'internal_reviewed_preparation'] = 'internal_reviewed_preparation'
+    truthTier: Literal["runtime_only", "internal_reviewed_preparation"] = (
+        "internal_reviewed_preparation"
+    )
     readyForPromotion: bool = False
     blockingReasons: list[str] = Field(default_factory=list)
     eligibleIssueIds: list[str] = Field(default_factory=list)
@@ -258,14 +317,16 @@ class ReviewPreparationSummary(BaseModel):
     rejectedAttachmentIds: list[str] = Field(default_factory=list)
     issueBlockingReasons: dict[str, list[str]] = Field(default_factory=dict)
     attachmentBlockingReasons: dict[str, list[str]] = Field(default_factory=dict)
-    provenance: ReviewPreparationProvenance = Field(default_factory=ReviewPreparationProvenance)
+    provenance: ReviewPreparationProvenance = Field(
+        default_factory=ReviewPreparationProvenance
+    )
     disclaimer: str | None = None
 
 
 class ReviewPreparationIssueRecord(BaseModel):
     issueId: str
-    disposition: ReviewPreparationDisposition = 'deferred'
-    state: ReviewerItemState = 'pending'
+    disposition: ReviewPreparationDisposition = "deferred"
+    state: ReviewerItemState = "pending"
     note: str | None = None
     issueKind: IssueKind | None = None
     applicabilityState: ApplicabilityState | None = None
@@ -279,8 +340,8 @@ class ReviewPreparationIssueRecord(BaseModel):
 
 class ReviewPreparationAttachmentRecord(BaseModel):
     attachmentId: str
-    disposition: ReviewPreparationDisposition = 'deferred'
-    state: ReviewerItemState = 'pending'
+    disposition: ReviewPreparationDisposition = "deferred"
+    state: ReviewerItemState = "pending"
     note: str | None = None
     visibility: AttachmentVisibility | None = None
     parseState: str | None = None
@@ -290,8 +351,10 @@ class ReviewPreparationAttachmentRecord(BaseModel):
 
 
 class ReviewPreparationAsset(BaseModel):
-    schemaVersion: Literal['v0.1'] = 'v0.1'
-    truthTier: Literal['internal_reviewed_preparation'] = 'internal_reviewed_preparation'
+    schemaVersion: Literal["v0.1"] = "v0.1"
+    truthTier: Literal["internal_reviewed_preparation"] = (
+        "internal_reviewed_preparation"
+    )
     taskId: str
     documentType: ReviewDocumentType | None = None
     sourceDocumentRef: SourceDocumentRef | None = None
@@ -299,8 +362,12 @@ class ReviewPreparationAsset(BaseModel):
     readyForPromotion: bool = False
     blockingReasons: list[str] = Field(default_factory=list)
     issueDecisions: list[ReviewPreparationIssueRecord] = Field(default_factory=list)
-    attachmentDecisions: list[ReviewPreparationAttachmentRecord] = Field(default_factory=list)
-    provenance: ReviewPreparationProvenance = Field(default_factory=ReviewPreparationProvenance)
+    attachmentDecisions: list[ReviewPreparationAttachmentRecord] = Field(
+        default_factory=list
+    )
+    provenance: ReviewPreparationProvenance = Field(
+        default_factory=ReviewPreparationProvenance
+    )
     disclaimer: str | None = None
 
 
@@ -318,11 +385,13 @@ class TaskRecord(BaseModel):
     sourceUrls: list[str] = Field(default_factory=list)
     documentType: ReviewDocumentType | None = None
     disciplineTags: list[str] = Field(default_factory=list)
-    strictMode: bool | None = None  # compatibility field still persisted and propagated into profile/result shaping; not an independent runtime branch switch
+    strictMode: bool | None = (
+        None  # compatibility field still persisted and propagated into profile/result shaping; not an independent runtime branch switch
+    )
     policyPackIds: list[str] = Field(default_factory=list)
     rulePackIds: list[str] = Field(default_factory=list)
     externalContext: ExternalIntegrationContext | None = None
-    status: TaskStatus = 'created'
+    status: TaskStatus = "created"
     plan: dict[str, Any] | None = None
     result: dict[str, Any] | None = None
     reviewerDecision: ReviewerDecision | None = None
@@ -350,7 +419,7 @@ class CapabilityHealth(BaseModel):
 
 
 class ReviewTaskClassification(BaseModel):
-    model_config = ConfigDict(extra='forbid')
+    model_config = ConfigDict(extra="forbid")
 
     l1: str = Field(min_length=1)
     l2: ReviewDocumentType
@@ -358,21 +427,23 @@ class ReviewTaskClassification(BaseModel):
 
 
 class ReviewTaskDocuments(BaseModel):
-    model_config = ConfigDict(extra='forbid')
+    model_config = ConfigDict(extra="forbid")
 
     target_file_ids: list[str] = Field(default_factory=list)
     basis_file_ids: list[str] = Field(default_factory=list)
     project_context_file_ids: list[str] = Field(default_factory=list)
 
-    @model_validator(mode='after')
+    @model_validator(mode="after")
     def _validate_target_files(self):
         if len(self.target_file_ids) != 1:
-            raise ValueError('review-tasks currently require exactly one target_file_id')
+            raise ValueError(
+                "review-tasks currently require exactly one target_file_id"
+            )
         return self
 
 
 class ReviewTaskBuiltinAssetSelections(BaseModel):
-    model_config = ConfigDict(extra='forbid')
+    model_config = ConfigDict(extra="forbid")
 
     standard_ids: list[str] = Field(default_factory=list)
     template_ids: list[str] = Field(default_factory=list)
@@ -381,7 +452,7 @@ class ReviewTaskBuiltinAssetSelections(BaseModel):
 
 
 class ReviewTaskIntent(BaseModel):
-    model_config = ConfigDict(extra='forbid')
+    model_config = ConfigDict(extra="forbid")
 
     enabled_modules: list[str] = Field(default_factory=list)
     disabled_modules: list[str] = Field(default_factory=list)
@@ -389,7 +460,7 @@ class ReviewTaskIntent(BaseModel):
 
 
 class ReviewTaskMetadata(BaseModel):
-    model_config = ConfigDict(extra='forbid')
+    model_config = ConfigDict(extra="forbid")
 
     client_request_id: str | None = None
     source: str | None = None
@@ -397,11 +468,13 @@ class ReviewTaskMetadata(BaseModel):
 
 
 class CreateReviewTaskRequest(BaseModel):
-    model_config = ConfigDict(extra='forbid')
+    model_config = ConfigDict(extra="forbid")
 
     classification: ReviewTaskClassification
     documents: ReviewTaskDocuments
-    builtin_asset_selections: ReviewTaskBuiltinAssetSelections = Field(default_factory=ReviewTaskBuiltinAssetSelections)
+    builtin_asset_selections: ReviewTaskBuiltinAssetSelections = Field(
+        default_factory=ReviewTaskBuiltinAssetSelections
+    )
     review_intent: ReviewTaskIntent = Field(default_factory=ReviewTaskIntent)
     metadata: ReviewTaskMetadata = Field(default_factory=ReviewTaskMetadata)
 
@@ -459,12 +532,12 @@ class ReviewTaskModuleResult(BaseModel):
     findings: list[dict[str, Any]] = Field(default_factory=list)
     severity_summary: dict[str, int] = Field(default_factory=dict)
     traceability_summary: list[dict[str, Any]] = Field(default_factory=list)
-    status: Literal['available', 'partial', 'not_applicable'] = 'available'
+    status: Literal["available", "partial", "not_applicable"] = "available"
 
 
 class ReviewTaskResultSummary(BaseModel):
     overall_conclusion: str
-    risk_level: Literal['low', 'medium', 'high', 'unknown']
+    risk_level: Literal["low", "medium", "high", "unknown"]
     key_counts: dict[str, int] = Field(default_factory=dict)
     key_metrics: dict[str, int] = Field(default_factory=dict)
 
@@ -480,12 +553,12 @@ class ReviewTaskResultMetadata(BaseModel):
     generated_at: datetime
     degraded: bool = False
     traceability_available: bool = False
-    assembler: str = 'HermesReviewAssembler'
-    decision_owner: str = 'hermes'
-    support_owner: str = 'structured_review_capability_facade'
-    final_output_entrypoint: str = 'hermes_review_assembler'
-    result_ownership: str = 'hermes_decision_layer'
-    module_bucketing: str = 'execution_metadata_first'
+    assembler: str = "HermesReviewAssembler"
+    decision_owner: str = "hermes"
+    support_owner: str = "structured_review_capability_facade"
+    final_output_entrypoint: str = "hermes_review_assembler"
+    result_ownership: str = "hermes_decision_layer"
+    module_bucketing: str = "execution_metadata_first"
     support_material_present: bool = False
 
 
@@ -503,7 +576,7 @@ class ReviewTaskResultResponse(BaseModel):
 
 
 class ReviewReportFeedbackRequest(BaseModel):
-    model_config = ConfigDict(extra='forbid')
+    model_config = ConfigDict(extra="forbid")
 
     feedback_type: ReviewFeedbackType
     comment: str | None = None

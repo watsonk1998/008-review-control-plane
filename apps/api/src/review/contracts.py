@@ -37,6 +37,7 @@ from src.domain.models import ReviewDocumentType
 # ReviewBrief — compiled task specification
 # ---------------------------------------------------------------------------
 
+
 class ReviewBrief(BaseModel):
     """Compiled task specification — single input contract for all review engines.
 
@@ -51,8 +52,8 @@ class ReviewBrief(BaseModel):
     project_context_files: list[dict[str, Any]] = Field(default_factory=list)
     focus_pack: dict[str, Any] = Field(default_factory=dict)
     review_policy: dict[str, Any] = Field(default_factory=dict)
-    report_type: str = 'structured_review'
-    query: str = ''
+    report_type: str = "structured_review"
+    query: str = ""
     compiled_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     metadata: dict[str, Any] = Field(default_factory=dict)
 
@@ -61,31 +62,35 @@ class ReviewBrief(BaseModel):
 # FindingItem — single finding, aligned across engines
 # ---------------------------------------------------------------------------
 
+
 class FindingItem(BaseModel):
     """Single finding in a review packet — aligned across engines."""
 
     id: str
     title: str
-    severity: Literal['high', 'medium', 'low', 'info']
-    category: str = ''
-    layer: str = ''
+    severity: Literal["high", "medium", "low", "info"]
+    category: str = ""
+    layer: str = ""
     evidence_status: Literal[
-        'grounded', 'inferred', 'evidence_gap', 'visibility_gap'
-    ] = 'grounded'
+        "grounded", "inferred", "evidence_gap", "visibility_gap"
+    ] = "grounded"
     evidence_refs: list[str] = Field(default_factory=list)
     basis_refs: list[str] = Field(default_factory=list)
-    suggestion: str = ''
-    summary: str = ''
-    finding_type: str = ''
+    suggestion: str = ""
+    summary: str = ""
+    finding_type: str = ""
     manual_review_needed: bool = False
-    confidence: Literal['high', 'medium', 'low'] = 'medium'
-    source_engine: str = ''
+    confidence: Literal["high", "medium", "low"] = "medium"
+    source_engine: str = ""
     raw_data: dict[str, Any] = Field(default_factory=dict)
+    hallucination_risk: bool = False
+    evidence_span_ids: list[str] = Field(default_factory=list)
 
 
 # ---------------------------------------------------------------------------
 # ReviewPacketMetrics — summary counts
 # ---------------------------------------------------------------------------
+
 
 class ReviewPacketMetrics(BaseModel):
     """Summary metrics for a review packet."""
@@ -104,6 +109,7 @@ class ReviewPacketMetrics(BaseModel):
 # FactPacket — structured engine output (008 or Hermes)
 # ---------------------------------------------------------------------------
 
+
 class FactPacket(BaseModel):
     """Structured output from a review engine.
 
@@ -112,10 +118,10 @@ class FactPacket(BaseModel):
     """
 
     review_id: str
-    engine: Literal['008', 'hermes']
+    engine: Literal["008", "hermes"]
     summary_metrics: ReviewPacketMetrics = Field(default_factory=ReviewPacketMetrics)
     findings: list[FindingItem] = Field(default_factory=list)
-    overall_assessment: str = ''
+    overall_assessment: str = ""
     raw_result: dict[str, Any] = Field(default_factory=dict)
     produced_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     error: str | None = None
@@ -127,6 +133,7 @@ class FactPacket(BaseModel):
 # FinalReportPacket — fused dual-path output
 # ---------------------------------------------------------------------------
 
+
 class FinalReportPacket(BaseModel):
     """Fused output from dual-path review.
 
@@ -136,14 +143,14 @@ class FinalReportPacket(BaseModel):
     """
 
     review_id: str
-    final_grade: str = ''
-    executive_summary: str = ''
+    final_grade: str = ""
+    executive_summary: str = ""
     top_risks: list[FindingItem] = Field(default_factory=list)
     key_findings: list[FindingItem] = Field(default_factory=list)
     supplemental_findings: list[FindingItem] = Field(default_factory=list)
     all_findings: list[FindingItem] = Field(default_factory=list)
     traceability: list[dict[str, Any]] = Field(default_factory=list)
-    report_markdown: str = ''
+    report_markdown: str = ""
     report_sections: list[dict[str, Any]] = Field(default_factory=list)
     engines_used: list[str] = Field(default_factory=list)
     degradation_info: dict[str, Any] = Field(default_factory=dict)
@@ -155,6 +162,7 @@ class FinalReportPacket(BaseModel):
 # ---------------------------------------------------------------------------
 # PresentationResult — read-only expression-layer output
 # ---------------------------------------------------------------------------
+
 
 class PresentationResult(BaseModel):
     """Read-only presentation pass output.
@@ -168,8 +176,8 @@ class PresentationResult(BaseModel):
     """
 
     review_id: str
-    presentation_markdown: str = ''
-    source_authoritative_review_id: str = ''
+    presentation_markdown: str = ""
+    source_authoritative_review_id: str = ""
     consistency_validated: bool = False
     consistency_errors: list[str] = Field(default_factory=list)
     produced_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))

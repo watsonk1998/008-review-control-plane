@@ -97,9 +97,9 @@ def test_all_hermes_degraded_fails_closed():
     payload, final_packet = assembler.assemble(
         brief=brief,
         support_packet_008=_make_support_packet(),
-        hermes_review_packets=[degraded_packet],
+        hermes_review_packets=[degraded_packet, _make_packet("parameter_consistency_reviewer", degraded=True, error="LLM timeout")],
         support_result_008={},
-        agent_results=[_make_agent_result("execution_risk_reviewer", degraded=True, error="LLM timeout")],
+        agent_results=[_make_agent_result("execution_risk_reviewer", degraded=True, error="LLM timeout"), _make_agent_result("parameter_consistency_reviewer", degraded=True, error="LLM timeout")],
         enabled_modules=["parameter_consistency", "execution_continuity"],
     )
 
@@ -132,9 +132,9 @@ def test_module_level_gate_blocks_when_all_run_templates_degraded():
             FindingItem(id="F2", title="合规问题", severity="medium", category="compliance",
                         raw_data={"module_name": "legality_compliance"}),
         ]),
-        _make_packet("visibility_gap_reviewer", degraded=False),
-        # execution_risk_reviewer 是 parameter_consistency + execution_continuity 的唯一运行 reviewer
+        # execution_risk_reviewer 和 parameter_consistency_reviewer 被隔离了
         _make_packet("execution_risk_reviewer", degraded=True, error="execution_risk_reviewer 审查组件降级"),
+        _make_packet("parameter_consistency_reviewer", degraded=True, error="parameter_consistency_reviewer 审查组件降级"),
     ]
 
     agent_results = [
@@ -143,6 +143,8 @@ def test_module_level_gate_blocks_when_all_run_templates_degraded():
         _make_agent_result("visibility_gap_reviewer", degraded=False),
         _make_agent_result("execution_risk_reviewer", degraded=True,
                            error="execution_risk_reviewer 审查组件降级"),
+        _make_agent_result("parameter_consistency_reviewer", degraded=True,
+                           error="parameter_consistency_reviewer 审查组件降级"),
         # power_outage_operation_chain_reviewer 未被选中运行（不在 agent_results 中）
     ]
 
@@ -162,7 +164,7 @@ def test_module_level_gate_blocks_when_all_run_templates_degraded():
 
     # 应 fail-closed
     assert final_packet is None, (
-        "execution_risk_reviewer 是 parameter_consistency 和 execution_continuity 的唯一运行 reviewer，"
+        "执行风险和参数一致性组件 degraded，"
         "其 degraded 应触发模块级门禁，不输出正式报告"
     )
     assert payload["hermesController"]["degraded"] is True
@@ -324,11 +326,9 @@ def test_check_critical_module_blocks_unit():
     """直接测试 _check_critical_module_blocks 的细粒度行为."""
     assembler = HermesReviewAssembler()
 
-    # execution_risk_reviewer 覆盖 parameter_consistency + execution_continuity
-    # power_outage_operation_chain_reviewer 未被选中运行（不在 agent_results）
-    # policy_compliance_reviewer 正常运行
     agent_results = [
         {"agent_id": "execution_risk_reviewer", "packet": {"degraded": True, "error": "timeout"}},
+        {"agent_id": "parameter_consistency_reviewer", "packet": {"degraded": True, "error": "timeout"}},
         {"agent_id": "policy_compliance_reviewer", "packet": {"degraded": False, "error": None}},
     ]
 
@@ -337,15 +337,13 @@ def test_check_critical_module_blocks_unit():
         agent_results=agent_results,
     )
 
-    # execution_risk_reviewer 是运行中唯一覆盖这两个模块的 reviewer，且 degraded → 被阻断
     assert "parameter_consistency" in blocked, f"parameter_consistency 应被阻断，实际 blocked={blocked}"
     assert "execution_continuity" in blocked, f"execution_continuity 应被阻断，实际 blocked={blocked}"
-    # legality_compliance 的 policy_compliance_reviewer 正常 → 不阻断
     assert "legality_compliance" not in blocked, f"legality_compliance 不应被阻断，实际 blocked={blocked}"
 
-    assert details["parameter_consistency"]["title"] == "参数一致性"
-    assert "execution_risk_reviewer" in details["parameter_consistency"]["degraded_templates"]
-    err = details["parameter_consistency"]["errors"].get("execution_risk_reviewer", "")
+    assert details["parameter_consistency"]["title"] == "内容一致性"
+    assert "parameter_consistency_reviewer" in details["parameter_consistency"]["degraded_templates"]
+    err = details["parameter_consistency"]["errors"].get("parameter_consistency_reviewer", "")
     assert err, f"block detail error 应非空，实际: {err!r}"
 
 

@@ -26,9 +26,6 @@
 - 可通过环境变量或部署侧配置文件提供：
   - `LLM_*` / `OPENAI_*`
   - `FASTGPT_*`
-- 勘查副本存在（默认值，可改环境变量）：
-  - `/tmp/008-discovery/DeepTutor`
-  - `/tmp/008-discovery/gpt-researcher`
 
 ## 2. 安装依赖
 
@@ -57,25 +54,15 @@ make dev-web
 
 默认端口：
 
-- DeepTutor bridge: `8121`
 - API: `8018`
 - Web: `3008`
 
 ## 4. 手动启动命令
 
-### DeepTutor bridge
-
-```bash
-cd .
-apps/api/.venv/bin/python scripts/run_deeptutor_bridge.py --port 8121
-```
-
 ### API
 
 ```bash
 cd apps/api
-export DEEPTUTOR_BASE_URL=http://127.0.0.1:8121
-export GPT_RESEARCHER_EXTERNAL_PATH=/tmp/008-discovery/gpt-researcher
 . .venv/bin/activate
 uvicorn src.main:app --host 127.0.0.1 --port 8018
 ```
@@ -96,20 +83,6 @@ make verify-connectivity
 ```
 
 ## 6. 常见问题
-
-### GPT Researcher import 失败
-
-先确认：
-
-- `GPT_RESEARCHER_EXTERNAL_PATH` 指向有效 repo
-- `apps/api/.venv` 已通过 `make bootstrap` 安装依赖
-
-### DeepTutor 不可用
-
-确认：
-
-- `DEEPTUTOR_EXTERNAL_PATH` 指向有效 repo
-- bridge 已启动并监听 `8121`
 
 ### FastGPT Mode B 无结果或解析失败
 
@@ -142,11 +115,10 @@ weknora 服务器部署目录：`/root/008-review-control-plane`
 1. 确保在**本地开发机**完成 commit 与 push
 2. 通过 `rsync` 仅同步源码体到服务端目录 `/root/008-review-control-plane`
 3. 视变更范围决定重建的镜像层级：
-   - 对于纯 Web （前端）变更：若源码树已同步，仅需重建并拉起 `web`。
-   - 对后端 API / Python 依赖库产生变更：**必须坚决重建** `api`，以及由于共享基础镜像需要同步连带重建的 `deeptutor-bridge`。
+   - 对后端 API / Python 依赖库产生变更：**必须坚决重建** `api`。
    ```bash
    # 重启命令范例
-   docker compose up -d --build api web deeptutor-bridge
+   docker compose up -d --build api web
    ```
 
 ### 排障画像：WeasyPrint 底层依赖事故

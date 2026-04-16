@@ -20,11 +20,13 @@ Overlay governance:
 - verify_overlay_manifest() validates the expected overlay structure at startup
 - The launcher passes --overlay-root to the shim; the shim reads overlay prompts at invocation time
 """
+
 from __future__ import annotations
 
 import asyncio
 import json
 import logging
+import os
 import sys
 from dataclasses import dataclass, field
 from enum import Enum
@@ -90,11 +92,11 @@ class HermesKernelLauncher:
         repo_root: Path | None = None,
     ):
         if repo_root is not None and kernel_path is None:
-            kernel_path = repo_root / 'external' / 'hermes-agent'
+            kernel_path = repo_root / "external" / "hermes-agent"
         if repo_root is not None and overlays_path is None:
-            overlays_path = repo_root / 'overlays' / 'hermes-agent'
+            overlays_path = repo_root / "overlays" / "hermes-agent"
         if kernel_path is None:
-            raise ValueError('kernel_path or repo_root must be provided')
+            raise ValueError("kernel_path or repo_root must be provided")
         self.kernel_path = kernel_path
         self.overlays_path = overlays_path
         self.repo_root = repo_root
@@ -110,51 +112,57 @@ class HermesKernelLauncher:
         - whether the invoke shim is available
         """
         report: dict[str, Any] = {
-            'overlay_root': str(self.overlays_path) if self.overlays_path else None,
-            'overlay_available': False,
-            'subdirs': {},
-            'key_assets': {},
-            'shim_available': False,
-            'errors': [],
-            'warnings': [],
+            "overlay_root": str(self.overlays_path) if self.overlays_path else None,
+            "overlay_available": False,
+            "subdirs": {},
+            "key_assets": {},
+            "shim_available": False,
+            "errors": [],
+            "warnings": [],
         }
 
         if self.overlays_path is None:
-            report['errors'].append('No overlays_path configured')
+            report["errors"].append("No overlays_path configured")
             return report
 
         if not self.overlays_path.is_dir():
-            report['errors'].append(f'Overlay root does not exist: {self.overlays_path}')
+            report["errors"].append(
+                f"Overlay root does not exist: {self.overlays_path}"
+            )
             return report
 
-        report['overlay_available'] = True
+        report["overlay_available"] = True
 
         # Check subdirectories
         for subdir in EXPECTED_OVERLAY_SUBDIRS:
             subdir_path = self.overlays_path / subdir
-            report['subdirs'][subdir] = subdir_path.is_dir()
+            report["subdirs"][subdir] = subdir_path.is_dir()
             if not subdir_path.is_dir():
-                report['warnings'].append(f'Overlay subdir missing: {subdir}')
+                report["warnings"].append(f"Overlay subdir missing: {subdir}")
 
         # Check key assets
         key_assets = {
-            'system_prompt': self.overlays_path / 'prompts' / 'hermes_review_system_prompt.md',
-            'launch_config': self.overlays_path / 'config' / 'local_kernel_launch.yaml',
-            'invoke_shim': self.overlays_path / 'scripts' / 'invoke_kernel.py',
+            "system_prompt": self.overlays_path
+            / "prompts"
+            / "hermes_review_system_prompt.md",
+            "launch_config": self.overlays_path / "config" / "local_kernel_launch.yaml",
+            "invoke_shim": self.overlays_path / "scripts" / "invoke_kernel.py",
         }
         for asset_name, asset_path in key_assets.items():
-            report['key_assets'][asset_name] = asset_path.is_file()
+            report["key_assets"][asset_name] = asset_path.is_file()
 
-        report['shim_available'] = report['key_assets'].get('invoke_shim', False)
+        report["shim_available"] = report["key_assets"].get("invoke_shim", False)
 
-        if not report['shim_available']:
-            report['errors'].append('invoke_kernel.py shim not found — subprocess execution will fail')
+        if not report["shim_available"]:
+            report["errors"].append(
+                "invoke_kernel.py shim not found — subprocess execution will fail"
+            )
 
         logger.info(
-            '[hermes_launcher] Overlay manifest: available=%s, subdirs=%s, shim=%s',
-            report['overlay_available'],
-            report['subdirs'],
-            report['shim_available'],
+            "[hermes_launcher] Overlay manifest: available=%s, subdirs=%s, shim=%s",
+            report["overlay_available"],
+            report["subdirs"],
+            report["shim_available"],
         )
         return report
 
@@ -174,7 +182,9 @@ class HermesKernelLauncher:
         if self.overlays_path is not None:
             overlay_root_str = str(self.overlays_path)
             if not self.overlays_path.is_dir():
-                warnings.append(f"overlay_root does not exist yet: {self.overlays_path}")
+                warnings.append(
+                    f"overlay_root does not exist yet: {self.overlays_path}"
+                )
             else:
                 for subdir in EXPECTED_OVERLAY_SUBDIRS:
                     overlay_dirs[subdir] = (self.overlays_path / subdir).is_dir()
@@ -226,12 +236,16 @@ class HermesKernelLauncher:
         # Check for run_agent.py as a marker of a valid upstream checkout
         run_agent = self.kernel_path / "run_agent.py"
         if not run_agent.is_file():
-            plan.warnings.append("run_agent.py not found in kernel — submodule may not be initialized")
+            plan.warnings.append(
+                "run_agent.py not found in kernel — submodule may not be initialized"
+            )
 
         # Echo payload to prove the round-trip contract works
         echo = payload or {}
 
-        logger.info("[hermes_launcher] smoke complete — kernel located, overlay resolved")
+        logger.info(
+            "[hermes_launcher] smoke complete — kernel located, overlay resolved"
+        )
         return SmokeResult(
             success=True,
             mode="smoke",
@@ -250,7 +264,9 @@ class HermesKernelLauncher:
         logger.info("[hermes_launcher] start() called (skeleton implementation).")
         pass
 
-    async def invoke(self, payload: dict[str, Any], timeout_seconds: int = 120) -> dict[str, Any]:
+    async def invoke(
+        self, payload: dict[str, Any], timeout_seconds: int = 120
+    ) -> dict[str, Any]:
         """
         Send a payload to the kernel via the invoke_kernel.py shim.
         """
@@ -263,7 +279,7 @@ class HermesKernelLauncher:
                 "response": "",
                 "error": f"Kernel not viable: {'; '.join(plan.errors)}",
             }
-            
+
         if self.overlays_path is None:
             return {
                 "success": False,
@@ -286,18 +302,23 @@ class HermesKernelLauncher:
         cmd = [
             sys.executable,
             str(shim_path),
-            "--kernel-root", str(self.kernel_path),
-            "--overlay-root", str(self.overlays_path),
-            "--timeout-hint", str(timeout_seconds),
+            "--kernel-root",
+            str(self.kernel_path),
+            "--overlay-root",
+            str(self.overlays_path),
+            "--timeout-hint",
+            str(timeout_seconds),
         ]
 
         try:
-            logger.info("[hermes_launcher] Invoking local kernel subprocess: %s", " ".join(cmd))
-            
+            logger.info(
+                "[hermes_launcher] Invoking local kernel subprocess: %s", " ".join(cmd)
+            )
+
             env = os.environ.copy()
             # Keep self-evolution data (skills, memory, cache) inside the local kernel directory
             env["HERMES_HOME"] = str(self.kernel_path / ".hermes")
-            
+
             proc = await asyncio.create_subprocess_exec(
                 *cmd,
                 stdin=asyncio.subprocess.PIPE,
@@ -307,7 +328,7 @@ class HermesKernelLauncher:
             )
 
             payload_bytes = json.dumps(payload).encode("utf-8")
-            
+
             try:
                 stdout_bytes, stderr_bytes = await asyncio.wait_for(
                     proc.communicate(input=payload_bytes),
@@ -326,14 +347,14 @@ class HermesKernelLauncher:
 
             stdout_str = stdout_bytes.decode("utf-8")
             stderr_str = stderr_bytes.decode("utf-8")
-            
+
             if stderr_str:
                 logger.debug("[hermes_launcher] Kernel stderr: %s", stderr_str)
 
             # Parse delimited JSON output from shim
             marker = "<<<HERMES_KERNEL_RESULT>>>"
             parts = stdout_str.split(marker)
-            
+
             if len(parts) >= 3:
                 json_str = parts[1].strip()
                 try:

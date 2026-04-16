@@ -44,36 +44,35 @@ const STAGE_LABELS: Record<string, string> = {
   finalize: "已完成",
 };
 
-function estimateRealReviewProgress({
+// Stage-based progress provides a FLOOR guarantee only.
+// Values are deliberately low — the time-based simulation is the primary driver.
+// This prevents the progress bar from jumping to 60%+ as soon as the first
+// agent_running event arrives.
+function estimateStageFloor({
   totalAgents,
   completedAgents,
   stage,
-  status,
 }: {
   totalAgents: number;
   completedAgents: number;
   stage?: string;
   status?: string;
 }) {
-  const normalizedStatus = (status || "").trim().toLowerCase();
-  if (["succeeded", "accepted"].includes(normalizedStatus)) return 100;
-  if (["failed", "partial", "rejected", "needs_attachment"].includes(normalizedStatus)) return 96;
-  if (stage === "finalize") return 99;
-  if (stage === "report") return 95;
-  if (stage === "hermes_controller") return 91;
-  if (["agent_select", "agent_running", "agent_done"].includes(stage || "")) {
-    if (!totalAgents) return 68;
-    return Math.max(60, Math.min(89, Math.round(60 + (Math.min(completedAgents, totalAgents) / totalAgents) * 29)));
+  if (stage === "finalize") return 95;
+  if (stage === "report") return 88;
+  if (["agent_select", "agent_running", "agent_done", "rules", "evidence", "hermes_controller"].includes(stage || "")) {
+    if (!totalAgents) return 25;
+    return Math.round(25 + (Math.min(completedAgents, totalAgents) / totalAgents) * 50);
   }
-  if (stage === "rules" || stage === "evidence") return 45;
-  if (stage === "extract") return 30;
-  if (stage === "dispatch" || stage === "parse") return 15;
-  if (stage === "planning") return 5;
-  return 8;
+  if (stage === "extract") return 12;
+  if (stage === "dispatch" || stage === "parse") return 6;
+  if (stage === "planning") return 3;
+  return 0;
 }
 
+// Primary progress driver: 1% every 6 seconds, capped at 90%.
 function estimateSimulatedProgress(elapsedSeconds: number) {
-  return Math.min(90, Math.max(0, Math.floor(elapsedSeconds / 4)));
+  return Math.min(90, Math.max(0, Math.floor(elapsedSeconds / 6)));
 }
 
 function formatElapsed(seconds: number) {
@@ -161,9 +160,18 @@ function StructuredReportMarkdown({ markdown }: { markdown: string }) {
 }
 
 function StructuredReportHtml({ htmlContent, printCss }: { htmlContent: string; printCss?: string }) {
+  const safeCss = printCss 
+    ? printCss
+        .replace(/break-inside:\s*avoid;?/gi, "")
+        .replace(/page-break-inside:\s*avoid;?/gi, "")
+        .replace(/content-visibility:\s*[^;]+;?/gi, "")
+        .replace(/contain-intrinsic-size:\s*[^;]+;?/gi, "")
+        .replace(/transition:\s*[^;]*box-shadow[^;]*;?/gi, "")
+    : "";
+
   return (
-    <div className="structured-report-host">
-      {printCss ? <style>{printCss}</style> : null}
+    <div className="structured-report-host" style={{ overscrollBehaviorX: 'contain' }}>
+      {safeCss ? <style>{safeCss}</style> : null}
       <div dangerouslySetInnerHTML={{ __html: htmlContent }} />
     </div>
   );
@@ -414,28 +422,32 @@ export function TaskDetail({ taskId }: { taskId: string }) {
       ? debugCompletedAgents
       : completedAgentEvents.length;
     const stage = latestEvent?.stage || "";
+    const taskStartMs = progressViewStartedAt;
     const elapsedSeconds = TERMINAL_STATES.has((task?.status || "").trim().toLowerCase())
       ? 0
-      : Math.max(0, Math.floor((now - progressViewStartedAt) / 1000));
-    const realPercent = estimateRealReviewProgress({
+      : Math.max(0, Math.floor((now - taskStartMs) / 1000));
+    const stageFloor = estimateStageFloor({
       totalAgents,
       completedAgents,
       stage,
       status: task?.status,
     });
     const simulatedPercent = estimateSimulatedProgress(elapsedSeconds);
+    // Terminal states set to 100%.
+    // Otherwise, ONLY simulatedPercent is used to avoid jumps and ensure 0% on entry.
+    const effectivePercent = TERMINAL_STATES.has((task?.status || "").trim().toLowerCase())
+      ? 100
+      : simulatedPercent;
     return {
       latestEvent,
       currentStage: STAGE_LABELS[stage] || "审查执行中",
       totalAgents,
       completedAgents,
       simulatedPercent,
-      realPercent,
-      progressPercent: TERMINAL_STATES.has((task?.status || "").trim().toLowerCase())
-        ? 100
-        : simulatedPercent,
+      stageFloor,
+      progressPercent: effectivePercent,
     };
-  }, [events, structuredResult, task?.status, now, progressViewStartedAt]);
+  }, [events, structuredResult, task?.status, task?.createdAt, now, progressViewStartedAt]);
 
   const reviewElapsedSeconds = useMemo(() => {
     if (!task) return 0;

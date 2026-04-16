@@ -1,5 +1,5 @@
-export type TaskType = "knowledge_qa" | "deep_research" | "document_research" | "review_assist" | "structured_review";
-export type CapabilityMode = "auto" | "deeptutor" | "gpt_researcher" | "fast" | "llm_only";
+export type TaskType = "structured_review";
+export type CapabilityMode = "auto" | "fast" | "llm_only";
 export type TaskStatus = "created" | "planned" | "running" | "waiting_external" | "succeeded" | "failed" | "partial";
 export type ReviewLayer = "L1" | "L2" | "L3";
 export type ReviewDocumentType =

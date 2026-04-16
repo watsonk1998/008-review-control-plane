@@ -38,7 +38,7 @@ _NON_NORMATIVE_HINTS = (
     '查勘记录',
 )
 _NORMATIVE_CODE_PATTERN = re.compile(
-    r'(?:(?:GB|GB/T|DL/T|DL|Q/CSG|Q/GDW|Q/SH|JGJ|NB/T|NB|AQ|DB|DBJ|YD/T|SL|GA|CECS)\s*[-/A-Z]*\s*\d{2,}(?:\.\d+)?(?:[-—]\d{2,4})?)',
+    r'(?:(?:GB|GB/T|GBJ|DL/T|DL|Q/CSG|Q/GDW|Q/SH|Q/BGJ|JGJ|NB/T|NB|AQ|DB|DBJ|DGJ|YD/T|SL|GA|CECS|TSG|HG|CJJ|SH/T|YB|JB|CJ|YS|SY|HJ|TB|LB|MZ)\s*[-/A-Z]*\s*\d{2,}(?:\.\d+)?(?:[-—]\d{2,4})?)',
     re.IGNORECASE,
 )
 _VERSION_YEAR_PATTERN = re.compile(r'[-—]\d{4}(?:\b|$)')
@@ -153,6 +153,29 @@ class NormativeValidityChecker:
         value = self._clean_text(text)
         if not value:
             return []
+
+        # Gate: markdown table rows (pipe-separated cells from PDF/DOCX extractors).
+        # Split by pipe into individual cells, then filter each cell:
+        # keep cells that contain a recognized standard code OR a book-title (《》).
+        pipe_count = value.count('|')
+        if value.lstrip().startswith('|') or pipe_count >= 2:
+            # Separator-only rows (e.g. |:---|---:|) → skip entirely
+            if re.match(r'^[\s|\-:]+$', value):
+                return []
+            cells = [cell.strip() for cell in value.split('|') if cell.strip()]
+            candidates = []
+            for cell in cells:
+                cleaned = re.sub(r'^\d+\.?\s*', '', cell).strip()
+                if not cleaned:
+                    continue
+                # Skip table header cells (short generic labels)
+                if cleaned in ('序号', '名称', '名 称', '编号', '编 号', '标准号', '规范名称', '备注'):
+                    continue
+                # Keep cells with a standard code or book-title marker
+                if _NORMATIVE_CODE_PATTERN.search(cleaned) or '《' in cleaned:
+                    candidates.append(cleaned)
+            return candidates
+
         normalized = re.sub(r'^[（(]?\d+[)）.、]\s*', '', value)
         return [part.strip('；;。 ') for part in re.split(r'[；;]', normalized) if part.strip('；;。 ')]
 

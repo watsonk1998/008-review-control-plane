@@ -277,6 +277,7 @@ class HermesController:
                 enabled_modules=enabled_modules,
             )
             enriched.setdefault('hermesController', {})['enabled'] = True
+            enriched.setdefault('hermesController', {})['degraded'] = False
         except Exception as exc:
             if emit:
                 emit('hermes_controller', 'hermes_controller', 'failed', f'Hermes 主审异常，已切换为降级路径：{exc}')

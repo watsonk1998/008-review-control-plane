@@ -10,12 +10,14 @@ final grades, or judgment logic. It is purely support material.
 
 from __future__ import annotations
 
+import hashlib
+import json
 from pathlib import Path
 from typing import Any
 from pydantic import BaseModel, Field
 
 from src.review.schema import ExtractedFacts, ResolvedReviewProfile
-from src.domain.models import TaskRecord
+from src.domain.models import TaskRecord, EvidenceSpan
 from src.review.basis_pack_resolver import ResolvedBasisProfile
 
 
@@ -25,6 +27,7 @@ class SupportPacket(BaseModel):
     It contains structured facts, visibility metadata, and resolved governance profiles
     but does NOT contain official verdicts, final grades, or judgment logic.
     """
+
     task_id: str
     document_type: str
     profile: dict[str, Any]
@@ -34,6 +37,7 @@ class SupportPacket(BaseModel):
     basis_fulltext_context: list[dict[str, Any]] = Field(default_factory=list)
     expert_review_points: list[str] = Field(default_factory=list)
     priority_focus_axes: list[str] = Field(default_factory=list)
+    provenance_registry: dict[str, EvidenceSpan] = Field(default_factory=dict)
     degraded: bool
     warning_signals: list[str]
 
@@ -44,20 +48,47 @@ class SupportPacketBuilder:
     It packages 008 facts and resolved basis profiles without attempting to issue
     a final decision.
     """
+
     def __init__(self) -> None:
         pass
+
+    def _register_span(
+        self, registry: dict[str, EvidenceSpan], span: EvidenceSpan
+    ) -> str:
+        """Register span in provenance registry, generate span_id if missing"""
+        if not span.span_id:
+            # Generate deterministic span_id using requested algorithm
+            raw_id = f"{span.sourceType}{span.sourceId}{span.excerpt}"
+            span.span_id = hashlib.md5(raw_id.encode()).hexdigest()[:16]
+
+        span_id = span.span_id
+        if span_id not in registry:
+            registry[span_id] = span
+
+        return span_id
 
     def build_packet(
         self,
         review_record: TaskRecord,
         profile: ResolvedReviewProfile,
         basis_profile: ResolvedBasisProfile,
-        facts: ExtractedFacts
+        facts: ExtractedFacts,
+        validate_span_provenance: bool = True,
     ) -> SupportPacket:
 
         warning_signals = []
         if basis_profile.degraded:
             warning_signals.extend(basis_profile.degradation_reasons)
+
+        provenance_registry: dict[str, EvidenceSpan] = {}
+
+        # Register document evidence spans from facts
+        for fact_key, spans in (facts.factEvidence or {}).items():
+            if not isinstance(spans, list):
+                continue
+            for span in spans:
+                if isinstance(span, EvidenceSpan):
+                    self._register_span(provenance_registry, span)
 
         # Build basis summary for Hermes consumption
         basis_summary = [
@@ -82,20 +113,27 @@ class SupportPacketBuilder:
             }
             for rp in basis_profile.rule_packs
         ]
-        basis_fulltext_context = self._load_basis_fulltext_context(basis_profile)
-        expert_review_points = self._collect_expert_review_points(basis_fulltext_context)
+        basis_fulltext_context = self._load_basis_fulltext_context(
+            basis_profile, provenance_registry
+        )
+        expert_review_points = self._collect_expert_review_points(
+            basis_fulltext_context,
+            provenance_registry,
+            validate_span_provenance=validate_span_provenance,
+        )
         priority_focus_axes = self._collect_priority_focus_axes(profile, basis_profile)
 
         return SupportPacket(
-            task_id=getattr(review_record, 'id', getattr(review_record, 'taskId', '')),
+            task_id=getattr(review_record, "id", getattr(review_record, "taskId", "")),
             document_type=profile.documentType,
-            profile=basis_profile.model_dump(mode='json'),
-            facts=facts.model_dump(mode='json'),
+            profile=basis_profile.model_dump(mode="json"),
+            facts=facts.model_dump(mode="json"),
             basis_summary=basis_summary,
             rule_pack_summary=rule_pack_summary,
             basis_fulltext_context=basis_fulltext_context,
             expert_review_points=expert_review_points,
             priority_focus_axes=priority_focus_axes,
+            provenance_registry=provenance_registry,
             degraded=basis_profile.degraded,
             warning_signals=warning_signals,
         )
@@ -103,7 +141,11 @@ class SupportPacketBuilder:
     def _repo_root(self) -> Path:
         return Path(__file__).resolve().parents[4]
 
-    def _load_basis_fulltext_context(self, basis_profile: ResolvedBasisProfile) -> list[dict[str, Any]]:
+    def _load_basis_fulltext_context(
+        self,
+        basis_profile: ResolvedBasisProfile,
+        provenance_registry: dict[str, EvidenceSpan],
+    ) -> list[dict[str, Any]]:
         root = self._repo_root()
         contexts: list[dict[str, Any]] = []
         for basis in basis_profile.basis_documents:
@@ -113,51 +155,102 @@ class SupportPacketBuilder:
                 if not path.exists() or not path.is_file():
                     continue
                 try:
-                    content = path.read_text(encoding='utf-8')
+                    content = path.read_text(encoding="utf-8")
                 except Exception:
                     continue
                 if not content.strip():
                     continue
                 chunks.append(content[:6000])
             if chunks:
-                contexts.append({
-                    'basis_id': basis.basis_id,
-                    'title': basis.title,
-                    'excerpt': '\n\n'.join(chunks)[:12000],
-                })
+                excerpt = "\n\n".join(chunks)[:12000]
+                span = EvidenceSpan(
+                    sourceType="policy",
+                    sourceId=basis.basis_id,
+                    locator={"blockId": "fulltext", "sectionId": "fulltext"},
+                    excerpt=excerpt,
+                    clauseTitle=basis.title,
+                )
+                span_id = self._register_span(provenance_registry, span)
+                contexts.append(
+                    {
+                        "basis_id": basis.basis_id,
+                        "title": basis.title,
+                        "evidence_span_id": span_id,
+                    }
+                )
         return contexts
 
-    def _collect_expert_review_points(self, contexts: list[dict[str, Any]]) -> list[str]:
+    def _collect_expert_review_points(
+        self,
+        contexts: list[dict[str, Any]],
+        provenance_registry: dict[str, EvidenceSpan],
+        validate_span_provenance: bool = True,
+    ) -> list[str]:
+        points = []
         for item in contexts:
-            basis_id = str(item.get('basis_id') or '')
-            title = str(item.get('title') or '')
-            if '监理工程师对停电施工方案的审核规则及要点' not in basis_id and '监理工程师对停电施工方案的审核规则及要点' not in title:
+            span_id = item.get("evidence_span_id")
+            if validate_span_provenance:
+                if not span_id or span_id not in provenance_registry:
+                    # Span not registered, treat as visibility gap
+                    continue
+
+            basis_id = str(item.get("basis_id") or "")
+            title = str(item.get("title") or "")
+            if (
+                "监理工程师对停电施工方案的审核规则及要点" not in basis_id
+                and "监理工程师对停电施工方案的审核规则及要点" not in title
+            ):
                 continue
-            excerpt = str(item.get('excerpt') or '')
-            points = []
+
+            span = provenance_registry.get(span_id) if span_id else None
+            if not span:
+                continue
+
+            excerpt = span.excerpt
             for line in excerpt.splitlines():
-                normalized = line.strip().lstrip('-*•0123456789.、（）() ')
+                normalized = line.strip().lstrip("-*•0123456789.、（）() ")
                 if len(normalized) < 6:
                     continue
-                if any(keyword in normalized for keyword in ('停电', '验电', '接地', '挂牌', '遮栏', '工作票', '操作票', '勘察', '审批', '用户告知', '送电', '归档', '整改', '监护', '交底')):
+                if any(
+                    keyword in normalized
+                    for keyword in (
+                        "停电",
+                        "验电",
+                        "接地",
+                        "挂牌",
+                        "遮栏",
+                        "工作票",
+                        "操作票",
+                        "勘察",
+                        "审批",
+                        "用户告知",
+                        "送电",
+                        "归档",
+                        "整改",
+                        "监护",
+                        "交底",
+                    )
+                ):
                     points.append(normalized)
                 if len(points) >= 16:
                     break
             return points
-        return []
+        return points
 
-    def _collect_priority_focus_axes(self, profile: ResolvedReviewProfile, basis_profile: ResolvedBasisProfile) -> list[str]:
+    def _collect_priority_focus_axes(
+        self, profile: ResolvedReviewProfile, basis_profile: ResolvedBasisProfile
+    ) -> list[str]:
         axes = [
-            '停电范围与停复电关键信息',
-            '停电申请审批与用户告知',
-            '停电五步法安全动作闭环',
-            '工作票/操作票/现场勘察证据链',
-            '防反送电与双电源风险控制',
-            '完工送电、资料归档与整改闭环',
+            "停电范围与停复电关键信息",
+            "停电申请审批与用户告知",
+            "停电五步法安全动作闭环",
+            "工作票/操作票/现场勘察证据链",
+            "防反送电与双电源风险控制",
+            "完工送电、资料归档与整改闭环",
         ]
-        if profile.documentType != 'distribution_network_special_scheme':
+        if profile.documentType != "distribution_network_special_scheme":
             return []
         rule_pack_ids = {item.rule_pack_id for item in basis_profile.rule_packs}
-        if 'distribution_network.restoration_closure.v1' not in rule_pack_ids:
+        if "distribution_network.restoration_closure.v1" not in rule_pack_ids:
             axes = axes[:-1]
         return axes
