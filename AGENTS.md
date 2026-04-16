@@ -238,3 +238,41 @@ All user-visible content in reports, interfaces, and statuses MUST be presented 
 - **`progressPercent` 必须采信后端真实 stage 估值**：最终渲染的进度百分比必须 `Math.max(simulatedPercent, realPercent)`。当后端明确上报已完成多轮 agent 审查（`realPercent > 60%`）时，绝不允许被单纯基于时间推演的低进度（`simulatedPercent`）所覆盖。
 - **Markdown 表格提取免疫（HG-26）**：针对 PDF 等格式的识别缺陷（会把表格渲染为带竖线的 markdown 行），在 `_split_reference_candidates` 提取规范依据时增加硬提取门禁：任何首字符为 `|` 或单句含 `>=2` 个 `|` 的片段，直接按噪音抛弃。禁止使用简单的符号 split 导致整块表格被识别为一个标准名称。
 - **内部状态键必须做展现层隔离（HG-27）**：像 `title_detected_without_attachment_body` 等内部引擎状态 key，绝对禁止通过 `finding.summary` 渗透至最终正式审查报告中展示给用户。此类变量应始终在到达视图模型（View Model）前经 `_INTERNAL_DESCRIPTION_KEY_LABELS` 之类的字典实行收口翻译。
+
+## Project Corrections Addendum (2026-04-16, 下午批次 — UI 体验回归修复)
+
+> Source: 用户截图报告 5 个生产回归——进度条瞬跳卡死、PDF 页面割裂空白、编制依据识别不全、网页滚动卡顿白屏、鼠标滚轮触发浏览器回退。
+
+### 进度条 stage floor 合同（修订，与上方旧规则冲突时以本条为准）
+
+**进度条设计最终合同**：
+- 时间驱动（`estimateSimulatedProgress`，1%/6s，上限 90%）为**唯一主驱动**。
+- stage 信号通过 `estimateStageFloor()` 只提供**下界保证（floor）**，不是跳跃目标值。
+- `effectivePercent = Math.max(simulatedPercent, stageFloor)`。
+- **`stageFloor` 值域上限约束（任何修改必须遵守，违反即回退）**：
+  - `agent_running`（无 totalAgents）：`≤ 25%`
+  - `agent_running`（有数据）：`25 + completedRatio * 50`，范围 `[25%, 75%]`
+  - `report`：`≤ 88%`；`finalize`：`≤ 95%`
+- 上方 HG-25 addendum 中"`progressPercent` 必须采信后端真实 stage 估值"的表述与本条冲突，以本条为准：stage 值只是 floor，**不是最终决定者**。
+
+### CSS 打印样式禁止事项
+
+- **`page: wide` 禁止在报告 CSS 中使用**（`@media print` 内亦禁止）：切换页面尺寸（portrait→landscape）需要从新页开始，即使包在 print block 内也会在元素前产生强制分页，导致报告空白页。宽表格应 `overflow-x: auto` 在屏幕水平滚动，PDF 自然断页。
+- **`content-visibility: auto` 禁止在报告 section 上使用**：快速滚动时未渲染 section 出现白屏占位块，副作用大于性能收益。
+- **`transition: box-shadow` 禁止用于长列表 issue-card**：hover 过渡在大量 card 时触发持续 composite 重绘，是滚动卡顿的主要 CSS 原因。
+
+### 横向滚动容器 overscroll 合同（HG-28）
+
+任何使用 `overflow-x: auto/scroll` 的报告/详情页容器，**必须**同时声明 `overscroll-behavior-x: contain`。
+- 不声明时 Mac trackpad/鼠标横向滚到边界后事件"穿透"给浏览器触发历史导航（后退）。
+- 受此约束：`.structured-report-host`（`theme.css`）、`.structured-report__table-wrap`（`final_report_view_model.py`）。
+- 新增任何横向滚动容器时，`overscroll-behavior-x: contain` 为**必须项**。
+
+### 标准代号提取 regex 覆盖合同（更新 normative_validity.py 维护规则）
+
+`_NORMATIVE_CODE_PATTERN` 覆盖的前缀集合（变更 normative_validity.py 时必须确认完整）：
+`GB / GB/T / GBJ / DL/T / DL / NB/T / NB / AQ / DB / DBJ / DGJ / JGJ / YD/T / SL / GA / CECS / TSG / HG / CJJ / SH/T / YB / JB / CJ / YS / SY / HJ / TB / LB / MZ / Q/CSG / Q/GDW / Q/SH / Q/BGJ`
+
+pipe-row 提取改为 cell-by-cell（最终版，上方旧 HG-26 的"按噪音抛弃"已被此方案取代）：
+1. 按 `|` 分割为单元格；2. 过滤表头标签；3. 保留含标准代号或 `《` 的 cell；4. 禁止 `findall(code)` 只提取裸代号。
+
