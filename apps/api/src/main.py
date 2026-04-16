@@ -38,6 +38,6 @@ app.include_router(admin_governance_router)
 async def root():
     return {
         'name': 'hermes-review-agent API',
-        'role': 'DeepResearchAgent-compatible orchestration layer',
+        'role': 'Hermes Control Plane',
         'docs': '/docs',
     }

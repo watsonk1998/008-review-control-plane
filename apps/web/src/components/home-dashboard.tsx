@@ -34,26 +34,6 @@ const TASK_OPTIONS: Array<{ value: TaskType; label: string; hint: string }> = [
     label: "正式审查",
     hint: "支持 fixture 或上传文档；当前稳定支持 construction_org / hazardous_special_scheme，已补充专项方案三级能力树展示。",
   },
-  {
-    value: "review_assist",
-    label: "审查辅助",
-    hint: "输出辅助审查要点，不给正式审查结论。",
-  },
-  {
-    value: "knowledge_qa",
-    label: "知识问答",
-    hint: "先规划，再调 Fast / DeepTutor / LLM。",
-  },
-  {
-    value: "document_research",
-    label: "文档研究",
-    hint: "围绕本地 fixture 文档做研究与报告。",
-  },
-  {
-    value: "deep_research",
-    label: "深度研究",
-    hint: "路由 GPT Researcher 产出研究报告。",
-  },
 ];
 
 const CAPABILITY_OPTIONS: Array<{
@@ -62,12 +42,6 @@ const CAPABILITY_OPTIONS: Array<{
   hint: string;
 }> = [
   { value: "auto", label: "自动编排", hint: "由系统智能决策执行链路。" },
-  { value: "deeptutor", label: "专业问答引擎", hint: "基于行业规范体系提供精准解释。" },
-  {
-    value: "gpt_researcher",
-    label: "深度研究引擎",
-    hint: "自动归纳证据链并产出分析报告。",
-  },
   {
     value: "fast",
     label: "检索增强框架",
@@ -82,16 +56,8 @@ const CAPABILITY_OPTIONS: Array<{
 
 const CAPABILITY_BOUNDARY = [
   {
-    title: "DeepResearchAgent 智能编排",
+    title: "Hermes 主规划",
     body: "负责整体规划、路由分发与逻辑综合，自身不直接出具结构化结论。",
-  },
-  {
-    title: "DeepTutor 专业问答",
-    body: "标准规程对齐、知识概念解析、全链路上文环境长内容推理。",
-  },
-  {
-    title: "GPT Researcher 深度研究",
-    body: "长文本局部研究、归纳并自动化整理多方证据，输出专业格式报告。",
   },
   {
     title: "FastGPT 检索分片",

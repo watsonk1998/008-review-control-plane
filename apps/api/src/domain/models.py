@@ -6,7 +6,7 @@ from typing import Any, Literal, Union
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-TaskType = Literal['knowledge_qa', 'deep_research', 'document_research', 'review_assist', 'structured_review']
+TaskType = Literal['structured_review']
 CapabilityMode = Literal['auto', 'fast', 'llm_only']
 TaskStatus = Literal['created', 'planned', 'running', 'waiting_external', 'succeeded', 'failed', 'partial']
 EventStatus = Literal['started', 'completed', 'failed', 'info']
