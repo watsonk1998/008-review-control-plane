@@ -101,7 +101,7 @@ class SQLiteTaskStore:
             if column not in existing:
                 conn.execute(f"ALTER TABLE tasks ADD COLUMN {column} {column_type}")
 
-def create_task(self, task: TaskRecord) -> TaskRecord:
+    def create_task(self, task: TaskRecord) -> TaskRecord:
         # Generate annotated facts and fact relationships from the task
         annotated_facts = getattr(task, 'annotatedFacts', None)
         fact_relationships = getattr(task, 'factRelationships', None)
