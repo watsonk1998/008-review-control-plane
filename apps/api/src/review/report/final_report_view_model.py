@@ -1083,7 +1083,6 @@ html, body {
   background: #ffffff;
   border: 1px solid #e5e7eb;
   box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-  break-inside: avoid;
 }
 
 .structured-report__section-header {
@@ -1291,8 +1290,6 @@ html, body {
   border-radius: 12px;
   border: 1px solid #e5e7eb;
   background: #ffffff;
-  break-inside: avoid;
-  page-break-inside: avoid;
   transition: box-shadow 0.15s ease;
 }
 
