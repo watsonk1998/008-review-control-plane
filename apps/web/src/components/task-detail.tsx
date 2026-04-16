@@ -44,7 +44,11 @@ const STAGE_LABELS: Record<string, string> = {
   finalize: "已完成",
 };
 
-function estimateRealReviewProgress({
+// Stage-based progress provides a FLOOR guarantee only.
+// Values are deliberately low — the time-based simulation is the primary driver.
+// This prevents the progress bar from jumping to 60%+ as soon as the first
+// agent_running event arrives.
+function estimateStageFloor({
   totalAgents,
   completedAgents,
   stage,
@@ -58,22 +62,24 @@ function estimateRealReviewProgress({
   const normalizedStatus = (status || "").trim().toLowerCase();
   if (["succeeded", "accepted"].includes(normalizedStatus)) return 100;
   if (["failed", "partial", "rejected", "needs_attachment"].includes(normalizedStatus)) return 96;
-  if (stage === "finalize") return 99;
-  if (stage === "report") return 95;
-  if (stage === "hermes_controller") return 91;
+  if (stage === "finalize") return 95;
+  if (stage === "report") return 88;
+  if (stage === "hermes_controller") return 80;
   if (["agent_select", "agent_running", "agent_done"].includes(stage || "")) {
-    if (!totalAgents) return 68;
-    return Math.max(60, Math.min(89, Math.round(60 + (Math.min(completedAgents, totalAgents) / totalAgents) * 29)));
+    if (!totalAgents) return 25;
+    // Scale 25-75% based on agent completion ratio
+    return Math.max(25, Math.min(75, Math.round(25 + (Math.min(completedAgents, totalAgents) / totalAgents) * 50)));
   }
-  if (stage === "rules" || stage === "evidence") return 45;
-  if (stage === "extract") return 30;
-  if (stage === "dispatch" || stage === "parse") return 15;
-  if (stage === "planning") return 5;
-  return 8;
+  if (stage === "rules" || stage === "evidence") return 18;
+  if (stage === "extract") return 12;
+  if (stage === "dispatch" || stage === "parse") return 6;
+  if (stage === "planning") return 3;
+  return 0;
 }
 
+// Primary progress driver: 1% every 6 seconds, capped at 90%.
 function estimateSimulatedProgress(elapsedSeconds: number) {
-  return Math.min(90, Math.max(0, Math.floor(elapsedSeconds / 4)));
+  return Math.min(90, Math.max(0, Math.floor(elapsedSeconds / 6)));
 }
 
 function formatElapsed(seconds: number) {
@@ -421,27 +427,27 @@ export function TaskDetail({ taskId }: { taskId: string }) {
     const elapsedSeconds = TERMINAL_STATES.has((task?.status || "").trim().toLowerCase())
       ? 0
       : Math.max(0, Math.floor((now - taskStartMs) / 1000));
-    const realPercent = estimateRealReviewProgress({
+    const stageFloor = estimateStageFloor({
       totalAgents,
       completedAgents,
       stage,
       status: task?.status,
     });
     const simulatedPercent = estimateSimulatedProgress(elapsedSeconds);
-    // Use the higher of time-simulated vs stage-based estimates.
-    // This ensures that (a) users who open the page mid-run see a sensible
-    // percent immediately, and (b) explicit stage signals (agent_running → 60%+)
-    // always win over the slow time-ramp.
+    // Time-based simulation is the PRIMARY driver (smooth ramp-up).
+    // Stage signals only provide a FLOOR — they guarantee the bar never
+    // drops below a sensible minimum for the current pipeline stage,
+    // but do NOT jump ahead of the time-based ramp.
     const effectivePercent = TERMINAL_STATES.has((task?.status || "").trim().toLowerCase())
       ? 100
-      : Math.max(simulatedPercent, realPercent);
+      : Math.max(simulatedPercent, stageFloor);
     return {
       latestEvent,
       currentStage: STAGE_LABELS[stage] || "审查执行中",
       totalAgents,
       completedAgents,
       simulatedPercent,
-      realPercent,
+      stageFloor,
       progressPercent: effectivePercent,
     };
   }, [events, structuredResult, task?.status, task?.createdAt, now, progressViewStartedAt]);

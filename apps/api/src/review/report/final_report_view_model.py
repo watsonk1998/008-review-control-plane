@@ -1116,6 +1116,9 @@ html, body {
   background: #ffffff;
   border: 1px solid #e5e7eb;
   box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  contain: layout style;
+  content-visibility: auto;
+  contain-intrinsic-size: auto 600px;
 }
 
 .structured-report__section-header {
@@ -1286,9 +1289,7 @@ html, body {
 }
 
 .structured-report__table-wrap--landscape {
-  page: wide;
-  break-before: page;
-  page-break-before: always;
+  /* page/break properties are print-only; see @media print below */
 }
 
 .structured-report__matrix-table {
@@ -1323,10 +1324,8 @@ html, body {
   border-radius: 12px;
   border: 1px solid #e5e7eb;
   background: #ffffff;
-  transition: box-shadow 0.15s ease;
+  contain: layout style;
 }
-
-.structured-report__issue-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
 
 .structured-report__issue-card--high {
   border-left: 5px solid #dc2626;
@@ -1388,8 +1387,6 @@ html, body {
     border-radius: 8px;
     margin-top: 18px;
     padding: 18px 16px;
-    break-inside: avoid;
-    page-break-inside: avoid;
   }
   .structured-report__section-title {
     font-size: 17px;
@@ -1446,7 +1443,14 @@ html, body {
     break-after: avoid;
     page-break-after: avoid;
   }
+  .structured-report__table-wrap--landscape {
+    page: wide;
+  }
   .structured-report__matrix-table thead { display: table-header-group; }
+  .structured-report__matrix-table tr {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
   .structured-report__matrix-table th,
   .structured-report__matrix-table td {
     padding: 10px 12px;
@@ -1458,11 +1462,17 @@ html, body {
   .structured-report__summary-metric {
     padding: 10px 12px;
     border-radius: 8px;
+    break-inside: avoid;
+    page-break-inside: avoid;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
   .structured-report__summary-metric-value {
     font-size: 18px;
+  }
+  .report-item {
+    break-inside: avoid;
+    page-break-inside: avoid;
   }
 }
 """
