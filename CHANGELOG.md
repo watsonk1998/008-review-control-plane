@@ -6,6 +6,62 @@
 
 ## 2026-04-16
 
+### Fixed（下午批次 - UI 体验回归修复）
+
+#### 进度条逻辑重构（HG-26，第二次犯同一错误）
+
+- **根因**：`estimateRealReviewProgress()` 在 `agent_running` 阶段无 totalAgents 时返回 `68`，有数据时高达 `60-89%`。`effectivePercent = Math.max(simulated, real)` 逻辑使得 stage 信号一到立即跳至 60%+，时间驱动的慢速爬升完全被压制，进度条从此卡死。**这是同一错误第二次出现**，应彻底消灭此模式。
+- **修复**（`apps/web/src/components/task-detail.tsx`）：
+  - 函数重命名为 `estimateStageFloor()`，语义从"目标值"变为"下界保证"
+  - stage 值大幅降低：`agent_running` 无数据=`25%`（原 `68%`），有数据时按完成比例缩放至 `25-75%`（原 `60-89%`）
+  - 时间驱动（1%/6s，90% 上限）为主驱动；stage 信号仅保证不低于当前阶段最低合理值
+  - `effectivePercent = Math.max(simulatedPercent, stageFloor)`——逻辑未变，但 stageFloor 值域已正确
+
+> [!WARNING] HG-26 约束（进度条 stage 值域）
+> `estimateStageFloor()` 的返回值代表"阶段最低保证"，**不是目标值也不是跳跃点**。`agent_running` 阶段 floor 不得超过 30%；`report` 阶段同理不超过 88%。任何增大 floor 的修改都会使进度条在该阶段瞬跳，破坏时间驱动主导原则。
+
+#### PDF 报告布局割裂
+
+- **根因**：`@media print` 中 `.structured-report__table-wrap--landscape { page: wide; }` 声明切换页面尺寸（portrait→landscape），PDF 引擎在该元素前强制分页，产生大段空白页。
+- **修复**（`apps/api/src/review/report/final_report_view_model.py`）：移除 `page: wide`（以注释保留说明），放弃横向翻转，让宽表格依靠自然流式断页；同时移除 `.structured-report__section` 的 `content-visibility: auto`（会导致快速滑动章节白屏）。
+
+> [!CAUTION] CSS `page: wide` 禁止用于屏幕/PDF 双用途样式
+> `page: wide` 仅在 `@media print` 内有效，但即使包在 print 块内，它也会在该元素前触发强制分页（因为要切换页面尺寸）。宽表格应使用 `overflow-x: auto` + 水平滚动在屏幕呈现，PDF 允许自然截断。禁止在正式报告 CSS 中使用 `page: wide`。
+
+#### 编制依据提取不完整
+
+- **根因（双重）**：(1) `_NORMATIVE_CODE_PATTERN` 缺少 TSG/DGJ/Q·BGJ/HG/CJJ/SH·T/GBJ/YB 等行业标准前缀；(2) pipe-row 路径仅用 `findall()` 提取裸代号，表格中的完整标准名称（含《》）全部丢失。
+- **修复**（`apps/api/src/review/hermes/normative_validity.py`）：
+  - `_NORMATIVE_CODE_PATTERN` 新增 16 个前缀：`GBJ / Q/BGJ / DGJ / TSG / HG / CJJ / SH/T / YB / JB / CJ / YS / SY / HJ / TB / LB / MZ`
+  - `_split_reference_candidates()` pipe-row 路径改为 cell-by-cell 提取：分割每个 `|` 单元格，过滤表头（序号/名称/编号），保留含标准代号或 `《` 的 cell 作为候选
+  - 验证：`pytest -k normative` 20 passed
+
+#### 网页滚动卡顿与白屏
+
+- **根因**：大量 `.structured-report__issue-card` 的 `transition: box-shadow 0.15s ease` 在快速滚动时触发持续 composite 层重绘；`content-visibility: auto` 导致章节内容快速滑动时出现白屏占位块。
+- **修复**（`apps/api/src/review/report/final_report_view_model.py`）：
+  - 移除 issue-card 的 hover `box-shadow` 过渡动画
+  - issue-card 和 section 增加 `contain: layout style`（CSS 渲染边界隔离）
+  - 移除 `content-visibility: auto` + `contain-intrinsic-size`（副作用大于收益）
+
+#### 鼠标横向滚动触发浏览器回退
+
+- **根因**：`.structured-report-host` 和 `.structured-report__table-wrap` 使用 `overflow-x: auto` 但无 `overscroll-behavior`，当 Mac trackpad/鼠标横向滚动到边界时事件"穿透"，触发浏览器历史后退导航。
+- **修复**：
+  - `apps/web/src/app/theme.css`：`.structured-report-host` 增加 `overscroll-behavior: contain`
+  - `apps/api/src/review/report/final_report_view_model.py`：`.structured-report__table-wrap` 增加 `overscroll-behavior-x: contain`
+
+> [!NOTE] HG-27 约束（横向滚动容器必须声明 overscroll-behavior）
+> 任何使用 `overflow-x: auto/scroll` 的报告容器，必须同时声明 `overscroll-behavior-x: contain`，防止横向滚轮事件触发浏览器导航。这是 Weknora 报告页面的标配。
+
+### Notes（下午批次）
+
+- 本批次全部修复属于用户发现的生产回归，非新增能力。
+- HG-26 完整进度条约束已与"4 秒 1%"规则（AGENTS.md 2026-04-15 corrections addendum）合并形成最终合同：时间驱动为主，stage 只提供 floor。
+- 两个失败测试（`test_final_report_merger` / `test_hermes_boundary_enforcement`）为历史预存，非本轮引入。
+
+
+
 ### Added (施工组织设计审查接入)
 
 - **新增 `construction_org` 文档类型**（施工组织设计审查）：完成从知识库到前端的全链路接入。
