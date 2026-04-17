@@ -22,6 +22,7 @@ from src.domain.models import (
     BlockLocator,
     ConfidenceLevel,
     EvidenceSpan,
+    SectionLocator,
     SourceDocumentRef,
     TableLocator,
     TaskArtifact,
@@ -572,7 +573,7 @@ class StructuredReviewExecutor:
             if ref in block_index:
                 block = block_index[ref]
                 span_id = hashlib.md5(
-                    f"document:{parse_result.documentId}:block:{block['id']}".encode()
+                    f"document:{parse_result.documentId}:{block['id']}".encode()
                 ).hexdigest()[:16]
                 spans.append(
                     EvidenceSpan(
@@ -596,7 +597,7 @@ class StructuredReviewExecutor:
             elif ref in table_index:
                 table = table_index[ref]
                 span_id = hashlib.md5(
-                    f"document:{parse_result.documentId}:table:{table['id']}".encode()
+                    f"document:{parse_result.documentId}:{table['id']}".encode()
                 ).hexdigest()[:16]
                 spans.append(
                     EvidenceSpan(
@@ -620,7 +621,7 @@ class StructuredReviewExecutor:
             elif ref in attachment_index:
                 attachment = attachment_index[ref]
                 span_id = hashlib.md5(
-                    f"document:{parse_result.documentId}:attachment:{attachment.id}".encode()
+                    f"document:{parse_result.documentId}:{attachment.id}".encode()
                 ).hexdigest()[:16]
                 spans.append(
                     EvidenceSpan(

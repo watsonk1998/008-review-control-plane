@@ -7,7 +7,14 @@ import json
 import sqlite3
 from typing import Any
 
-from src.domain.models import AnnotatedFact, FactRelationship, ReviewerDecision, SourceDocumentRef, TaskEvent, TaskRecord
+from src.domain.models import (
+    AnnotatedFact,
+    FactRelationship,
+    ReviewerDecision,
+    SourceDocumentRef,
+    TaskEvent,
+    TaskRecord,
+)
 
 
 _TASK_EXTRA_COLUMNS = {
@@ -101,32 +108,36 @@ class SQLiteTaskStore:
             if column not in existing:
                 conn.execute(f"ALTER TABLE tasks ADD COLUMN {column} {column_type}")
 
-def create_task(self, task: TaskRecord) -> TaskRecord:
+    def create_task(self, task: TaskRecord) -> TaskRecord:
         # Generate annotated facts and fact relationships from the task
-        annotated_facts = getattr(task, 'annotatedFacts', None)
-        fact_relationships = getattr(task, 'factRelationships', None)
+        annotated_facts = getattr(task, "annotatedFacts", None)
+        fact_relationships = getattr(task, "factRelationships", None)
 
         # If not provided, create them from evidence spans in the task
         if not annotated_facts or not fact_relationships:
             evidence_spans = []
-            for field in ['sourceDocumentRef', 'policyPackIds', 'rulePackIds']:
+            for field in ["sourceDocumentRef", "policyPackIds", "rulePackIds"]:
                 field_value = getattr(task, field, None)
                 if isinstance(field_value, list):
                     evidence_spans.extend(field_value)
 
-            annotated_facts = self._create_annotated_facts(task.id, evidence_spans, fact_relationships or [])
-            fact_relationships = self._create_fact_relationships(task.id, fact_relationships)
+            annotated_facts = self._create_annotated_facts(
+                task.id, evidence_spans, fact_relationships or []
+            )
+            fact_relationships = self._create_fact_relationships(
+                task.id, fact_relationships
+            )
 
         with self._connect() as conn:
             conn.execute(
-                '''
+                """
                 INSERT INTO tasks (
                     id, task_type, capability_mode, query, dataset_id, collection_id, fixture_id,
                     source_document_ref_json, use_web, debug, source_urls, document_type, discipline_tags_json, strict_mode,
                     policy_pack_ids_json, rule_pack_ids_json, reviewer_decision_json, external_context_json, status, plan_json, result_json, error_json,
                     annotated_facts_json, fact_relationships_json, created_at, updated_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ''',
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
                 (
                     task.id,
                     task.taskType,
@@ -135,7 +146,12 @@ def create_task(self, task: TaskRecord) -> TaskRecord:
                     task.datasetId,
                     task.collectionId,
                     task.fixtureId,
-                    json.dumps(task.sourceDocumentRef.model_dump(mode='json'), ensure_ascii=False) if task.sourceDocumentRef else None,
+                    json.dumps(
+                        task.sourceDocumentRef.model_dump(mode="json"),
+                        ensure_ascii=False,
+                    )
+                    if task.sourceDocumentRef
+                    else None,
                     int(task.useWeb),
                     int(task.debug),
                     json.dumps(task.sourceUrls, ensure_ascii=False),
@@ -144,12 +160,27 @@ def create_task(self, task: TaskRecord) -> TaskRecord:
                     int(task.strictMode) if task.strictMode is not None else None,
                     json.dumps(task.policyPackIds, ensure_ascii=False),
                     json.dumps(task.rulePackIds, ensure_ascii=False),
-                    json.dumps(task.reviewerDecision.model_dump(mode='json'), ensure_ascii=False) if task.reviewerDecision is not None else None,
-                    json.dumps(task.externalContext.model_dump(mode='json'), ensure_ascii=False) if task.externalContext is not None else None,
+                    json.dumps(
+                        task.reviewerDecision.model_dump(mode="json"),
+                        ensure_ascii=False,
+                    )
+                    if task.reviewerDecision is not None
+                    else None,
+                    json.dumps(
+                        task.externalContext.model_dump(mode="json"), ensure_ascii=False
+                    )
+                    if task.externalContext is not None
+                    else None,
                     task.status,
-                    json.dumps(task.plan, ensure_ascii=False) if task.plan is not None else None,
-                    json.dumps(task.result, ensure_ascii=False) if task.result is not None else None,
-                    json.dumps(task.error, ensure_ascii=False) if task.error is not None else None,
+                    json.dumps(task.plan, ensure_ascii=False)
+                    if task.plan is not None
+                    else None,
+                    json.dumps(task.result, ensure_ascii=False)
+                    if task.result is not None
+                    else None,
+                    json.dumps(task.error, ensure_ascii=False)
+                    if task.error is not None
+                    else None,
                     json.dumps(annotated_facts, ensure_ascii=False),
                     json.dumps(fact_relationships, ensure_ascii=False),
                     task.createdAt.isoformat(),
@@ -168,7 +199,7 @@ def create_task(self, task: TaskRecord) -> TaskRecord:
     def list_tasks(self, limit: int = 8) -> list[TaskRecord]:
         with self._connect() as conn:
             rows = conn.execute(
-                'SELECT * FROM tasks ORDER BY updated_at DESC LIMIT ?',
+                "SELECT * FROM tasks ORDER BY updated_at DESC LIMIT ?",
                 (limit,),
             ).fetchall()
         return [self._row_to_task(row) for row in rows]
@@ -180,11 +211,13 @@ def create_task(self, task: TaskRecord) -> TaskRecord:
             return None
 
         # Load annotated facts JSON
-        annotated_facts_json = task.annotatedFacts if task.annotatedFacts else '[]'
+        annotated_facts_json = task.annotatedFacts if task.annotatedFacts else "[]"
         task.annotatedFacts = self._load_annotated_facts(annotated_facts_json)
 
         # Load fact relationships JSON
-        fact_relationships_json = task.factRelationships if task.factRelationships else '[]'
+        fact_relationships_json = (
+            task.factRelationships if task.factRelationships else "[]"
+        )
         task.factRelationships = self._load_fact_relationships(fact_relationships_json)
 
         return task
@@ -372,38 +405,9 @@ def create_task(self, task: TaskRecord) -> TaskRecord:
 
     def _row_to_task(self, row: sqlite3.Row) -> TaskRecord:
         from src.domain.models import ExternalIntegrationContext
-        source_document_ref = self._load_model(row['source_document_ref_json'], SourceDocumentRef)
-        reviewer_decision = self._load_model(row['reviewer_decision_json'], ReviewerDecision)
-        external_context = self._load_model(row['external_context_json'], ExternalIntegrationContext) if 'external_context_json' in row.keys() else None
-        annotated_facts = self._load_annotated_facts(row.get('annotated_facts_json', '[]'))
-        fact_relationships = self._load_fact_relationships(row.get('fact_relationships_json', '[]'))
-        return TaskRecord(
-            id=row['id'],
-            taskType=row['task_type'],
-            capabilityMode=row['capability_mode'],
-            query=row['query'],
-            datasetId=row['dataset_id'],
-            collectionId=row['collection_id'],
-            fixtureId=row['fixture_id'],
-            sourceDocumentRef=source_document_ref,
-            useWeb=bool(row['use_web']),
-            debug=bool(row['debug']),
-            sourceUrls=self._load_list_json(row['source_urls']),
-            documentType=row['document_type'],
-            disciplineTags=self._load_list_json(row['discipline_tags_json']),
-            strictMode=bool(row['strict_mode']) if row['strict_mode'] is not None else None,
-            policyPackIds=self._load_list_json(row['policy_pack_ids_json']),
-            rulePackIds=self._load_list_json(row['rule_pack_ids_json']),
-            status=row['status'],
-            plan=self._load_json(row['plan_json']),
-            result=self._load_json(row['result_json']),
-            reviewerDecision=reviewer_decision,
-            externalContext=external_context,
-            error=self._load_json(row['error_json']),
-            annotatedFacts=annotated_facts,
-            factRelationships=fact_relationships,
-            createdAt=datetime.fromisoformat(row['created_at']),
-            updatedAt=datetime.fromisoformat(row['updated_at']),
+
+        source_document_ref = self._load_model(
+            row["source_document_ref_json"], SourceDocumentRef
         )
         reviewer_decision = self._load_model(
             row["reviewer_decision_json"], ReviewerDecision
@@ -412,6 +416,12 @@ def create_task(self, task: TaskRecord) -> TaskRecord:
             self._load_model(row["external_context_json"], ExternalIntegrationContext)
             if "external_context_json" in row.keys()
             else None
+        )
+        annotated_facts = self._load_annotated_facts(
+            row["annotated_facts_json"] if "annotated_facts_json" in row.keys() else "[]"
+        )
+        fact_relationships = self._load_fact_relationships(
+            row["fact_relationships_json"] if "fact_relationships_json" in row.keys() else "[]"
         )
         return TaskRecord(
             id=row["id"],
@@ -438,6 +448,8 @@ def create_task(self, task: TaskRecord) -> TaskRecord:
             reviewerDecision=reviewer_decision,
             externalContext=external_context,
             error=self._load_json(row["error_json"]),
+            annotatedFacts=annotated_facts,
+            factRelationships=fact_relationships,
             createdAt=datetime.fromisoformat(row["created_at"]),
             updatedAt=datetime.fromisoformat(row["updated_at"]),
         )

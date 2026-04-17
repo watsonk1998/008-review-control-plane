@@ -122,6 +122,8 @@ class IssueCandidate(BaseModel):
 
 
 class FinalIssue(ReviewIssue):
+    hallucination_risk: bool = False
+    evidence_span_ids: list[str] = Field(default_factory=list)
     docEvidence: list[EvidenceSpan] = Field(default_factory=list)
     policyEvidence: list[EvidenceSpan] = Field(default_factory=list)
     annotatedFacts: list[AnnotatedFact] = Field(default_factory=list)

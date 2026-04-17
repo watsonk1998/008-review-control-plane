@@ -185,7 +185,7 @@ class CreateTaskRequest(BaseModel):
 
 
 class EvidenceSpan(BaseModel):
-    span_id: str | None = None
+    span_id: str = ""
     sourceType: Literal["document", "policy", "artifact"]
     sourceId: str
     locator: EvidenceLocator

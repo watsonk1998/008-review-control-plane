@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from src.domain.models import ConfidenceLevel, EvidenceSpan
+from src.domain.models import ClauseLocator, ConfidenceLevel, EvidenceSpan
 from src.review.evidence.packs import get_evidence_pack_registry
 from src.review.schema import EvidencePack, PolicyClause
 
@@ -195,13 +195,15 @@ class ClauseStore:
             clause = self._clauses.get(clause_id)
             if clause is None:
                 continue
-            span_id = hashlib.md5(f"policy{clause.id}".encode()).hexdigest()[:16]
+            span_id = hashlib.md5(
+                f"policy:{clause.sourceId}:{clause.id}".encode()
+            ).hexdigest()[:16]
             evidence.append(
                 EvidenceSpan(
                     span_id=span_id,
                     sourceType="policy",
                     sourceId=clause.sourceId,
-                    locator={"clauseId": clause.id},
+                    locator=ClauseLocator(clauseId=clause.id, span_id=span_id),
                     excerpt=clause.excerpt,
                     confidence=ConfidenceLevel.high,
                     clauseTitle=clause.title,
