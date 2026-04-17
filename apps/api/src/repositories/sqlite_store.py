@@ -418,10 +418,10 @@ class SQLiteTaskStore:
             else None
         )
         annotated_facts = self._load_annotated_facts(
-            row.get("annotated_facts_json", "[]")
+            row["annotated_facts_json"] if "annotated_facts_json" in row.keys() else "[]"
         )
         fact_relationships = self._load_fact_relationships(
-            row.get("fact_relationships_json", "[]")
+            row["fact_relationships_json"] if "fact_relationships_json" in row.keys() else "[]"
         )
         return TaskRecord(
             id=row["id"],
