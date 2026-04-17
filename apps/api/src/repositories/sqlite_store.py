@@ -136,7 +136,7 @@ class SQLiteTaskStore:
                     source_document_ref_json, use_web, debug, source_urls, document_type, discipline_tags_json, strict_mode,
                     policy_pack_ids_json, rule_pack_ids_json, reviewer_decision_json, external_context_json, status, plan_json, result_json, error_json,
                     annotated_facts_json, fact_relationships_json, created_at, updated_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     task.id,
