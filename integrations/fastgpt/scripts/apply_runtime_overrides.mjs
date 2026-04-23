@@ -32,9 +32,20 @@ function replaceDeep(value, replacements) {
 
 const registryPath = process.argv[2] || path.join(artifactsDir, 'workflow_tool_registry.template.json');
 const registry = readJson(registryPath);
+const workflowToolPlaceholders = {
+  hermes_review_context_wft: '__WFT_HERMES_REVIEW_CONTEXT_ID__',
+  hermes_ai_review_wft: '__WFT_HERMES_AI_REVIEW_ID__',
+  hermes_deterministic_review_wft: '__WFT_HERMES_DETERMINISTIC_REVIEW_ID__',
+  hermes_support_008_wft: '__WFT_HERMES_SUPPORT_008_ID__',
+  hermes_final_assembler_wft: '__WFT_HERMES_FINAL_ASSEMBLER_ID__'
+};
+const workflowToolReplacements = {};
+for (const [key, value] of Object.entries(registry.workflowToolIds || {})) {
+  workflowToolReplacements[workflowToolPlaceholders[key] || key] = value;
+}
 const replacements = {
   '__FASTGPT_AI_MODEL__': registry.aiModel || '__FASTGPT_AI_MODEL__',
-  ...(registry.workflowToolIds || {})
+  ...workflowToolReplacements
 };
 
 const mainWorkflow = readJson(path.join(artifactsDir, 'hermes-main-review.workflow.json'));

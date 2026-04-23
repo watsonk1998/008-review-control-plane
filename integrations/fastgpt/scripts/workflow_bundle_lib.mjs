@@ -554,7 +554,8 @@ function ifElseNode({ nodeId, name, intro, position, variableRef }) {
 }
 
 function pluginModuleNode({ nodeId, name, intro, position, pluginId, inputs, outputs }) {
-  return baseNode({
+  return {
+    ...baseNode({
     nodeId,
     name,
     intro,
@@ -577,9 +578,10 @@ function pluginModuleNode({ nodeId, name, intro, position, pluginId, inputs, out
       },
       ...inputs
     ],
-    outputs,
+    outputs
+    }),
     pluginId
-  });
+  };
 }
 
 function variableEntry({ key, type = 'input', required = false }) {
@@ -1842,7 +1844,7 @@ function finalAssemblerWorkflow(docTypeLabels, moduleTitles) {
 
 function mainWorkflow(docTypeLabels) {
   const nodes = [
-    userGuideNode(pos(-320, -180)),
+    userGuideNode(pos(-720, -260)),
     workflowStartNode(pos(0, 0)),
     codeNode({
       nodeId: 'normalizeInput',
@@ -1992,14 +1994,14 @@ function mainWorkflow(docTypeLabels) {
       nodeId: 'formalReply',
       name: '正式报告输出',
       intro: '输出正式 Markdown 报告。',
-      position: pos(3720, -150),
+      position: pos(3720, -240),
       textValue: ['callFinalAssemblerWft', 'finalReportMarkdown']
     }),
     answerNode({
       nodeId: 'degradedReply',
       name: '降级结果输出',
       intro: '输出 fail-closed 说明。',
-      position: pos(3720, 150),
+      position: pos(3720, 240),
       textValue: ['callFinalAssemblerWft', 'finalAnswer']
     })
   ];

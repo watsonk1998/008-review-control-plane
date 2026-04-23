@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { buildReviewContext } from '../toolset/hermesStructuredReview/lib/context.js';
 import {
   assembleFinalDecisionTool,
@@ -31,6 +31,20 @@ GB/T 6995
 }
 
 describe('reviewCore', () => {
+  beforeAll(() => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({
+        ok: true,
+        text: async () => '<html><body>现行 有效 实施</body></html>'
+      }))
+    );
+  });
+
+  afterAll(() => {
+    vi.unstubAllGlobals();
+  });
+
   it('builds support review and deterministic reviewer packets', async () => {
     const context = await makeContext();
     const support = await runSupportReview008Tool({

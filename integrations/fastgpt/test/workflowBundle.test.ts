@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { execFileSync } from 'node:child_process';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { generateBundle } from '../scripts/workflow_bundle_lib.mjs';
 
@@ -38,5 +39,36 @@ describe('FastGPT workflow-tool bundle', () => {
     expect(JSON.stringify(contextNode.inputs)).toContain('targetFileUrls');
     expect(JSON.stringify(contextNode.inputs)).toContain('basisFileUrls');
     expect(JSON.stringify(contextNode.inputs)).toContain('contextFileUrls');
+  });
+
+  it('links workflow-tool placeholder IDs from a runtime registry', () => {
+    const registryPath = path.join('/tmp', `hermes-fastgpt-registry-${Date.now()}.json`);
+    const registry = JSON.parse(fs.readFileSync(path.join(artifactsDir, 'workflow_tool_registry.template.json'), 'utf8'));
+    registry.aiModel = 'fastgpt-test-model';
+    registry.workflowToolIds = {
+      hermes_review_context_wft: 'wft_context_test',
+      hermes_ai_review_wft: 'wft_ai_test',
+      hermes_deterministic_review_wft: 'wft_det_test',
+      hermes_support_008_wft: 'wft_support_test',
+      hermes_final_assembler_wft: 'wft_final_test'
+    };
+    fs.writeFileSync(registryPath, `${JSON.stringify(registry, null, 2)}\n`);
+    execFileSync('node', [path.join(repoRoot, 'integrations', 'fastgpt', 'scripts', 'apply_runtime_overrides.mjs'), registryPath], {
+      cwd: path.join(repoRoot, 'integrations', 'fastgpt')
+    });
+    const linked = JSON.parse(fs.readFileSync(path.join(artifactsDir, 'hermes-main-review.linked.workflow.json'), 'utf8'));
+    expect(linked.nodes.filter((node: any) => node.flowNodeType === 'pluginModule').map((node: any) => node.pluginId)).toEqual([
+      'wft_context_test',
+      'wft_ai_test',
+      'wft_det_test',
+      'wft_support_test',
+      'wft_final_test'
+    ]);
+    for (const file of fs.readdirSync(artifactsDir)) {
+      if (file.includes('.linked.')) fs.rmSync(path.join(artifactsDir, file), { force: true });
+    }
+    for (const file of fs.readdirSync(workflowToolsDir)) {
+      if (file.endsWith('.linked.json')) fs.rmSync(path.join(workflowToolsDir, file), { force: true });
+    }
   });
 });
