@@ -1,0 +1,16 @@
+{
+  "construction_org_attachment_visibility": "visibility_gap",
+  "construction_scheme_attachment_visibility": "visibility_gap",
+  "hazardous_special_scheme_attachment_visibility": "visibility_gap",
+  "hazardous_special_scheme_drawing_visibility": "drawing_visibility_gap",
+  "foundation_pit_monitoring_and_drawings": "drawing_visibility_gap",
+  "lifting_installation_removal_drawing_visibility": "drawing_visibility_gap",
+  "underground_excavation_monitoring_and_drawings": "drawing_visibility_gap",
+  "curtain_wall_installation_drawing_and_acceptance": "drawing_visibility_gap",
+  "manual_bored_pile_forbidden_conditions_manual_review": "forbidden_condition_requires_manual_confirmation",
+  "steel_structure_installation_drawing_and_acceptance": "drawing_visibility_gap",
+  "supervision_plan_attachment_visibility": "visibility_gap",
+  "review_support_material_attachment_visibility": "visibility_gap",
+  "construction_org_special_scheme_gap": "special_scheme_reference_requires_manual_confirmation",
+  "lifting_operations_special_scheme_linkage": "special_scheme_reference_requires_manual_confirmation"
+}

@@ -1,0 +1,7 @@
+{
+  "structure_completeness": "文档完整性",
+  "parameter_consistency": "内容一致性",
+  "legality_compliance": "合规审查",
+  "execution_continuity": "技术方案审查",
+  "evidence_validation": "依据与验证"
+}

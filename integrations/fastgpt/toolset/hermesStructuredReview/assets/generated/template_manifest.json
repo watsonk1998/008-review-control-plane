@@ -1,0 +1,854 @@
+[
+  {
+    "id": "calculation_review_reviewer",
+    "agent_name": "计算式与验算依据审查",
+    "agent_purpose": "审查方案中出现的计算式、验算过程、参数取值依据、公式选型、验算覆盖范围，将审查结果归入证据验证模块。未看到计算书或验算过程时，不得臆造计算错误，应保守表达为证据不足或需人工补充复核。",
+    "agent_scope": "calculation_review",
+    "execution_mode": "hermes_router",
+    "module_bindings": [
+      "fact_extract",
+      "rule_and_evidence"
+    ],
+    "supported_document_types": [],
+    "focus_keywords": [
+      "计算",
+      "验算",
+      "公式",
+      "参数",
+      "荷载",
+      "强度",
+      "安全系数",
+      "校核",
+      "量纲"
+    ],
+    "required_context_types": [
+      "target_document",
+      "focus_requirements"
+    ],
+    "input_contract": {
+      "type": "review_brief"
+    },
+    "output_contract": {
+      "type": "fact_packet",
+      "role": "supplemental"
+    },
+    "instructions": "专注审查被审方案中的计算式与验算过程。审查要点包括：(1) 公式是否适用于当前工况（施工类型、荷载条件、材料特性）；(2) 参数来源是否明确（标注出处、规范条文引用）；(3) 单位/量纲是否自洽（同一公式内各参数单位应一致）；(4) 代入过程与计算结果是否复现一致（验算复核）；(5) 是否遗漏必要验算项（临时支撑、吊装荷载、安全系数、稳定性等）。关键约束：如文档中未提供计算书或验算过程，不得猜测或编造计算错误，只能标注为证据不足需人工补充复核或未见计算验算过程建议补充。",
+    "prompt": "请审查被审方案中的计算式、验算过程、参数取值依据和公式选型。重点关注：公式适用性、参数来源明确性、单位量纲自洽性、代入计算复核、必要验算项覆盖。如未见计算验算过程，请保守表达为证据不足。",
+    "default_enabled": true,
+    "save_policy": {
+      "seed": true
+    },
+    "template_version": "1.0.1",
+    "compatibility": {
+      "controller": "hermes_v0"
+    },
+    "metadata": {
+      "review_modules": [
+        "evidence_validation"
+      ],
+      "ownership": "hermes_main_review"
+    },
+    "input_token_limit": 200000,
+    "output_token_limit": 200000
+  },
+  {
+    "id": "construction_org_compliance_reviewer",
+    "agent_name": "施工组织设计合规性审查",
+    "agent_purpose": "审查施工组织设计在安全管理、消防、质量、危大工程管控等方面是否满足现行法规与强制性标准要求",
+    "agent_scope": "legality_compliance",
+    "execution_mode": "hermes_router",
+    "module_bindings": [
+      "profile_and_packs",
+      "rule_and_evidence"
+    ],
+    "supported_document_types": [
+      "construction_org"
+    ],
+    "focus_keywords": [
+      "安全管理",
+      "安全生产",
+      "消防",
+      "防火",
+      "质量管理",
+      "危险性较大",
+      "危大工程",
+      "重大事故隐患",
+      "专项方案",
+      "应急预案",
+      "文明施工",
+      "安全教育培训",
+      "安全技术措施",
+      "扬尘控制",
+      "临时用电",
+      "脚手架",
+      "起重吊装"
+    ],
+    "required_context_types": [
+      "target_document"
+    ],
+    "input_contract": {
+      "type": "review_brief"
+    },
+    "output_contract": {
+      "type": "fact_packet",
+      "role": "main_review"
+    },
+    "instructions": "依据以下现行法规和标准，审查施工组织设计的合规性：\n1. 《建设工程安全生产管理条例》（国务院令第393号）：安全管理组织机构、专项施工方案编制要求、安全技术交底\n2. 《建设工程质量管理条例》（国务院令第279号）：质量管理责任体系、验收程序\n3. 《建设工程施工现场消防安全技术规范》GB 50720-2011：临时消防设施、动火管理\n4. 《建筑施工安全检查标准》JGJ 59-2011：安全管理要素覆盖检查\n5. 《关于实施〈危险性较大的分部分项工程安全管理规定〉有关问题的通知》（建办质〔2018〕31号）：危大工程专项方案管理要求\n6. 《房屋市政工程生产安全重大事故隐患判定标准（2024版）》：重大事故隐患识别与防控\n\n重点审查：\n- 是否明确列出危大工程清单并说明专项方案编制计划\n- 安全管理计划是否覆盖风险辨识、安全技术措施、教育培训\n- 消防安全措施是否具体可操作\n- 质量管理体系是否建立并有可量化目标\n- 是否识别并防控重大事故隐患",
+    "prompt": "请依据现行法规标准（安全生产管理条例、质量管理条例、消防规范、安全检查标准等），审查此施工组织设计在安全、质量、消防、危大工程管控方面的合规性，指出不符合项及对应条款。",
+    "default_enabled": true,
+    "save_policy": {
+      "seed": true
+    },
+    "template_version": "1.0.0",
+    "compatibility": {
+      "controller": "hermes_v0"
+    },
+    "metadata": {
+      "review_modules": [
+        "legality_compliance"
+      ],
+      "ownership": "hermes_main_review"
+    },
+    "input_token_limit": 200000,
+    "output_token_limit": 200000
+  },
+  {
+    "id": "construction_org_consistency_reviewer",
+    "agent_name": "施工组织设计内容一致性审查",
+    "agent_purpose": "审查施工组织设计文档内部各章节参数指标的一致性，识别工期、资源、目标、进度计划之间的矛盾",
+    "agent_scope": "parameter_consistency",
+    "execution_mode": "hermes_router",
+    "module_bindings": [
+      "fact_extract",
+      "rule_and_evidence"
+    ],
+    "supported_document_types": [
+      "construction_org"
+    ],
+    "focus_keywords": [
+      "一致性",
+      "工期目标",
+      "劳动力计划",
+      "物资计划",
+      "进度计划",
+      "施工部署",
+      "资源配置",
+      "分包管理",
+      "工程概况",
+      "施工阶段"
+    ],
+    "required_context_types": [
+      "target_document"
+    ],
+    "input_contract": {
+      "type": "review_brief"
+    },
+    "output_contract": {
+      "type": "fact_packet",
+      "role": "main_review"
+    },
+    "instructions": "针对施工组织设计文档，审查以下内容一致性问题：(1) 工期一致性：总工期目标与施工总进度计划里程碑是否吻合；(2) 资源一致性：劳动力配置计划人数与各施工阶段工程量匹配度，物资计划是否覆盖全部阶段；(3) 目标与措施一致性：安全/质量/环境管理目标是否各有对应管理计划支撑；(4) 分包一致性：分包范围描述与施工方法中施工主体是否一致；(5) 技术参数一致性：工程概况设计参数与各施工方案引用参数是否一致。输出矛盾时注明具体章节（如第5.2节 vs 第7.4节）。",
+    "prompt": "请审查此施工组织设计内部各章节（施工部署、进度计划、资源配置、管理计划）之间的参数一致性，识别工期目标与计划不符、资源配置与施工量不匹配、目标与管理措施脱节等问题。",
+    "default_enabled": true,
+    "save_policy": {
+      "seed": true
+    },
+    "template_version": "1.0.0",
+    "compatibility": {
+      "controller": "hermes_v0"
+    },
+    "metadata": {
+      "review_modules": [
+        "parameter_consistency"
+      ],
+      "ownership": "hermes_main_review"
+    },
+    "input_token_limit": 200000,
+    "output_token_limit": 200000
+  },
+  {
+    "id": "construction_org_structure_reviewer",
+    "agent_name": "施工组织设计章节完整性审查",
+    "agent_purpose": "依据《建筑施工组织设计规范》GB/T 50502-2009，审核施工组织设计必备章节的覆盖完整性",
+    "agent_scope": "structure_completeness",
+    "execution_mode": "hermes_router",
+    "module_bindings": [
+      "primary_support_review",
+      "profile_and_packs"
+    ],
+    "supported_document_types": [
+      "construction_org"
+    ],
+    "focus_keywords": [
+      "施工组织设计",
+      "施工组织总设计",
+      "总体部署",
+      "施工部署",
+      "进度计划",
+      "施工总进度",
+      "资源配置",
+      "劳动力配置",
+      "物资配置",
+      "主要施工方法",
+      "施工现场平面布置",
+      "施工总平面",
+      "管理计划",
+      "安全管理计划",
+      "质量管理计划",
+      "环境管理计划",
+      "成本管理计划",
+      "应急预案",
+      "编制依据"
+    ],
+    "required_context_types": [
+      "target_document"
+    ],
+    "input_contract": {
+      "type": "review_brief"
+    },
+    "output_contract": {
+      "type": "fact_packet",
+      "role": "main_review"
+    },
+    "instructions": "依据《建筑施工组织设计规范》GB/T 50502-2009 第3至第7章的要求，审查施工组织设计文档是否完整覆盖以下必备章节：\n1. 编制依据（相关法律法规、合同、设计文件等）\n2. 工程概况（工程主要情况、施工条件）\n3. 施工部署（施工目标、进度安排、空间组织、管理组织机构）\n4. 施工进度计划（横道图或网络图）\n5. 施工准备与资源配置计划（技术准备、现场准备、劳动力、物资）\n6. 主要施工方法（主要分部分项工程施工方法）\n7. 施工现场平面布置（各阶段平面布置图）\n8. 主要施工管理计划（进度、质量、安全、环境、成本管理计划）\n\n对于缺失或严重简化的章节，输出具体的不符合条款（如：3.0.4、5.2、7.4等）。",
+    "prompt": "请根据《建筑施工组织设计规范》GB/T 50502-2009 的规定，审核此施工组织设计文档的章节结构完整性，并指出缺失或不符合要求的章节及对应的规范条款。",
+    "default_enabled": true,
+    "save_policy": {
+      "seed": true
+    },
+    "template_version": "1.0.0",
+    "compatibility": {
+      "controller": "hermes_v0"
+    },
+    "metadata": {
+      "review_modules": [
+        "structure_completeness"
+      ],
+      "ownership": "hermes_main_review"
+    },
+    "input_token_limit": 200000,
+    "output_token_limit": 200000
+  },
+  {
+    "id": "construction_org_technical_reviewer",
+    "agent_name": "施工组织设计技术方案审查",
+    "agent_purpose": "审查施工组织设计的技术方案合理性，包括施工方法可行性、工序逻辑、危大工程管控、季节性措施和应急预案",
+    "agent_scope": "execution_continuity",
+    "execution_mode": "hermes_router",
+    "module_bindings": [
+      "fact_extract",
+      "rule_and_evidence"
+    ],
+    "supported_document_types": [
+      "construction_org"
+    ],
+    "focus_keywords": [
+      "施工方法",
+      "主要施工方案",
+      "施工工艺",
+      "工序",
+      "施工顺序",
+      "施工流程",
+      "危险性较大",
+      "危大工程",
+      "专项施工方案",
+      "季节性施工",
+      "冬雨期施工",
+      "应急预案",
+      "应急响应",
+      "脚手架",
+      "起重吊装",
+      "地基基础",
+      "主体结构",
+      "装修装饰"
+    ],
+    "required_context_types": [
+      "target_document"
+    ],
+    "input_contract": {
+      "type": "review_brief"
+    },
+    "output_contract": {
+      "type": "fact_packet",
+      "role": "main_review"
+    },
+    "instructions": "对施工组织设计的技术方案进行实质性审查：\n1. **施工方法可行性**：主要分部分项工程（地基基础、主体结构、装修装饰、机电安装）所提出的施工方法是否具体可操作，是否适合工程规模和现场条件\n2. **工序逻辑合理性**：施工顺序是否符合工程建设客观规律（地基→主体→装饰→机电），流水段划分是否清晰，各工序衔接是否合理\n3. **危大工程管控**：是否明确识别本工程涉及的危险性较大的分部分项工程，是否制定专项施工方案编制计划（含深基坑、高大模板、起重吊装、脚手架等）\n4. **季节性施工措施**：是否针对工程所在地气候特点（冬期、雨期）制定具体施工措施，措施是否有针对性\n5. **应急预案充分性**：应急预案是否覆盖本工程主要风险（如坍塌、高处坠落、触电、火灾等），应急响应流程是否具体\n6. **新技术新工艺**：提到采用新技术新工艺时，是否有相应的技术资料和论证支撑\n\n输出时引用对应的 GB/T 50502-2009 条款（如 5.5.1、5.5.2、7.4 等）。",
+    "prompt": "请审查此施工组织设计的技术方案合理性，重点检查主要施工方法的可行性、施工工序逻辑、危大工程专项方案计划、季节性施工措施和应急预案的充分性。",
+    "default_enabled": true,
+    "save_policy": {
+      "seed": true
+    },
+    "template_version": "1.0.0",
+    "compatibility": {
+      "controller": "hermes_v0"
+    },
+    "metadata": {
+      "review_modules": [
+        "execution_continuity"
+      ],
+      "ownership": "hermes_main_review"
+    },
+    "input_token_limit": 200000,
+    "output_token_limit": 200000
+  },
+  {
+    "id": "execution_risk_reviewer",
+    "agent_name": "通用技术风险审查",
+    "agent_purpose": "识别方案执行层面的系统性风险、逻辑链路断点与资源协调缺口",
+    "agent_scope": "execution_continuity",
+    "execution_mode": "hermes_router",
+    "module_bindings": [
+      "fact_extract"
+    ],
+    "supported_document_types": [],
+    "focus_keywords": [
+      "风险",
+      "实施",
+      "逻辑",
+      "链路",
+      "连贯性",
+      "节点",
+      "顺序",
+      "工序"
+    ],
+    "required_context_types": [
+      "target_document",
+      "focus_requirements"
+    ],
+    "input_contract": {
+      "type": "review_brief"
+    },
+    "output_contract": {
+      "type": "fact_packet",
+      "role": "supplemental"
+    },
+    "instructions": "审查方案技术方案的执行风险：识别工序逻辑断点、关键节点紧张度、资源协调缺口和系统性遗漏问题。不审查参数一致性（由 parameter_consistency_reviewer 负责）。",
+    "prompt": "请识别此方案在技术方案执行层面的系统性风险、工序逻辑问题和资源协调缺口。",
+    "default_enabled": true,
+    "save_policy": {
+      "seed": true
+    },
+    "template_version": "1.0.0",
+    "compatibility": {
+      "controller": "hermes_v0"
+    },
+    "metadata": {
+      "review_modules": [
+        "execution_continuity"
+      ],
+      "ownership": "hermes_main_review"
+    },
+    "input_token_limit": 200000,
+    "output_token_limit": 200000
+  },
+  {
+    "id": "normative_validity_reviewer",
+    "agent_name": "编制依据标准规范现行有效性审查",
+    "agent_purpose": "核验被审方案《编制依据》章节中列出的标准规范（国标、行标、地标、带标准号的企业标准等）是否仍为现行有效版本，并将异常项沉淀到证据验证模块。不核验法律法规、部门规章、行政条例或企业内部管理制度。",
+    "agent_scope": "仅处理被审方案《编制依据/编制说明》章节抽取出的标准规范类依据，不处理系统内置审查依据。",
+    "execution_mode": "module_only",
+    "module_bindings": [
+      "rule_and_evidence"
+    ],
+    "supported_document_types": [],
+    "focus_keywords": [
+      "标准规范",
+      "国标",
+      "行标",
+      "现行有效",
+      "废止",
+      "替代"
+    ],
+    "required_context_types": [
+      "rule_and_evidence"
+    ],
+    "input_contract": {
+      "requires": [
+        "document_parse_result"
+      ]
+    },
+    "output_contract": {
+      "type": "fact_packet"
+    },
+    "instructions": "仅对被审方案《编制依据/编制说明》章节中抽取出的标准规范做现行有效性核验。核验范围包括：国标（GB/GB/T）、行标（DL/DL/T/NB/NB/T等）、地标（DB/DBJ）、带标准号的企业标准（Q/CSG/Q/GDW等）。明确排除：法律、行政法规、部门规章、条例、办法、规定、实施细则、通知、企业内部管理制度文件。系统内置审查依据不得进入核验集合。优先使用联网公开来源判断；若联网结果与模型判断冲突，以联网结果为准；若联网无法稳定判断，则明确标记为待人工核验。不得编造确定性结论。",
+    "prompt": "请核验被审方案《编制依据/编制说明》章节中列出的标准规范是否仍为现行有效版本，并将废止、替代或状态不明的标准单独标记出来。注意：法律法规、部门规章、行政条例和企业内部管理制度不在核验范围内。",
+    "default_enabled": true,
+    "save_policy": {},
+    "template_version": "1.2.0",
+    "compatibility": {},
+    "metadata": {
+      "preferred_pack_ids": [],
+      "review_modules": [
+        "evidence_validation"
+      ],
+      "ownership": "support_material"
+    },
+    "input_token_limit": 200000,
+    "output_token_limit": 200000
+  },
+  {
+    "id": "parameter_consistency_reviewer",
+    "agent_name": "内容一致性审查",
+    "agent_purpose": "审查文档内部数据与参数的一致性，检测方案各章节之间的矛盾和前后不符",
+    "agent_scope": "parameter_consistency",
+    "execution_mode": "hermes_router",
+    "module_bindings": [
+      "fact_extract",
+      "rule_and_evidence"
+    ],
+    "supported_document_types": [],
+    "focus_keywords": [
+      "一致性",
+      "参数",
+      "矛盾",
+      "冲突",
+      "不符",
+      "目标",
+      "指标",
+      "数量",
+      "规模",
+      "清单",
+      "图纸"
+    ],
+    "required_context_types": [
+      "target_document"
+    ],
+    "input_contract": {
+      "type": "review_brief"
+    },
+    "output_contract": {
+      "type": "fact_packet",
+      "role": "main_review"
+    },
+    "instructions": "审查文档内部参数一致性，重点识别：(1) 工程规模/数量参数在不同章节前后不一致；(2) 人员/资质描述与实际安排矛盾；(3) 施工目标与具体计划不匹配；(4) 附图/附表参数与正文冲突；(5) 引用文件版本与正文适用性不符。输出时注明矛盾出现的章节位置。",
+    "prompt": "请审查此方案文档内部各章节参数的一致性，识别数据矛盾、目标与计划不匹配、人员清单与方案安排冲突等问题。",
+    "default_enabled": true,
+    "save_policy": {
+      "seed": true
+    },
+    "template_version": "1.0.0",
+    "compatibility": {
+      "controller": "hermes_v0"
+    },
+    "metadata": {
+      "review_modules": [
+        "parameter_consistency"
+      ],
+      "ownership": "hermes_main_review"
+    },
+    "input_token_limit": 200000,
+    "output_token_limit": 200000
+  },
+  {
+    "id": "policy_compliance_reviewer",
+    "agent_name": "规范合规审查",
+    "agent_purpose": "复用008 pack/rule/evidence能力，补充规范命中视角",
+    "agent_scope": "policy_and_rule_focus",
+    "execution_mode": "module_only",
+    "module_bindings": [
+      "parse_visibility",
+      "fact_extract",
+      "profile_and_packs",
+      "rule_and_evidence"
+    ],
+    "supported_document_types": [],
+    "focus_keywords": [
+      "规范",
+      "法规",
+      "合规",
+      "条款",
+      "规则",
+      "停送电"
+    ],
+    "required_context_types": [
+      "target_document",
+      "basis_files"
+    ],
+    "input_contract": {
+      "type": "review_brief"
+    },
+    "output_contract": {
+      "type": "fact_packet",
+      "role": "supplemental"
+    },
+    "instructions": "优先输出规则命中、证据缺口、政策依据。",
+    "prompt": "",
+    "default_enabled": true,
+    "save_policy": {
+      "seed": true
+    },
+    "template_version": "1.0.0",
+    "compatibility": {
+      "controller": "hermes_v0"
+    },
+    "metadata": {
+      "preferred_pack_ids": [
+        "power_outage_work.base",
+        "construction_org.base"
+      ],
+      "review_modules": [
+        "legality_compliance"
+      ],
+      "ownership": "hermes_main_review"
+    },
+    "input_token_limit": 200000,
+    "output_token_limit": 200000
+  },
+  {
+    "id": "power_outage_code_acceptance_reviewer",
+    "agent_name": "电力作业规程与验收条文审查器",
+    "agent_purpose": "围绕电力安全工作规程与低压电器施工验收规范，核对停电施工作业的操作要求、恢复送电条件与验收闭环。",
+    "agent_scope": "停电/涉电施工作业中的安全操作、验电接地、工作票执行、低压电器验收、恢复送电前检查。",
+    "execution_mode": "hermes_router",
+    "module_bindings": [],
+    "supported_document_types": [
+      "distribution_network_special_scheme"
+    ],
+    "focus_keywords": [
+      "电力安全工作规程",
+      "低压电器施工及验收",
+      "恢复送电",
+      "验电",
+      "接地"
+    ],
+    "required_context_types": [
+      "governed_support_packet"
+    ],
+    "input_contract": {
+      "requires": [
+        "basis_fulltext_context",
+        "priority_focus_axes"
+      ]
+    },
+    "output_contract": {
+      "type": "fact_packet"
+    },
+    "instructions": "优先核查《电力安全工作规程 发电厂和变电站电气部分》GB 26860-2011 与《电气装置安装工程低压电器施工及验收规范》GB 50254-2014 对停电申请、工作票执行、验电接地、恢复送电、设备验收的强制要求；仅输出条文依据明确、证据链完整的问题。",
+    "prompt": "请从电力作业规程与设备验收角度，识别停电施工方案中与停电申请、操作票/工作票、验电接地、防误送电、完工验收、恢复送电条件相关的缺失、冲突和执行风险，优先给出可落到规范条款的审查意见。",
+    "default_enabled": true,
+    "save_policy": {},
+    "template_version": "1.0.0",
+    "compatibility": {},
+    "metadata": {
+      "preferred_pack_ids": [
+        "power_outage_work.base"
+      ],
+      "review_modules": [
+        "legality_compliance",
+        "execution_continuity",
+        "evidence_validation"
+      ],
+      "ownership": "hermes_main_review"
+    },
+    "input_token_limit": 200000,
+    "output_token_limit": 200000
+  },
+  {
+    "id": "power_outage_normative_reviewer",
+    "agent_name": "停电专项规范主审",
+    "agent_purpose": "结合电力规范全文与监理审核要点，对停电施工方案进行专项深挖",
+    "agent_scope": "power_outage_normative",
+    "execution_mode": "hermes_router",
+    "module_bindings": [
+      "fact_extract",
+      "profile_and_packs",
+      "rule_and_evidence"
+    ],
+    "supported_document_types": [
+      "distribution_network_special_scheme"
+    ],
+    "focus_keywords": [
+      "停电",
+      "配网",
+      "监理",
+      "规范",
+      "审核要点",
+      "防反送电"
+    ],
+    "required_context_types": [
+      "target_document",
+      "basis_files"
+    ],
+    "input_contract": {
+      "type": "review_brief"
+    },
+    "output_contract": {
+      "type": "fact_packet",
+      "role": "main_review"
+    },
+    "instructions": "结合正式电力规范、南网指引和监理审核要点，深挖停电施工方案中的合规性、安全性、可行性与管理闭环问题。避免重复结构化层已明确指出的浅表缺项。",
+    "prompt": "请重点审查停电范围、停复电时间、关键审批手续、重要用户保障、防反送电控制和监理审核闭环。",
+    "default_enabled": true,
+    "save_policy": {
+      "seed": true
+    },
+    "template_version": "1.0.0",
+    "compatibility": {
+      "controller": "hermes_v0"
+    },
+    "metadata": {
+      "preferred_pack_ids": [
+        "distribution_network_special_scheme.base",
+        "power_outage_work.base"
+      ],
+      "review_modules": [
+        "legality_compliance",
+        "parameter_consistency"
+      ],
+      "ownership": "hermes_main_review"
+    },
+    "input_token_limit": 200000,
+    "output_token_limit": 200000
+  },
+  {
+    "id": "power_outage_operation_chain_reviewer",
+    "agent_name": "停电五步法与票据链审查",
+    "agent_purpose": "围绕停电、验电、接地、挂牌、遮栏及票据链路进行专项复核",
+    "agent_scope": "power_outage_operation_chain",
+    "execution_mode": "hermes_router",
+    "module_bindings": [
+      "fact_extract",
+      "rule_and_evidence"
+    ],
+    "supported_document_types": [
+      "distribution_network_special_scheme"
+    ],
+    "focus_keywords": [
+      "停电",
+      "验电",
+      "接地",
+      "挂牌",
+      "遮栏",
+      "工作票",
+      "操作票"
+    ],
+    "required_context_types": [
+      "target_document",
+      "basis_files"
+    ],
+    "input_contract": {
+      "type": "review_brief"
+    },
+    "output_contract": {
+      "type": "fact_packet",
+      "role": "main_review"
+    },
+    "instructions": "重点检查停电五步法是否闭合，工作票/操作票/现场勘察记录是否完整，以及误送电、倒送电风险是否被准确控制。",
+    "prompt": "请专项审查停电五步法执行链、票据链和防反送电措施，优先指出流程断点与证据链断点。",
+    "default_enabled": true,
+    "save_policy": {
+      "seed": true
+    },
+    "template_version": "1.0.0",
+    "compatibility": {
+      "controller": "hermes_v0"
+    },
+    "metadata": {
+      "preferred_pack_ids": [
+        "power_outage_work.base"
+      ],
+      "review_modules": [
+        "execution_continuity"
+      ],
+      "ownership": "hermes_main_review"
+    },
+    "input_token_limit": 200000,
+    "output_token_limit": 200000
+  },
+  {
+    "id": "power_outage_restoration_closure_reviewer",
+    "agent_name": "送电恢复与监理闭环审查",
+    "agent_purpose": "聚焦停电施工完工检查、恢复送电、资料归档和整改闭环",
+    "agent_scope": "power_outage_restoration_closure",
+    "execution_mode": "hermes_router",
+    "module_bindings": [
+      "fact_extract",
+      "profile_and_packs",
+      "rule_and_evidence"
+    ],
+    "supported_document_types": [
+      "distribution_network_special_scheme"
+    ],
+    "focus_keywords": [
+      "恢复送电",
+      "拆接地线",
+      "资料归档",
+      "整改闭环",
+      "监理"
+    ],
+    "required_context_types": [
+      "target_document",
+      "basis_files"
+    ],
+    "input_contract": {
+      "type": "review_brief"
+    },
+    "output_contract": {
+      "type": "fact_packet",
+      "role": "main_review"
+    },
+    "instructions": "从监理审核角度检查用户告知、完工检查、拆接地线、恢复送电、资料归档和整改闭环安排是否可执行、可追溯。",
+    "prompt": "请专项审查停电施工的收尾闭环，重点检查恢复送电条件、完工确认、资料归档和整改闭环。",
+    "default_enabled": true,
+    "save_policy": {
+      "seed": true
+    },
+    "template_version": "1.0.0",
+    "compatibility": {
+      "controller": "hermes_v0"
+    },
+    "metadata": {
+      "preferred_pack_ids": [
+        "power_outage_work.base"
+      ],
+      "review_modules": [
+        "legality_compliance",
+        "execution_continuity"
+      ],
+      "ownership": "hermes_main_review"
+    },
+    "input_token_limit": 200000,
+    "output_token_limit": 200000
+  },
+  {
+    "id": "structure_completeness_reviewer",
+    "agent_name": "结构完整性审查",
+    "agent_purpose": "基于008主审支撑材料，做出结构完整性最终裁决",
+    "agent_scope": "structure_completeness",
+    "execution_mode": "hermes_router",
+    "module_bindings": [
+      "primary_support_review",
+      "profile_and_packs"
+    ],
+    "supported_document_types": [],
+    "focus_keywords": [
+      "完整性",
+      "章节",
+      "结构",
+      "专项"
+    ],
+    "required_context_types": [
+      "target_document"
+    ],
+    "input_contract": {
+      "type": "review_brief"
+    },
+    "output_contract": {
+      "type": "fact_packet",
+      "role": "main_review"
+    },
+    "instructions": "结合008结构化支撑包，判断文档是否存在结构性缺口并输出官方审查结论。",
+    "prompt": "请根据提供的结构化支撑材料，确认文档结构与专项章节的完整性。",
+    "default_enabled": true,
+    "save_policy": {
+      "seed": true
+    },
+    "template_version": "1.0.0",
+    "compatibility": {
+      "controller": "hermes_v0"
+    },
+    "metadata": {
+      "review_modules": [
+        "structure_completeness"
+      ],
+      "ownership": "hermes_main_review"
+    },
+    "input_token_limit": 200000,
+    "output_token_limit": 200000
+  },
+  {
+    "id": "structured_review_primary_worker",
+    "agent_name": "008 主审支撑材料工作器",
+    "agent_purpose": "复用 008 结构化审查主链，为 Hermes 主审提供结构完整性支撑材料",
+    "agent_scope": "primary_support_material",
+    "execution_mode": "module_only",
+    "module_bindings": [
+      "primary_support_review"
+    ],
+    "supported_document_types": [],
+    "focus_keywords": [
+      "完整性",
+      "章节",
+      "结构",
+      "专项"
+    ],
+    "required_context_types": [
+      "target_document"
+    ],
+    "input_contract": {
+      "type": "review_brief"
+    },
+    "output_contract": {
+      "type": "fact_packet",
+      "role": "support_material"
+    },
+    "instructions": "调用 008 structured review capability facade 的 primary_support_review 能力，为 Hermes 主审和裁决层提供结构化支撑包与报告材料。",
+    "prompt": "",
+    "default_enabled": true,
+    "save_policy": {
+      "seed": true
+    },
+    "template_version": "1.1.0",
+    "compatibility": {
+      "controller": "hermes_v0",
+      "legacy_template_ids": [
+        "structure_completeness_reviewer"
+      ]
+    },
+    "metadata": {
+      "preferred_pack_ids": [],
+      "review_modules": [
+        "structure_completeness"
+      ],
+      "ownership": "support_material"
+    },
+    "input_token_limit": 200000,
+    "output_token_limit": 200000
+  },
+  {
+    "id": "visibility_gap_reviewer",
+    "agent_name": "可视域复核",
+    "agent_purpose": "聚焦附件、图纸和可视域缺口",
+    "agent_scope": "visibility_gap",
+    "execution_mode": "module_only",
+    "module_bindings": [
+      "parse_visibility"
+    ],
+    "supported_document_types": [],
+    "focus_keywords": [
+      "附件",
+      "图纸",
+      "可视域",
+      "pdf",
+      "OCR"
+    ],
+    "required_context_types": [
+      "target_document"
+    ],
+    "input_contract": {
+      "type": "review_brief"
+    },
+    "output_contract": {
+      "type": "fact_packet",
+      "role": "supplemental"
+    },
+    "instructions": "聚焦当前解析能力无法覆盖的可视域风险。",
+    "prompt": "",
+    "default_enabled": false,
+    "save_policy": {
+      "seed": true
+    },
+    "template_version": "1.0.0",
+    "compatibility": {
+      "controller": "hermes_v0"
+    },
+    "metadata": {
+      "review_modules": [
+        "evidence_validation"
+      ],
+      "ownership": "hermes_main_review"
+    },
+    "input_token_limit": 200000,
+    "output_token_limit": 200000
+  }
+]

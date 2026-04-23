@@ -1,0 +1,149 @@
+{
+  "hazardous_special_scheme": {
+    "profile_id": "hazardous_special_scheme",
+    "classification": {
+      "level1": "专项施工方案审查",
+      "level2": "危大工程专项方案"
+    },
+    "default_pack_ids": [
+      "hazardous_special_scheme.base",
+      "review.visibility",
+      "review.emergency"
+    ],
+    "required_pack_ids": [],
+    "optional_pack_ids": [],
+    "enterprise_pack_ids": [],
+    "rule_pack_ids": [
+      "hazardous.core.v1"
+    ]
+  },
+  "foundation_pit": {
+    "profile_id": "foundation_pit",
+    "classification": {
+      "level1": "专项施工方案审查",
+      "level2": "危大工程专项方案",
+      "level3": "基坑工程"
+    },
+    "default_pack_ids": [
+      "hazardous_special_scheme.base",
+      "foundation_pit.base",
+      "review.visibility",
+      "review.emergency"
+    ],
+    "required_pack_ids": [],
+    "optional_pack_ids": [],
+    "enterprise_pack_ids": [],
+    "rule_pack_ids": [
+      "hazardous.core.v1",
+      "hazardous.foundation_pit.v1"
+    ]
+  },
+  "formwork_support": {
+    "profile_id": "formwork_support",
+    "classification": {
+      "level1": "专项施工方案审查",
+      "level2": "危大工程专项方案",
+      "level3": "模板工程及支撑体系"
+    },
+    "default_pack_ids": [
+      "hazardous_special_scheme.base",
+      "formwork_support.base",
+      "review.visibility",
+      "review.emergency"
+    ],
+    "required_pack_ids": [],
+    "optional_pack_ids": [],
+    "enterprise_pack_ids": [],
+    "rule_pack_ids": [
+      "hazardous.core.v1",
+      "hazardous.formwork.v1"
+    ]
+  },
+  "construction_org": {
+    "profile_id": "construction_org",
+    "classification": {
+      "level1": "施工组织设计审查"
+    },
+    "default_pack_ids": [
+      "construction_org.base",
+      "review.visibility",
+      "review.emergency"
+    ],
+    "required_pack_ids": [],
+    "optional_pack_ids": [],
+    "enterprise_pack_ids": [],
+    "rule_pack_ids": [
+      "construction_org.core.v1"
+    ]
+  },
+  "construction_scheme": {
+    "profile_id": "construction_scheme",
+    "classification": {
+      "level1": "一般施工方案审查"
+    },
+    "default_pack_ids": [
+      "construction_scheme.base",
+      "review.visibility"
+    ],
+    "required_pack_ids": [],
+    "optional_pack_ids": [],
+    "enterprise_pack_ids": [],
+    "rule_pack_ids": []
+  },
+  "distribution_network_special_scheme": {
+    "profile_id": "distribution_network_special_scheme",
+    "classification": {
+      "level1": "一般专项与管理体系类",
+      "level2": "配电配网工程",
+      "level3": "停电施工作业 / 组塔架线等"
+    },
+    "default_pack_ids": [
+      "distribution_network_special_scheme.base",
+      "power_outage_work.base",
+      "review.visibility",
+      "review.emergency"
+    ],
+    "required_pack_ids": [],
+    "optional_pack_ids": [],
+    "enterprise_pack_ids": [],
+    "rule_pack_ids": [
+      "distribution_network.core.v1",
+      "distribution_network.structure.v1",
+      "distribution_network.safety_closure.v1",
+      "distribution_network.power_outage.v1",
+      "distribution_network.preparation.v1",
+      "distribution_network.operation_chain.v1",
+      "distribution_network.restoration_closure.v1"
+    ]
+  },
+  "supervision_plan": {
+    "profile_id": "supervision_plan",
+    "classification": {
+      "level1": "监理规划审查"
+    },
+    "default_pack_ids": [
+      "supervision_plan.base",
+      "review.visibility"
+    ],
+    "required_pack_ids": [],
+    "optional_pack_ids": [],
+    "enterprise_pack_ids": [],
+    "rule_pack_ids": [
+      "supervision.core.v1"
+    ]
+  },
+  "review_support_material": {
+    "profile_id": "review_support_material",
+    "classification": {
+      "level1": "审查辅助材料（边界说明）"
+    },
+    "default_pack_ids": [
+      "review_support_material.base",
+      "review.visibility"
+    ],
+    "required_pack_ids": [],
+    "optional_pack_ids": [],
+    "enterprise_pack_ids": [],
+    "rule_pack_ids": []
+  }
+}
