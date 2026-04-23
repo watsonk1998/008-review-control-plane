@@ -1,401 +1,130 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-export const DOC_TYPES = [
-  'construction_org',
-  'construction_scheme',
-  'hazardous_special_scheme',
-  'distribution_network_special_scheme',
-  'supervision_plan',
-  'review_support_material'
-];
-
-export const DEFAULT_MODULES = [
-  'structure_completeness',
-  'parameter_consistency',
-  'legality_compliance',
-  'execution_continuity',
-  'evidence_validation'
-];
-
-export const WORKFLOW_TOOL_SPECS = [
+const TOOL_DEFS = [
   {
     key: 'hermes_review_context_wft',
-    name: 'Hermes 审查上下文工具',
-    intro: '读取文件、解析正文、生成 facts/profile/basis/governed context。',
-    description: 'Hermes review context workflow tool',
-    avatar: 'core/app/type/pluginFill',
-    tags: ['review', 'workflow-tool', 'hermes']
+    title: 'Hermes 审查上下文工具',
+    intro: '归一化输入、解析文档、解析治理快照，并输出受治理的审查上下文。',
+    placeholder: '__WFT_HERMES_REVIEW_CONTEXT_ID__'
   },
   {
     key: 'hermes_ai_review_wft',
-    name: 'Hermes AI 主审工具',
-    intro: '选择 AI reviewer，并生成 Hermes 主审 reviewer packets。',
-    description: 'Hermes AI review workflow tool',
-    avatar: 'core/app/type/pluginFill',
-    tags: ['review', 'workflow-tool', 'hermes']
+    title: 'Hermes AI 审查工具',
+    intro: '按模块与文档类型选择 AI reviewer，执行结构化主审并输出 reviewer 分包。',
+    placeholder: '__WFT_HERMES_AI_REVIEW_ID__'
   },
   {
     key: 'hermes_deterministic_review_wft',
-    name: 'Hermes 确定性审查工具',
-    intro: '执行可视域、合规、规范有效性与计算 fallback 审查。',
-    description: 'Hermes deterministic review workflow tool',
-    avatar: 'core/app/type/pluginFill',
-    tags: ['review', 'workflow-tool', 'hermes']
+    title: 'Hermes 确定性审查工具',
+    intro: '执行可视域缺口、规范有效性、政策符合性与计算核验 fallback。',
+    placeholder: '__WFT_HERMES_DETERMINISTIC_REVIEW_ID__'
   },
   {
     key: 'hermes_support_008_wft',
-    name: 'Hermes 008 支撑层工具',
-    intro: '生成 008 支撑层结果与 supportPacket008。',
-    description: 'Hermes support 008 workflow tool',
-    avatar: 'core/app/type/pluginFill',
-    tags: ['review', 'workflow-tool', 'hermes']
+    title: 'Hermes 008 支撑层工具',
+    intro: '整理 008 支撑层结果、证据索引与 supportPacket008。',
+    placeholder: '__WFT_HERMES_SUPPORT_008_ID__'
   },
   {
     key: 'hermes_final_assembler_wft',
-    name: 'Hermes 最终组装工具',
-    intro: '执行 fail-closed、模块门禁、最终报告与降级出口组装。',
-    description: 'Hermes final assembler workflow tool',
-    avatar: 'core/app/type/pluginFill',
-    tags: ['review', 'workflow-tool', 'hermes']
+    title: 'Hermes 最终组装工具',
+    intro: '执行 fail-closed、模块门禁、最终评级与正式/降级报告输出。',
+    placeholder: '__WFT_HERMES_FINAL_ASSEMBLER_ID__'
   }
 ];
 
-export const PLACEHOLDER_AI_MODEL = '__FASTGPT_AI_MODEL__';
-export const WORKFLOW_TOOL_ID_PLACEHOLDER_PREFIX = '__FASTGPT_WORKFLOW_TOOL_ID__';
+const AI_MODEL_PLACEHOLDER = '__FASTGPT_AI_MODEL__';
 
 function ensureDir(dir) {
   fs.mkdirSync(dir, { recursive: true });
 }
 
-function unique(items = []) {
-  return [...new Set((items || []).filter(Boolean))];
+function readJson(file) {
+  return JSON.parse(fs.readFileSync(file, 'utf8'));
 }
 
-function slugify(value = '') {
-  return String(value)
-    .toLowerCase()
-    .replace(/[^a-z0-9\u4e00-\u9fff]+/g, '_')
-    .replace(/^_+|_+$/g, '') || 'item';
-}
-
-function placeholderToolId(key) {
-  return `${WORKFLOW_TOOL_ID_PLACEHOLDER_PREFIX}${key}__`;
-}
-
-function makeDatasetPlaceholder(index) {
-  return `__FASTGPT_DATASET_ID_${String(index).padStart(3, '0')}__`;
+function writeJson(file, payload) {
+  ensureDir(path.dirname(file));
+  fs.writeFileSync(file, `${JSON.stringify(payload, null, 2)}\n`);
 }
 
 function pos(x, y) {
   return { x, y };
 }
 
-function ref(nodeId, outputKey) {
-  return [[nodeId, outputKey]];
+function makeEdge(source, target, sourceHandle = `${source}-source-right`, targetHandle = `${target}-target-left`) {
+  return { source, target, sourceHandle, targetHandle };
 }
 
-function renderTypesForValueType(valueType, mode = 'reference') {
-  const byMode = {
-    reference: {
-      string: ['reference', 'textarea'],
-      number: ['reference', 'numberInput'],
-      boolean: ['reference', 'switch'],
-      object: ['reference', 'JSONEditor'],
-      arrayObject: ['reference', 'JSONEditor'],
-      arrayString: ['reference', 'JSONEditor'],
-      any: ['reference', 'JSONEditor'],
-      chatHistory: ['reference']
-    },
-    input: {
-      string: ['input', 'reference'],
-      number: ['numberInput', 'reference'],
-      boolean: ['switch', 'reference'],
-      object: ['JSONEditor', 'reference'],
-      arrayObject: ['JSONEditor', 'reference'],
-      arrayString: ['JSONEditor', 'reference'],
-      any: ['JSONEditor', 'reference'],
-      chatHistory: ['reference']
-    }
-  };
-  return (byMode[mode] && byMode[mode][valueType]) || ['reference'];
-}
-
-function inputField({
-  key,
-  label,
-  valueType = 'string',
-  required = false,
-  renderTypeList,
-  value,
-  description,
-  placeholder,
-  toolDescription,
-  maxLength,
-  isToolOutput
-}) {
-  const item = {
-    key,
-    label: label || key,
-    valueType,
-    renderTypeList: renderTypeList || renderTypesForValueType(valueType, value === undefined ? 'input' : 'reference')
-  };
-  if (required) item.required = true;
-  if (value !== undefined) item.value = value;
-  if (description) item.description = description;
-  if (placeholder) item.placeholder = placeholder;
-  if (toolDescription !== undefined) item.toolDescription = toolDescription;
-  if (maxLength !== undefined) item.maxLength = maxLength;
-  if (isToolOutput !== undefined) item.isToolOutput = isToolOutput;
-  return item;
-}
-
-function staticOutput(key, label, valueType = 'string', description = '') {
+function baseNode({ nodeId, name, intro, avatar, flowNodeType, position, version = '489', showStatus = true, inputs = [], outputs = [] }) {
   return {
-    id: key,
-    key,
-    label: label || key,
-    type: 'static',
-    valueType,
-    description
-  };
-}
-
-function dynamicOutput(key, label, valueType = 'any', description = '') {
-  return {
-    id: key,
-    key,
-    label: label || key,
-    type: 'dynamic',
-    valueType,
-    description
-  };
-}
-
-function pluginInputNode(inputs, x, y) {
-  return {
-    nodeId: 'pluginInput',
-    name: '工具输入',
-    avatar: 'core/workflow/template/workflowStart',
-    flowNodeType: 'pluginInput',
-    showStatus: false,
-    position: pos(x, y),
-    version: '489',
+    nodeId,
+    name,
+    intro,
+    avatar,
+    flowNodeType,
+    showStatus,
+    position,
+    version,
     inputs,
-    outputs: [
-      ...inputs.map((item) =>
-        staticOutput(item.key, item.label || item.key, item.valueType, item.description || '')
-      ),
-      staticOutput('userFiles', '会话上传文件', 'arrayString', '插件单独运行时的会话文件链接')
-    ]
+    outputs
   };
 }
 
-function pluginOutputNode(inputs, x, y) {
-  return {
-    nodeId: 'pluginOutput',
-    name: '工具输出',
-    avatar: 'core/workflow/template/pluginOutput',
-    flowNodeType: 'pluginOutput',
-    showStatus: false,
-    position: pos(x, y),
-    version: '489',
-    inputs,
-    outputs: []
-  };
-}
-
-function pluginConfigNode(x, y) {
-  return {
+function pluginConfigNode(position = pos(0, 0)) {
+  return baseNode({
     nodeId: 'pluginConfig',
     name: '系统配置',
     intro: '',
     avatar: 'core/workflow/template/systemConfig',
     flowNodeType: 'pluginConfig',
-    position: pos(x, y),
-    version: '489',
-    inputs: [],
+    showStatus: false,
+    position,
+    version: '4811'
+  });
+}
+
+function pluginInputNode(inputs, outputs, position = pos(420, 0)) {
+  return baseNode({
+    nodeId: 'pluginInput',
+    name: '工具开始',
+    intro: '配置工作流工具输入参数。',
+    avatar: 'core/workflow/template/workflowStart',
+    flowNodeType: 'pluginInput',
+    showStatus: false,
+    position,
+    version: '481',
+    inputs,
+    outputs
+  });
+}
+
+function pluginOutputNode(inputs, position = pos(1980, 0)) {
+  return baseNode({
+    nodeId: 'pluginOutput',
+    name: '工具输出',
+    intro: '配置工作流工具对外暴露的输出。',
+    avatar: 'core/workflow/template/pluginOutput',
+    flowNodeType: 'pluginOutput',
+    showStatus: false,
+    position,
+    version: '481',
+    inputs,
     outputs: []
-  };
+  });
 }
 
-function readFilesNode({
-  nodeId,
-  name,
-  x,
-  y,
-  fileUrlRef,
-  parentNodeId
-}) {
-  return {
-    nodeId,
-    parentNodeId,
-    name,
-    intro: '读取文件正文',
-    avatar: 'core/workflow/template/readFiles',
-    flowNodeType: 'readFiles',
-    showStatus: true,
-    position: pos(x, y),
-    version: '489',
-    inputs: [
-      inputField({
-        key: 'fileUrlList',
-        label: '文件链接',
-        valueType: 'arrayString',
-        required: true,
-        renderTypeList: ['reference', 'input'],
-        value: fileUrlRef
-      })
-    ],
-    outputs: [
-      staticOutput('text', '读取结果', 'string', '拼接后的文件正文'),
-      staticOutput('system_rawResponse', '原始读取结果', 'arrayObject', '每个文件的读取结果'),
-      staticOutput('error', '错误', 'string', '读取文件时的错误信息')
-    ]
-  };
-}
-
-function codeNode({
-  nodeId,
-  name,
-  intro,
-  x,
-  y,
-  inputs,
-  outputs,
-  code,
-  parentNodeId
-}) {
-  return {
-    nodeId,
-    parentNodeId,
-    name,
-    intro,
-    avatar: 'core/workflow/template/codeRun',
-    flowNodeType: 'code',
-    showStatus: true,
-    position: pos(x, y),
-    version: '489',
-    catchError: false,
-    inputs: [
-      ...inputs,
-      {
-        key: 'codeType',
-        renderTypeList: ['hidden'],
-        label: '',
-        valueType: 'string',
-        value: 'js'
-      },
-      {
-        key: 'code',
-        renderTypeList: ['custom'],
-        label: '',
-        valueType: 'string',
-        value: code
-      }
-    ],
-    outputs: [
-      staticOutput('system_rawResponse', '完整返回', 'object', '代码节点的完整返回对象'),
-      ...outputs,
-      staticOutput('error', '错误', 'string', '代码执行错误')
-    ]
-  };
-}
-
-function chatNode({
-  nodeId,
-  name,
-  intro,
-  x,
-  y,
-  modelValue,
-  systemPromptRef,
-  userPromptRef,
-  fileUrlRef,
-  parentNodeId
-}) {
-  return {
-    nodeId,
-    parentNodeId,
-    name,
-    intro,
-    avatar: 'core/workflow/template/aiChat',
-    flowNodeType: 'chatNode',
-    showStatus: true,
-    position: pos(x, y),
-    version: '489',
-    catchError: false,
-    inputs: [
-      {
-        key: 'model',
-        renderTypeList: ['settingLLMModel', 'reference'],
-        label: '模型',
-        valueType: 'string',
-        required: true,
-        value: modelValue
-      },
-      { key: 'temperature', renderTypeList: ['hidden'], label: '', valueType: 'number', value: 0.2 },
-      { key: 'maxToken', renderTypeList: ['hidden'], label: '', valueType: 'number', value: 4000 },
-      { key: 'isResponseAnswerText', renderTypeList: ['hidden'], label: '', valueType: 'boolean', value: true },
-      { key: 'quoteRole', renderTypeList: ['hidden'], label: '', valueType: 'string', value: 'system' },
-      { key: 'quoteTemplate', renderTypeList: ['hidden'], label: '', valueType: 'string', value: '' },
-      { key: 'quotePrompt', renderTypeList: ['hidden'], label: '', valueType: 'string', value: '' },
-      { key: 'aiChatVision', renderTypeList: ['hidden'], label: '', valueType: 'boolean', value: true },
-      { key: 'aiChatReasoning', renderTypeList: ['hidden'], label: '', valueType: 'boolean', value: false },
-      { key: 'aiChatTopP', renderTypeList: ['hidden'], label: '', valueType: 'number', value: 1 },
-      { key: 'aiChatStopSign', renderTypeList: ['hidden'], label: '', valueType: 'string', value: '' },
-      { key: 'aiChatResponseFormat', renderTypeList: ['hidden'], label: '', valueType: 'string', value: 'json_object' },
-      { key: 'aiChatJsonSchema', renderTypeList: ['hidden'], label: '', valueType: 'string', value: '' },
-      {
-        key: 'systemPrompt',
-        renderTypeList: ['reference', 'textarea'],
-        label: '系统提示词',
-        valueType: 'string',
-        value: systemPromptRef
-      },
-      {
-        key: 'history',
-        renderTypeList: ['reference', 'numberInput'],
-        label: '历史消息',
-        valueType: 'chatHistory',
-        value: 0,
-        required: true
-      },
-      {
-        key: 'fileUrlList',
-        renderTypeList: ['reference', 'input'],
-        label: '用户文件',
-        valueType: 'arrayString',
-        value: fileUrlRef || []
-      },
-      {
-        key: 'userChatInput',
-        renderTypeList: ['reference', 'textarea'],
-        label: '用户输入',
-        valueType: 'string',
-        required: true,
-        value: userPromptRef,
-        toolDescription: '用户问题'
-      }
-    ],
-    outputs: [
-      staticOutput('history', '新上下文', 'chatHistory', '模型返回后的上下文'),
-      staticOutput('text', '模型输出', 'string', 'AI 节点输出文本'),
-      staticOutput('reasoningText', '推理内容', 'string', '模型推理内容'),
-      staticOutput('error', '错误', 'string', 'AI 节点错误')
-    ]
-  };
-}
-
-function workflowStartNode(x, y) {
-  return {
+function workflowStartNode(position = pos(0, 0)) {
+  return baseNode({
     nodeId: 'workflowStart',
-    name: '工作流开始',
-    intro: '接收用户输入与文件',
+    name: '流程开始',
+    intro: '接收用户问题、上传文件和工作流变量。',
     avatar: 'core/workflow/template/workflowStart',
     flowNodeType: 'workflowStart',
-    position: pos(x, y),
-    version: '489',
+    showStatus: false,
+    position,
+    version: '481',
     inputs: [
       {
         key: 'userChatInput',
@@ -403,933 +132,1149 @@ function workflowStartNode(x, y) {
         valueType: 'string',
         label: '用户问题',
         required: true,
-        toolDescription: '用户问题'
+        toolDescription: '用户问题',
+        debugLabel: ''
       }
     ],
     outputs: [
-      staticOutput('userChatInput', '用户问题', 'string', '标准化后的文本输入'),
-      staticOutput('userFiles', '上传文件', 'arrayString', '用户上传文件链接')
+      {
+        id: 'userChatInput',
+        key: 'userChatInput',
+        label: '用户问题',
+        type: 'static',
+        valueType: 'string',
+        description: ''
+      },
+      {
+        id: 'userFiles',
+        key: 'userFiles',
+        label: '用户文件',
+        description: '用户上传文件 URL 数组。',
+        type: 'static',
+        valueType: 'arrayString'
+      }
     ]
-  };
+  });
 }
 
-function answerNode(nodeId, x, y, answerRef) {
-  return {
+function userGuideNode(position = pos(-380, -180)) {
+  return baseNode({
+    nodeId: 'userGuide',
+    name: '系统配置',
+    intro: 'Hermes 审查主工作流（migrationMode=workflow+workflow-tools）。',
+    avatar: 'core/workflow/template/systemConfig',
+    flowNodeType: 'userGuide',
+    showStatus: false,
+    position,
+    version: '481'
+  });
+}
+
+function readFilesNode({ nodeId, position, fileSource }) {
+  return baseNode({
     nodeId,
-    name: '输出结果',
-    intro: '返回最终审查结果',
-    avatar: 'core/workflow/template/reply',
-    flowNodeType: 'answerNode',
-    position: pos(x, y),
-    version: '489',
+    name: '文档解析',
+    intro: '解析文档内容并返回拼接后的正文文本。',
+    avatar: 'core/workflow/template/readFiles',
+    flowNodeType: 'readFiles',
     showStatus: true,
+    position,
+    version: '489',
     inputs: [
       {
-        key: 'answerText',
-        renderTypeList: ['reference', 'textarea'],
-        valueType: 'any',
+        key: 'fileUrlList',
+        renderTypeList: ['reference'],
+        valueType: 'arrayString',
+        label: '文档链接',
         required: true,
-        isRichText: false,
-        maxLength: 100000,
-        label: '响应内容',
-        value: answerRef
+        value: fileSource,
+        valueDesc: '',
+        description: '',
+        debugLabel: '',
+        toolDescription: ''
       }
     ],
-    outputs: []
-  };
+    outputs: [
+      {
+        id: 'system_text',
+        key: 'system_text',
+        label: '文档文本',
+        description: '文档原文，由文件名和文档内容组成。',
+        valueType: 'string',
+        type: 'static'
+      }
+    ]
+  });
 }
 
-function pluginModuleNode({
-  nodeId,
-  name,
-  intro,
-  key,
-  x,
-  y,
-  inputs,
-  outputs
-}) {
-  return {
+function codeNode({ nodeId, name, intro, position, code, inputs = [], outputs = [] }) {
+  return baseNode({
     nodeId,
     name,
     intro,
-    avatar: 'core/app/type/pluginFill',
-    flowNodeType: 'pluginModule',
+    avatar: 'core/workflow/template/codeRun',
+    flowNodeType: 'code',
     showStatus: true,
-    position: pos(x, y),
-    version: '489',
-    pluginId: placeholderToolId(key),
-    inputs,
-    outputs
-  };
+    position,
+    version: '482',
+    inputs: [
+      {
+        key: 'system_addInputParam',
+        renderTypeList: ['addInputParam'],
+        valueType: 'dynamic',
+        label: '',
+        required: false,
+        description: '代码节点输入参数。',
+        customInputConfig: {
+          selectValueTypeList: [
+            'string',
+            'number',
+            'boolean',
+            'object',
+            'arrayString',
+            'arrayNumber',
+            'arrayBoolean',
+            'arrayObject',
+            'arrayAny',
+            'any',
+            'chatHistory',
+            'datasetQuote',
+            'dynamic',
+            'selectApp',
+            'selectDataset'
+          ],
+          showDescription: false,
+          showDefaultValue: true
+        },
+        debugLabel: '',
+        toolDescription: ''
+      },
+      {
+        key: 'codeType',
+        renderTypeList: ['hidden'],
+        label: '',
+        value: 'js',
+        debugLabel: '',
+        toolDescription: ''
+      },
+      {
+        key: 'code',
+        renderTypeList: ['custom'],
+        label: '',
+        value: code,
+        debugLabel: '',
+        toolDescription: ''
+      },
+      ...inputs
+    ],
+    outputs: [
+      {
+        id: 'system_rawResponse',
+        key: 'system_rawResponse',
+        label: '完整结果',
+        valueType: 'object',
+        type: 'static',
+        description: ''
+      },
+      {
+        id: 'error',
+        key: 'error',
+        label: '错误信息',
+        description: '代码运行错误信息。',
+        valueType: 'object',
+        type: 'static'
+      },
+      {
+        id: 'system_addOutputParam',
+        key: 'system_addOutputParam',
+        type: 'dynamic',
+        valueType: 'dynamic',
+        label: '',
+        customFieldConfig: {
+          selectValueTypeList: [
+            'string',
+            'number',
+            'boolean',
+            'object',
+            'arrayString',
+            'arrayNumber',
+            'arrayBoolean',
+            'arrayObject',
+            'any',
+            'chatHistory',
+            'datasetQuote',
+            'dynamic',
+            'selectApp',
+            'selectDataset'
+          ],
+          showDescription: false,
+          showDefaultValue: false
+        },
+        description: 'return 对象会按 key 作为输出。'
+      },
+      ...outputs
+    ]
+  });
 }
 
-function systemConfigNode(x, y) {
-  return {
-    nodeId: 'userGuide',
-    name: '系统配置',
-    intro: 'Hermes 结构化审查主工作流',
-    avatar: 'core/workflow/template/systemConfig',
-    flowNodeType: 'userGuide',
-    position: pos(x, y),
-    version: '489',
-    inputs: [],
-    outputs: []
-  };
+function chatNode({ nodeId, name, intro, position, modelValue, systemPrompt, userChatInputRef, outputs = [], extraInputs = [] }) {
+  return baseNode({
+    nodeId,
+    name,
+    intro,
+    avatar: 'core/workflow/template/aiChat',
+    flowNodeType: 'chatNode',
+    showStatus: true,
+    position,
+    version: '481',
+    inputs: [
+      {
+        key: 'model',
+        renderTypeList: ['settingLLMModel', 'reference'],
+        label: '模型',
+        valueType: 'string',
+        selectedTypeIndex: 0,
+        value: modelValue,
+        debugLabel: '',
+        toolDescription: ''
+      },
+      {
+        key: 'temperature',
+        renderTypeList: ['hidden'],
+        label: '',
+        value: 2,
+        valueType: 'number',
+        min: 0,
+        max: 10,
+        step: 1,
+        debugLabel: '',
+        toolDescription: ''
+      },
+      {
+        key: 'maxToken',
+        renderTypeList: ['hidden'],
+        label: '',
+        value: 4000,
+        valueType: 'number',
+        min: 100,
+        max: 4000,
+        step: 50,
+        debugLabel: '',
+        toolDescription: ''
+      },
+      {
+        key: 'isResponseAnswerText',
+        renderTypeList: ['hidden'],
+        label: '',
+        value: false,
+        valueType: 'boolean',
+        debugLabel: '',
+        toolDescription: ''
+      },
+      {
+        key: 'aiChatQuoteRole',
+        renderTypeList: ['hidden'],
+        label: '',
+        valueType: 'string',
+        value: 'system',
+        debugLabel: '',
+        toolDescription: ''
+      },
+      {
+        key: 'quoteTemplate',
+        renderTypeList: ['hidden'],
+        label: '',
+        valueType: 'string',
+        value: '{{q}}\n{{a}}',
+        debugLabel: '',
+        toolDescription: ''
+      },
+      {
+        key: 'quotePrompt',
+        renderTypeList: ['hidden'],
+        label: '',
+        valueType: 'string',
+        value: '',
+        debugLabel: '',
+        toolDescription: ''
+      },
+      {
+        key: 'aiChatVision',
+        renderTypeList: ['hidden'],
+        label: '',
+        valueType: 'boolean',
+        value: false,
+        debugLabel: '',
+        toolDescription: ''
+      },
+      {
+        key: 'systemPrompt',
+        renderTypeList: ['textarea', 'reference'],
+        max: 3000,
+        valueType: 'string',
+        label: '系统提示词',
+        description: '控制结构化输出。',
+        placeholder: '',
+        value: systemPrompt,
+        debugLabel: '',
+        toolDescription: ''
+      },
+      {
+        key: 'history',
+        renderTypeList: ['numberInput', 'reference'],
+        valueType: 'chatHistory',
+        label: '历史轮次',
+        description: '限制历史轮次。',
+        required: true,
+        min: 0,
+        max: 50,
+        value: 2,
+        debugLabel: '',
+        toolDescription: ''
+      },
+      {
+        key: 'stringQuoteText',
+        renderTypeList: ['reference', 'textarea'],
+        label: '文档引用',
+        debugLabel: '文档引用',
+        description: '可选的补充上下文。',
+        valueType: 'string',
+        toolDescription: ''
+      },
+      {
+        key: 'userChatInput',
+        renderTypeList: ['reference', 'textarea'],
+        valueType: 'string',
+        label: '用户问题',
+        required: true,
+        toolDescription: '用户问题',
+        selectedTypeIndex: 0,
+        value: userChatInputRef,
+        debugLabel: ''
+      },
+      ...extraInputs
+    ],
+    outputs: [
+      {
+        id: 'history',
+        key: 'history',
+        required: true,
+        label: '新上下文',
+        description: '新的上下文',
+        valueType: 'chatHistory',
+        valueDesc: '{ obj: System | Human | AI; value: string; }[]',
+        type: 'static'
+      },
+      {
+        id: 'answerText',
+        key: 'answerText',
+        required: true,
+        label: '回答文本',
+        description: '模型回复文本。',
+        valueType: 'string',
+        type: 'static'
+      },
+      ...outputs
+    ]
+  });
 }
 
-function reverseTemplateModules(moduleBindings = {}) {
-  const result = {};
-  for (const [moduleName, binding] of Object.entries(moduleBindings)) {
-    for (const templateId of binding?.hermes_templates || []) {
-      if (!result[templateId]) result[templateId] = [];
-      result[templateId].push(moduleName);
-    }
-  }
-  return result;
-}
-
-export function buildDatasetManifest(basisRegistry = {}) {
-  const basisDatasets = {};
-  const datasetGroups = {};
-  let index = 1;
-  for (const [basisId, basis] of Object.entries(basisRegistry)) {
-    const placeholder = makeDatasetPlaceholder(index++);
-    const payload = {
-      basisId,
-      title: basis.title || basisId,
-      sourceType: basis.source_type || 'unknown',
-      effectiveStatus: basis.effective_status || 'unknown',
-      applicabilityTags: basis.applicability_tags || [],
-      fileRefs: basis.file_refs || [],
-      datasetIdPlaceholder: placeholder
-    };
-    basisDatasets[basisId] = payload;
-    for (const tag of basis.applicability_tags || []) {
-      if (tag === 'all') {
-        for (const docType of DOC_TYPES) {
-          datasetGroups[docType] = unique([...(datasetGroups[docType] || []), basisId]);
-        }
-      } else if (DOC_TYPES.includes(tag)) {
-        datasetGroups[tag] = unique([...(datasetGroups[tag] || []), basisId]);
+function answerNode({ nodeId, name, intro, position, textValue }) {
+  return baseNode({
+    nodeId,
+    name,
+    intro,
+    avatar: 'core/workflow/template/reply',
+    flowNodeType: 'answerNode',
+    showStatus: false,
+    position,
+    version: '481',
+    inputs: [
+      {
+        key: 'text',
+        renderTypeList: ['textarea', 'reference'],
+        valueType: 'any',
+        required: true,
+        label: '回复内容',
+        description: '输出给用户的文本。',
+        placeholder: '',
+        selectedTypeIndex: Array.isArray(textValue) ? 1 : 0,
+        value: textValue,
+        debugLabel: '',
+        toolDescription: ''
       }
-    }
-  }
-  return { basisDatasets, datasetGroups };
+    ],
+    outputs: []
+  });
 }
 
-export function loadGeneratedAssets(repoRoot) {
-  const generatedDir = path.join(
-    repoRoot,
-    'integrations',
-    'fastgpt',
-    'toolset',
-    'hermesStructuredReview',
-    'assets',
-    'generated'
-  );
-  const read = (name) => JSON.parse(fs.readFileSync(path.join(generatedDir, name), 'utf8'));
-  const assets = {
-    generatedDir,
-    moduleBindings: read('module_bindings.json'),
-    moduleTitles: read('module_titles.json'),
-    docTypeLabels: read('doc_type_labels.json'),
-    templateManifest: read('template_manifest.json'),
-    profileMapping: read('profile_mapping.json'),
-    packRegistry: read('pack_registry.json'),
-    rulePackRegistry: read('rule_pack_registry.json'),
-    basisRegistry: read('basis_registry.json'),
-    evidenceTitles: read('evidence_titles.json'),
-    evidenceFindingTypes: read('evidence_finding_types.json'),
-    evidenceManualReviewReasons: read('evidence_manual_review_reasons.json')
+function ifElseNode({ nodeId, name, intro, position, variableRef }) {
+  return baseNode({
+    nodeId,
+    name,
+    intro,
+    avatar: 'core/workflow/template/ifelse',
+    flowNodeType: 'ifElseNode',
+    showStatus: true,
+    position,
+    version: '481',
+    inputs: [
+      {
+        key: 'ifElseList',
+        renderTypeList: ['hidden'],
+        valueType: 'any',
+        label: '',
+        value: [
+          {
+            condition: 'AND',
+            list: [
+              {
+                variable: variableRef,
+                condition: 'equalTo',
+                value: 'true'
+              }
+            ]
+          }
+        ],
+        debugLabel: '',
+        toolDescription: ''
+      }
+    ],
+    outputs: [
+      {
+        id: 'ifElseResult',
+        key: 'ifElseResult',
+        label: '判断结果',
+        valueType: 'string',
+        type: 'static',
+        description: ''
+      }
+    ]
+  });
+}
+
+function pluginModuleNode({ nodeId, name, intro, position, pluginId, inputs, outputs }) {
+  return baseNode({
+    nodeId,
+    name,
+    intro,
+    avatar: '/imgs/workflow/tool.svg',
+    flowNodeType: 'pluginModule',
+    showStatus: false,
+    position,
+    version: '488',
+    inputs: [
+      {
+        key: 'system_forbid_stream',
+        renderTypeList: ['switch'],
+        valueType: 'boolean',
+        label: '禁用流输出',
+        description: '嵌套工具一律使用非流式。',
+        value: true,
+        valueDesc: '',
+        debugLabel: '',
+        toolDescription: ''
+      },
+      ...inputs
+    ],
+    outputs,
+    pluginId
+  });
+}
+
+function variableEntry({ key, type = 'input', required = false }) {
+  return { key, label: key, type, required };
+}
+
+function inputVar(key, label, valueType, value, description = '', required = true) {
+  return {
+    renderTypeList: ['input'],
+    selectedTypeIndex: 0,
+    valueType,
+    canEdit: true,
+    key,
+    label,
+    description,
+    required,
+    value,
+    valueDesc: '',
+    debugLabel: '',
+    toolDescription: description || label
   };
-  assets.datasetManifest = buildDatasetManifest(assets.basisRegistry);
-  assets.templateModuleMap = reverseTemplateModules(assets.moduleBindings);
-  return assets;
+}
+
+function inputRef(key, label, valueType, value, description = '', required = true) {
+  return {
+    renderTypeList: ['reference'],
+    selectedTypeIndex: 0,
+    valueType,
+    canEdit: true,
+    key,
+    label,
+    description,
+    required,
+    value,
+    valueDesc: '',
+    debugLabel: '',
+    toolDescription: description || label
+  };
+}
+
+function inputHidden(key, valueType, value, description = '') {
+  return {
+    key,
+    renderTypeList: ['hidden'],
+    valueType,
+    label: '',
+    value,
+    required: false,
+    description,
+    debugLabel: '',
+    toolDescription: ''
+  };
+}
+
+function outputHidden(key, valueType, label = key) {
+  return {
+    id: key,
+    valueType,
+    key,
+    label,
+    type: 'hidden'
+  };
+}
+
+function outputDynamic(key, valueType, label = key, description = '') {
+  return {
+    id: key,
+    valueType,
+    type: 'dynamic',
+    key,
+    label,
+    description
+  };
+}
+
+function pluginOutputRef(key, label, valueType, value, description = '') {
+  return {
+    renderTypeList: ['reference'],
+    valueType,
+    canEdit: true,
+    key,
+    label,
+    description,
+    value
+  };
+}
+
+function normalizeMultilineCode(code) {
+  return code.trim().replace(/^\n+/, '');
+}
+
+function mainNormalizeCode(docTypeLabels) {
+  return normalizeMultilineCode(`
+function main({ userChatInput, userFiles, documentTypeRaw, disciplineTagsRaw, enabledModulesRaw, disabledModulesRaw, focusRequirementsRaw, strictModeRaw }) {
+  function toArray(value) {
+    if (Array.isArray(value)) return value.filter(Boolean);
+    if (value == null || value === '') return [];
+    if (typeof value === 'object') return [value];
+    if (typeof value === 'string') {
+      const text = value.trim();
+      if (!text) return [];
+      try {
+        const parsed = JSON.parse(text);
+        if (Array.isArray(parsed)) return parsed.filter(Boolean);
+      } catch (error) {}
+      return text.split(/[\n,，;；]/).map((item) => item.trim()).filter(Boolean);
+    }
+    return [value];
+  }
+  function toBoolean(value, defaultValue) {
+    if (typeof value === 'boolean') return value;
+    if (typeof value === 'number') return value !== 0;
+    if (typeof value === 'string') {
+      const normalized = value.trim().toLowerCase();
+      if (!normalized) return defaultValue;
+      if (['true', '1', 'yes', 'y', 'on'].includes(normalized)) return true;
+      if (['false', '0', 'no', 'n', 'off'].includes(normalized)) return false;
+    }
+    return defaultValue;
+  }
+  const defaultModules = ['structure_completeness', 'parameter_consistency', 'legality_compliance', 'execution_continuity', 'evidence_validation'];
+  const disabledModules = new Set(toArray(disabledModulesRaw));
+  let enabledModules = toArray(enabledModulesRaw);
+  if (!enabledModules.length) enabledModules = defaultModules.slice();
+  enabledModules = enabledModules.filter((item) => !disabledModules.has(item));
+  const targetFileUrls = Array.isArray(userFiles) ? userFiles.filter(Boolean) : [];
+  const documentType = (documentTypeRaw || '').trim() || 'construction_org';
+  const reviewId = 'fastgpt-hermes-' + Date.now();
+  const documentTypeLabelMap = ${JSON.stringify(docTypeLabels)};
+  return {
+    reviewId,
+    query: typeof userChatInput === 'string' && userChatInput.trim() ? userChatInput.trim() : '请执行 Hermes 正式审查。',
+    documentType,
+    documentTypeLabel: documentTypeLabelMap[documentType] || documentType,
+    disciplineTags: toArray(disciplineTagsRaw),
+    enabledModules,
+    disabledModules: Array.from(disabledModules),
+    focusRequirements: toArray(focusRequirementsRaw),
+    strictMode: toBoolean(strictModeRaw, true),
+    targetFileUrls,
+    basisFileUrls: [],
+    contextFileUrls: []
+  };
+}
+`);
 }
 
 function reviewContextCode() {
-  return String.raw`function main(input) {
-  const {
-    query = '',
-    documentType = '',
-    disciplineTags = [],
-    enabledModules = [],
-    disabledModules = [],
-    focusRequirements = [],
-    strictMode = true,
-    targetFilesText = '',
-    targetFilesRaw = [],
-    basisFilesRaw = [],
-    contextFilesRaw = [],
-    snapshot = {}
-  } = input || {};
-
-  const DEFAULT_MODULES = ['structure_completeness', 'parameter_consistency', 'legality_compliance', 'execution_continuity', 'evidence_validation'];
-  const unique = (items) => [...new Set((Array.isArray(items) ? items : []).filter(Boolean))];
-  const normalizeText = (value) => String(value || '').replace(/\r\n/g, '\n').replace(/\u00a0/g, ' ').trim();
-  const slugify = (value) => String(value || '').toLowerCase().replace(/[^a-z0-9\u4e00-\u9fff]+/g, '_').replace(/^_+|_+$/g, '') || 'item';
-  const hasAnyKeyword = (text, keywords) => (keywords || []).some((keyword) => text.includes(keyword));
-  const extractContent = (entry) => {
-    const raw = String(entry && entry.text ? entry.text : '');
-    const match = raw.match(/<Content>\n?([\s\S]*?)\n?<\/Content>/i);
-    return normalizeText(match ? match[1] : raw.replace(/^File:[^\n]*\n?/i, ''));
-  };
-  const fileLabel = (entry, index) => {
-    return (entry && (entry.filename || entry.url)) || 'document_' + (index + 1);
-  };
-  const detectHeadingLevel = (text) => {
-    if (/^#{1,6}\s+/.test(text)) return Math.min((text.match(/^#+/) || ['#'])[0].length, 4);
-    if (/^[一二三四五六七八九十]+[、.]/.test(text)) return 1;
-    if (/^\d+[、.]/.test(text)) return 2;
-    if (/^\(?[一二三四五六七八九十]+\)/.test(text) || /^\([0-9]+\)/.test(text)) return 3;
-    return null;
-  };
-
-  const targetRaw = Array.isArray(targetFilesRaw) ? targetFilesRaw : [];
-  const targetContents = targetRaw.map(extractContent).filter(Boolean);
-  const normalizedTextValue = normalizeText(targetContents.length ? targetContents.join('\n\n') : targetFilesText);
-  const lines = normalizedTextValue.split('\n').map((line) => normalizeText(line)).filter(Boolean);
-  const sections = [];
-  const blocks = [];
-  const attachments = [];
-  const sectionStack = [];
-  const currentSectionId = () => sectionStack.length ? sectionStack[sectionStack.length - 1].id : null;
-
-  for (let index = 0; index < lines.length; index++) {
-    const line = lines[index];
-    const headingLevel = detectHeadingLevel(line);
-    const blockId = 'block_' + (index + 1);
-    if (/附件|附图|附表|图纸|详图|见图/.test(line)) {
-      attachments.push({
-        id: 'attachment_' + attachments.length,
-        title: line,
-        sectionId: currentSectionId(),
-        visibility: /详图|图纸/.test(line) ? 'referenced_only' : 'parsed'
-      });
+  return normalizeMultilineCode(`
+function main({ reviewId, query, documentType, disciplineTags, enabledModules, disabledModules, focusRequirements, strictMode, targetFileUrls, basisFileUrls, contextFileUrls, documentText, governanceSnapshot, datasetManifest }) {
+  function toArray(value) {
+    if (Array.isArray(value)) return value.filter(Boolean);
+    if (value == null || value === '') return [];
+    if (typeof value === 'object') return [value];
+    if (typeof value === 'string') {
+      const text = value.trim();
+      if (!text) return [];
+      try {
+        const parsed = JSON.parse(text);
+        if (Array.isArray(parsed)) return parsed.filter(Boolean);
+      } catch (error) {}
+      return text.split(/[\n,，;；]/).map((item) => item.trim()).filter(Boolean);
     }
-    if (headingLevel) {
-      while (sectionStack.length && sectionStack[sectionStack.length - 1].level >= headingLevel) {
-        sectionStack.pop();
-      }
-      const sectionId = 'section_' + (sections.length + 1);
-      const section = {
-        id: sectionId,
-        title: line.replace(/^#+\s*/, ''),
-        key: slugify(line.replace(/^#+\s*/, '')),
-        level: headingLevel,
-        parentId: currentSectionId(),
-        blockId,
-        position: index + 1
-      };
-      sections.push(section);
-      sectionStack.push(section);
-    }
-    blocks.push({
-      id: blockId,
-      type: headingLevel ? 'heading' : 'paragraph',
-      text: line,
-      sectionId: currentSectionId(),
-      headingLevel,
-      position: index + 1
-    });
+    return [value];
   }
-
-  const titleCounts = {};
-  const duplicateSectionTitles = [];
-  sections.filter((section) => section.level <= 2).forEach((section) => {
-    titleCounts[section.key] = (titleCounts[section.key] || 0) + 1;
-    if (titleCounts[section.key] === 2) duplicateSectionTitles.push(section.key);
-  });
-
-  const visibility = {
-    attachmentCount: attachments.length,
-    counts: attachments.reduce((acc, item) => {
-      const key = String(item.visibility || 'parsed');
-      acc[key] = (acc[key] || 0) + 1;
-      return acc;
-    }, {}),
-    reasonCounts: attachments.some((item) => item.visibility === 'referenced_only') ? { reference_detected_without_attachment_body: 1 } : {},
-    duplicateSectionTitles,
-    parseWarnings: ['text_tables_not_preserved', 'text_attachment_boundaries_inferred_from_headings'],
-    manualReviewNeeded: attachments.some((item) => item.visibility !== 'parsed'),
-    manualReviewReason: attachments.some((item) => item.visibility !== 'parsed') ? 'reference_detected_without_attachment_body' : null
+  function unique(list) {
+    return Array.from(new Set((list || []).filter(Boolean)));
+  }
+  function normalizeText(value) {
+    return String(value || '').replace(/\r/g, '\n').replace(/\u0000/g, '').replace(/\n{3,}/g, '\n\n').trim();
+  }
+  function slugify(value) {
+    return String(value || '').toLowerCase().replace(/[^a-z0-9\u4e00-\u9fa5]+/g, '-').replace(/^-+|-+$/g, '') || 'block';
+  }
+  function isHeading(line) {
+    return /^#{1,6}\s+/.test(line) || /^第[一二三四五六七八九十0-9]+[章节篇部分]/.test(line) || /^(一|二|三|四|五|六|七|八|九|十)[、.]/.test(line);
+  }
+  function headingLevel(line) {
+    const hashMatch = line.match(/^(#{1,6})\s+/);
+    if (hashMatch) return hashMatch[1].length;
+    if (/^第[一二三四五六七八九十0-9]+篇/.test(line)) return 1;
+    if (/^第[一二三四五六七八九十0-9]+章/.test(line)) return 2;
+    if (/^第[一二三四五六七八九十0-9]+节/.test(line)) return 3;
+    return 2;
+  }
+  function cleanHeading(line) {
+    return line.replace(/^#{1,6}\s+/, '').trim();
+  }
+  function parseDocument(text) {
+    const normalized = normalizeText(text);
+    const lines = normalized.split(/\n/);
+    const sections = [];
+    const blocks = [];
+    let currentSectionId = null;
+    let currentTitle = '正文';
+    let currentLevel = 1;
+    let buffer = [];
+    let position = 0;
+    function flushBuffer() {
+      const value = normalizeText(buffer.join('\n'));
+      if (!value) return;
+      position += 1;
+      blocks.push({
+        id: 'block-' + position,
+        type: 'paragraph',
+        text: value,
+        sectionId: currentSectionId,
+        headingLevel: null,
+        position
+      });
+      buffer = [];
+    }
+    lines.forEach((rawLine) => {
+      const line = String(rawLine || '').trim();
+      if (!line) {
+        if (buffer.length) buffer.push('');
+        return;
+      }
+      if (isHeading(line)) {
+        flushBuffer();
+        currentTitle = cleanHeading(line);
+        currentLevel = headingLevel(line);
+        currentSectionId = 'section-' + slugify(currentTitle) + '-' + (sections.length + 1);
+        sections.push({
+          id: currentSectionId,
+          title: currentTitle,
+          key: slugify(currentTitle),
+          level: currentLevel,
+          parentId: null,
+          blockId: 'block-heading-' + (sections.length + 1),
+          position: sections.length + 1
+        });
+        position += 1;
+        blocks.push({
+          id: 'block-heading-' + sections.length,
+          type: 'heading',
+          text: currentTitle,
+          sectionId: currentSectionId,
+          headingLevel: currentLevel,
+          position
+        });
+        return;
+      }
+      buffer.push(line);
+    });
+    flushBuffer();
+    return { sections, blocks, normalizedText: normalized };
+  }
+  function targetSectionIds(sections) {
+    return new Set((sections || []).filter((section) => /编制依据|编制说明/.test(section.title)).map((section) => section.id));
+  }
+  function splitReferenceCandidates(text) {
+    const value = normalizeText(text);
+    if (!value) return [];
+    if (value.trim().startsWith('|') || value.split('|').length >= 3) {
+      return value.split('|').map((cell) => normalizeText(cell)).filter(Boolean).filter((cell) => !['序号', '名称', '规范名称', '标准号', '备注', '编号'].includes(cell));
+    }
+    return value.replace(/^[（(]?\d+[)）.、]\s*/, '').split(/[；;]/).map((part) => part.trim().replace(/[。;；]+$/g, '')).filter(Boolean);
+  }
+  const normativeCodePattern = /(?:(?:GB|GB\/T|GBJ|DL\/T|DL|Q\/CSG|Q\/GDW|Q\/SH|Q\/BGJ|JGJ|NB\/T|NB|AQ|DB|DBJ|DGJ|YD\/T|SL|GA|CECS|TSG|HG|CJJ|SH\/T|YB|JB|CJ|YS|SY|HJ|TB|LB|MZ)\s*[-/A-Z]*\s*\d{2,}(?:\.\d+)?(?:[-—]\d{2,4})?)/i;
+  function extractNormativeTitle(text) {
+    let value = normalizeText(text);
+    if (!value) return '';
+    if (!value.includes('《') && !normativeCodePattern.test(value)) return '';
+    if (value.includes('《')) value = value.slice(value.indexOf('《'));
+    return value.replace(/^[(（]?\d+[)）.、]\s*/, '').trim();
+  }
+  function parseVisibility(text) {
+    const attachmentMatches = text.match(/附件|附图|见图|详见|附表/g) || [];
+    const duplicateSectionTitles = [];
+    return {
+      attachmentCount: attachmentMatches.length,
+      counts: { sectionCount: 0, blockCount: 0 },
+      reasonCounts: attachmentMatches.length ? { title_detected_without_attachment_body: attachmentMatches.length } : {},
+      duplicateSectionTitles,
+      parseWarnings: attachmentMatches.length ? ['正文多处引用附件或附图，当前仅获得正文文本。'] : [],
+      manualReviewNeeded: attachmentMatches.length > 0,
+      manualReviewReason: attachmentMatches.length ? '正文引用了附件、附图或外部材料，需人工结合原件复核。' : null
+    };
+  }
+  const snapshot = governanceSnapshot || {};
+  const parsed = parseDocument(documentText || '');
+  const visibility = parseVisibility(parsed.normalizedText);
+  visibility.counts.sectionCount = parsed.sections.length;
+  visibility.counts.blockCount = parsed.blocks.length;
+  const basisSectionIds = targetSectionIds(parsed.sections);
+  const normativeRefs = unique(parsed.blocks
+    .filter((block) => block.type !== 'heading')
+    .filter((block) => basisSectionIds.size ? basisSectionIds.has(block.sectionId) : true)
+    .flatMap((block) => splitReferenceCandidates(block.text))
+    .map(extractNormativeTitle)
+    .filter(Boolean));
+  const facts = {
+    section_count: parsed.sections.length,
+    block_count: parsed.blocks.length,
+    attachment_mentions: visibility.attachmentCount,
+    has_emergency_plan: /应急|抢修|事故/.test(parsed.normalizedText),
+    has_calculation_basis: /计算|验算|公式|荷载|安全系数/.test(parsed.normalizedText),
+    has_operation_chain: /停电|验电|接地|挂牌|遮栏|复电|送电/.test(parsed.normalizedText),
+    normative_refs: normativeRefs,
+    focus_requirements: toArray(focusRequirements),
+    discipline_tags: toArray(disciplineTags)
   };
-
+  const profileMapping = snapshot.profileMapping || {};
+  const resolvedProfile = profileMapping[documentType] || {
+    profile_id: documentType,
+    classification: { level1: '审查任务', level2: documentType },
+    default_pack_ids: [],
+    required_pack_ids: [],
+    optional_pack_ids: [],
+    enterprise_pack_ids: [],
+    rule_pack_ids: []
+  };
+  const packRegistry = snapshot.packRegistry || {};
+  const packsMap = packRegistry.packs || {};
+  const basisRegistry = snapshot.basisRegistry || {};
+  const packIds = unique([].concat(resolvedProfile.default_pack_ids || [], resolvedProfile.required_pack_ids || [], resolvedProfile.enterprise_pack_ids || []));
+  const packs = packIds.map((packId) => packsMap[packId]).filter(Boolean);
+  const basisIds = unique(packs.flatMap((pack) => pack.basis_ids || []));
+  const basisDocuments = basisIds.map((basisId) => {
+    const item = basisRegistry[basisId] || { basis_id: basisId, title: basisId, file_refs: [] };
+    return {
+      basis_id: basisId,
+      title: item.title || basisId,
+      version: item.version || '',
+      file_refs: item.file_refs || [],
+      applicability_tags: item.applicability_tags || []
+    };
+  });
+  const resolvedBasisProfile = {
+    profile_id: resolvedProfile.profile_id || documentType,
+    level1_classification: (resolvedProfile.classification || {}).level1 || '审查任务',
+    level2_classification: (resolvedProfile.classification || {}).level2 || documentType,
+    level3_classification: (resolvedProfile.classification || {}).level3 || null,
+    packs,
+    rule_packs: (snapshot.rulePackRegistry && (resolvedProfile.rule_pack_ids || []).map((rulePackId) => snapshot.rulePackRegistry.rule_packs ? snapshot.rulePackRegistry.rule_packs[rulePackId] : null).filter(Boolean)) || [],
+    basis_documents: basisDocuments,
+    degraded: false,
+    degradation_reasons: []
+  };
+  const governedDatasetScope = {
+    documentType,
+    profileId: resolvedBasisProfile.profile_id,
+    datasetKeys: ((datasetManifest || {}).entries || []).filter((entry) => entry.profileId === resolvedBasisProfile.profile_id || (entry.documentTypes || []).includes(documentType)).map((entry) => entry.datasetKey),
+    datasetIdPlaceholders: ((datasetManifest || {}).entries || []).filter((entry) => entry.profileId === resolvedBasisProfile.profile_id || (entry.documentTypes || []).includes(documentType)).map((entry) => entry.datasetIdPlaceholder),
+    basisIds,
+    basisTitles: basisDocuments.map((item) => item.title),
+    basisFileRefs: unique(basisDocuments.flatMap((item) => item.file_refs || []))
+  };
+  const moduleBindings = snapshot.moduleBindings || {};
+  const ruleHits = basisDocuments.slice(0, Math.max(3, Math.min(basisDocuments.length, 8))).map((doc, index) => ({
+    ruleId: 'FG-RULE-' + String(index + 1).padStart(3, '0'),
+    packId: packs[index % Math.max(packs.length, 1)] ? packs[index % packs.length].pack_id : 'governed.base',
+    packReadiness: 'ready',
+    matchType: 'basis_profile_projection',
+    status: 'candidate',
+    layerHint: 'support',
+    severityHint: index === 0 ? 'medium' : 'low',
+    factRefs: ['normative_refs'],
+    evidenceRefs: doc.file_refs || [],
+    rationale: '已将受治理依据纳入本次 FastGPT 审查上下文。',
+    applicabilityState: 'matched',
+    blockingReasons: [],
+    missingFactKeys: []
+  }));
+  const enabled = toArray(enabledModules).length ? toArray(enabledModules) : Object.keys(moduleBindings);
+  const candidates = enabled.map((moduleName, index) => ({
+    candidateId: moduleName + '-candidate-' + (index + 1),
+    title: ((moduleBindings[moduleName] || {}).title || moduleName) + '：待主审复核',
+    layerHint: 'review',
+    severityHint: moduleName === 'evidence_validation' && visibility.manualReviewNeeded ? 'medium' : 'low',
+    findingType: visibility.manualReviewNeeded && moduleName === 'evidence_validation' ? 'visibility_gap' : 'engineering_inference',
+    ruleHits: ruleHits.slice(0, 2),
+    evidenceMissing: visibility.manualReviewNeeded && moduleName === 'evidence_validation',
+    manualReviewNeeded: visibility.manualReviewNeeded && moduleName === 'evidence_validation',
+    manualReviewReason: visibility.manualReviewReason,
+    blockingReasons: visibility.manualReviewNeeded && moduleName === 'evidence_validation' ? ['attachment_visibility_gap'] : []
+  }));
   const parseResult = {
-    documentId: fileLabel(targetRaw[0], 0).replace(/\.[^.]+$/, ''),
-    fileType: 'readFiles',
-    parseMode: 'fastgpt_readfiles_text',
-    parserLimited: false,
-    sections,
-    blocks,
-    attachments,
-    normalizedText: normalizedTextValue,
-    preview: normalizedTextValue.slice(0, 4000),
+    documentId: reviewId,
+    filePath: (targetFileUrls || [])[0] || '',
+    fileType: 'mixed',
+    parseMode: 'fastgpt_read_files',
+    parserLimited: visibility.manualReviewNeeded,
+    sections: parsed.sections,
+    blocks: parsed.blocks,
+    attachments: [],
+    normalizedText: parsed.normalizedText,
+    preview: parsed.normalizedText.slice(0, 1000),
     visibility,
     parseWarnings: visibility.parseWarnings
   };
-
-  const coreSectionKeywords = {
-    construction_org: [
-      { itemKey: 'engineeringOverview', keywords: ['工程概况'] },
-      { itemKey: 'preparationBasis', keywords: ['编制依据', '编制说明'] },
-      { itemKey: 'constructionDeployment', keywords: ['施工部署'] },
-      { itemKey: 'schedulePlan', keywords: ['施工进度', '进度计划'] },
-      { itemKey: 'resourcePlan', keywords: ['资源配置', '人员计划'] },
-      { itemKey: 'safetyMeasures', keywords: ['安全措施', '安全技术'] },
-      { itemKey: 'emergencyPlan', keywords: ['应急预案', '应急处置'] },
-      { itemKey: 'siteLayout', keywords: ['平面布置', '施工总平面'] }
-    ],
-    construction_scheme: [
-      { itemKey: 'engineeringOverview', keywords: ['工程概况'] },
-      { itemKey: 'preparationBasis', keywords: ['编制依据', '编制说明'] },
-      { itemKey: 'processMethod', keywords: ['施工方法', '工艺流程'] },
-      { itemKey: 'safetyMeasures', keywords: ['安全措施', '安全技术'] }
-    ],
-    hazardous_special_scheme: [
-      { itemKey: 'engineeringOverview', keywords: ['工程概况'] },
-      { itemKey: 'preparationBasis', keywords: ['编制依据', '编制说明'] },
-      { itemKey: 'constructionPlan', keywords: ['施工计划', '施工方案'] },
-      { itemKey: 'processMethod', keywords: ['工艺流程', '施工工艺'] },
-      { itemKey: 'safetyMeasures', keywords: ['安全措施', '安全技术'] },
-      { itemKey: 'emergencyPlan', keywords: ['应急预案', '应急处置'] },
-      { itemKey: 'calculationBook', keywords: ['计算书', '验算'] }
-    ],
-    distribution_network_special_scheme: [
-      { itemKey: 'engineeringOverview', keywords: ['工程概况'] },
-      { itemKey: 'preparationBasis', keywords: ['编制依据', '编制说明'] },
-      { itemKey: 'riskIdentification', keywords: ['风险辨识', '风险分级'] },
-      { itemKey: 'safetyMeasures', keywords: ['安全措施', '停电', '验电', '接地'] },
-      { itemKey: 'emergencyPlan', keywords: ['应急预案', '应急处置'] },
-      { itemKey: 'ticketChain', keywords: ['工作票', '操作票', '现场勘察'] }
-    ],
-    supervision_plan: [
-      { itemKey: 'engineeringOverview', keywords: ['工程概况'] },
-      { itemKey: 'monitoringPlan', keywords: ['监测监控', '旁站', '巡视'] },
-      { itemKey: 'safetyMeasures', keywords: ['安全监理', '安全控制'] }
-    ],
-    review_support_material: [
-      { itemKey: 'materialScope', keywords: ['审查支持材料', '支持材料'] }
-    ]
-  };
-
-  const sectionsForDoc = coreSectionKeywords[documentType] || [];
-  const sectionPresence = Object.fromEntries(sectionsForDoc.map((item) => [item.itemKey, hasAnyKeyword(normalizedTextValue, item.keywords)]));
-  const structureCompleteness = sectionsForDoc.map((item) => ({
-    itemKey: item.itemKey,
-    scope: 'common',
-    status: sectionPresence[item.itemKey] ? 'complete' : 'missing'
-  }));
-  const hazardKeywords = {
-    lifting_operations: ['吊装', '起重'],
-    temporary_power: ['临时用电', '停送电'],
-    hot_work: ['动火'],
-    gas_area_ops: ['煤气', '有毒有害气体']
-  };
-  const highRiskCategories = Object.keys(hazardKeywords).filter((key) => hasAnyKeyword(normalizedTextValue, hazardKeywords[key]));
-  const facts = {
-    projectFacts: {
-      sectionPresence,
-      structureCompleteness,
-      duplicateSections: duplicateSectionTitles
-    },
-    attachmentFacts: { attachments },
-    hazardFacts: {
-      highRiskCategories,
-      specialSchemePlanStatus: normalizedTextValue.includes('专项方案') ? 'explicit_section' : (highRiskCategories.length ? 'generic_mention_only' : 'not_applicable')
-    },
-    emergencyFacts: {
-      targetedPlanCount: (normalizedTextValue.match(/应急预案|应急处置/g) || []).length,
-      planTitles: normalizedTextValue.includes('应急预案') ? ['应急预案'] : []
-    },
-    scheduleFacts: {
-      shutdownWindowDays: Number((normalizedTextValue.match(/(\d+)\s*天/) || [])[1] || 0) || null
-    },
-    resourceFacts: {
-      laborTotal: Number((normalizedTextValue.match(/(\d+)\s*人/) || [])[1] || 0) || null
-    }
-  };
-
-  const profileMapping = snapshot.profileMapping || {};
-  const packRegistry = (snapshot.packRegistry && (snapshot.packRegistry.packs || snapshot.packRegistry)) || {};
-  const rulePackRegistry = (snapshot.rulePackRegistry && (snapshot.rulePackRegistry.rule_packs || snapshot.rulePackRegistry)) || {};
-  const basisRegistry = snapshot.basisRegistry || {};
-  const datasetManifest = snapshot.datasetManifest || {};
-  const mapping = profileMapping[documentType] || {};
-  const requestedPackIds = unique((Array.isArray(focusRequirements) ? focusRequirements : []).filter((item) => String(item).endsWith('.base')));
-  const requestedRulePackIds = unique((Array.isArray(focusRequirements) ? focusRequirements : []).filter((item) => String(item).includes('.v1')));
-  const basePackIds = unique([...(mapping.default_pack_ids || []), ...requestedPackIds]);
-  const rulePackIds = unique([...(mapping.rule_pack_ids || []), ...requestedRulePackIds]);
-  const degradationReasons = [];
-  let degraded = false;
-  const packIds = new Set();
-  const packs = [];
-  const rulePacks = [];
-  const basisIds = [];
-
-  basePackIds.forEach((packId) => {
-    const pack = packRegistry[packId];
-    if (!pack) {
-      degraded = true;
-      degradationReasons.push('missing pack: ' + packId);
-      return;
-    }
-    packIds.add(packId);
-    packs.push({
-      pack_id: packId,
-      status: pack.status || 'unknown',
-      role: pack.role || 'unknown',
-      family: pack.family || 'unknown',
-      basis_ids: pack.basis_ids || []
-    });
-    basisIds.push(...(pack.basis_ids || []));
-  });
-
-  rulePackIds.forEach((rulePackId) => {
-    const rulePack = rulePackRegistry[rulePackId];
-    if (!rulePack) {
-      degraded = true;
-      degradationReasons.push('missing rule pack: ' + rulePackId);
-      return;
-    }
-    rulePacks.push({
-      rule_pack_id: rulePackId,
-      scope: rulePack.scope || '',
-      related_pack_ids: rulePack.related_pack_ids || [],
-      evidence_requirements: rulePack.evidence_requirements || []
-    });
-    (rulePack.related_pack_ids || []).forEach((relatedPackId) => {
-      if (packIds.has(relatedPackId)) return;
-      const relatedPack = packRegistry[relatedPackId];
-      if (!relatedPack) return;
-      packIds.add(relatedPackId);
-      packs.push({
-        pack_id: relatedPackId,
-        status: relatedPack.status || 'unknown',
-        role: relatedPack.role || 'unknown',
-        family: relatedPack.family || 'unknown',
-        basis_ids: relatedPack.basis_ids || []
-      });
-      basisIds.push(...(relatedPack.basis_ids || []));
-    });
-  });
-
-  const resolvedBasisProfile = {
-    profile_id: mapping.profile_id || documentType,
-    level1_classification: mapping.classification && mapping.classification.level1 || 'Unknown',
-    level2_classification: mapping.classification && mapping.classification.level2 || 'Unknown',
-    level3_classification: mapping.classification && mapping.classification.level3 || null,
-    packs,
-    rule_packs: rulePacks,
-    basis_documents: unique(basisIds).map((basisId) => {
-      const basis = basisRegistry[basisId];
-      if (!basis) {
-        degraded = true;
-        degradationReasons.push('missing basis: ' + basisId);
-        return {
-          basis_id: basisId,
-          title: basisId,
-          degraded: true,
-          degradation_reason: 'missing basis ' + basisId
-        };
-      }
-      return {
-        basis_id: basisId,
-        title: basis.title || basisId,
-        source_type: basis.source_type || 'unknown',
-        effective_status: basis.effective_status || 'unknown',
-        jurisdiction: basis.jurisdiction || 'unknown',
-        file_refs: basis.file_refs || []
-      };
-    }),
-    degraded,
-    degradation_reasons: degradationReasons
-  };
-
-  const governedDatasetScope = {
-    basisIds: resolvedBasisProfile.basis_documents.map((item) => item.basis_id),
-    datasetIds: resolvedBasisProfile.basis_documents.map((item) => {
-      const dataset = datasetManifest.basisDatasets && datasetManifest.basisDatasets[item.basis_id];
-      return dataset ? dataset.datasetIdPlaceholder : null;
-    }).filter(Boolean),
-    byDocumentType: (datasetManifest.datasetGroups && datasetManifest.datasetGroups[documentType]) || []
-  };
-
-  const structureRuleMap = {
-    construction_org: 'construction_org_structure_completeness',
-    construction_scheme: 'construction_scheme_structure_completeness',
-    hazardous_special_scheme: 'hazardous_special_scheme_core_sections',
-    distribution_network_special_scheme: 'distribution_network_special_scheme_structure_completeness',
-    supervision_plan: 'supervision_plan_structure_completeness',
-    review_support_material: 'review_support_material_context_only'
-  };
-  const ruleHits = [];
-  const missingSections = structureCompleteness.filter((item) => item.status !== 'complete');
-  const basePackId = String((packs[0] && packs[0].pack_id) || (documentType + '.base'));
-  ruleHits.push({
-    ruleId: structureRuleMap[documentType] || (documentType + '_structure_completeness'),
-    packId: basePackId,
-    packReadiness: 'ready',
-    matchType: 'direct_hit',
-    status: missingSections.length ? 'hit' : 'pass',
-    layerHint: 'L1',
-    severityHint: missingSections.length >= 2 ? 'high' : 'medium',
-    factRefs: missingSections.map((item) => 'project.structureCompleteness.' + item.itemKey),
-    evidenceRefs: ['policy:structure'],
-    rationale: '核心章节缺失或结构不完整。'
-  });
-  if (parseResult.visibility.manualReviewNeeded) {
-    ruleHits.push({
-      ruleId: documentType + '_attachment_visibility',
-      packId: basePackId,
-      packReadiness: 'ready',
-      matchType: 'visibility_gap',
-      status: 'manual_review_needed',
-      layerHint: 'L1',
-      severityHint: 'medium',
-      factRefs: ['attachments.visibility'],
-      evidenceRefs: ['policy:review_visibility_gap'],
-      rationale: '附件或图纸存在可视域缺口。',
-      applicabilityState: 'blocked_by_visibility',
-      blockingReasons: ['visibility_gap']
-    });
-  }
-  if (highRiskCategories.length && (facts.emergencyFacts.targetedPlanCount || 0) < 2) {
-    ruleHits.push({
-      ruleId: documentType + '_emergency_targeted',
-      packId: basePackId,
-      packReadiness: 'ready',
-      matchType: 'direct_hit',
-      status: 'hit',
-      layerHint: 'L2',
-      severityHint: 'medium',
-      factRefs: ['emergency.planTitles'],
-      evidenceRefs: ['policy:emergency_plan_targeted'],
-      rationale: '高风险场景下应急安排针对性不足。'
-    });
-  }
-
-  const inferModuleName = (value) => {
-    const lower = String(value || '').toLowerCase();
-    if (lower.includes('visibility') || lower.includes('evidence') || lower.includes('normative') || lower.includes('calculation')) return 'evidence_validation';
-    if (lower.includes('structure') || lower.includes('完整')) return 'structure_completeness';
-    if (lower.includes('consistency') || lower.includes('parameter') || lower.includes('resource')) return 'parameter_consistency';
-    if (lower.includes('operation_chain') || lower.includes('execution') || lower.includes('ticket') || lower.includes('power_outage')) return 'execution_continuity';
-    return 'legality_compliance';
-  };
-
-  const candidates = ruleHits
-    .filter((hit) => hit.status === 'hit' || hit.status === 'manual_review_needed')
-    .map((hit, index) => ({
-      candidateId: hit.ruleId,
-      title: (snapshot.evidenceTitles && snapshot.evidenceTitles[hit.ruleId]) || hit.ruleId,
-      layerHint: hit.layerHint,
-      severityHint: hit.severityHint,
-      findingType: (snapshot.evidenceFindingTypes && snapshot.evidenceFindingTypes[hit.ruleId]) || (hit.status === 'manual_review_needed' ? 'visibility_gap' : 'hard_evidence'),
-      ruleHits: [hit],
-      evidenceMissing: hit.status === 'manual_review_needed',
-      manualReviewNeeded: hit.status === 'manual_review_needed',
-      manualReviewReason: (snapshot.evidenceManualReviewReasons && snapshot.evidenceManualReviewReasons[hit.ruleId]) || (hit.status === 'manual_review_needed' ? 'visibility_gap' : undefined),
-      blockingReasons: hit.blockingReasons || [],
-      moduleName: inferModuleName(hit.ruleId)
-    }));
-
-  const normalizedEnabledModules = unique((Array.isArray(enabledModules) && enabledModules.length ? enabledModules : DEFAULT_MODULES).filter((item) => !(Array.isArray(disabledModules) && disabledModules.includes(item))));
-  const resolvedProfile = {
-    profileId: resolvedBasisProfile.profile_id,
-    documentType,
-    disciplineTags: Array.isArray(disciplineTags) ? disciplineTags : [],
-    enabledModules: normalizedEnabledModules,
-    strictMode: strictMode !== false
-  };
-
   const supportPacketBase = {
+    review_id: reviewId,
     document_type: documentType,
-    profile: resolvedBasisProfile,
-    facts,
-    basis_summary: resolvedBasisProfile.basis_documents.map((item) => ({
-      basis_id: item.basis_id,
-      title: item.title,
-      effective_status: item.effective_status || 'unknown'
-    })),
-    rule_pack_summary: resolvedBasisProfile.rule_packs,
-    warning_signals: resolvedBasisProfile.degradation_reasons,
-    degraded: resolvedBasisProfile.degraded
-  };
-
-  return {
-    reviewContext: {
-      query,
-      documentType,
-      disciplineTags: Array.isArray(disciplineTags) ? disciplineTags : [],
-      enabledModules: normalizedEnabledModules,
-      disabledModules: Array.isArray(disabledModules) ? disabledModules : [],
-      focusRequirements: Array.isArray(focusRequirements) ? focusRequirements : [],
-      strictMode: strictMode !== false,
-      parseResult,
-      docTextPreview: parseResult.preview,
-      facts,
-      ruleHits,
-      candidates,
-      resolvedProfile,
-      resolvedBasisProfile,
-      governedDatasetScope,
-      supportPacketBase,
-      targetFileUrls: (targetRaw || []).map((item) => item.url).filter(Boolean),
-      basisFileUrls: (basisFilesRaw || []).map((item) => item.url).filter(Boolean),
-      contextFileUrls: (contextFilesRaw || []).map((item) => item.url).filter(Boolean)
+    document_preview: parseResult.preview,
+    basis_summary: {
+      profile_id: resolvedBasisProfile.profile_id,
+      pack_ids: packs.map((item) => item.pack_id),
+      basis_ids: basisDocuments.map((item) => item.basis_id),
+      dataset_scope: governedDatasetScope
     },
+    parse_visibility: visibility,
+    facts,
+    focus_requirements: toArray(focusRequirements),
+    discipline_tags: toArray(disciplineTags),
+    strict_mode: strictMode !== false
+  };
+  const reviewContext = {
+    reviewId,
+    query,
+    documentType,
+    enabledModules: enabled,
+    disabledModules: toArray(disabledModules),
+    focusRequirements: toArray(focusRequirements),
+    strictMode: strictMode !== false,
+    targetFileUrls: toArray(targetFileUrls),
+    basisFileUrls: toArray(basisFileUrls),
+    contextFileUrls: toArray(contextFileUrls),
     parseResult,
     docTextPreview: parseResult.preview,
+    facts,
+    ruleHits,
+    candidates,
     resolvedProfile,
     resolvedBasisProfile,
     governedDatasetScope,
     supportPacketBase
   };
-}`;
+  return {
+    reviewContext,
+    parseResult,
+    docTextPreview: reviewContext.docTextPreview,
+    facts,
+    ruleHits,
+    candidates,
+    resolvedProfile,
+    resolvedBasisProfile,
+    governedDatasetScope,
+    supportPacketBase
+  };
+}
+`);
 }
 
-function aiReviewPlannerCode() {
-  return String.raw`function main(input) {
-  const {
-    reviewId = '',
-    query = '',
-    documentType = '',
-    enabledModules = [],
-    focusRequirements = [],
-    strictMode = true,
-    reviewContext = {},
-    targetFileUrls = [],
-    snapshot = {},
-    aiModel = '__FASTGPT_AI_MODEL__'
-  } = input || {};
-
-  const DEFAULT_MODULES = ['structure_completeness', 'parameter_consistency', 'legality_compliance', 'execution_continuity', 'evidence_validation'];
-  const unique = (items) => [...new Set((Array.isArray(items) ? items : []).filter(Boolean))];
+function aiReviewPrepareCode() {
+  return normalizeMultilineCode(`
+function main({ reviewContext, governanceSnapshot, aiModel }) {
+  function unique(list) { return Array.from(new Set((list || []).filter(Boolean))); }
+  function lower(value) { return String(value || '').toLowerCase(); }
+  const snapshot = governanceSnapshot || {};
   const moduleBindings = snapshot.moduleBindings || {};
-  const templateManifest = Array.isArray(snapshot.templateManifest) ? snapshot.templateManifest : [];
-  const templateModuleMap = snapshot.templateModuleMap || {};
-  const deterministicReviewers = new Set(['visibility_gap_reviewer', 'policy_compliance_reviewer', 'normative_validity_reviewer']);
-  const modules = unique((Array.isArray(enabledModules) && enabledModules.length ? enabledModules : DEFAULT_MODULES));
-  const selectedTemplateIds = unique(modules.flatMap((moduleName) => (moduleBindings[moduleName] && moduleBindings[moduleName].hermes_templates) || []));
-
-  const selectedReviewers = selectedTemplateIds
-    .filter((templateId) => !deterministicReviewers.has(templateId))
+  const templateManifest = snapshot.templateManifest || [];
+  const enabledModules = Array.isArray(reviewContext && reviewContext.enabledModules) ? reviewContext.enabledModules : [];
+  const documentType = reviewContext && reviewContext.documentType;
+  const templateIdToModules = {};
+  Object.keys(moduleBindings).forEach((moduleName) => {
+    const templates = ((moduleBindings[moduleName] || {}).hermes_templates || []);
+    templates.forEach((templateId) => {
+      templateIdToModules[templateId] = templateIdToModules[templateId] || [];
+      templateIdToModules[templateId].push(moduleName);
+    });
+  });
+  const selectedAiTemplates = unique(enabledModules.flatMap((moduleName) => ((moduleBindings[moduleName] || {}).hermes_templates || [])))
     .map((templateId) => templateManifest.find((item) => item.id === templateId))
     .filter(Boolean)
+    .filter((template) => template.execution_mode === 'hermes_router')
     .filter((template) => !Array.isArray(template.supported_document_types) || template.supported_document_types.length === 0 || template.supported_document_types.includes(documentType))
     .map((template) => ({
       reviewerId: template.id,
-      agentName: template.agent_name || template.id,
-      agentPurpose: template.agent_purpose || '',
-      prompt: template.prompt || '',
-      instructions: template.instructions || '',
-      reviewModules: templateModuleMap[template.id] || ((template.metadata && template.metadata.review_modules) || []),
-      supportedDocumentTypes: template.supported_document_types || []
+      name: template.agent_name,
+      purpose: template.agent_purpose,
+      focusKeywords: template.focus_keywords || [],
+      modules: unique(templateIdToModules[template.id] || [])
     }));
-
-  const contextPreview = String(reviewContext.docTextPreview || '').slice(0, 12000);
-  const facts = reviewContext.facts || {};
-  const basisSummary = (((reviewContext.resolvedBasisProfile || {}).basis_documents) || []).map((item) => item.title).slice(0, 20);
-  const reviewPrompt = [
-    '你是 Hermes 正式审查主审执行器。请对每个 reviewer 单独输出结构化结论。',
-    '严格要求：',
-    '1. 只输出 JSON；',
-    '2. 必须按 selectedReviewers 顺序输出 reviewerPackets；',
-    '3. 每个 finding 只能基于已给出的文档内容、facts、basis_summary 与 reviewer prompt；',
-    '4. 若证据不足，使用 evidence_status=evidence_gap 或 visibility_gap，并保守表达；',
-    '5. 不得输出正式总裁决，只输出 reviewerPackets。',
+  const prompt = [
+    '你是 Hermes 结构化审查主审执行器。',
+    '必须严格依据给定的 reviewContext 输出 JSON，不得输出 JSON 之外的文字。',
+    '如无问题，可返回空 findings，但不得臆造计算错误。',
+    '若 reviewer 属于计算类且证据不足，不得编造错误，交由后续确定性 fallback 处理。',
     '',
-    'selectedReviewers:',
-    JSON.stringify(selectedReviewers, null, 2),
+    '返回 JSON 结构：',
+    '{',
+    '  "packets": [',
+    '    {',
+    '      "reviewerId": "string",',
+    '      "degraded": false,',
+    '      "overall": "string",',
+    '      "findings": [',
+    '        {',
+    '          "title": "string",',
+    '          "severity": "high|medium|low|info",',
+    '          "summary": "string",',
+    '          "suggestion": "string",',
+    '          "evidence_status": "grounded|inferred|evidence_gap|visibility_gap"',
+    '        }',
+    '      ]',
+    '    }',
+    '  ]',
+    '}',
     '',
-    'reviewContextSummary:',
-    JSON.stringify({
-      reviewId,
-      query,
-      documentType,
-      enabledModules: modules,
-      focusRequirements,
-      strictMode,
-      basisSummary,
-      facts,
-      docTextPreview: contextPreview
-    }, null, 2),
-    '',
-    'JSON 结构示例：',
-    JSON.stringify({
-      reviewerPackets: [
-        {
-          reviewerId: 'example_reviewer',
-          reviewModules: ['structure_completeness'],
-          degraded: false,
-          overallAssessment: '字符串',
-          findings: [
-            {
-              id: 'TMP-001',
-              title: '字符串',
-              severity: 'high',
-              summary: '字符串',
-              suggestion: '字符串',
-              evidenceStatus: 'grounded',
-              findingType: 'hard_evidence',
-              moduleName: 'structure_completeness'
-            }
-          ]
-        }
-      ]
-    }, null, 2)
+    'selectedAiTemplates=' + JSON.stringify(selectedAiTemplates),
+    'reviewContext=' + JSON.stringify(reviewContext)
   ].join('\n');
-
   return {
-    selectedReviewers,
-    aiModel: aiModel || '__FASTGPT_AI_MODEL__',
-    aiSystemPrompt: '你必须返回严格 JSON，不要输出 markdown、解释或多余文本。',
-    aiUserPrompt: reviewPrompt,
-    targetFileUrls: Array.isArray(targetFileUrls) ? targetFileUrls : [],
-    hasAiReviewers: selectedReviewers.length > 0
+    selectedAiTemplates,
+    selectedReviewerIds: selectedAiTemplates.map((item) => item.reviewerId),
+    aiPrompt: prompt,
+    aiModel: aiModel || '${AI_MODEL_PLACEHOLDER}'
   };
-}`;
+}
+`);
 }
 
 function aiReviewNormalizeCode() {
-  return String.raw`function main(input) {
-  const {
-    reviewId = '',
-    aiAnswer = '',
-    selectedReviewers = [],
-    fallbackModuleMap = {}
-  } = input || {};
-
-  const parseJson = (text) => {
+  return normalizeMultilineCode(`
+function main({ reviewContext, governanceSnapshot, selectedAiTemplates, aiAnswerText }) {
+  function unique(list) { return Array.from(new Set((list || []).filter(Boolean))); }
+  function parseJson(text) {
     const raw = String(text || '').trim();
-    if (!raw) return {};
-    const fenced = raw.match(/```(?:json)?\s*([\s\S]*?)```/i);
-    const candidate = fenced ? fenced[1].trim() : raw;
-    try {
-      return JSON.parse(candidate);
-    } catch (error) {
-      return { error: 'JSON_PARSE_FAILED', raw: candidate };
+    if (!raw) return null;
+    const stripped = raw.replace(/^```json\s*/i, '').replace(/^```/, '').replace(/```$/, '').trim();
+    try { return JSON.parse(stripped); } catch (error) {}
+    const start = stripped.indexOf('{');
+    const end = stripped.lastIndexOf('}');
+    if (start >= 0 && end > start) {
+      try { return JSON.parse(stripped.slice(start, end + 1)); } catch (error) {}
     }
-  };
-  const severitySet = new Set(['high', 'medium', 'low', 'info']);
-  const evidenceStatusSet = new Set(['grounded', 'inferred', 'evidence_gap', 'visibility_gap']);
-  const payload = parseJson(aiAnswer);
-  const rawPackets = Array.isArray(payload) ? payload : (Array.isArray(payload.reviewerPackets) ? payload.reviewerPackets : []);
-  const packetMap = new Map();
-
-  rawPackets.forEach((packet, packetIndex) => {
-    if (!packet || !packet.reviewerId) return;
-    packetMap.set(packet.reviewerId, {
-      review_id: reviewId,
+    return null;
+  }
+  function severity(value) {
+    const normalized = String(value || 'low').toLowerCase();
+    return ['high', 'medium', 'low', 'info'].includes(normalized) ? normalized : 'low';
+  }
+  const snapshot = governanceSnapshot || {};
+  const moduleBindings = snapshot.moduleBindings || {};
+  const templateIdToModules = {};
+  Object.keys(moduleBindings).forEach((moduleName) => {
+    ((moduleBindings[moduleName] || {}).hermes_templates || []).forEach((templateId) => {
+      templateIdToModules[templateId] = templateIdToModules[templateId] || [];
+      templateIdToModules[templateId].push(moduleName);
+    });
+  });
+  const parsed = parseJson(aiAnswerText) || { packets: [] };
+  const packetMap = {};
+  (Array.isArray(parsed.packets) ? parsed.packets : []).forEach((packet) => {
+    if (packet && packet.reviewerId) packetMap[packet.reviewerId] = packet;
+  });
+  const reviewerPackets = (selectedAiTemplates || []).map((template, index) => {
+    const packet = packetMap[template.reviewerId];
+    if (!packet) {
+      return {
+        review_id: reviewContext.reviewId,
+        engine: 'hermes',
+        findings: [],
+        overall_assessment: 'AI reviewer 未返回结构化结果。',
+        degraded: true,
+        error: template.reviewerId + ' 审查组件降级，未返回有效结果',
+        metadata: {
+          template_id: template.reviewerId,
+          agent_id: template.reviewerId,
+          review_modules: unique(template.modules || templateIdToModules[template.reviewerId] || []),
+          agent_name: template.name
+        },
+        raw_result: { parseError: true, answerText: aiAnswerText }
+      };
+    }
+    const findings = Array.isArray(packet.findings) ? packet.findings : [];
+    return {
+      review_id: reviewContext.reviewId,
       engine: 'hermes',
-      findings: Array.isArray(packet.findings) ? packet.findings.map((finding, findingIndex) => ({
-        id: finding.id || ('H-AI-' + String(packetIndex + 1).padStart(2, '0') + '-' + String(findingIndex + 1).padStart(3, '0')),
-        title: finding.title || '未命名问题',
-        severity: severitySet.has(finding.severity) ? finding.severity : 'medium',
-        category: finding.moduleName || ((packet.reviewModules && packet.reviewModules[0]) || 'legality_compliance'),
-        summary: finding.summary || '未给出详细说明。',
-        suggestion: finding.suggestion || '请人工复核并补充明确的整改措施。',
-        evidence_status: evidenceStatusSet.has(finding.evidenceStatus) ? finding.evidenceStatus : 'inferred',
+      findings: findings.map((finding, findingIndex) => ({
+        id: 'H-AI-' + String(index + 1).padStart(2, '0') + '-' + String(findingIndex + 1).padStart(3, '0'),
+        title: finding.title || (template.name + '发现'),
+        severity: severity(finding.severity),
+        category: (template.modules || templateIdToModules[template.reviewerId] || [])[0] || 'legality_compliance',
+        summary: finding.summary || '主审组件已识别到需要人工处置的问题。',
+        suggestion: finding.suggestion || '请根据依据文件和原文证据补正。',
+        evidence_status: finding.evidence_status || 'grounded',
         source_engine: 'hermes',
-        finding_type: finding.findingType || 'engineering_inference',
+        finding_type: 'hard_evidence',
         raw_data: {
-          module_name: finding.moduleName || ((packet.reviewModules && packet.reviewModules[0]) || 'legality_compliance'),
-          template_id: packet.reviewerId,
-          reviewer_id: packet.reviewerId
+          module_name: (template.modules || templateIdToModules[template.reviewerId] || [])[0] || 'legality_compliance',
+          review_modules: unique(template.modules || templateIdToModules[template.reviewerId] || []),
+          reviewer_id: template.reviewerId,
+          reviewer_name: template.name
         }
-      })) : [],
-      overall_assessment: packet.overallAssessment || 'AI reviewer 已完成专项审查。',
-      degraded: packet.degraded === true,
-      error: packet.degraded ? (packet.error || (packet.reviewerId + ' 审查组件降级，未返回有效结果')) : undefined,
+      })),
+      overall_assessment: packet.overall || (findings.length ? 'AI reviewer 已形成结构化问题。' : 'AI reviewer 未识别到需输出的问题。'),
+      degraded: Boolean(packet.degraded),
+      error: packet.degraded ? (packet.error || (template.reviewerId + ' 审查组件降级，未返回有效结果')) : '',
       metadata: {
-        template_id: packet.reviewerId,
-        agent_id: packet.reviewerId,
-        review_modules: Array.isArray(packet.reviewModules) && packet.reviewModules.length ? packet.reviewModules : (fallbackModuleMap[packet.reviewerId] || [])
-      }
-    });
+        template_id: template.reviewerId,
+        agent_id: template.reviewerId,
+        review_modules: unique(template.modules || templateIdToModules[template.reviewerId] || []),
+        agent_name: template.name
+      },
+      raw_result: packet
+    };
   });
-
-  (Array.isArray(selectedReviewers) ? selectedReviewers : []).forEach((reviewer) => {
-    if (packetMap.has(reviewer.reviewerId)) return;
-    packetMap.set(reviewer.reviewerId, {
-      review_id: reviewId,
-      engine: 'hermes',
-      findings: [],
-      overall_assessment: reviewer.reviewerId + ' 未返回有效结果。',
-      degraded: true,
-      error: reviewer.reviewerId + ' 审查组件降级，未返回有效结果',
-      metadata: {
-        template_id: reviewer.reviewerId,
-        agent_id: reviewer.reviewerId,
-        review_modules: Array.isArray(reviewer.reviewModules) ? reviewer.reviewModules : (fallbackModuleMap[reviewer.reviewerId] || [])
-      }
-    });
-  });
-
-  const reviewerPackets = Array.from(packetMap.values());
+  const traceability = reviewerPackets.flatMap((packet) => (packet.findings || []).map((finding) => ({
+    reviewerId: packet.metadata.agent_id,
+    findingId: finding.id,
+    moduleName: finding.raw_data && finding.raw_data.module_name,
+    basisIds: ((reviewContext.resolvedBasisProfile || {}).basis_documents || []).map((item) => item.basis_id),
+    evidenceRefs: ((reviewContext.governedDatasetScope || {}).basisFileRefs || []).slice(0, 5)
+  })));
   return {
-    aiReview: {
+    aiReviewResult: {
+      selectedAiTemplates,
       reviewerPackets,
-      selectedReviewerIds: (Array.isArray(selectedReviewers) ? selectedReviewers : []).map((item) => item.reviewerId),
-      degradedReviewerIds: reviewerPackets.filter((packet) => packet.degraded).map((packet) => packet.metadata.template_id)
+      traceability,
+      degradedCount: reviewerPackets.filter((packet) => packet.degraded).length
     },
-    reviewerPackets
+    reviewerPackets,
+    traceability
   };
-}`;
+}
+`);
 }
 
-function deterministicReviewCode() {
-  return String.raw`function main(input) {
-  const {
-    reviewId = '',
-    reviewContext = {},
-    enabledModules = [],
-    aiReview = {}
-  } = input || {};
-
-  const DEFAULT_MODULES = ['structure_completeness', 'parameter_consistency', 'legality_compliance', 'execution_continuity', 'evidence_validation'];
-  const modules = Array.isArray(enabledModules) && enabledModules.length ? enabledModules : DEFAULT_MODULES;
-  const parseResult = reviewContext.parseResult || {};
-  const candidates = Array.isArray(reviewContext.candidates) ? reviewContext.candidates : [];
-  const text = String(parseResult.normalizedText || '');
-  const reviewerPackets = [];
-
-  const pushPacket = (packet) => reviewerPackets.push(packet);
-  const makePacket = (reviewerId, reviewModules, findings, overall, degraded, error) => ({
-    review_id: reviewId,
-    engine: 'hermes',
-    findings,
-    overall_assessment: overall,
-    degraded: !!degraded,
-    error,
-    metadata: {
-      template_id: reviewerId,
-      agent_id: reviewerId,
-      review_modules: reviewModules
-    }
-  });
-
-  if (modules.includes('evidence_validation')) {
-    const visibilityNeeded = !!(parseResult.visibility && parseResult.visibility.manualReviewNeeded);
-    pushPacket(makePacket(
-      'visibility_gap_reviewer',
-      ['evidence_validation'],
-      visibilityNeeded ? [{
-        id: 'H-VIS-001',
-        title: '附件及图纸解析受限，请结合原件复核',
-        severity: 'medium',
-        category: 'evidence_validation',
-        summary: '正文引用了附件或图纸，但当前可视域无法稳定获取其实质内容。',
-        suggestion: '请补充附件原件或结合原件人工复核。',
-        evidence_status: 'visibility_gap',
-        source_engine: 'hermes',
-        finding_type: 'visibility_gap',
-        manual_review_needed: true,
-        raw_data: { module_name: 'evidence_validation' }
-      }] : [],
-      visibilityNeeded ? '可视域检查已完成。' : '未发现需要单列的可视域问题。'
-    ));
+function deterministicCode() {
+  return normalizeMultilineCode(`
+function main({ reviewContext, governanceSnapshot, aiReviewResult }) {
+  function unique(list) { return Array.from(new Set((list || []).filter(Boolean))); }
+  function severity(value) {
+    const normalized = String(value || 'low').toLowerCase();
+    return ['high', 'medium', 'low', 'info'].includes(normalized) ? normalized : 'low';
   }
-
-  if (modules.includes('legality_compliance')) {
-    const findings = candidates.map((candidate, index) => ({
-      id: 'H-POL-' + String(index + 1).padStart(3, '0'),
-      title: candidate.title,
-      severity: candidate.severityHint || 'medium',
-      category: 'legality_compliance',
-      summary: ((candidate.ruleHits || []).map((hit) => hit.rationale).filter(Boolean).join('；')) || (candidate.title + ' 已命中受治理审查规则。'),
-      suggestion: candidate.manualReviewNeeded ? '请结合原件人工复核。' : '请依据规范条文完成补齐或修正。',
-      evidence_status: candidate.manualReviewNeeded ? 'visibility_gap' : (candidate.evidenceMissing ? 'evidence_gap' : 'grounded'),
-      source_engine: 'hermes',
-      finding_type: candidate.findingType || 'hard_evidence',
-      raw_data: { module_name: 'legality_compliance' }
-    }));
-    pushPacket(makePacket(
-      'policy_compliance_reviewer',
-      ['legality_compliance'],
+  const normativeCodePattern = /(?:(?:GB|GB\/T|GBJ|DL\/T|DL|Q\/CSG|Q\/GDW|Q\/SH|Q\/BGJ|JGJ|NB\/T|NB|AQ|DB|DBJ|DGJ|YD\/T|SL|GA|CECS|TSG|HG|CJJ|SH\/T|YB|JB|CJ|YS|SY|HJ|TB|LB|MZ)\s*[-/A-Z]*\s*\d{2,}(?:\.\d+)?(?:[-—]\d{2,4})?)/i;
+  const versionYearPattern = /[-—]\d{4}(?:\b|$)/;
+  function makePacket(reviewerId, findings, overall, degraded, error, modules) {
+    return {
+      review_id: reviewContext.reviewId,
+      engine: 'hermes',
       findings,
-      findings.length ? '规范命中与证据线索已整理。' : '未发现需要单列的规范命中问题。'
-    ));
-  }
-
-  if (modules.includes('evidence_validation')) {
-    const NEGATIVE_HINTS = ['废止', '作废', '失效', '替代', '代替', '废除'];
-    const EXCLUDED_DOCUMENT_KEYWORDS = ['条例', '办法', '规定', '实施细则', '通知', '通告', '意见', '决定', '命令', '管理制度', '规章', '管理办法', '管理规定', '暂行规定', '暂行办法'];
-    const NON_NORMATIVE_HINTS = ['合同', '委托函', '中标通知书', '技术资料', '施工图', '设计图', '审批资料', '交底记录', '现场查勘', '查勘记录'];
-    const CODE_PATTERN = /(?:(?:GB|GB\/T|GBJ|DL\/T|DL|NB\/T|NB|AQ|DB|DBJ|DGJ|JGJ|YD\/T|SL|GA|CECS|TSG|HG|CJJ|SH\/T|YB|JB|CJ|YS|SY|HJ|TB|LB|MZ|Q\/CSG|Q\/GDW|Q\/SH|Q\/BGJ)\s*[-/A-Z]*\s*\d{2,}(?:\.\d+)?(?:[-—]\d{2,4})?)/ig;
-    const VERSION_YEAR_PATTERN = /[-—]\d{4}(?:\b|$)/;
-    const normalizeText = (value) => String(value || '').replace(/\r\n/g, '\n').replace(/\u00a0/g, ' ').trim();
-    const splitReferenceCandidates = (value) => {
-      const text = normalizeText(value);
-      if (!text) return [];
-      if (text.trim().startsWith('|') || text.split('|').length >= 3) {
-        return text
-          .split('|')
-          .map((cell) => normalizeText(cell))
-          .filter(Boolean)
-          .filter((cell) => !['序号', '名称', '名 称', '编号', '编 号', '标准号', '规范名称', '备注'].includes(cell))
-          .filter((cell) => CODE_PATTERN.test(cell) || cell.includes('《'));
+      overall_assessment: overall,
+      degraded: Boolean(degraded),
+      error: degraded ? (error || (reviewerId + ' 审查组件降级，未返回有效结果')) : '',
+      metadata: {
+        template_id: reviewerId,
+        agent_id: reviewerId,
+        review_modules: unique(modules || [])
       }
-      return text
-        .replace(/^[（(]?\d+[)）.、]\s*/, '')
-        .split(/[；;]/)
-        .map((part) => part.trim().replace(/[。;；]+$/g, ''))
-        .filter(Boolean);
     };
-    const extractNormativeTitle = (value) => {
-      let text = normalizeText(value);
-      if (!text) return '';
-      if (NON_NORMATIVE_HINTS.some((hint) => text.includes(hint))) return '';
-      if (!text.includes('《') && !CODE_PATTERN.test(text)) return '';
-      if (text.includes('《')) text = text.slice(text.indexOf('《'));
-      text = text.replace(/^[（(]?\d+[)）.、]\s*/, '').replace(/\s+/g, ' ').trim();
-      return NON_NORMATIVE_HINTS.some((hint) => text.includes(hint)) ? '' : text;
-    };
-    const isStandardNormative = (title) => {
-      if (CODE_PATTERN.test(title)) return true;
-      if (EXCLUDED_DOCUMENT_KEYWORDS.some((keyword) => title.includes(keyword))) return false;
-      if (/[^办]法》/.test(title)) return false;
-      return true;
-    };
-    const sectionIds = new Set((parseResult.sections || []).filter((section) => ['编制依据', '编制说明'].some((keyword) => String(section.title || '').includes(keyword))).map((section) => section.id));
-    const candidatesRaw = (parseResult.blocks || [])
-      .filter((block) => block.type !== 'heading')
-      .filter((block) => block.sectionId && sectionIds.has(block.sectionId))
-      .flatMap((block) => splitReferenceCandidates(block.text))
-      .map(extractNormativeTitle)
-      .filter(Boolean)
-      .filter(isStandardNormative);
-    const seen = new Set();
-    const sources = candidatesRaw.filter((title) => {
-      if (seen.has(title)) return false;
-      seen.add(title);
-      return true;
-    });
-    const checks = sources.map((title) => {
-      const codeMatch = title.match(CODE_PATTERN);
-      const precise = !!(codeMatch && VERSION_YEAR_PATTERN.test(codeMatch[0]));
+  }
+  const packets = [];
+  const visibility = reviewContext.parseResult && reviewContext.parseResult.visibility;
+  const enabledModules = reviewContext.enabledModules || [];
+  if (enabledModules.includes('evidence_validation') && visibility && visibility.manualReviewNeeded) {
+    packets.push(makePacket('visibility_gap_reviewer', [{
+      id: 'H-VIS-001',
+      title: '附件及图纸解析受限，请结合原件复核',
+      severity: 'medium',
+      category: 'evidence_validation',
+      summary: visibility.manualReviewReason || '正文引用了附件或图纸，但当前可视域无法稳定获取其实质内容。',
+      suggestion: '请补充附件原件或结合原件人工复核。',
+      evidence_status: 'visibility_gap',
+      source_engine: 'hermes',
+      finding_type: 'visibility_gap',
+      manual_review_needed: true,
+      raw_data: { module_name: 'evidence_validation', review_modules: ['evidence_validation'] }
+    }], '可视域检查已完成。', false, '', ['evidence_validation']));
+  }
+  if (enabledModules.includes('legality_compliance')) {
+    const findings = (reviewContext.candidates || []).filter((candidate) => String(candidate.candidateId || '').includes('legality') || String(candidate.title || '').includes('合法') || String(candidate.title || '').includes('合规'))
+      .slice(0, 3)
+      .map((candidate, index) => ({
+        id: 'H-POL-' + String(index + 1).padStart(3, '0'),
+        title: candidate.title || '规范符合性提示',
+        severity: severity(candidate.severityHint || 'low'),
+        category: 'legality_compliance',
+        summary: (candidate.ruleHits || []).map((hit) => hit.rationale).filter(Boolean).join('；') || '已命中规范符合性线索，请结合正式依据复核。',
+        suggestion: '请结合正式依据和原文段落补充合规性说明。',
+        evidence_status: candidate.evidenceMissing ? 'evidence_gap' : 'grounded',
+        source_engine: 'hermes',
+        finding_type: 'engineering_inference',
+        raw_data: { module_name: 'legality_compliance', review_modules: ['legality_compliance'] }
+      }));
+    packets.push(makePacket('policy_compliance_reviewer', findings, findings.length ? '规范命中与合规线索已整理。' : '未发现需要单列的规范符合性问题。', false, '', ['legality_compliance']));
+  }
+  if (enabledModules.includes('evidence_validation')) {
+    const refs = (((reviewContext.facts || {}).normative_refs) || []).slice(0, 12);
+    const checks = refs.map((title) => {
+      const codeMatch = String(title).match(normativeCodePattern);
+      const precise = Boolean(codeMatch && versionYearPattern.test(codeMatch[0]));
       if (!precise) {
         return {
           sourceId: title,
           title,
           status: 'unknown',
           resolvedBy: 'heuristic',
-          summary: '标准号缺少年份或分册锚点，不能直接判定为现行有效，需人工核验。',
-          resolvedTitle: null,
+          summary: '标准号缺少年份或分册锚点，不能直接判定为现行有效。',
+          resolvedTitle: '',
           note: '裸标准号不得直接判定 current。'
-        };
-      }
-      if (NEGATIVE_HINTS.some((token) => title.includes(token))) {
-        return {
-          sourceId: title,
-          title,
-          status: 'superseded',
-          resolvedBy: 'heuristic',
-          summary: '标题中包含废止或替代信号，需按最新版本复核。',
-          resolvedTitle: title,
-          note: '需结合权威来源进一步人工核验。'
         };
       }
       return {
@@ -1337,133 +1282,97 @@ function deterministicReviewCode() {
         title,
         status: 'current',
         resolvedBy: 'heuristic',
-        summary: '已识别到带年份锚点的标准标题，但仍建议结合权威来源复核。',
+        summary: '当前仅根据标准标题与年份锚点作保守确认，仍建议人工复核。',
         resolvedTitle: title,
         note: '已匹配到带年份版本锚点的标准标题。'
       };
     });
-    const findings = [];
-    if (checks.length) {
-      findings.push({
-        id: 'H-NORM-SUM-001',
-        title: '编制依据现行有效性核验',
+    packets.push(makePacket('normative_validity_reviewer', checks.length ? [{
+      id: 'H-NORM-001',
+      title: '编制依据现行有效性核验',
+      severity: checks.some((item) => item.status === 'unknown') ? 'medium' : 'info',
+      category: 'evidence_validation',
+      summary: checks.some((item) => item.status === 'unknown') ? '存在待人工核验的标准编号或版本锚点。' : '当前标准标题均带有版本锚点。',
+      suggestion: '请对 unknown 项结合权威来源补充核验。',
+      evidence_status: checks.some((item) => item.status === 'unknown') ? 'evidence_gap' : 'grounded',
+      source_engine: 'hermes',
+      finding_type: 'engineering_inference',
+      raw_data: {
+        module_name: 'evidence_validation',
+        review_modules: ['evidence_validation'],
+        normativeValidityChecks: checks
+      }
+    }] : [], checks.length ? '规范有效性核验已完成。' : '未识别到需核验的标准规范。', false, '', ['evidence_validation']));
+    const aiCalcPacket = Array.isArray(aiReviewResult && aiReviewResult.reviewerPackets)
+      ? aiReviewResult.reviewerPackets.find((packet) => packet && packet.metadata && packet.metadata.agent_id === 'calculation_review_reviewer')
+      : null;
+    if (!aiCalcPacket || !Array.isArray(aiCalcPacket.findings) || aiCalcPacket.findings.length === 0) {
+      packets.push(makePacket('calculation_review_reviewer', [{
+        id: 'H-CALC-FALLBACK-001',
+        title: '未见计算书或验算过程，需人工补充复核',
         severity: 'info',
         category: 'evidence_validation',
-        summary: '共核验 ' + checks.length + ' 项编制依据，其中现行有效 ' + checks.filter((item) => item.status === 'current').length + ' 项，疑似废止/替代 ' + checks.filter((item) => item.status === 'superseded').length + ' 项，待人工核验 ' + checks.filter((item) => item.status === 'unknown').length + ' 项。',
-        suggestion: '对状态不明或疑似替代的标准，请补做联网或人工复核。',
-        evidence_status: 'inferred',
+        summary: '当前材料未稳定呈现计算书、验算过程或参数取值依据，系统按保守策略输出提示。',
+        suggestion: '请补充计算书、验算过程或关键参数来源后再复核。',
+        evidence_status: 'evidence_gap',
         source_engine: 'hermes',
-        finding_type: 'normative_validity_summary',
-        raw_data: { module_name: 'evidence_validation', normativeValidityChecks: checks }
-      });
-      checks.filter((item) => item.status !== 'current').forEach((check, index) => {
-        findings.push({
-          id: 'H-NORM-' + String(index + 1).padStart(3, '0'),
-          title: '编制依据现行有效性存在疑点：' + check.title,
-          severity: check.status === 'superseded' ? 'medium' : 'info',
-          category: 'evidence_validation',
-          summary: check.summary,
-          suggestion: '如该编制依据已废止、被替代或状态不明，请改用现行版本并同步修正文内引用。',
-          evidence_status: 'inferred',
-          source_engine: 'hermes',
-          finding_type: 'normative_validity_issue',
-          raw_data: { module_name: 'evidence_validation', normativeValidityCheck: check }
-        });
-      });
-    }
-    pushPacket(makePacket(
-      'normative_validity_reviewer',
-      ['evidence_validation'],
-      findings,
-      checks.length ? '被审方案“编制依据”现行有效性核验已完成。' : '未识别到被审方案“编制依据”章节中可执行现行有效性核验的规范。'
-    ));
-  }
-
-  if (modules.includes('evidence_validation')) {
-    const aiPackets = Array.isArray(aiReview.reviewerPackets) ? aiReview.reviewerPackets : [];
-    const calcPacket = aiPackets.find((packet) => packet && packet.metadata && packet.metadata.template_id === 'calculation_review_reviewer');
-    if (!calcPacket || !Array.isArray(calcPacket.findings) || calcPacket.findings.length === 0) {
-      pushPacket(makePacket(
-        'calculation_review_reviewer',
-        ['evidence_validation'],
-        [{
-          id: 'H-CALC-FALLBACK-001',
-          title: '未见计算书或验算过程，需人工补充复核',
-          severity: 'info',
-          category: 'evidence_validation',
-          summary: '当前材料未稳定识别出计算书或完整验算过程，禁止臆造计算错误。',
-          suggestion: '请补充计算书、公式来源及关键参数验算过程后再复核。',
-          evidence_status: 'evidence_gap',
-          source_engine: 'hermes',
-          finding_type: 'suggestion_enhancement',
-          raw_data: { module_name: 'evidence_validation', fallback: true }
-        }],
-        '计算式与验算依据审查未获取到稳定证据，已按保守策略返回人工复核提示。'
-      ));
+        finding_type: 'suggestion_enhancement',
+        raw_data: { module_name: 'evidence_validation', review_modules: ['evidence_validation'], fallback: true }
+      }], '计算核验 reviewer 未形成有效结果，已注入保守型 fallback。', false, '', ['evidence_validation']));
     }
   }
-
   return {
-    deterministicReview: {
-      reviewerPackets
+    deterministicReviewResult: {
+      reviewerPackets: packets,
+      degradedCount: packets.filter((packet) => packet.degraded).length
     },
-    reviewerPackets
+    reviewerPackets: packets
   };
-}`;
+}
+`);
 }
 
-function supportReviewCode() {
-  return String.raw`function main(input) {
-  const {
-    reviewId = '',
-    documentType = '',
-    reviewContext = {}
-  } = input || {};
-  const inferModuleName = (value) => {
-    const lower = String(value || '').toLowerCase();
-    if (lower.includes('visibility') || lower.includes('evidence') || lower.includes('normative') || lower.includes('calculation')) return 'evidence_validation';
-    if (lower.includes('structure') || lower.includes('完整')) return 'structure_completeness';
-    if (lower.includes('consistency') || lower.includes('parameter') || lower.includes('resource')) return 'parameter_consistency';
-    if (lower.includes('operation_chain') || lower.includes('execution') || lower.includes('ticket') || lower.includes('power_outage')) return 'execution_continuity';
-    return 'legality_compliance';
-  };
-  const findings = (Array.isArray(reviewContext.candidates) ? reviewContext.candidates : []).map((candidate, index) => ({
+function support008Code() {
+  return normalizeMultilineCode(`
+function main({ reviewContext }) {
+  function severity(value) {
+    const normalized = String(value || 'low').toLowerCase();
+    return ['high', 'medium', 'low', 'info'].includes(normalized) ? normalized : 'low';
+  }
+  const findings = (reviewContext.candidates || []).map((candidate, index) => ({
     id: 'S-' + String(index + 1).padStart(3, '0'),
     title: candidate.title,
-    severity: candidate.severityHint || 'medium',
-    category: inferModuleName(candidate.candidateId),
-    summary: ((candidate.ruleHits || []).map((hit) => hit.rationale).filter(Boolean).join('；')) || (candidate.title + ' 已命中受治理审查规则。'),
-    suggestion: candidate.manualReviewNeeded ? '当前证据存在可视域缺口，请结合原件或附件人工复核。' : '请根据命中规则补齐正文、附件或规范依据。',
+    severity: severity(candidate.severityHint),
+    category: String(candidate.candidateId || '').split('-candidate-')[0] || 'support_material',
+    summary: (candidate.ruleHits || []).map((hit) => hit.rationale).filter(Boolean).join('；') || '已命中治理快照中的审查线索。',
+    suggestion: candidate.manualReviewNeeded ? '请结合原件人工补充复核。' : '请结合正式审查结论闭环处置。',
     evidence_status: candidate.manualReviewNeeded ? 'visibility_gap' : (candidate.evidenceMissing ? 'evidence_gap' : 'grounded'),
     source_engine: '008',
-    finding_type: candidate.findingType || 'hard_evidence',
-    manual_review_needed: !!candidate.manualReviewNeeded,
+    finding_type: candidate.findingType || 'engineering_inference',
     raw_data: {
       candidateId: candidate.candidateId,
-      module_name: inferModuleName(candidate.candidateId),
-      blocking_reasons: candidate.blockingReasons || []
+      review_modules: [String(candidate.candidateId || '').split('-candidate-')[0]],
+      module_name: String(candidate.candidateId || '').split('-candidate-')[0]
     }
   }));
-  const reportMarkdown = [
-    '# ' + documentType + ' — 008 支撑层结果',
-    '',
-    ...(findings.length ? findings.map((item) => '- [' + item.severity + '] ' + item.title + '：' + item.summary) : ['- 未识别到需输出的问题'])
-  ].join('\n');
+  const reportMarkdown = ['# 008 支撑层结果', '', ...(findings.length ? findings.map((item) => '- [' + item.severity + '] ' + item.title + '：' + item.summary) : ['- 未识别到需输出的问题'])].join('\n');
   const supportPacket008 = {
-    review_id: reviewId,
+    review_id: reviewContext.reviewId,
     engine: '008',
     findings,
     overall_assessment: findings.length ? '008 支撑层已形成结构化问题线索。' : '008 支撑层未识别到需输出的问题。',
+    degraded: false,
+    error: '',
     metadata: {
       template_id: 'structured_review_primary_worker',
       agent_id: 'structured_review_primary_worker',
-      review_modules: [...new Set(findings.map((item) => item.raw_data.module_name).filter(Boolean))]
+      review_modules: ['support_material']
     }
   };
   return {
-    supportReview: {
+    supportReviewResult: {
       supportResult008: {
-        summary: { issueCount: findings.length, documentType },
+        summary: { issueCount: findings.length, documentType: reviewContext.documentType },
         issues: findings,
         reportMarkdown,
         ownership: 'support_material'
@@ -1473,825 +1382,647 @@ function supportReviewCode() {
       supportLayerContext: {
         reportMarkdown,
         issueCount: findings.length,
-        resolvedBasisProfile: reviewContext.resolvedBasisProfile || {}
+        governedDatasetScope: reviewContext.governedDatasetScope
       }
     },
-    supportPacket008
+    supportResult008: {
+      summary: { issueCount: findings.length, documentType: reviewContext.documentType },
+      issues: findings,
+      reportMarkdown,
+      ownership: 'support_material'
+    },
+    supportPacket008,
+    artifactIndex: [],
+    supportLayerContext: {
+      reportMarkdown,
+      issueCount: findings.length,
+      governedDatasetScope: reviewContext.governedDatasetScope
+    }
   };
-}`;
+}
+`);
 }
 
-function finalAssemblerCode() {
-  return String.raw`function main(input) {
-  const {
-    reviewId = '',
-    documentType = '',
-    enabledModules = [],
-    supportReview = {},
-    aiReview = {},
-    deterministicReview = {},
-    docTypeLabels = {}
-  } = input || {};
-
-  const DEFAULT_MODULES = ['structure_completeness', 'parameter_consistency', 'legality_compliance', 'execution_continuity', 'evidence_validation'];
-  const modules = Array.isArray(enabledModules) && enabledModules.length ? enabledModules : DEFAULT_MODULES;
-  const reviewerPackets = [
-    ...(Array.isArray(aiReview.reviewerPackets) ? aiReview.reviewerPackets : []),
-    ...(Array.isArray(deterministicReview.reviewerPackets) ? deterministicReview.reviewerPackets : [])
-  ];
-  const docLabel = docTypeLabels[documentType] || documentType;
-  const renderDegradedMarkdown = (reason) => [
-    '# ' + docLabel + ' — 预检结果与支撑层数据（非正式审查报告）',
-    '',
-    '> 审查主控链路未能形成正式裁决，系统已按 fail-closed 返回降级结果。原因：' + reason,
-    '',
-    '本结果仅供人工复核，不构成正式审查结论。'
-  ].join('\n');
-  const severityScore = (severity) => ({ high: 3, medium: 2, low: 1, info: 0 })[severity] || 0;
-
-  const hermesOk = reviewerPackets.some((packet) => !packet.degraded);
-  if (!hermesOk) {
-    const degradedReason = (reviewerPackets.find((packet) => packet.error) || {}).error || 'Hermes 主审 reviewer 未返回有效结果';
-    return {
-      finalDecision: {
-        degraded: true,
-        degradedReason,
-        finalReportPacket: null,
-        finalAnswer: renderDegradedMarkdown(degradedReason),
-        traceability: [],
-        hermesController: {
-          enabled: true,
-          finalReportReady: false,
-          degraded: true,
-          degradedReason
-        }
-      },
-      finalAnswer: renderDegradedMarkdown(degradedReason),
-      degraded: true,
-      degradedReason,
-      traceability: [],
-      finalReportMarkdown: renderDegradedMarkdown(degradedReason),
-      reportHtml: '<html lang="zh-CN"><body><pre>' + renderDegradedMarkdown(degradedReason) + '</pre></body></html>',
-      reportPrintCss: 'body { font-family: "PingFang SC", "Microsoft YaHei", sans-serif; }',
-      finalReportViewModel: {
-        title: docLabel + '降级结果',
-        degraded: true,
-        verdict: null,
-        executiveSummary: '主审链路不可用，已按 fail-closed 返回降级结果：' + degradedReason,
-        topRisks: [],
-        keyFindings: [],
-        supplementalFindings: [],
-        traceabilityCount: 0
-      }
-    };
+function finalAssemblerCode(docTypeLabels, moduleTitles) {
+  return normalizeMultilineCode(`
+function main({ reviewContext, aiReviewResult, deterministicReviewResult, supportReviewResult }) {
+  const DOC_LABELS = ${JSON.stringify(docTypeLabels)};
+  const MODULE_TITLES = ${JSON.stringify(moduleTitles)};
+  function severityRank(value) {
+    return { high: 4, medium: 3, low: 2, info: 1 }[String(value || 'low').toLowerCase()] || 2;
   }
-
-  const blockedModules = modules.filter((moduleName) => {
-    const packets = reviewerPackets.filter((packet) => Array.isArray(packet.metadata && packet.metadata.review_modules) ? packet.metadata.review_modules.includes(moduleName) : false);
-    return packets.length === 0 || packets.every((packet) => packet.degraded);
-  });
-  if (blockedModules.length) {
-    const degradedReason = '以下模块未形成有效主审结论：' + blockedModules.join('、');
-    return {
-      finalDecision: {
-        degraded: true,
-        degradedReason,
-        finalReportPacket: null,
-        finalAnswer: renderDegradedMarkdown(degradedReason),
-        traceability: [],
-        hermesController: {
-          enabled: true,
-          finalReportReady: false,
-          degraded: true,
-          degradedReason,
-          blockedModules
-        }
-      },
-      finalAnswer: renderDegradedMarkdown(degradedReason),
-      degraded: true,
-      degradedReason,
-      traceability: [],
-      finalReportMarkdown: renderDegradedMarkdown(degradedReason),
-      reportHtml: '<html lang="zh-CN"><body><pre>' + renderDegradedMarkdown(degradedReason) + '</pre></body></html>',
-      reportPrintCss: 'body { font-family: "PingFang SC", "Microsoft YaHei", sans-serif; }',
-      finalReportViewModel: {
-        title: docLabel + '降级结果',
-        degraded: true,
-        verdict: null,
-        executiveSummary: '主审链路不可用，已按 fail-closed 返回降级结果：' + degradedReason,
-        topRisks: [],
-        keyFindings: [],
-        supplementalFindings: [],
-        traceabilityCount: 0
-      }
-    };
+  function unique(list) { return Array.from(new Set((list || []).filter(Boolean))); }
+  function docLabel(documentType) { return DOC_LABELS[documentType] || documentType; }
+  function moduleLabel(moduleName) { return MODULE_TITLES[moduleName] || moduleName; }
+  function nonEmpty(value, fallback) {
+    return String(value || '').trim() || fallback;
   }
-
-  const supportFindings = ((supportReview.supportPacket008 || {}).findings) || [];
-  const hermesFindings = reviewerPackets.flatMap((packet) => Array.isArray(packet.findings) ? packet.findings : []);
-  const supportTitles = new Set(supportFindings.map((item) => item.title));
-  const supplementalFindings = hermesFindings.filter((item) => !supportTitles.has(item.title));
-  const allFindings = [...supportFindings, ...supplementalFindings];
-  const verdict = allFindings.some((item) => item.severity === 'high')
-    ? 'fail'
-    : allFindings.some((item) => item.severity === 'medium' || item.evidence_status === 'evidence_gap' || item.manual_review_needed)
-      ? 'needs_revision'
-      : 'conditional_pass';
-
-  const verdictLabelMap = {
-    conditional_pass: '有条件通过',
-    needs_revision: '需要修改',
-    fail: '不通过'
-  };
-  const topRisks = allFindings
-    .slice()
-    .sort((left, right) => severityScore(right.severity) - severityScore(left.severity))
-    .map((item) => item.title)
-    .filter(Boolean)
-    .slice(0, 5);
-  const traceability = allFindings.map((finding) => ({
-    finding_id: finding.id,
-    title: finding.title,
-    source_engine: finding.source_engine || 'unknown',
-    module_name: finding.raw_data && finding.raw_data.module_name || null,
-    template_id: finding.raw_data && finding.raw_data.template_id || null
-  }));
-  const finalReportPacket = {
-    title: docLabel + '正式审查报告',
+  function flatten(list) { return [].concat(...(list || []).map((item) => Array.isArray(item) ? item : [item])); }
+  const aiPackets = Array.isArray(aiReviewResult && aiReviewResult.reviewerPackets) ? aiReviewResult.reviewerPackets : [];
+  const deterministicPackets = Array.isArray(deterministicReviewResult && deterministicReviewResult.reviewerPackets) ? deterministicReviewResult.reviewerPackets : [];
+  const reviewerPackets = aiPackets.concat(deterministicPackets);
+  const hermesPackets = reviewerPackets.filter((packet) => packet && packet.engine === 'hermes');
+  const enabledModules = reviewContext.enabledModules || [];
+  let degradedReason = '';
+  if (!hermesPackets.length) {
+    degradedReason = 'Hermes 主审链路未形成任何实际审查结果。';
+  } else if (hermesPackets.every((packet) => packet.degraded)) {
+    degradedReason = 'Hermes 主审链路全部降级，系统按 fail-closed 返回非正式结果。';
+  }
+  if (!degradedReason) {
+    for (const moduleName of enabledModules) {
+      const actualPackets = hermesPackets.filter((packet) => Array.isArray(packet.metadata && packet.metadata.review_modules) && packet.metadata.review_modules.includes(moduleName));
+      if (!actualPackets.length) {
+        degradedReason = moduleLabel(moduleName) + ' 模块未形成实际审查结果，系统按 fail-closed 返回。';
+        break;
+      }
+      if (actualPackets.every((packet) => packet.degraded)) {
+        degradedReason = moduleLabel(moduleName) + ' 模块的实际运行 reviewer 全部降级，系统按 fail-closed 返回。';
+        break;
+      }
+    }
+  }
+  const allFindings = reviewerPackets.flatMap((packet) => Array.isArray(packet.findings) ? packet.findings : []);
+  const keyFindings = allFindings.filter((item) => severityRank(item.severity) >= 3).sort((a, b) => severityRank(b.severity) - severityRank(a.severity));
+  const supplementalFindings = allFindings.filter((item) => !keyFindings.includes(item));
+  const verdict = keyFindings.some((item) => String(item.severity).toLowerCase() === 'high') ? 'fail' : keyFindings.length ? 'needs_revision' : 'conditional_pass';
+  const verdictLabel = { conditional_pass: '有条件通过', needs_revision: '需要修改', fail: '不通过' }[verdict];
+  const topRisks = unique(keyFindings.slice(0, 5).map((item) => item.title));
+  const traceability = flatten([
+    Array.isArray(aiReviewResult && aiReviewResult.traceability) ? aiReviewResult.traceability : [],
+    allFindings.map((finding) => ({
+      findingId: finding.id,
+      title: finding.title,
+      moduleName: finding.raw_data && finding.raw_data.module_name,
+      basisIds: ((reviewContext.resolvedBasisProfile || {}).basis_documents || []).map((item) => item.basis_id),
+      evidenceRefs: ((reviewContext.governedDatasetScope || {}).basisFileRefs || []).slice(0, 5)
+    }))
+  ]);
+  const title = docLabel(reviewContext.documentType) + '正式审查报告';
+  const summary = '本次审查已由专业主审组件裁决完成，总体评级结论为：**' + verdictLabel + '**。';
+  const finalReportPacket = degradedReason ? null : {
+    title,
     verdict,
-    summary: '本次审查已由专业主审组件裁决完成，总体评级结论为：**' + verdictLabelMap[verdict] + '**。',
+    summary,
     top_risks: topRisks,
-    key_findings: supportFindings,
+    key_findings: keyFindings,
     supplemental_findings: supplementalFindings,
     traceability,
     report_markdown: '',
     metadata: {
-      documentType,
-      selected_review_modules: modules
+      reviewId: reviewContext.reviewId,
+      documentType: reviewContext.documentType,
+      enabledModules,
+      basisProfileId: reviewContext.resolvedBasisProfile && reviewContext.resolvedBasisProfile.profile_id
     }
   };
-  finalReportPacket.report_markdown = [
-    '# ' + finalReportPacket.title,
-    '',
-    finalReportPacket.summary,
-    '',
-    '## 重点风险',
-    ...(topRisks.length ? topRisks.map((item) => '- ' + item) : ['- 未识别到需要单列的高风险事项']),
-    '',
-    '## 关键问题',
-    ...(supportFindings.length ? supportFindings.map((item) => '- [' + item.severity + '] ' + item.title + '：' + item.summary) : ['- 无']),
-    '',
-    '## 补充问题',
-    ...(supplementalFindings.length ? supplementalFindings.map((item) => '- [' + item.severity + '] ' + item.title + '：' + item.summary) : ['- 无'])
-  ].join('\n');
-
-  const markdown = finalReportPacket.report_markdown;
-  const reportHtml = '<!doctype html><html lang="zh-CN"><head><meta charset="utf-8" /><title>' + finalReportPacket.title + '</title><style>body { font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif; margin: 24px; color: #0f172a; } h1 { font-size: 28px; margin-bottom: 16px; } h2 { font-size: 18px; margin-top: 24px; border-left: 4px solid #2563eb; padding-left: 8px; } li { margin: 8px 0; } </style></head><body>' + markdown.split('\n').map((line) => {
-    if (line.startsWith('# ')) return '<h1>' + line.slice(2) + '</h1>';
-    if (line.startsWith('## ')) return '<h2>' + line.slice(3) + '</h2>';
-    if (line.startsWith('- ')) return '<li>' + line.slice(2) + '</li>';
-    if (!line.trim()) return '';
-    return '<p>' + line + '</p>';
-  }).join('\n') + '</body></html>';
-  const reportPrintCss = 'body { font-family: "PingFang SC", "Microsoft YaHei", sans-serif; color: #0f172a; }\nh1, h2 { break-after: avoid; }\nul, ol { padding-left: 20px; }\n';
-  const finalDecision = {
-    degraded: false,
-    degradedReason: '',
-    finalReportPacket,
-    finalAnswer: markdown,
-    traceability,
-    hermesController: {
-      enabled: true,
-      finalReportReady: true,
-      degraded: false
-    }
-  };
+  let finalReportMarkdown = '';
+  let reportHtml = '';
+  let reportPrintCss = '';
+  let finalReportViewModel = {};
+  let finalAnswer = '';
+  if (degradedReason) {
+    finalAnswer = [
+      '# ' + docLabel(reviewContext.documentType) + ' — 预检结果与支撑层数据（非正式审查报告）',
+      '',
+      '> 审查主控链路未能形成正式裁决，系统已按 fail-closed 返回降级结果。原因：' + nonEmpty(degradedReason, 'Hermes 审查组件降级，未返回有效结果'),
+      '',
+      '本结果仅供人工复核，不构成正式审查结论。'
+    ].join('\n');
+  } else {
+    finalReportMarkdown = [
+      '# ' + title,
+      '',
+      summary,
+      '',
+      '## 重点风险',
+      ...(topRisks.length ? topRisks.map((item) => '- ' + item) : ['- 未识别到需要单列的高风险事项']),
+      '',
+      '## 关键问题',
+      ...(keyFindings.length ? keyFindings.map((item) => '- [' + item.severity + '] ' + item.title + '：' + item.summary) : ['- 无']),
+      '',
+      '## 补充问题',
+      ...(supplementalFindings.length ? supplementalFindings.slice(0, 10).map((item) => '- [' + item.severity + '] ' + item.title + '：' + item.summary) : ['- 无'])
+    ].join('\n');
+    reportPrintCss = ['body { font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif; color: #111827; line-height: 1.7; }', '.structured-report__section { margin-bottom: 24px; }', '.structured-report__muted { color: #6b7280; font-size: 12px; }', '.structured-report__table-wrap { overflow-x: auto; overscroll-behavior-x: contain; }', '@media print { .structured-report__table-wrap { overflow: visible; } }'].join('\n');
+    reportHtml = '<html><head><meta charset="utf-8" /><style>' + reportPrintCss + '</style></head><body>' +
+      '<h1>' + title + '</h1>' +
+      '<p>' + summary + '</p>' +
+      '<div class="structured-report__section"><h2>重点风险</h2><ul>' + (topRisks.length ? topRisks.map((item) => '<li>' + item + '</li>').join('') : '<li>未识别到需要单列的高风险事项</li>') + '</ul></div>' +
+      '<div class="structured-report__section"><h2>关键问题</h2><ul>' + (keyFindings.length ? keyFindings.map((item) => '<li>[' + item.severity + '] ' + item.title + '：' + item.summary + '</li>').join('') : '<li>无</li>') + '</ul></div>' +
+      '</body></html>';
+    finalReportViewModel = {
+      reviewId: reviewContext.reviewId,
+      title,
+      verdict,
+      verdictLabel,
+      executiveSummary: summary,
+      executiveSummaryView: {
+        verdictLabel,
+        metrics: {
+          enabledModuleCount: enabledModules.length,
+          findingCount: allFindings.length,
+          keyFindingCount: keyFindings.length
+        }
+      },
+      sections: enabledModules.map((moduleName) => ({
+        moduleName,
+        title: moduleLabel(moduleName),
+        findings: allFindings.filter((item) => item.raw_data && item.raw_data.module_name === moduleName)
+      })),
+      normativeValidityChecks: allFindings.flatMap((item) => item.raw_data && Array.isArray(item.raw_data.normativeValidityChecks) ? item.raw_data.normativeValidityChecks : [])
+    };
+    finalAnswer = finalReportMarkdown;
+    finalReportPacket.report_markdown = finalReportMarkdown;
+  }
   return {
-    finalDecision,
-    finalAnswer: markdown,
-    degraded: false,
-    degradedReason: '',
-    traceability,
-    finalReportMarkdown: markdown,
+    degraded: Boolean(degradedReason),
+    degradedReason: nonEmpty(degradedReason, 'Hermes 审查组件降级，未返回有效结果'),
+    finalReportPacket,
+    finalReportMarkdown,
     reportHtml,
     reportPrintCss,
-    finalReportViewModel: {
-      title: finalReportPacket.title,
-      degraded: false,
-      verdict,
-      executiveSummary: finalReportPacket.summary,
-      topRisks,
-      keyFindings: supportFindings,
-      supplementalFindings,
-      traceabilityCount: traceability.length
+    finalReportViewModel,
+    traceability,
+    finalAnswer,
+    artifactLinks: {
+      html: '',
+      markdown: '',
+      json: ''
     }
   };
-}`;
+}
+`);
 }
 
-function buildReviewContextTool(assets) {
-  const snapshot = {
-    profileMapping: assets.profileMapping,
-    packRegistry: assets.packRegistry,
-    rulePackRegistry: assets.rulePackRegistry,
-    basisRegistry: assets.basisRegistry,
-    evidenceTitles: assets.evidenceTitles,
-    evidenceFindingTypes: assets.evidenceFindingTypes,
-    evidenceManualReviewReasons: assets.evidenceManualReviewReasons,
-    datasetManifest: assets.datasetManifest
-  };
+function reviewContextWorkflow(governanceSnapshot, datasetManifest) {
+  const inputKeys = [
+    ['reviewId', '审查任务 ID', 'string'],
+    ['query', '审查指令', 'string'],
+    ['documentType', '文档类型', 'string'],
+    ['disciplineTags', '专业标签', 'arrayString'],
+    ['enabledModules', '启用模块', 'arrayString'],
+    ['disabledModules', '禁用模块', 'arrayString'],
+    ['focusRequirements', '关注点', 'arrayString'],
+    ['strictMode', '严格模式', 'boolean'],
+    ['targetFileUrls', '目标文件 URL', 'arrayString'],
+    ['basisFileUrls', '依据文件 URL', 'arrayString'],
+    ['contextFileUrls', '补充上下文 URL', 'arrayString']
+  ];
   const nodes = [
-    pluginConfigNode(-280, -220),
+    pluginConfigNode(pos(0, 0)),
     pluginInputNode(
-      [
-        inputField({ key: 'query', label: '审查指令', valueType: 'string', required: true, toolDescription: '审查目标与重点要求' }),
-        inputField({ key: 'documentType', label: '文档类型', valueType: 'string', required: true, toolDescription: '被审文档类型枚举值' }),
-        inputField({ key: 'disciplineTags', label: '专业标签', valueType: 'arrayString', toolDescription: '审查专业标签数组' }),
-        inputField({ key: 'enabledModules', label: '启用模块', valueType: 'arrayString', toolDescription: '启用的正式审查模块' }),
-        inputField({ key: 'disabledModules', label: '禁用模块', valueType: 'arrayString', toolDescription: '显式禁用的审查模块' }),
-        inputField({ key: 'focusRequirements', label: '重点要求', valueType: 'arrayString', toolDescription: '用户指定的重点问题或 pack/rule_pack 提示' }),
-        inputField({ key: 'strictMode', label: '严格模式', valueType: 'boolean', toolDescription: '是否按严格模式执行' }),
-        inputField({ key: 'targetFileUrls', label: '目标文件 URL', valueType: 'arrayString', required: true, toolDescription: '被审文件链接数组' }),
-        inputField({ key: 'basisFileUrls', label: 'basis 文件 URL', valueType: 'arrayString', toolDescription: '额外 basis 文件链接数组' }),
-        inputField({ key: 'contextFileUrls', label: '上下文文件 URL', valueType: 'arrayString', toolDescription: '额外上下文文件链接数组' })
-      ],
-      0,
-      0
+      inputKeys.map(([key, label, valueType]) => inputRef(key, label, valueType, undefined, label)),
+      inputKeys.map(([key, label, valueType]) => outputHidden(key, valueType, label)),
+      pos(420, 0)
     ),
-    readFilesNode({ nodeId: 'readTargetFiles', name: '读取目标文件', x: 360, y: -160, fileUrlRef: ref('pluginInput', 'targetFileUrls') }),
-    readFilesNode({ nodeId: 'readBasisFiles', name: '读取 basis 文件', x: 360, y: 20, fileUrlRef: ref('pluginInput', 'basisFileUrls') }),
-    readFilesNode({ nodeId: 'readContextFiles', name: '读取上下文文件', x: 360, y: 200, fileUrlRef: ref('pluginInput', 'contextFileUrls') }),
+    readFilesNode({ nodeId: 'readTargetFiles', position: pos(820, -180), fileSource: ['pluginInput', 'targetFileUrls'] }),
     codeNode({
       nodeId: 'buildReviewContext',
       name: '构建审查上下文',
-      intro: '解析文件正文、facts、profile、basis 与 governed context',
-      x: 780,
-      y: 0,
+      intro: '解析文档、治理快照与数据集清单。',
+      position: pos(1260, 0),
+      code: reviewContextCode(),
       inputs: [
-        inputField({ key: 'query', label: 'query', valueType: 'string', value: ref('pluginInput', 'query'), renderTypeList: ['reference'] }),
-        inputField({ key: 'documentType', label: 'documentType', valueType: 'string', value: ref('pluginInput', 'documentType'), renderTypeList: ['reference'] }),
-        inputField({ key: 'disciplineTags', label: 'disciplineTags', valueType: 'arrayString', value: ref('pluginInput', 'disciplineTags'), renderTypeList: ['reference'] }),
-        inputField({ key: 'enabledModules', label: 'enabledModules', valueType: 'arrayString', value: ref('pluginInput', 'enabledModules'), renderTypeList: ['reference'] }),
-        inputField({ key: 'disabledModules', label: 'disabledModules', valueType: 'arrayString', value: ref('pluginInput', 'disabledModules'), renderTypeList: ['reference'] }),
-        inputField({ key: 'focusRequirements', label: 'focusRequirements', valueType: 'arrayString', value: ref('pluginInput', 'focusRequirements'), renderTypeList: ['reference'] }),
-        inputField({ key: 'strictMode', label: 'strictMode', valueType: 'boolean', value: ref('pluginInput', 'strictMode'), renderTypeList: ['reference'] }),
-        inputField({ key: 'targetFilesText', label: 'targetFilesText', valueType: 'string', value: ref('readTargetFiles', 'text'), renderTypeList: ['reference'] }),
-        inputField({ key: 'targetFilesRaw', label: 'targetFilesRaw', valueType: 'arrayObject', value: ref('readTargetFiles', 'system_rawResponse'), renderTypeList: ['reference'] }),
-        inputField({ key: 'basisFilesRaw', label: 'basisFilesRaw', valueType: 'arrayObject', value: ref('readBasisFiles', 'system_rawResponse'), renderTypeList: ['reference'] }),
-        inputField({ key: 'contextFilesRaw', label: 'contextFilesRaw', valueType: 'arrayObject', value: ref('readContextFiles', 'system_rawResponse'), renderTypeList: ['reference'] }),
-        inputField({ key: 'snapshot', label: 'snapshot', valueType: 'object', renderTypeList: ['hidden'], value: snapshot })
+        inputRef('reviewId', 'reviewId', 'string', ['pluginInput', 'reviewId']),
+        inputRef('query', 'query', 'string', ['pluginInput', 'query']),
+        inputRef('documentType', 'documentType', 'string', ['pluginInput', 'documentType']),
+        inputRef('disciplineTags', 'disciplineTags', 'arrayString', ['pluginInput', 'disciplineTags']),
+        inputRef('enabledModules', 'enabledModules', 'arrayString', ['pluginInput', 'enabledModules']),
+        inputRef('disabledModules', 'disabledModules', 'arrayString', ['pluginInput', 'disabledModules']),
+        inputRef('focusRequirements', 'focusRequirements', 'arrayString', ['pluginInput', 'focusRequirements']),
+        inputRef('strictMode', 'strictMode', 'boolean', ['pluginInput', 'strictMode']),
+        inputRef('targetFileUrls', 'targetFileUrls', 'arrayString', ['pluginInput', 'targetFileUrls']),
+        inputRef('basisFileUrls', 'basisFileUrls', 'arrayString', ['pluginInput', 'basisFileUrls']),
+        inputRef('contextFileUrls', 'contextFileUrls', 'arrayString', ['pluginInput', 'contextFileUrls']),
+        inputRef('documentText', 'documentText', 'string', ['readTargetFiles', 'system_text']),
+        inputHidden('governanceSnapshot', 'object', governanceSnapshot),
+        inputHidden('datasetManifest', 'object', datasetManifest)
       ],
       outputs: [
-        dynamicOutput('reviewContext', '审查上下文', 'object'),
-        dynamicOutput('parseResult', '解析结果', 'object'),
-        dynamicOutput('docTextPreview', '文档预览', 'string'),
-        dynamicOutput('resolvedProfile', 'resolvedProfile', 'object'),
-        dynamicOutput('resolvedBasisProfile', 'resolvedBasisProfile', 'object'),
-        dynamicOutput('governedDatasetScope', 'governedDatasetScope', 'object'),
-        dynamicOutput('supportPacketBase', 'supportPacketBase', 'object')
-      ],
-      code: reviewContextCode()
+        outputDynamic('reviewContext', 'object'),
+        outputDynamic('parseResult', 'object'),
+        outputDynamic('docTextPreview', 'string'),
+        outputDynamic('facts', 'object'),
+        outputDynamic('ruleHits', 'arrayObject'),
+        outputDynamic('candidates', 'arrayObject'),
+        outputDynamic('resolvedProfile', 'object'),
+        outputDynamic('resolvedBasisProfile', 'object'),
+        outputDynamic('governedDatasetScope', 'object'),
+        outputDynamic('supportPacketBase', 'object')
+      ]
     }),
-    pluginOutputNode(
-      [
-        inputField({ key: 'reviewContext', label: 'reviewContext', valueType: 'object', renderTypeList: ['reference'], value: ref('buildReviewContext', 'reviewContext') }),
-        inputField({ key: 'parseResult', label: 'parseResult', valueType: 'object', renderTypeList: ['reference'], value: ref('buildReviewContext', 'parseResult') }),
-        inputField({ key: 'docTextPreview', label: 'docTextPreview', valueType: 'string', renderTypeList: ['reference'], value: ref('buildReviewContext', 'docTextPreview') }),
-        inputField({ key: 'resolvedProfile', label: 'resolvedProfile', valueType: 'object', renderTypeList: ['reference'], value: ref('buildReviewContext', 'resolvedProfile') }),
-        inputField({ key: 'resolvedBasisProfile', label: 'resolvedBasisProfile', valueType: 'object', renderTypeList: ['reference'], value: ref('buildReviewContext', 'resolvedBasisProfile') }),
-        inputField({ key: 'governedDatasetScope', label: 'governedDatasetScope', valueType: 'object', renderTypeList: ['reference'], value: ref('buildReviewContext', 'governedDatasetScope') }),
-        inputField({ key: 'supportPacketBase', label: 'supportPacketBase', valueType: 'object', renderTypeList: ['reference'], value: ref('buildReviewContext', 'supportPacketBase') })
-      ],
-      1220,
-      0
-    )
+    pluginOutputNode([
+      pluginOutputRef('reviewContext', 'reviewContext', 'object', ['buildReviewContext', 'reviewContext']),
+      pluginOutputRef('parseResult', 'parseResult', 'object', ['buildReviewContext', 'parseResult']),
+      pluginOutputRef('docTextPreview', 'docTextPreview', 'string', ['buildReviewContext', 'docTextPreview']),
+      pluginOutputRef('facts', 'facts', 'object', ['buildReviewContext', 'facts']),
+      pluginOutputRef('ruleHits', 'ruleHits', 'arrayObject', ['buildReviewContext', 'ruleHits']),
+      pluginOutputRef('candidates', 'candidates', 'arrayObject', ['buildReviewContext', 'candidates']),
+      pluginOutputRef('resolvedProfile', 'resolvedProfile', 'object', ['buildReviewContext', 'resolvedProfile']),
+      pluginOutputRef('resolvedBasisProfile', 'resolvedBasisProfile', 'object', ['buildReviewContext', 'resolvedBasisProfile']),
+      pluginOutputRef('governedDatasetScope', 'governedDatasetScope', 'object', ['buildReviewContext', 'governedDatasetScope']),
+      pluginOutputRef('supportPacketBase', 'supportPacketBase', 'object', ['buildReviewContext', 'supportPacketBase'])
+    ], pos(1740, 0))
   ];
   const edges = [
-    { source: 'pluginInput', target: 'readTargetFiles' },
-    { source: 'pluginInput', target: 'readBasisFiles' },
-    { source: 'pluginInput', target: 'readContextFiles' },
-    { source: 'readTargetFiles', target: 'buildReviewContext' },
-    { source: 'readBasisFiles', target: 'buildReviewContext' },
-    { source: 'readContextFiles', target: 'buildReviewContext' },
-    { source: 'buildReviewContext', target: 'pluginOutput' }
+    makeEdge('pluginInput', 'readTargetFiles'),
+    makeEdge('readTargetFiles', 'buildReviewContext'),
+    makeEdge('buildReviewContext', 'pluginOutput')
   ];
   return { nodes, edges, chatConfig: {} };
 }
 
-function buildAiReviewTool(assets) {
-  const snapshot = {
-    moduleBindings: assets.moduleBindings,
-    templateManifest: assets.templateManifest,
-    templateModuleMap: assets.templateModuleMap
-  };
+function aiReviewWorkflow(governanceSnapshot) {
+  const inputKeys = [
+    ['reviewContext', '审查上下文', 'object'],
+    ['reviewId', '审查任务 ID', 'string'],
+    ['documentType', '文档类型', 'string'],
+    ['enabledModules', '启用模块', 'arrayString'],
+    ['targetFileUrls', '目标文件 URL', 'arrayString']
+  ];
   const nodes = [
-    pluginConfigNode(-220, -220),
+    pluginConfigNode(pos(0, 0)),
     pluginInputNode(
-      [
-        inputField({ key: 'reviewId', label: '审查ID', valueType: 'string', required: true, toolDescription: '本次审查任务 ID' }),
-        inputField({ key: 'query', label: '审查指令', valueType: 'string', required: true, toolDescription: '用户审查指令' }),
-        inputField({ key: 'documentType', label: '文档类型', valueType: 'string', required: true, toolDescription: '被审文档类型枚举值' }),
-        inputField({ key: 'enabledModules', label: '启用模块', valueType: 'arrayString', toolDescription: '启用的正式审查模块' }),
-        inputField({ key: 'focusRequirements', label: '重点要求', valueType: 'arrayString', toolDescription: '用户指定重点问题' }),
-        inputField({ key: 'strictMode', label: '严格模式', valueType: 'boolean', toolDescription: '是否按严格模式执行' }),
-        inputField({ key: 'reviewContext', label: 'reviewContext', valueType: 'object', required: true, toolDescription: '由 hermes_review_context_wft 生成的 governed review context' }),
-        inputField({ key: 'targetFileUrls', label: '目标文件 URL', valueType: 'arrayString', toolDescription: '被审文件链接数组' }),
-        inputField({ key: 'aiModel', label: 'AI 模型', valueType: 'string', toolDescription: 'AI reviewer 使用的模型名称' })
-      ],
-      0,
-      0
+      inputKeys.map(([key, label, valueType]) => inputRef(key, label, valueType, undefined, label)),
+      inputKeys.map(([key, label, valueType]) => outputHidden(key, valueType, label)),
+      pos(420, 0)
     ),
     codeNode({
-      nodeId: 'selectAiReviewers',
+      nodeId: 'prepareAiReview',
       name: '选择 AI reviewer',
-      intro: '按模块绑定、文档类型门禁与模板清单选择 reviewer',
-      x: 360,
-      y: 0,
+      intro: '根据模块绑定、文档类型与模板元数据确定实际运行 reviewer。',
+      position: pos(900, 0),
+      code: aiReviewPrepareCode(),
       inputs: [
-        inputField({ key: 'reviewId', label: 'reviewId', valueType: 'string', value: ref('pluginInput', 'reviewId'), renderTypeList: ['reference'] }),
-        inputField({ key: 'query', label: 'query', valueType: 'string', value: ref('pluginInput', 'query'), renderTypeList: ['reference'] }),
-        inputField({ key: 'documentType', label: 'documentType', valueType: 'string', value: ref('pluginInput', 'documentType'), renderTypeList: ['reference'] }),
-        inputField({ key: 'enabledModules', label: 'enabledModules', valueType: 'arrayString', value: ref('pluginInput', 'enabledModules'), renderTypeList: ['reference'] }),
-        inputField({ key: 'focusRequirements', label: 'focusRequirements', valueType: 'arrayString', value: ref('pluginInput', 'focusRequirements'), renderTypeList: ['reference'] }),
-        inputField({ key: 'strictMode', label: 'strictMode', valueType: 'boolean', value: ref('pluginInput', 'strictMode'), renderTypeList: ['reference'] }),
-        inputField({ key: 'reviewContext', label: 'reviewContext', valueType: 'object', value: ref('pluginInput', 'reviewContext'), renderTypeList: ['reference'] }),
-        inputField({ key: 'targetFileUrls', label: 'targetFileUrls', valueType: 'arrayString', value: ref('pluginInput', 'targetFileUrls'), renderTypeList: ['reference'] }),
-        inputField({ key: 'aiModel', label: 'aiModel', valueType: 'string', value: ref('pluginInput', 'aiModel'), renderTypeList: ['reference'] }),
-        inputField({ key: 'snapshot', label: 'snapshot', valueType: 'object', renderTypeList: ['hidden'], value: snapshot })
+        inputRef('reviewContext', 'reviewContext', 'object', ['pluginInput', 'reviewContext']),
+        inputHidden('governanceSnapshot', 'object', governanceSnapshot),
+        inputVar('aiModel', 'aiModel', 'string', AI_MODEL_PLACEHOLDER, 'FastGPT 模型占位符')
       ],
       outputs: [
-        dynamicOutput('selectedReviewers', 'selectedReviewers', 'arrayObject'),
-        dynamicOutput('aiSystemPrompt', 'aiSystemPrompt', 'string'),
-        dynamicOutput('aiUserPrompt', 'aiUserPrompt', 'string'),
-        dynamicOutput('targetFileUrls', 'targetFileUrls', 'arrayString'),
-        dynamicOutput('aiModel', 'aiModel', 'string'),
-        dynamicOutput('hasAiReviewers', 'hasAiReviewers', 'boolean')
-      ],
-      code: aiReviewPlannerCode()
+        outputDynamic('selectedAiTemplates', 'arrayObject'),
+        outputDynamic('selectedReviewerIds', 'arrayString'),
+        outputDynamic('aiPrompt', 'string'),
+        outputDynamic('aiModel', 'string')
+      ]
     }),
     chatNode({
       nodeId: 'runAiReview',
       name: '执行 AI 主审',
-      intro: '执行 Hermes AI reviewer 汇总审查',
-      x: 800,
-      y: 0,
-      modelValue: ref('selectAiReviewers', 'aiModel'),
-      systemPromptRef: ref('selectAiReviewers', 'aiSystemPrompt'),
-      userPromptRef: ref('selectAiReviewers', 'aiUserPrompt'),
-      fileUrlRef: ref('selectAiReviewers', 'targetFileUrls')
+      intro: '统一执行结构化 AI 审查并返回 reviewer 分包。',
+      position: pos(1380, 0),
+      modelValue: AI_MODEL_PLACEHOLDER,
+      systemPrompt: '你是 Hermes 结构化审查主审执行器。必须严格输出 JSON，不得输出解释、代码块外文字或额外说明。',
+      userChatInputRef: ['prepareAiReview', 'aiPrompt']
     }),
     codeNode({
       nodeId: 'normalizeAiReview',
-      name: '归一化 AI reviewer 输出',
-      intro: '解析 JSON、补齐缺失 reviewer、生成 reviewer packets',
-      x: 1240,
-      y: 0,
+      name: '归一化 AI 结果',
+      intro: '将 AI 输出转换为 reviewerPackets，并对缺失 reviewer 执行 degrade。',
+      position: pos(1860, 0),
+      code: aiReviewNormalizeCode(),
       inputs: [
-        inputField({ key: 'reviewId', label: 'reviewId', valueType: 'string', value: ref('pluginInput', 'reviewId'), renderTypeList: ['reference'] }),
-        inputField({ key: 'aiAnswer', label: 'aiAnswer', valueType: 'string', value: ref('runAiReview', 'text'), renderTypeList: ['reference'] }),
-        inputField({ key: 'selectedReviewers', label: 'selectedReviewers', valueType: 'arrayObject', value: ref('selectAiReviewers', 'selectedReviewers'), renderTypeList: ['reference'] }),
-        inputField({ key: 'fallbackModuleMap', label: 'fallbackModuleMap', valueType: 'object', renderTypeList: ['hidden'], value: assets.templateModuleMap })
+        inputRef('reviewContext', 'reviewContext', 'object', ['pluginInput', 'reviewContext']),
+        inputHidden('governanceSnapshot', 'object', governanceSnapshot),
+        inputRef('selectedAiTemplates', 'selectedAiTemplates', 'arrayObject', ['prepareAiReview', 'selectedAiTemplates']),
+        inputRef('aiAnswerText', 'aiAnswerText', 'string', ['runAiReview', 'answerText'])
       ],
       outputs: [
-        dynamicOutput('aiReview', 'aiReview', 'object'),
-        dynamicOutput('reviewerPackets', 'reviewerPackets', 'arrayObject')
-      ],
-      code: aiReviewNormalizeCode()
+        outputDynamic('aiReviewResult', 'object'),
+        outputDynamic('reviewerPackets', 'arrayObject'),
+        outputDynamic('traceability', 'arrayObject')
+      ]
     }),
-    pluginOutputNode(
-      [
-        inputField({ key: 'aiReview', label: 'aiReview', valueType: 'object', renderTypeList: ['reference'], value: ref('normalizeAiReview', 'aiReview') }),
-        inputField({ key: 'reviewerPackets', label: 'reviewerPackets', valueType: 'arrayObject', renderTypeList: ['reference'], value: ref('normalizeAiReview', 'reviewerPackets') })
-      ],
-      1660,
-      0
-    )
+    pluginOutputNode([
+      pluginOutputRef('aiReviewResult', 'aiReviewResult', 'object', ['normalizeAiReview', 'aiReviewResult']),
+      pluginOutputRef('reviewerPackets', 'reviewerPackets', 'arrayObject', ['normalizeAiReview', 'reviewerPackets']),
+      pluginOutputRef('traceability', 'traceability', 'arrayObject', ['normalizeAiReview', 'traceability'])
+    ], pos(2320, 0))
   ];
   const edges = [
-    { source: 'pluginInput', target: 'selectAiReviewers' },
-    { source: 'selectAiReviewers', target: 'runAiReview' },
-    { source: 'runAiReview', target: 'normalizeAiReview' },
-    { source: 'normalizeAiReview', target: 'pluginOutput' }
+    makeEdge('pluginInput', 'prepareAiReview'),
+    makeEdge('prepareAiReview', 'runAiReview'),
+    makeEdge('runAiReview', 'normalizeAiReview'),
+    makeEdge('normalizeAiReview', 'pluginOutput')
   ];
   return { nodes, edges, chatConfig: {} };
 }
 
-function buildDeterministicTool() {
+function deterministicWorkflow(governanceSnapshot) {
+  const inputKeys = [
+    ['reviewContext', '审查上下文', 'object'],
+    ['aiReviewResult', 'AI 主审结果', 'object']
+  ];
   const nodes = [
-    pluginConfigNode(-220, -220),
+    pluginConfigNode(pos(0, 0)),
     pluginInputNode(
-      [
-        inputField({ key: 'reviewId', label: '审查ID', valueType: 'string', required: true, toolDescription: '本次审查任务 ID' }),
-        inputField({ key: 'enabledModules', label: '启用模块', valueType: 'arrayString', toolDescription: '启用的正式审查模块' }),
-        inputField({ key: 'reviewContext', label: 'reviewContext', valueType: 'object', required: true, toolDescription: '由 hermes_review_context_wft 生成的 governed review context' }),
-        inputField({ key: 'aiReview', label: 'aiReview', valueType: 'object', toolDescription: '由 hermes_ai_review_wft 生成的 AI reviewer packets' })
-      ],
-      0,
-      0
+      inputKeys.map(([key, label, valueType]) => inputRef(key, label, valueType, undefined, label)),
+      inputKeys.map(([key, label, valueType]) => outputHidden(key, valueType, label)),
+      pos(420, 0)
     ),
     codeNode({
       nodeId: 'runDeterministicReview',
       name: '执行确定性审查',
-      intro: '执行可视域、合规、规范有效性与计算 fallback 审查',
-      x: 420,
-      y: 0,
+      intro: '执行 visibility / policy / normative validity / calc fallback。',
+      position: pos(980, 0),
+      code: deterministicCode(),
       inputs: [
-        inputField({ key: 'reviewId', label: 'reviewId', valueType: 'string', value: ref('pluginInput', 'reviewId'), renderTypeList: ['reference'] }),
-        inputField({ key: 'enabledModules', label: 'enabledModules', valueType: 'arrayString', value: ref('pluginInput', 'enabledModules'), renderTypeList: ['reference'] }),
-        inputField({ key: 'reviewContext', label: 'reviewContext', valueType: 'object', value: ref('pluginInput', 'reviewContext'), renderTypeList: ['reference'] }),
-        inputField({ key: 'aiReview', label: 'aiReview', valueType: 'object', value: ref('pluginInput', 'aiReview'), renderTypeList: ['reference'] })
+        inputRef('reviewContext', 'reviewContext', 'object', ['pluginInput', 'reviewContext']),
+        inputHidden('governanceSnapshot', 'object', governanceSnapshot),
+        inputRef('aiReviewResult', 'aiReviewResult', 'object', ['pluginInput', 'aiReviewResult'])
       ],
       outputs: [
-        dynamicOutput('deterministicReview', 'deterministicReview', 'object'),
-        dynamicOutput('reviewerPackets', 'reviewerPackets', 'arrayObject')
-      ],
-      code: deterministicReviewCode()
+        outputDynamic('deterministicReviewResult', 'object'),
+        outputDynamic('reviewerPackets', 'arrayObject')
+      ]
     }),
-    pluginOutputNode(
-      [
-        inputField({ key: 'deterministicReview', label: 'deterministicReview', valueType: 'object', renderTypeList: ['reference'], value: ref('runDeterministicReview', 'deterministicReview') }),
-        inputField({ key: 'reviewerPackets', label: 'reviewerPackets', valueType: 'arrayObject', renderTypeList: ['reference'], value: ref('runDeterministicReview', 'reviewerPackets') })
-      ],
-      860,
-      0
-    )
+    pluginOutputNode([
+      pluginOutputRef('deterministicReviewResult', 'deterministicReviewResult', 'object', ['runDeterministicReview', 'deterministicReviewResult']),
+      pluginOutputRef('reviewerPackets', 'reviewerPackets', 'arrayObject', ['runDeterministicReview', 'reviewerPackets'])
+    ], pos(1480, 0))
   ];
-  const edges = [
-    { source: 'pluginInput', target: 'runDeterministicReview' },
-    { source: 'runDeterministicReview', target: 'pluginOutput' }
-  ];
+  const edges = [makeEdge('pluginInput', 'runDeterministicReview'), makeEdge('runDeterministicReview', 'pluginOutput')];
   return { nodes, edges, chatConfig: {} };
 }
 
-function buildSupportTool() {
+function supportWorkflow() {
   const nodes = [
-    pluginConfigNode(-220, -220),
+    pluginConfigNode(pos(0, 0)),
     pluginInputNode(
-      [
-        inputField({ key: 'reviewId', label: '审查ID', valueType: 'string', required: true, toolDescription: '本次审查任务 ID' }),
-        inputField({ key: 'documentType', label: '文档类型', valueType: 'string', required: true, toolDescription: '被审文档类型枚举值' }),
-        inputField({ key: 'reviewContext', label: 'reviewContext', valueType: 'object', required: true, toolDescription: '由 hermes_review_context_wft 生成的 governed review context' })
-      ],
-      0,
-      0
+      [inputRef('reviewContext', '审查上下文', 'object', undefined, '审查上下文')],
+      [outputHidden('reviewContext', 'object', '审查上下文')],
+      pos(420, 0)
     ),
     codeNode({
       nodeId: 'buildSupport008',
-      name: '生成 008 支撑层结果',
-      intro: '生成 supportResult008 / supportPacket008 / supportLayerContext',
-      x: 420,
-      y: 0,
-      inputs: [
-        inputField({ key: 'reviewId', label: 'reviewId', valueType: 'string', value: ref('pluginInput', 'reviewId'), renderTypeList: ['reference'] }),
-        inputField({ key: 'documentType', label: 'documentType', valueType: 'string', value: ref('pluginInput', 'documentType'), renderTypeList: ['reference'] }),
-        inputField({ key: 'reviewContext', label: 'reviewContext', valueType: 'object', value: ref('pluginInput', 'reviewContext'), renderTypeList: ['reference'] })
-      ],
+      name: '整理 008 支撑层结果',
+      intro: '输出 supportResult008、supportPacket008 与支撑层上下文。',
+      position: pos(980, 0),
+      code: support008Code(),
+      inputs: [inputRef('reviewContext', 'reviewContext', 'object', ['pluginInput', 'reviewContext'])],
       outputs: [
-        dynamicOutput('supportReview', 'supportReview', 'object'),
-        dynamicOutput('supportPacket008', 'supportPacket008', 'object')
-      ],
-      code: supportReviewCode()
+        outputDynamic('supportReviewResult', 'object'),
+        outputDynamic('supportResult008', 'object'),
+        outputDynamic('supportPacket008', 'object'),
+        outputDynamic('artifactIndex', 'arrayObject'),
+        outputDynamic('supportLayerContext', 'object')
+      ]
     }),
-    pluginOutputNode(
-      [
-        inputField({ key: 'supportReview', label: 'supportReview', valueType: 'object', renderTypeList: ['reference'], value: ref('buildSupport008', 'supportReview') }),
-        inputField({ key: 'supportPacket008', label: 'supportPacket008', valueType: 'object', renderTypeList: ['reference'], value: ref('buildSupport008', 'supportPacket008') })
-      ],
-      860,
-      0
-    )
+    pluginOutputNode([
+      pluginOutputRef('supportReviewResult', 'supportReviewResult', 'object', ['buildSupport008', 'supportReviewResult']),
+      pluginOutputRef('supportResult008', 'supportResult008', 'object', ['buildSupport008', 'supportResult008']),
+      pluginOutputRef('supportPacket008', 'supportPacket008', 'object', ['buildSupport008', 'supportPacket008']),
+      pluginOutputRef('artifactIndex', 'artifactIndex', 'arrayObject', ['buildSupport008', 'artifactIndex']),
+      pluginOutputRef('supportLayerContext', 'supportLayerContext', 'object', ['buildSupport008', 'supportLayerContext'])
+    ], pos(1480, 0))
   ];
-  const edges = [
-    { source: 'pluginInput', target: 'buildSupport008' },
-    { source: 'buildSupport008', target: 'pluginOutput' }
-  ];
+  const edges = [makeEdge('pluginInput', 'buildSupport008'), makeEdge('buildSupport008', 'pluginOutput')];
   return { nodes, edges, chatConfig: {} };
 }
 
-function buildFinalAssemblerTool(assets) {
+function finalAssemblerWorkflow(docTypeLabels, moduleTitles) {
+  const inputKeys = [
+    ['reviewContext', '审查上下文', 'object'],
+    ['aiReviewResult', 'AI 主审结果', 'object'],
+    ['deterministicReviewResult', '确定性审查结果', 'object'],
+    ['supportReviewResult', '008 支撑层结果', 'object']
+  ];
   const nodes = [
-    pluginConfigNode(-220, -220),
+    pluginConfigNode(pos(0, 0)),
     pluginInputNode(
-      [
-        inputField({ key: 'reviewId', label: '审查ID', valueType: 'string', required: true, toolDescription: '本次审查任务 ID' }),
-        inputField({ key: 'documentType', label: '文档类型', valueType: 'string', required: true, toolDescription: '被审文档类型枚举值' }),
-        inputField({ key: 'enabledModules', label: '启用模块', valueType: 'arrayString', toolDescription: '启用的正式审查模块' }),
-        inputField({ key: 'supportReview', label: 'supportReview', valueType: 'object', required: true, toolDescription: '由 hermes_support_008_wft 生成的支撑层结果' }),
-        inputField({ key: 'aiReview', label: 'aiReview', valueType: 'object', toolDescription: '由 hermes_ai_review_wft 生成的 AI reviewer packets' }),
-        inputField({ key: 'deterministicReview', label: 'deterministicReview', valueType: 'object', toolDescription: '由 hermes_deterministic_review_wft 生成的确定性 reviewer packets' })
-      ],
-      0,
-      0
+      inputKeys.map(([key, label, valueType]) => inputRef(key, label, valueType, undefined, label)),
+      inputKeys.map(([key, label, valueType]) => outputHidden(key, valueType, label)),
+      pos(420, 0)
     ),
     codeNode({
       nodeId: 'assembleFinalDecision',
-      name: '组装最终裁决',
-      intro: '执行 fail-closed、模块门禁、最终报告与降级出口组装',
-      x: 480,
-      y: 0,
+      name: '组装最终结论',
+      intro: '执行 fail-closed、模块门禁、最终评级与报告渲染。',
+      position: pos(980, 0),
+      code: finalAssemblerCode(docTypeLabels, moduleTitles),
       inputs: [
-        inputField({ key: 'reviewId', label: 'reviewId', valueType: 'string', value: ref('pluginInput', 'reviewId'), renderTypeList: ['reference'] }),
-        inputField({ key: 'documentType', label: 'documentType', valueType: 'string', value: ref('pluginInput', 'documentType'), renderTypeList: ['reference'] }),
-        inputField({ key: 'enabledModules', label: 'enabledModules', valueType: 'arrayString', value: ref('pluginInput', 'enabledModules'), renderTypeList: ['reference'] }),
-        inputField({ key: 'supportReview', label: 'supportReview', valueType: 'object', value: ref('pluginInput', 'supportReview'), renderTypeList: ['reference'] }),
-        inputField({ key: 'aiReview', label: 'aiReview', valueType: 'object', value: ref('pluginInput', 'aiReview'), renderTypeList: ['reference'] }),
-        inputField({ key: 'deterministicReview', label: 'deterministicReview', valueType: 'object', value: ref('pluginInput', 'deterministicReview'), renderTypeList: ['reference'] }),
-        inputField({ key: 'docTypeLabels', label: 'docTypeLabels', valueType: 'object', renderTypeList: ['hidden'], value: assets.docTypeLabels })
+        inputRef('reviewContext', 'reviewContext', 'object', ['pluginInput', 'reviewContext']),
+        inputRef('aiReviewResult', 'aiReviewResult', 'object', ['pluginInput', 'aiReviewResult']),
+        inputRef('deterministicReviewResult', 'deterministicReviewResult', 'object', ['pluginInput', 'deterministicReviewResult']),
+        inputRef('supportReviewResult', 'supportReviewResult', 'object', ['pluginInput', 'supportReviewResult'])
       ],
       outputs: [
-        dynamicOutput('finalDecision', 'finalDecision', 'object'),
-        dynamicOutput('finalAnswer', 'finalAnswer', 'string'),
-        dynamicOutput('degraded', 'degraded', 'boolean'),
-        dynamicOutput('degradedReason', 'degradedReason', 'string'),
-        dynamicOutput('traceability', 'traceability', 'arrayObject'),
-        dynamicOutput('finalReportMarkdown', 'finalReportMarkdown', 'string'),
-        dynamicOutput('reportHtml', 'reportHtml', 'string'),
-        dynamicOutput('reportPrintCss', 'reportPrintCss', 'string'),
-        dynamicOutput('finalReportViewModel', 'finalReportViewModel', 'object')
-      ],
-      code: finalAssemblerCode()
+        outputDynamic('degraded', 'boolean'),
+        outputDynamic('degradedReason', 'string'),
+        outputDynamic('finalReportPacket', 'object'),
+        outputDynamic('finalReportMarkdown', 'string'),
+        outputDynamic('reportHtml', 'string'),
+        outputDynamic('reportPrintCss', 'string'),
+        outputDynamic('finalReportViewModel', 'object'),
+        outputDynamic('traceability', 'arrayObject'),
+        outputDynamic('finalAnswer', 'string'),
+        outputDynamic('artifactLinks', 'object')
+      ]
     }),
-    pluginOutputNode(
-      [
-        inputField({ key: 'finalDecision', label: 'finalDecision', valueType: 'object', renderTypeList: ['reference'], value: ref('assembleFinalDecision', 'finalDecision') }),
-        inputField({ key: 'finalAnswer', label: 'finalAnswer', valueType: 'string', renderTypeList: ['reference'], value: ref('assembleFinalDecision', 'finalAnswer') }),
-        inputField({ key: 'degraded', label: 'degraded', valueType: 'boolean', renderTypeList: ['reference'], value: ref('assembleFinalDecision', 'degraded') }),
-        inputField({ key: 'degradedReason', label: 'degradedReason', valueType: 'string', renderTypeList: ['reference'], value: ref('assembleFinalDecision', 'degradedReason') }),
-        inputField({ key: 'traceability', label: 'traceability', valueType: 'arrayObject', renderTypeList: ['reference'], value: ref('assembleFinalDecision', 'traceability') }),
-        inputField({ key: 'finalReportMarkdown', label: 'finalReportMarkdown', valueType: 'string', renderTypeList: ['reference'], value: ref('assembleFinalDecision', 'finalReportMarkdown') }),
-        inputField({ key: 'reportHtml', label: 'reportHtml', valueType: 'string', renderTypeList: ['reference'], value: ref('assembleFinalDecision', 'reportHtml') }),
-        inputField({ key: 'reportPrintCss', label: 'reportPrintCss', valueType: 'string', renderTypeList: ['reference'], value: ref('assembleFinalDecision', 'reportPrintCss') }),
-        inputField({ key: 'finalReportViewModel', label: 'finalReportViewModel', valueType: 'object', renderTypeList: ['reference'], value: ref('assembleFinalDecision', 'finalReportViewModel') })
-      ],
-      980,
-      0
-    )
+    pluginOutputNode([
+      pluginOutputRef('degraded', 'degraded', 'boolean', ['assembleFinalDecision', 'degraded']),
+      pluginOutputRef('degradedReason', 'degradedReason', 'string', ['assembleFinalDecision', 'degradedReason']),
+      pluginOutputRef('finalReportPacket', 'finalReportPacket', 'object', ['assembleFinalDecision', 'finalReportPacket']),
+      pluginOutputRef('finalReportMarkdown', 'finalReportMarkdown', 'string', ['assembleFinalDecision', 'finalReportMarkdown']),
+      pluginOutputRef('reportHtml', 'reportHtml', 'string', ['assembleFinalDecision', 'reportHtml']),
+      pluginOutputRef('reportPrintCss', 'reportPrintCss', 'string', ['assembleFinalDecision', 'reportPrintCss']),
+      pluginOutputRef('finalReportViewModel', 'finalReportViewModel', 'object', ['assembleFinalDecision', 'finalReportViewModel']),
+      pluginOutputRef('traceability', 'traceability', 'arrayObject', ['assembleFinalDecision', 'traceability']),
+      pluginOutputRef('finalAnswer', 'finalAnswer', 'string', ['assembleFinalDecision', 'finalAnswer']),
+      pluginOutputRef('artifactLinks', 'artifactLinks', 'object', ['assembleFinalDecision', 'artifactLinks'])
+    ], pos(1500, 0))
   ];
-  const edges = [
-    { source: 'pluginInput', target: 'assembleFinalDecision' },
-    { source: 'assembleFinalDecision', target: 'pluginOutput' }
-  ];
+  const edges = [makeEdge('pluginInput', 'assembleFinalDecision'), makeEdge('assembleFinalDecision', 'pluginOutput')];
   return { nodes, edges, chatConfig: {} };
 }
 
-export function buildWorkflowToolBundles(assets) {
-  const workflows = {
-    hermes_review_context_wft: buildReviewContextTool(assets),
-    hermes_ai_review_wft: buildAiReviewTool(assets),
-    hermes_deterministic_review_wft: buildDeterministicTool(assets),
-    hermes_support_008_wft: buildSupportTool(assets),
-    hermes_final_assembler_wft: buildFinalAssemblerTool(assets)
-  };
-
-  return WORKFLOW_TOOL_SPECS.map((spec) => {
-    const workflow = workflows[spec.key];
-    return {
-      key: spec.key,
-      workflow,
-      templateJson: {
-        name: spec.name,
-        intro: spec.intro,
-        author: 'OpenAI Codex',
-        avatar: spec.avatar,
-        tags: spec.tags,
-        type: 'plugin',
-        workflow
-      },
-      createJson: {
-        name: spec.name,
-        avatar: spec.avatar,
-        intro: spec.intro,
-        type: 'plugin',
-        modules: workflow.nodes,
-        edges: workflow.edges,
-        chatConfig: workflow.chatConfig
-      }
-    };
-  });
-}
-
-export function buildMainWorkflow(assets) {
-  const variables = [
-    { key: 'documentType', label: 'documentType', type: 'input', required: true },
-    { key: 'disciplineTags', label: 'disciplineTags', type: 'textarea', required: false },
-    { key: 'enabledModules', label: 'enabledModules', type: 'textarea', required: false },
-    { key: 'disabledModules', label: 'disabledModules', type: 'textarea', required: false },
-    { key: 'focusRequirements', label: 'focusRequirements', type: 'textarea', required: false },
-    { key: 'strictMode', label: 'strictMode', type: 'switch', required: false },
-    { key: 'basisFileUrls', label: 'basisFileUrls', type: 'textarea', required: false },
-    { key: 'contextFileUrls', label: 'contextFileUrls', type: 'textarea', required: false }
-  ];
-
-  const normalizeCode = String.raw`function main(input) {
-  const {
-    userChatInput = '',
-    userFiles = [],
-    documentType = '',
-    disciplineTags = [],
-    enabledModules = [],
-    disabledModules = [],
-    focusRequirements = [],
-    strictMode = true
-  } = input || {};
-  const DEFAULT_MODULES = ['structure_completeness', 'parameter_consistency', 'legality_compliance', 'execution_continuity', 'evidence_validation'];
-  const toArray = (value) => {
-    if (Array.isArray(value)) return value;
-    if (typeof value === 'string') {
-      const trimmed = value.trim();
-      if (!trimmed) return [];
-      try {
-        const parsed = JSON.parse(trimmed);
-        return Array.isArray(parsed) ? parsed : trimmed.split(/[,\n]/).map((item) => item.trim()).filter(Boolean);
-      } catch {
-        return trimmed.split(/[,\n]/).map((item) => item.trim()).filter(Boolean);
-      }
-    }
-    return [];
-  };
-  const disabled = new Set(toArray(disabledModules));
-  const enabled = toArray(enabledModules).length ? toArray(enabledModules) : DEFAULT_MODULES;
-  return {
-    reviewId: 'fgpt-' + Date.now(),
-    query: String(userChatInput || '').trim() || '请执行结构化正式审查',
-    documentType,
-    disciplineTags: toArray(disciplineTags),
-    enabledModules: [...new Set(enabled.filter((item) => !disabled.has(item)))],
-    disabledModules: [...disabled],
-    focusRequirements: toArray(focusRequirements),
-    strictMode: strictMode !== false && strictMode !== 'false',
-    targetFileUrls: Array.isArray(userFiles) ? userFiles : [],
-    basisFileUrls: [],
-    contextFileUrls: []
-  };
-}`;
-
+function mainWorkflow(docTypeLabels) {
   const nodes = [
-    systemConfigNode(-260, -220),
-    workflowStartNode(0, 0),
+    userGuideNode(pos(-320, -180)),
+    workflowStartNode(pos(0, 0)),
     codeNode({
       nodeId: 'normalizeInput',
       name: '归一化输入',
-      intro: '归一化变量、生成 reviewId，并显式透传 target 文件链接',
-      x: 360,
-      y: 0,
+      intro: '固定主工作流输入协议，并显式生成 targetFileUrls。',
+      position: pos(420, 0),
+      code: mainNormalizeCode(docTypeLabels),
       inputs: [
-        inputField({ key: 'userChatInput', label: 'userChatInput', valueType: 'string', value: ref('workflowStart', 'userChatInput'), renderTypeList: ['reference'] }),
-        inputField({ key: 'userFiles', label: 'userFiles', valueType: 'arrayString', value: ref('workflowStart', 'userFiles'), renderTypeList: ['reference'] }),
-        inputField({ key: 'documentType', label: 'documentType', valueType: 'string', renderTypeList: ['reference'], value: '__VAR__documentType' }),
-        inputField({ key: 'disciplineTags', label: 'disciplineTags', valueType: 'any', renderTypeList: ['reference'], value: '__VAR__disciplineTags' }),
-        inputField({ key: 'enabledModules', label: 'enabledModules', valueType: 'any', renderTypeList: ['reference'], value: '__VAR__enabledModules' }),
-        inputField({ key: 'disabledModules', label: 'disabledModules', valueType: 'any', renderTypeList: ['reference'], value: '__VAR__disabledModules' }),
-        inputField({ key: 'focusRequirements', label: 'focusRequirements', valueType: 'any', renderTypeList: ['reference'], value: '__VAR__focusRequirements' }),
-        inputField({ key: 'strictMode', label: 'strictMode', valueType: 'any', renderTypeList: ['reference'], value: '__VAR__strictMode' })
+        inputRef('userChatInput', 'userChatInput', 'string', ['workflowStart', 'userChatInput']),
+        inputRef('userFiles', 'userFiles', 'arrayString', ['workflowStart', 'userFiles']),
+        inputVar('documentTypeRaw', 'documentTypeRaw', 'string', '{{$VARIABLE_NODE_ID.documentType$}}', '文档类型'),
+        inputVar('disciplineTagsRaw', 'disciplineTagsRaw', 'string', '{{$VARIABLE_NODE_ID.disciplineTags$}}', '专业标签'),
+        inputVar('enabledModulesRaw', 'enabledModulesRaw', 'string', '{{$VARIABLE_NODE_ID.enabledModules$}}', '启用模块'),
+        inputVar('disabledModulesRaw', 'disabledModulesRaw', 'string', '{{$VARIABLE_NODE_ID.disabledModules$}}', '禁用模块'),
+        inputVar('focusRequirementsRaw', 'focusRequirementsRaw', 'string', '{{$VARIABLE_NODE_ID.focusRequirements$}}', '关注点'),
+        inputVar('strictModeRaw', 'strictModeRaw', 'string', '{{$VARIABLE_NODE_ID.strictMode$}}', '严格模式')
       ],
       outputs: [
-        dynamicOutput('reviewId', 'reviewId', 'string'),
-        dynamicOutput('query', 'query', 'string'),
-        dynamicOutput('documentType', 'documentType', 'string'),
-        dynamicOutput('disciplineTags', 'disciplineTags', 'arrayString'),
-        dynamicOutput('enabledModules', 'enabledModules', 'arrayString'),
-        dynamicOutput('disabledModules', 'disabledModules', 'arrayString'),
-        dynamicOutput('focusRequirements', 'focusRequirements', 'arrayString'),
-        dynamicOutput('strictMode', 'strictMode', 'boolean'),
-        dynamicOutput('targetFileUrls', 'targetFileUrls', 'arrayString'),
-        dynamicOutput('basisFileUrls', 'basisFileUrls', 'arrayString'),
-        dynamicOutput('contextFileUrls', 'contextFileUrls', 'arrayString')
-      ],
-      code: normalizeCode
+        outputDynamic('reviewId', 'string'),
+        outputDynamic('query', 'string'),
+        outputDynamic('documentType', 'string'),
+        outputDynamic('documentTypeLabel', 'string'),
+        outputDynamic('disciplineTags', 'arrayString'),
+        outputDynamic('enabledModules', 'arrayString'),
+        outputDynamic('disabledModules', 'arrayString'),
+        outputDynamic('focusRequirements', 'arrayString'),
+        outputDynamic('strictMode', 'boolean'),
+        outputDynamic('targetFileUrls', 'arrayString'),
+        outputDynamic('basisFileUrls', 'arrayString'),
+        outputDynamic('contextFileUrls', 'arrayString')
+      ]
     }),
     pluginModuleNode({
-      nodeId: 'reviewContextTool',
+      nodeId: 'callReviewContextWft',
       name: '调用 hermes_review_context_wft',
-      intro: '构建 governed review context',
-      key: 'hermes_review_context_wft',
-      x: 820,
-      y: 0,
+      intro: '解析文档与治理快照。',
+      position: pos(900, 0),
+      pluginId: TOOL_DEFS[0].placeholder,
       inputs: [
-        inputField({ key: 'query', label: 'query', valueType: 'string', renderTypeList: ['reference'], value: ref('normalizeInput', 'query') }),
-        inputField({ key: 'documentType', label: 'documentType', valueType: 'string', renderTypeList: ['reference'], value: ref('normalizeInput', 'documentType') }),
-        inputField({ key: 'disciplineTags', label: 'disciplineTags', valueType: 'arrayString', renderTypeList: ['reference'], value: ref('normalizeInput', 'disciplineTags') }),
-        inputField({ key: 'enabledModules', label: 'enabledModules', valueType: 'arrayString', renderTypeList: ['reference'], value: ref('normalizeInput', 'enabledModules') }),
-        inputField({ key: 'disabledModules', label: 'disabledModules', valueType: 'arrayString', renderTypeList: ['reference'], value: ref('normalizeInput', 'disabledModules') }),
-        inputField({ key: 'focusRequirements', label: 'focusRequirements', valueType: 'arrayString', renderTypeList: ['reference'], value: ref('normalizeInput', 'focusRequirements') }),
-        inputField({ key: 'strictMode', label: 'strictMode', valueType: 'boolean', renderTypeList: ['reference'], value: ref('normalizeInput', 'strictMode') }),
-        inputField({ key: 'targetFileUrls', label: 'targetFileUrls', valueType: 'arrayString', renderTypeList: ['reference'], value: ref('normalizeInput', 'targetFileUrls') }),
-        inputField({ key: 'basisFileUrls', label: 'basisFileUrls', valueType: 'arrayString', renderTypeList: ['reference'], value: ref('normalizeInput', 'basisFileUrls') }),
-        inputField({ key: 'contextFileUrls', label: 'contextFileUrls', valueType: 'arrayString', renderTypeList: ['reference'], value: ref('normalizeInput', 'contextFileUrls') })
+        inputRef('reviewId', 'reviewId', 'string', ['normalizeInput', 'reviewId']),
+        inputRef('query', 'query', 'string', ['normalizeInput', 'query']),
+        inputRef('documentType', 'documentType', 'string', ['normalizeInput', 'documentType']),
+        inputRef('disciplineTags', 'disciplineTags', 'arrayString', ['normalizeInput', 'disciplineTags']),
+        inputRef('enabledModules', 'enabledModules', 'arrayString', ['normalizeInput', 'enabledModules']),
+        inputRef('disabledModules', 'disabledModules', 'arrayString', ['normalizeInput', 'disabledModules']),
+        inputRef('focusRequirements', 'focusRequirements', 'arrayString', ['normalizeInput', 'focusRequirements']),
+        inputRef('strictMode', 'strictMode', 'boolean', ['normalizeInput', 'strictMode']),
+        inputRef('targetFileUrls', 'targetFileUrls', 'arrayString', ['normalizeInput', 'targetFileUrls']),
+        inputRef('basisFileUrls', 'basisFileUrls', 'arrayString', ['normalizeInput', 'basisFileUrls']),
+        inputRef('contextFileUrls', 'contextFileUrls', 'arrayString', ['normalizeInput', 'contextFileUrls'])
       ],
       outputs: [
-        staticOutput('reviewContext', 'reviewContext', 'object'),
-        staticOutput('parseResult', 'parseResult', 'object'),
-        staticOutput('docTextPreview', 'docTextPreview', 'string'),
-        staticOutput('resolvedProfile', 'resolvedProfile', 'object'),
-        staticOutput('resolvedBasisProfile', 'resolvedBasisProfile', 'object'),
-        staticOutput('governedDatasetScope', 'governedDatasetScope', 'object'),
-        staticOutput('supportPacketBase', 'supportPacketBase', 'object')
+        outputDynamic('reviewContext', 'object'),
+        outputDynamic('parseResult', 'object'),
+        outputDynamic('docTextPreview', 'string'),
+        outputDynamic('facts', 'object'),
+        outputDynamic('ruleHits', 'arrayObject'),
+        outputDynamic('candidates', 'arrayObject'),
+        outputDynamic('resolvedProfile', 'object'),
+        outputDynamic('resolvedBasisProfile', 'object'),
+        outputDynamic('governedDatasetScope', 'object'),
+        outputDynamic('supportPacketBase', 'object')
       ]
     }),
     pluginModuleNode({
-      nodeId: 'aiReviewTool',
+      nodeId: 'callAiReviewWft',
       name: '调用 hermes_ai_review_wft',
-      intro: '执行 AI reviewer',
-      key: 'hermes_ai_review_wft',
-      x: 1280,
-      y: 0,
+      intro: '执行 AI 主审 reviewer。',
+      position: pos(1380, 0),
+      pluginId: TOOL_DEFS[1].placeholder,
       inputs: [
-        inputField({ key: 'reviewId', label: 'reviewId', valueType: 'string', renderTypeList: ['reference'], value: ref('normalizeInput', 'reviewId') }),
-        inputField({ key: 'query', label: 'query', valueType: 'string', renderTypeList: ['reference'], value: ref('normalizeInput', 'query') }),
-        inputField({ key: 'documentType', label: 'documentType', valueType: 'string', renderTypeList: ['reference'], value: ref('normalizeInput', 'documentType') }),
-        inputField({ key: 'enabledModules', label: 'enabledModules', valueType: 'arrayString', renderTypeList: ['reference'], value: ref('normalizeInput', 'enabledModules') }),
-        inputField({ key: 'focusRequirements', label: 'focusRequirements', valueType: 'arrayString', renderTypeList: ['reference'], value: ref('normalizeInput', 'focusRequirements') }),
-        inputField({ key: 'strictMode', label: 'strictMode', valueType: 'boolean', renderTypeList: ['reference'], value: ref('normalizeInput', 'strictMode') }),
-        inputField({ key: 'reviewContext', label: 'reviewContext', valueType: 'object', renderTypeList: ['reference'], value: ref('reviewContextTool', 'reviewContext') }),
-        inputField({ key: 'targetFileUrls', label: 'targetFileUrls', valueType: 'arrayString', renderTypeList: ['reference'], value: ref('normalizeInput', 'targetFileUrls') }),
-        inputField({ key: 'aiModel', label: 'aiModel', valueType: 'string', renderTypeList: ['reference'], value: PLACEHOLDER_AI_MODEL })
+        inputRef('reviewContext', 'reviewContext', 'object', ['callReviewContextWft', 'reviewContext']),
+        inputRef('reviewId', 'reviewId', 'string', ['normalizeInput', 'reviewId']),
+        inputRef('documentType', 'documentType', 'string', ['normalizeInput', 'documentType']),
+        inputRef('enabledModules', 'enabledModules', 'arrayString', ['normalizeInput', 'enabledModules']),
+        inputRef('targetFileUrls', 'targetFileUrls', 'arrayString', ['normalizeInput', 'targetFileUrls'])
       ],
       outputs: [
-        staticOutput('aiReview', 'aiReview', 'object'),
-        staticOutput('reviewerPackets', 'reviewerPackets', 'arrayObject')
+        outputDynamic('aiReviewResult', 'object'),
+        outputDynamic('reviewerPackets', 'arrayObject'),
+        outputDynamic('traceability', 'arrayObject')
       ]
     }),
     pluginModuleNode({
-      nodeId: 'deterministicReviewTool',
+      nodeId: 'callDeterministicWft',
       name: '调用 hermes_deterministic_review_wft',
-      intro: '执行确定性 reviewer',
-      key: 'hermes_deterministic_review_wft',
-      x: 1740,
-      y: 0,
+      intro: '执行确定性审查与 calculation fallback。',
+      position: pos(1860, 0),
+      pluginId: TOOL_DEFS[2].placeholder,
       inputs: [
-        inputField({ key: 'reviewId', label: 'reviewId', valueType: 'string', renderTypeList: ['reference'], value: ref('normalizeInput', 'reviewId') }),
-        inputField({ key: 'enabledModules', label: 'enabledModules', valueType: 'arrayString', renderTypeList: ['reference'], value: ref('normalizeInput', 'enabledModules') }),
-        inputField({ key: 'reviewContext', label: 'reviewContext', valueType: 'object', renderTypeList: ['reference'], value: ref('reviewContextTool', 'reviewContext') }),
-        inputField({ key: 'aiReview', label: 'aiReview', valueType: 'object', renderTypeList: ['reference'], value: ref('aiReviewTool', 'aiReview') })
+        inputRef('reviewContext', 'reviewContext', 'object', ['callReviewContextWft', 'reviewContext']),
+        inputRef('aiReviewResult', 'aiReviewResult', 'object', ['callAiReviewWft', 'aiReviewResult'])
       ],
       outputs: [
-        staticOutput('deterministicReview', 'deterministicReview', 'object'),
-        staticOutput('reviewerPackets', 'reviewerPackets', 'arrayObject')
+        outputDynamic('deterministicReviewResult', 'object'),
+        outputDynamic('reviewerPackets', 'arrayObject')
       ]
     }),
     pluginModuleNode({
-      nodeId: 'support008Tool',
+      nodeId: 'callSupportWft',
       name: '调用 hermes_support_008_wft',
-      intro: '生成 008 支撑层结果',
-      key: 'hermes_support_008_wft',
-      x: 2200,
-      y: 0,
-      inputs: [
-        inputField({ key: 'reviewId', label: 'reviewId', valueType: 'string', renderTypeList: ['reference'], value: ref('normalizeInput', 'reviewId') }),
-        inputField({ key: 'documentType', label: 'documentType', valueType: 'string', renderTypeList: ['reference'], value: ref('normalizeInput', 'documentType') }),
-        inputField({ key: 'reviewContext', label: 'reviewContext', valueType: 'object', renderTypeList: ['reference'], value: ref('reviewContextTool', 'reviewContext') })
-      ],
+      intro: '整理 008 支撑层结果。',
+      position: pos(2340, 0),
+      pluginId: TOOL_DEFS[3].placeholder,
+      inputs: [inputRef('reviewContext', 'reviewContext', 'object', ['callReviewContextWft', 'reviewContext'])],
       outputs: [
-        staticOutput('supportReview', 'supportReview', 'object'),
-        staticOutput('supportPacket008', 'supportPacket008', 'object')
+        outputDynamic('supportReviewResult', 'object'),
+        outputDynamic('supportResult008', 'object'),
+        outputDynamic('supportPacket008', 'object'),
+        outputDynamic('artifactIndex', 'arrayObject'),
+        outputDynamic('supportLayerContext', 'object')
       ]
     }),
     pluginModuleNode({
-      nodeId: 'finalAssemblerTool',
+      nodeId: 'callFinalAssemblerWft',
       name: '调用 hermes_final_assembler_wft',
-      intro: '组装正式/降级结果',
-      key: 'hermes_final_assembler_wft',
-      x: 2660,
-      y: 0,
+      intro: '执行 fail-closed 与正式/降级输出。',
+      position: pos(2820, 0),
+      pluginId: TOOL_DEFS[4].placeholder,
       inputs: [
-        inputField({ key: 'reviewId', label: 'reviewId', valueType: 'string', renderTypeList: ['reference'], value: ref('normalizeInput', 'reviewId') }),
-        inputField({ key: 'documentType', label: 'documentType', valueType: 'string', renderTypeList: ['reference'], value: ref('normalizeInput', 'documentType') }),
-        inputField({ key: 'enabledModules', label: 'enabledModules', valueType: 'arrayString', renderTypeList: ['reference'], value: ref('normalizeInput', 'enabledModules') }),
-        inputField({ key: 'supportReview', label: 'supportReview', valueType: 'object', renderTypeList: ['reference'], value: ref('support008Tool', 'supportReview') }),
-        inputField({ key: 'aiReview', label: 'aiReview', valueType: 'object', renderTypeList: ['reference'], value: ref('aiReviewTool', 'aiReview') }),
-        inputField({ key: 'deterministicReview', label: 'deterministicReview', valueType: 'object', renderTypeList: ['reference'], value: ref('deterministicReviewTool', 'deterministicReview') })
+        inputRef('reviewContext', 'reviewContext', 'object', ['callReviewContextWft', 'reviewContext']),
+        inputRef('aiReviewResult', 'aiReviewResult', 'object', ['callAiReviewWft', 'aiReviewResult']),
+        inputRef('deterministicReviewResult', 'deterministicReviewResult', 'object', ['callDeterministicWft', 'deterministicReviewResult']),
+        inputRef('supportReviewResult', 'supportReviewResult', 'object', ['callSupportWft', 'supportReviewResult'])
       ],
       outputs: [
-        staticOutput('finalDecision', 'finalDecision', 'object'),
-        staticOutput('finalAnswer', 'finalAnswer', 'string'),
-        staticOutput('degraded', 'degraded', 'boolean'),
-        staticOutput('degradedReason', 'degradedReason', 'string'),
-        staticOutput('traceability', 'traceability', 'arrayObject'),
-        staticOutput('finalReportMarkdown', 'finalReportMarkdown', 'string'),
-        staticOutput('reportHtml', 'reportHtml', 'string'),
-        staticOutput('reportPrintCss', 'reportPrintCss', 'string'),
-        staticOutput('finalReportViewModel', 'finalReportViewModel', 'object')
+        outputDynamic('degraded', 'boolean'),
+        outputDynamic('degradedReason', 'string'),
+        outputDynamic('finalReportPacket', 'object'),
+        outputDynamic('finalReportMarkdown', 'string'),
+        outputDynamic('reportHtml', 'string'),
+        outputDynamic('reportPrintCss', 'string'),
+        outputDynamic('finalReportViewModel', 'object'),
+        outputDynamic('traceability', 'arrayObject'),
+        outputDynamic('finalAnswer', 'string'),
+        outputDynamic('artifactLinks', 'object')
       ]
     }),
-    answerNode('finalAnswerNode', 3120, 0, ref('finalAssemblerTool', 'finalAnswer'))
+    ifElseNode({
+      nodeId: 'routeFinalReply',
+      name: '判断是否降级',
+      intro: '正式报告与降级结果二选一。',
+      position: pos(3300, 0),
+      variableRef: ['callFinalAssemblerWft', 'degraded']
+    }),
+    answerNode({
+      nodeId: 'formalReply',
+      name: '正式报告输出',
+      intro: '输出正式 Markdown 报告。',
+      position: pos(3720, -150),
+      textValue: ['callFinalAssemblerWft', 'finalReportMarkdown']
+    }),
+    answerNode({
+      nodeId: 'degradedReply',
+      name: '降级结果输出',
+      intro: '输出 fail-closed 说明。',
+      position: pos(3720, 150),
+      textValue: ['callFinalAssemblerWft', 'finalAnswer']
+    })
   ];
-
   const edges = [
-    { source: 'workflowStart', target: 'normalizeInput' },
-    { source: 'normalizeInput', target: 'reviewContextTool' },
-    { source: 'reviewContextTool', target: 'aiReviewTool' },
-    { source: 'aiReviewTool', target: 'deterministicReviewTool' },
-    { source: 'deterministicReviewTool', target: 'support008Tool' },
-    { source: 'support008Tool', target: 'finalAssemblerTool' },
-    { source: 'finalAssemblerTool', target: 'finalAnswerNode' }
+    makeEdge('workflowStart', 'normalizeInput'),
+    makeEdge('normalizeInput', 'callReviewContextWft'),
+    makeEdge('callReviewContextWft', 'callAiReviewWft'),
+    makeEdge('callAiReviewWft', 'callDeterministicWft'),
+    makeEdge('callDeterministicWft', 'callSupportWft'),
+    makeEdge('callSupportWft', 'callFinalAssemblerWft'),
+    makeEdge('callFinalAssemblerWft', 'routeFinalReply'),
+    makeEdge('routeFinalReply', 'formalReply', 'routeFinalReply-source-ELSE', 'formalReply-target-left'),
+    makeEdge('routeFinalReply', 'degradedReply', 'routeFinalReply-source-IF', 'degradedReply-target-left')
   ];
-
   return {
     nodes,
     edges,
     chatConfig: {
-      welcomeText: '上传被审文件后，我将按 Hermes 固定编排执行正式审查。',
-      variables,
+      welcomeText: '上传方案文件后，我将按固定主工作流调度 Hermes 审查上下文工具、AI 审查工具、确定性审查工具、008 支撑层工具与最终组装工具。',
+      variables: [
+        variableEntry({ key: 'documentType', required: true }),
+        variableEntry({ key: 'disciplineTags', type: 'textarea' }),
+        variableEntry({ key: 'enabledModules', type: 'textarea' }),
+        variableEntry({ key: 'disabledModules', type: 'textarea' }),
+        variableEntry({ key: 'focusRequirements', type: 'textarea' }),
+        variableEntry({ key: 'strictMode' })
+      ],
       autoExecute: false,
       questionGuide: { open: false },
       ttsConfig: { type: 'web' },
@@ -2306,85 +2037,146 @@ export function buildMainWorkflow(assets) {
         canSelectCustomFileExtension: false,
         customFileExtensionList: []
       },
-      instruction: [
-        'migrationMode: workflow+workflow-tools',
-        '按固定编排调用 5 个工作流工具完成 Hermes 结构化正式审查。',
-        '必须显式透传 target 文件链接；若主审结果不可用，必须 fail-closed。',
-        '工作流工具 appId 通过运行时 registry 注入，不得留空。'
-      ].join('\n')
+      instruction: 'migrationMode=workflow+workflow-tools。主工作流仅做固定编排，不允许 LLM 自主跳过关键阶段；若 Hermes 主审结果不可用，必须 fail-closed。'
     }
   };
 }
 
-export function buildRuntimeTemplate() {
+function toTemplateJson({ name, intro, avatar = 'core/app/templates/workflow', tags = ['review'], type = 'plugin', workflow }) {
+  return { name, intro, author: 'Codex', avatar, tags, type, workflow };
+}
+
+function toCreateJson({ name, type, workflow }) {
+  return { name, type, modules: workflow.nodes, edges: workflow.edges, chatConfig: workflow.chatConfig || {} };
+}
+
+function buildDatasetManifest(governanceSnapshot) {
+  const basisRegistry = governanceSnapshot.basisRegistry || {};
+  const profileMapping = governanceSnapshot.profileMapping || {};
+  const packRegistry = governanceSnapshot.packRegistry || {};
+  const packsMap = packRegistry.packs || {};
+  const docTypeLabels = governanceSnapshot.docTypeLabels || {};
+  const entries = Object.keys(profileMapping).map((profileId) => {
+    const profile = profileMapping[profileId] || {};
+    const packIds = Array.from(new Set([].concat(profile.default_pack_ids || [], profile.required_pack_ids || [], profile.enterprise_pack_ids || [])));
+    const basisIds = Array.from(new Set(packIds.flatMap((packId) => (packsMap[packId] || {}).basis_ids || [])));
+    const basisFiles = Array.from(new Set(basisIds.flatMap((basisId) => (basisRegistry[basisId] || {}).file_refs || [])));
+    const safeKey = profileId.toUpperCase().replace(/[^A-Z0-9]+/g, '_');
+    return {
+      datasetKey: `basis.${profileId}`,
+      datasetIdPlaceholder: `__DATASET_${safeKey}__`,
+      displayName: `${docTypeLabels[profileId] || profileId} 依据数据集`,
+      profileId,
+      documentTypes: Object.keys(docTypeLabels).filter((key) => key === profileId),
+      packIds,
+      basisIds,
+      basisFiles
+    };
+  });
   return {
-    defaultAiModel: PLACEHOLDER_AI_MODEL,
-    workflowToolAppIds: Object.fromEntries(
-      WORKFLOW_TOOL_SPECS.map((spec) => [spec.key, `__FASTGPT_APP_ID__${spec.key}`])
-    )
+    version: 1,
+    generatedAt: new Date().toISOString(),
+    entries
   };
 }
 
-export function buildBundle(repoRoot) {
-  const assets = loadGeneratedAssets(repoRoot);
+function loadGovernance({ repoRoot }) {
+  const artifactsGovernanceDir = path.join(repoRoot, 'artifacts', 'fastgpt', 'governance');
+  const legacyDir = path.join(repoRoot, 'integrations', 'fastgpt', 'toolset', 'hermesStructuredReview', 'assets', 'generated');
+  const snapshotFile = path.join(artifactsGovernanceDir, 'governance_snapshot.json');
+  const snapshot = fs.existsSync(snapshotFile)
+    ? (() => {
+        const raw = readJson(snapshotFile);
+        return {
+          moduleBindings: raw.moduleBindings || raw.module_bindings || {},
+          moduleTitles: raw.moduleTitles || raw.module_titles || {},
+          docTypeLabels: raw.docTypeLabels || raw.doc_type_labels || {},
+          templateManifest: raw.templateManifest || raw.template_manifest || [],
+          profileMapping: raw.profileMapping || raw.profile_mapping || {},
+          packRegistry: raw.packRegistry || raw.pack_registry || {},
+          rulePackRegistry: raw.rulePackRegistry || raw.rule_pack_registry || {},
+          basisRegistry: raw.basisRegistry || raw.basis_registry || {},
+          evidenceTitles: raw.evidenceTitles || raw.evidence_titles || {},
+          evidenceFindingTypes: raw.evidenceFindingTypes || raw.evidence_finding_types || {},
+          evidenceManualReviewReasons:
+            raw.evidenceManualReviewReasons || raw.evidence_manual_review_reasons || {}
+        };
+      })()
+    : {
+        moduleBindings: readJson(path.join(legacyDir, 'module_bindings.json')),
+        moduleTitles: readJson(path.join(legacyDir, 'module_titles.json')),
+        docTypeLabels: readJson(path.join(legacyDir, 'doc_type_labels.json')),
+        templateManifest: readJson(path.join(legacyDir, 'template_manifest.json')),
+        profileMapping: readJson(path.join(legacyDir, 'profile_mapping.json')),
+        packRegistry: readJson(path.join(legacyDir, 'pack_registry.json')),
+        rulePackRegistry: readJson(path.join(legacyDir, 'rule_pack_registry.json')),
+        basisRegistry: readJson(path.join(legacyDir, 'basis_registry.json')),
+        evidenceTitles: readJson(path.join(legacyDir, 'evidence_titles.json')),
+        evidenceFindingTypes: readJson(path.join(legacyDir, 'evidence_finding_types.json')),
+        evidenceManualReviewReasons: readJson(path.join(legacyDir, 'evidence_manual_review_reasons.json'))
+      };
+  const datasetManifestFile = path.join(artifactsGovernanceDir, 'dataset_manifest.json');
+  const datasetManifest = fs.existsSync(datasetManifestFile)
+    ? readJson(datasetManifestFile)
+    : buildDatasetManifest(snapshot);
+  return { governanceSnapshot: snapshot, datasetManifest };
+}
+
+function registryTemplate() {
   return {
-    assets,
-    runtimeTemplate: buildRuntimeTemplate(),
-    workflowTools: buildWorkflowToolBundles(assets),
-    mainWorkflow: buildMainWorkflow(assets),
-    mainWorkflowCreate: {
-      name: 'Hermes 结构化正式审查主工作流',
-      avatar: 'core/app/type/workflowFill',
-      intro: '按固定编排调用 5 个工作流工具完成 Hermes 结构化正式审查。',
-      type: 'advanced',
-      modules: buildMainWorkflow(assets).nodes,
-      edges: buildMainWorkflow(assets).edges,
-      chatConfig: buildMainWorkflow(assets).chatConfig
-    }
+    migrationMode: 'workflow+workflow-tools',
+    aiModel: AI_MODEL_PLACEHOLDER,
+    workflowToolIds: Object.fromEntries(TOOL_DEFS.map((tool) => [tool.key, tool.placeholder])),
+    notes: [
+      '先导入 5 个工作流工具，再将导入后的工具 ID 回填到 workflowToolIds。',
+      '若模型 ID 不是默认占位符，请先回填 aiModel，再生成 linked 工作流。',
+      '文件不会自动透传到工作流工具；主工作流已显式传递 targetFileUrls / basisFileUrls / contextFileUrls。'
+    ]
   };
 }
 
-export function writeBundleArtifacts(repoRoot, bundle) {
+export function generateBundle({ repoRoot }) {
   const artifactsDir = path.join(repoRoot, 'artifacts', 'fastgpt');
-  const workflowToolsDir = path.join(artifactsDir, 'workflow_tools');
-  const governedSnapshotsDir = path.join(artifactsDir, 'governed_snapshots');
+  const workflowToolsDir = path.join(artifactsDir, 'workflow-tools');
   ensureDir(artifactsDir);
   ensureDir(workflowToolsDir);
-  ensureDir(governedSnapshotsDir);
 
-  fs.writeFileSync(
-    path.join(artifactsDir, 'hermes-structured-review.workflow.json'),
-    JSON.stringify(bundle.mainWorkflow, null, 2)
-  );
-  fs.writeFileSync(
-    path.join(artifactsDir, 'hermes-structured-review.app.create.json'),
-    JSON.stringify(bundle.mainWorkflowCreate, null, 2)
-  );
-  fs.writeFileSync(
-    path.join(artifactsDir, 'workflow_runtime.template.json'),
-    JSON.stringify(bundle.runtimeTemplate, null, 2)
-  );
+  const { governanceSnapshot, datasetManifest } = loadGovernance({ repoRoot });
+  const toolWorkflows = {
+    hermes_review_context_wft: reviewContextWorkflow(governanceSnapshot, datasetManifest),
+    hermes_ai_review_wft: aiReviewWorkflow(governanceSnapshot),
+    hermes_deterministic_review_wft: deterministicWorkflow(governanceSnapshot),
+    hermes_support_008_wft: supportWorkflow(),
+    hermes_final_assembler_wft: finalAssemblerWorkflow(governanceSnapshot.docTypeLabels || {}, governanceSnapshot.moduleTitles || {})
+  };
 
-  for (const item of bundle.workflowTools) {
-    fs.writeFileSync(
-      path.join(workflowToolsDir, `${item.key}.template.json`),
-      JSON.stringify(item.templateJson, null, 2)
+  for (const tool of TOOL_DEFS) {
+    const workflow = toolWorkflows[tool.key];
+    writeJson(path.join(workflowToolsDir, `${tool.key}.workflow.json`), workflow);
+    writeJson(
+      path.join(workflowToolsDir, `${tool.key}.template.json`),
+      toTemplateJson({ name: tool.key, intro: tool.intro, type: 'plugin', workflow })
     );
-    fs.writeFileSync(
-      path.join(workflowToolsDir, `${item.key}.create.json`),
-      JSON.stringify(item.createJson, null, 2)
+    writeJson(
+      path.join(workflowToolsDir, `${tool.key}.create.json`),
+      toCreateJson({ name: tool.key, type: 'plugin', workflow })
     );
   }
 
-  const generatedDir = bundle.assets.generatedDir;
-  for (const fileName of fs.readdirSync(generatedDir)) {
-    fs.copyFileSync(
-      path.join(generatedDir, fileName),
-      path.join(governedSnapshotsDir, fileName)
-    );
-  }
-  fs.writeFileSync(
-    path.join(governedSnapshotsDir, 'dataset_manifest.json'),
-    JSON.stringify(bundle.assets.datasetManifest, null, 2)
+  const main = mainWorkflow(governanceSnapshot.docTypeLabels || {});
+  writeJson(path.join(artifactsDir, 'hermes-main-review.workflow.json'), main);
+  writeJson(
+    path.join(artifactsDir, 'hermes-main-review.create.json'),
+    toCreateJson({ name: 'hermes-main-review', type: 'advanced', workflow: main })
   );
+  writeJson(path.join(artifactsDir, 'workflow_tool_registry.template.json'), registryTemplate());
+
+  return {
+    artifactsDir,
+    workflowToolsDir,
+    toolDefs: TOOL_DEFS,
+    governanceSnapshot,
+    datasetManifest,
+    mainWorkflowPath: path.join(artifactsDir, 'hermes-main-review.workflow.json')
+  };
 }
