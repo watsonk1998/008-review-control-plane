@@ -1101,7 +1101,11 @@ function main({ reviewContext, governanceSnapshot, selectedAiTemplates, aiAnswer
   function parseJson(text) {
     const raw = String(text || '').trim();
     if (!raw) return null;
-    const stripped = raw.replace(/^```json\s*/i, '').replace(/^```/, '').replace(/```$/, '').trim();
+    const stripped = raw
+      .replace(new RegExp('^' + String.fromCharCode(96, 96, 96) + 'json\\s*', 'i'), '')
+      .replace(new RegExp('^' + String.fromCharCode(96, 96, 96)), '')
+      .replace(new RegExp(String.fromCharCode(96, 96, 96) + '$'), '')
+      .trim();
     try { return JSON.parse(stripped); } catch (error) {}
     const start = stripped.indexOf('{');
     const end = stripped.lastIndexOf('}');

@@ -8,7 +8,9 @@
     "generate:parity": "node ./scripts/generate_parity_matrix.mjs",
     "generate:all": "npm run export:assets && npm run generate:workflow && npm run generate:parity",
     "test": "vitest run",
-    "build:pkg": "bash ./scripts/build_fastgpt_pkg.sh"
+    "link:workflow": "node ./scripts/apply_runtime_overrides.mjs",
+    "validate:bundle": "npm run generate:all",
+    "legacy:build-pkg": "bash ./scripts/build_fastgpt_pkg.sh"
   },
   "dependencies": {
     "mammoth": "^1.8.0",
@@ -19,5 +21,6 @@
     "@types/node": "^24.0.0",
     "typescript": "^5.8.3",
     "vitest": "^3.2.4"
-  }
+  },
+  "description": "FastGPT 主工作流与工作流工具迁移 bundle for hermes-review-agent"
 }
