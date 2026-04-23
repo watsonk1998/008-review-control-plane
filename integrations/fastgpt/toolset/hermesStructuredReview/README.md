@@ -9,3 +9,9 @@ Included tools:
 - `runDeterministicReviewer`
 - `assembleFinalDecision`
 - `renderFormalReport`
+
+Implementation note:
+
+- child tools live under `children/*`
+- shared governed logic lives under `lib/*`
+- governed YAML / template / basis assets are exported into `assets/generated/*`

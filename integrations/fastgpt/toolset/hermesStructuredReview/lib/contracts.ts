@@ -24,3 +24,19 @@ export interface Finding { id: string; title: string; severity: Severity; catego
 export interface FactPacket { review_id: string; engine: string; findings: Finding[]; overall_assessment: string; degraded?: boolean; error?: string; metadata: Record<string, unknown>; raw_result?: Record<string, unknown>; }
 export interface SupportReviewResult { supportResult008: Record<string, unknown>; supportPacket008: FactPacket; artifactIndex: Array<Record<string, unknown>>; supportLayerContext: Record<string, unknown>; }
 export interface FinalReportPacket { title: string; verdict: 'conditional_pass' | 'needs_revision' | 'fail'; summary: string; top_risks: string[]; key_findings: Finding[]; supplemental_findings: Finding[]; traceability: Array<Record<string, unknown>>; report_markdown: string; metadata: Record<string, unknown>; }
+export interface NormativeValidityCheck { sourceId: string; title: string; status: 'current' | 'superseded' | 'unknown'; resolvedBy: 'web' | 'heuristic'; summary: string; evidenceTitle?: string; evidenceUrl?: string; resolvedTitle?: string; note?: string; }
+export interface DeterministicReviewerResult { reviewerId: string; packet: FactPacket; }
+export interface FinalDecisionResult {
+  degraded: boolean;
+  degradedReason: string;
+  finalReportPacket: FinalReportPacket | null;
+  finalAnswer: string;
+  traceability: Array<Record<string, unknown>>;
+  hermesController: Record<string, unknown>;
+}
+export interface RenderedReportResult {
+  finalReportMarkdown: string;
+  reportHtml: string;
+  reportPrintCss: string;
+  finalReportViewModel: Record<string, unknown>;
+}

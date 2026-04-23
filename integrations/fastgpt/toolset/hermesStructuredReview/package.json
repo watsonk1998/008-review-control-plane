@@ -1,5 +1,5 @@
 {
-  "name": "fastgpt-tools-hermes-structured-review",
+  "name": "@fastgpt-plugins/tool-hermes-structured-review",
   "module": "index.ts",
   "type": "module",
   "scripts": {
