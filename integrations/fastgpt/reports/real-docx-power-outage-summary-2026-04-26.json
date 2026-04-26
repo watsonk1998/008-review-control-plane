@@ -1,0 +1,74 @@
+{
+  "httpStatus": 200,
+  "contentLength": 424,
+  "contentPreview": "\n# 配网停电施工专项方案正式审查报告\n\n本次审查已由专业主审组件裁决完成，总体评级结论为：**需要修改**。\n\n## 重点风险\n- 计算书与验算依据缺失\n- 附件及图纸解析受限，请结合原件复核\n\n## 关键问题\n- [medium] 计算书与验算依据缺失：文档中虽包含风险评估公式及风险值计算过程（如制作电缆中间头风险值60，户内终端头安装作业风险值50），但未提供具体的电气参数选型计算、电缆截面热稳定校验或机械强度验算等关键计算书。根据审查规则，未看到详细计算书时不得臆造错误，判定为证据不足。\n- [medium",
+  "finalStatus": "formal",
+  "nodeCount": 9,
+  "nodes": [
+    {
+      "nodeId": "workflowStart",
+      "moduleType": "workflowStart",
+      "moduleName": "流程开始",
+      "errorText": null
+    },
+    {
+      "nodeId": "normalizeInput",
+      "moduleType": "code",
+      "moduleName": "归一化输入",
+      "errorText": null
+    },
+    {
+      "nodeId": "callReviewContextWft",
+      "moduleType": "pluginModule",
+      "moduleName": "调用 hermes_review_context_wft",
+      "errorText": null
+    },
+    {
+      "nodeId": "callAiReviewWft",
+      "moduleType": "pluginModule",
+      "moduleName": "调用 hermes_ai_review_wft",
+      "errorText": null
+    },
+    {
+      "nodeId": "callDeterministicWft",
+      "moduleType": "pluginModule",
+      "moduleName": "调用 hermes_deterministic_review_wft",
+      "errorText": null
+    },
+    {
+      "nodeId": "callSupportWft",
+      "moduleType": "pluginModule",
+      "moduleName": "调用 hermes_support_008_wft",
+      "errorText": null
+    },
+    {
+      "nodeId": "callFinalAssemblerWft",
+      "moduleType": "pluginModule",
+      "moduleName": "调用 hermes_final_assembler_wft",
+      "errorText": null
+    },
+    {
+      "nodeId": "routeFinalReply",
+      "moduleType": "ifElseNode",
+      "moduleName": "判断是否降级",
+      "errorText": null
+    },
+    {
+      "nodeId": "formalReply",
+      "moduleType": "answerNode",
+      "moduleName": "正式报告输出",
+      "errorText": null
+    }
+  ],
+  "nodeErrors": [],
+  "passed": true,
+  "checks": {
+    "chineseNonEmpty": true,
+    "formalOrDegradedReply": true,
+    "responseDataNoNodeErrors": true,
+    "businessSignals": true,
+    "riskSignals": true,
+    "evidenceBoundarySignals": true,
+    "remediationOrManualReviewSignals": true
+  }
+}

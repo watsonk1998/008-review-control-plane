@@ -8,6 +8,7 @@
     "generate:parity": "node ./scripts/generate_parity_matrix.mjs",
     "generate:all": "npm run export:assets && npm run generate:workflow && npm run link:local && npm run generate:parity",
     "build:delivery": "node ./scripts/build_delivery_package.mjs",
+    "acceptance:real-docx": "node ./scripts/run_real_scheme_acceptance.mjs",
     "test": "vitest run",
     "link:workflow": "node ./scripts/apply_runtime_overrides.mjs",
     "link:local": "node ./scripts/apply_runtime_overrides.mjs ../../artifacts/fastgpt/workflow_tool_registry.local.json",
