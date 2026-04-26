@@ -10,43 +10,50 @@ const IMPORT_FILES = [
   {
     order: 1,
     area: '工作流工具 / 我的工具',
-    source: path.join(artifactsDir, 'workflow-tools', 'hermes_review_context_wft.workflow.linked.json'),
-    target: '01-tool-review-context.json',
-    title: 'Hermes 审查上下文工具'
+    source: path.join(artifactsDir, 'workflow-tools', 'hermes_review_config_wft.workflow.linked.json'),
+    target: '01-tool-review-config.json',
+    title: 'Hermes 审查配置工具'
   },
   {
     order: 2,
     area: '工作流工具 / 我的工具',
-    source: path.join(artifactsDir, 'workflow-tools', 'hermes_ai_review_wft.workflow.linked.json'),
-    target: '02-tool-ai-review.json',
-    title: 'Hermes AI 审查工具'
+    source: path.join(artifactsDir, 'workflow-tools', 'hermes_review_context_wft.workflow.linked.json'),
+    target: '02-tool-review-context.json',
+    title: 'Hermes 审查上下文工具'
   },
   {
     order: 3,
     area: '工作流工具 / 我的工具',
-    source: path.join(artifactsDir, 'workflow-tools', 'hermes_deterministic_review_wft.workflow.linked.json'),
-    target: '03-tool-deterministic-review.json',
-    title: 'Hermes 确定性审查工具'
+    source: path.join(artifactsDir, 'workflow-tools', 'hermes_ai_review_wft.workflow.linked.json'),
+    target: '03-tool-ai-review.json',
+    title: 'Hermes AI 审查工具'
   },
   {
     order: 4,
     area: '工作流工具 / 我的工具',
-    source: path.join(artifactsDir, 'workflow-tools', 'hermes_support_008_wft.workflow.linked.json'),
-    target: '04-tool-support-008.json',
-    title: 'Hermes 008 支撑层工具'
+    source: path.join(artifactsDir, 'workflow-tools', 'hermes_deterministic_review_wft.workflow.linked.json'),
+    target: '04-tool-deterministic-review.json',
+    title: 'Hermes 确定性审查工具'
   },
   {
     order: 5,
     area: '工作流工具 / 我的工具',
-    source: path.join(artifactsDir, 'workflow-tools', 'hermes_final_assembler_wft.workflow.linked.json'),
-    target: '05-tool-final-assembler.json',
-    title: 'Hermes 最终组装工具'
+    source: path.join(artifactsDir, 'workflow-tools', 'hermes_support_008_wft.workflow.linked.json'),
+    target: '05-tool-support-008.json',
+    title: 'Hermes 008 支撑层工具'
   },
   {
     order: 6,
+    area: '工作流工具 / 我的工具',
+    source: path.join(artifactsDir, 'workflow-tools', 'hermes_final_assembler_wft.workflow.linked.json'),
+    target: '06-tool-final-assembler.json',
+    title: 'Hermes 最终组装工具'
+  },
+  {
+    order: 7,
     area: '应用导入配置',
     source: path.join(artifactsDir, 'hermes-main-review.linked.workflow.json'),
-    target: '06-main-review-app.json',
+    target: '07-main-review-app.json',
     title: 'Hermes 主审查应用'
   }
 ];
@@ -117,11 +124,11 @@ function registryInfo() {
 function renderReadme(info) {
   return `# FastGPT Review Agent 导入包
 
-这是 Hermes FastGPT 审查应用的压缩导入包。只使用 \`import/\` 目录里的 6 个 JSON。
+这是 Hermes FastGPT 审查应用的压缩导入包。只使用 \`import/\` 目录里的 7 个 JSON。
 
 ## 关键修正
 
-FastGPT「导入配置」入口读取的是顶层 \`nodes / edges / chatConfig\`。因此本包中的 6 个 JSON 都是 dashboard workflow 结构，不是 \`create\` 结构，也不是 \`template\` 包装结构。
+FastGPT「导入配置」入口读取的是顶层 \`nodes / edges / chatConfig\`。因此本包中的 7 个 JSON 都是 dashboard workflow 结构，不是 \`create\` 结构，也不是 \`template\` 包装结构。
 
 ## 导入顺序
 
@@ -129,17 +136,18 @@ FastGPT「导入配置」入口读取的是顶层 \`nodes / edges / chatConfig\`
 
 进入 FastGPT 的「工作流工具 / 我的工具」，分别新建或打开对应工作流工具，在「导入配置」入口依次导入：
 
-1. \`import/01-tool-review-context.json\` — Hermes 审查上下文工具
-2. \`import/02-tool-ai-review.json\` — Hermes AI 审查工具
-3. \`import/03-tool-deterministic-review.json\` — Hermes 确定性审查工具
-4. \`import/04-tool-support-008.json\` — Hermes 008 支撑层工具
-5. \`import/05-tool-final-assembler.json\` — Hermes 最终组装工具
+1. \`import/01-tool-review-config.json\` — Hermes 审查配置工具
+2. \`import/02-tool-review-context.json\` — Hermes 审查上下文工具
+3. \`import/03-tool-ai-review.json\` — Hermes AI 审查工具
+4. \`import/04-tool-deterministic-review.json\` — Hermes 确定性审查工具
+5. \`import/05-tool-support-008.json\` — Hermes 008 支撑层工具
+6. \`import/06-tool-final-assembler.json\` — Hermes 最终组装工具
 
 ### 2. 主应用导入
 
 进入 FastGPT 主应用的「导入配置」入口，导入：
 
-6. \`import/06-main-review-app.json\` — Hermes 主审查应用
+7. \`import/07-main-review-app.json\` — Hermes 主审查应用
 
 ## 不要导入的文件
 
@@ -150,19 +158,19 @@ FastGPT「导入配置」入口读取的是顶层 \`nodes / edges / chatConfig\`
 
 ## 当前实例绑定
 
-本包已经绑定当前实例的 5 个工作流工具 AppId，并使用模型：
+本包已经绑定当前实例的 6 个工作流工具 AppId，并使用模型：
 
 \`\`\`text
 ${info.aiModel}
 \`\`\`
 
-如果换 FastGPT 实例，不能复用 \`import/06-main-review-app.json\` 中的工具 AppId，必须重新导入 5 个工具并重新生成主应用绑定文件。
+如果换 FastGPT 实例，不能复用 \`import/07-main-review-app.json\` 中的工具 AppId，必须重新导入 6 个工具并重新生成主应用绑定文件。
 
 ## 目录说明
 
 \`\`\`text
 fastgpt-review-agent/
-  import/      # 只导入这里的 6 个 JSON
+  import/      # 只导入这里的 7 个 JSON
   reports/     # 校验报告
   README.md
   MANIFEST.md
@@ -204,7 +212,7 @@ ${rows}
 
 - All import files use top-level \`nodes/edges/chatConfig\`.
 - Tool files contain \`pluginConfig\`, \`pluginInput\`, and \`pluginOutput\` nodes.
-- Main app file contains 5 \`pluginModule\` nodes bound to current instance-local workflow tool AppIds.
+- Main app file contains 6 \`pluginModule\` nodes bound to current instance-local workflow tool AppIds.
 - No \`template\` or \`create\` JSON is included in this delivery package.
 
 ## Bound Runtime
@@ -231,7 +239,7 @@ These AppIds are instance-local. Rebuild bindings before importing into another 
 
 The package should satisfy:
 
-- exactly 6 files under \`import/\`
+- exactly 7 files under \`import/\`
 - each import JSON has top-level \`nodes/edges/chatConfig\`
 - no files with \`template\` or \`create\` in their names
 - no \`node_modules\`

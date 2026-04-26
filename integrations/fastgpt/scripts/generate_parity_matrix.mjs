@@ -64,8 +64,8 @@ const readiness = runPython('generate_import_readiness_report.py', [
 
 const rows = [
   ['迁移模式', '已实现', '`workflow+workflow-tools`；无 repo-owned Helper API，无 MCP。'],
-  ['主工作流', '已生成', '`hermes-main-review.linked.workflow.json` 固定编排 5 个工作流工具，并已绑定当前实例 AppId。'],
-  ['工作流工具数量', '已生成', `${toolWorkflowFiles.length} 个：review_context / ai_review / deterministic_review / support_008 / final_assembler。`],
+  ['主工作流', '已生成', '`hermes-main-review.linked.workflow.json` 固定编排 6 个工作流工具，并已绑定当前实例 AppId。'],
+  ['工作流工具数量', '已生成', `${toolWorkflowFiles.length} 个：review_config / review_context / ai_review / deterministic_review / support_008 / final_assembler。`],
   ['工具模板 JSON', '已生成', '每个工具输出 `.template.json`，内部 `type=plugin`，UI 语义为工作流工具。'],
   ['工具创建 JSON', '已生成', '每个工具输出 `.create.json`，用于 OpenAPI 创建。'],
   ['治理快照', '已生成', '`governance_snapshot.json` 来自 Python 真源，生成期静态治理数据已编译进 code node，避免 hidden object 运行态丢失。'],
@@ -89,7 +89,7 @@ md.push('- 工作流工具目录：`/Users/lucas/repos/review/hermes-review-agen
 md.push('- 治理快照目录：`/Users/lucas/repos/review/hermes-review-agent/artifacts/fastgpt/governance/`');
 md.push('- 运行时 ID 回填模板：`/Users/lucas/repos/review/hermes-review-agent/artifacts/fastgpt/workflow_tool_registry.template.json`');
 md.push('', '## 导入顺序', '');
-md.push('1. 先导入 5 个工作流工具模板 JSON，确认它们出现在 FastGPT「我的工具」。');
+md.push('1. 先导入 6 个工作流工具模板 JSON，确认它们出现在 FastGPT「我的工具」。');
 md.push('2. 将导入后的工具 ID 和当前环境模型 ID 写入 `workflow_tool_registry.template.json` 的副本。');
 md.push('3. 执行 `node scripts/apply_runtime_overrides.mjs <registry.json>` 生成 linked 主工作流 JSON。');
 md.push('4. 导入 `hermes-main-review.linked.workflow.json` 或对应 create JSON。');

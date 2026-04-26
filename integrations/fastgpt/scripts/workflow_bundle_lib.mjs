@@ -3,6 +3,12 @@ import path from 'node:path';
 
 const TOOL_DEFS = [
   {
+    key: 'hermes_review_config_wft',
+    title: 'Hermes 审查配置工具',
+    intro: '维护 documentType 注册表、方案类型配置、reviewer prompt 与输出合同。',
+    placeholder: '__WFT_HERMES_REVIEW_CONFIG_ID__'
+  },
+  {
     key: 'hermes_review_context_wft',
     title: 'Hermes 审查上下文工具',
     intro: '归一化输入、解析文档、解析治理快照，并输出受治理的审查上下文。',
@@ -733,9 +739,180 @@ function main({ userChatInput, userFiles, documentTypeRaw, disciplineTagsRaw, en
 `);
 }
 
+function reviewConfigCode(governanceSnapshot) {
+  return normalizeMultilineCode(String.raw`
+function main({ documentType, enabledModules, focusRequirements, strictMode }) {
+  const GOVERNANCE_SNAPSHOT = ${jsJsonParseLiteral(governanceSnapshot)};
+  function toArray(value) {
+    if (Array.isArray(value)) return value.filter(Boolean);
+    if (value == null || value === '') return [];
+    if (typeof value === 'object') return [value];
+    if (typeof value === 'string') {
+      const text = value.trim();
+      if (!text) return [];
+      try {
+        const parsed = JSON.parse(text);
+        if (Array.isArray(parsed)) return parsed.filter(Boolean);
+      } catch (error) {}
+      return text.split(/[\n,，;；]/).map((item) => item.trim()).filter(Boolean);
+    }
+    return [value];
+  }
+  function unique(list) { return Array.from(new Set((list || []).filter(Boolean))); }
+  const snapshot = GOVERNANCE_SNAPSHOT || {};
+  const profileMapping = snapshot.profileMapping || {};
+  const moduleBindings = snapshot.moduleBindings || {};
+  const moduleTitles = snapshot.moduleTitles || {};
+  const docTypeLabels = snapshot.docTypeLabels || {};
+  const templateManifest = snapshot.templateManifest || [];
+  const packRegistry = snapshot.packRegistry || {};
+  const packsMap = packRegistry.packs || {};
+  const rulePackRegistry = snapshot.rulePackRegistry || {};
+  const rulePacksMap = rulePackRegistry.rule_packs || {};
+  const basisRegistry = snapshot.basisRegistry || {};
+  const defaultModules = ['structure_completeness', 'parameter_consistency', 'legality_compliance', 'execution_continuity', 'evidence_validation'];
+  const documentTypeRegistry = Object.keys(profileMapping).sort().map((type) => ({
+    documentType: type,
+    displayName: docTypeLabels[type] || type,
+    enabled: true,
+    defaultModules,
+    configKey: 'scheme_config__' + type
+  }));
+  const requestedType = String(documentType || '').trim();
+  const registryEntry = documentTypeRegistry.find((item) => item.documentType === requestedType);
+  if (!registryEntry) {
+    const degradedReason = '未知 documentType：' + (requestedType || '(empty)') + '，未命中 document_type_registry，系统按 fail-closed 处理。';
+    return {
+      documentTypeRegistry,
+      reviewConfig: {
+        documentType: requestedType,
+        profileId: requestedType || 'unknown',
+        displayName: requestedType || '未知方案类型',
+        defaultEnabledModules: [],
+        reviewerConfigs: [],
+        basisPackRefs: [],
+        deterministicRuleRefs: [],
+        riskFocus: [],
+        modelPolicy: { aiModel: '${AI_MODEL_PLACEHOLDER}', temperature: 0.2, maxToken: 4000 },
+        outputContract: { language: 'zh-CN', failClosed: true, formalReportRequired: true },
+        maintainerNotes: ['未知类型不得静默套用其他方案类型配置。'],
+        degraded: true,
+        degradedReason
+      },
+      defaultEnabledModules: [],
+      reviewerConfigs: [],
+      degraded: true,
+      degradedReason
+    };
+  }
+  const profile = profileMapping[requestedType] || {};
+  const effectiveModules = toArray(enabledModules).length ? toArray(enabledModules) : defaultModules;
+  const packIds = unique([].concat(profile.default_pack_ids || [], profile.required_pack_ids || [], profile.enterprise_pack_ids || []));
+  const basisPackRefs = packIds.map((packId) => {
+    const pack = packsMap[packId] || {};
+    const basisIds = pack.basis_ids || [];
+    return {
+      packId,
+      role: pack.role || '',
+      family: pack.family || '',
+      status: pack.status || 'unknown',
+      basisIds,
+      basisTitles: basisIds.map((basisId) => (basisRegistry[basisId] || {}).title || basisId)
+    };
+  });
+  const deterministicRuleRefs = unique(profile.rule_pack_ids || []).map((rulePackId) => {
+    const rulePack = rulePacksMap[rulePackId] || {};
+    return {
+      rulePackId,
+      scope: rulePack.scope || '',
+      relatedPackIds: rulePack.related_pack_ids || [],
+      evidenceRequirements: rulePack.evidence_requirements || []
+    };
+  });
+  const templateIdToModules = {};
+  Object.keys(moduleBindings).forEach((moduleName) => {
+    ((moduleBindings[moduleName] || {}).hermes_templates || []).forEach((templateId) => {
+      templateIdToModules[templateId] = templateIdToModules[templateId] || [];
+      templateIdToModules[templateId].push(moduleName);
+    });
+  });
+  const selectedTemplateIds = unique(effectiveModules.flatMap((moduleName) => ((moduleBindings[moduleName] || {}).hermes_templates || [])));
+  const reviewerConfigs = selectedTemplateIds
+    .map((templateId) => templateManifest.find((item) => item.id === templateId))
+    .filter(Boolean)
+    .filter((template) => template.execution_mode === 'hermes_router')
+    .filter((template) => !Array.isArray(template.supported_document_types) || template.supported_document_types.length === 0 || template.supported_document_types.includes(requestedType))
+    .map((template) => ({
+      reviewerId: template.id,
+      name: template.agent_name,
+      purpose: template.agent_purpose,
+      moduleNames: unique(templateIdToModules[template.id] || []),
+      prompt: template.prompt || '',
+      instructions: template.instructions || '',
+      focusKeywords: template.focus_keywords || [],
+      supportedDocumentTypes: template.supported_document_types || [],
+      outputContract: template.output_contract || { type: 'fact_packet' },
+      evidenceRequirements: deterministicRuleRefs.flatMap((item) => item.evidenceRequirements || []).slice(0, 12)
+    }));
+  const riskFocusMap = {
+    distribution_network_special_scheme: [
+      '停电范围、计划时间、影响用户和送电条件必须闭环',
+      '停电、验电、接地、挂牌、遮栏、复电等停电五步法不得缺项',
+      '工作票、操作票、现场勘察和许可手续必须形成证据链',
+      '防反送电、双电源、用户自备电源等风险必须单列控制',
+      '计算书、附图、附件不可视时必须提示人工复核'
+    ],
+    construction_org: [
+      '工程概况、施工部署、进度计划、资源配置和安全措施必须形成章节矩阵',
+      '危大工程、消防、临时用电、起重吊装等风险应有专项安排',
+      '质量、安全、应急、文明施工措施应具体可执行',
+      '附件、图纸、计算书和参数来源不可视时必须提示人工复核'
+    ]
+  };
+  const reviewConfig = {
+    documentType: requestedType,
+    profileId: profile.profile_id || requestedType,
+    displayName: registryEntry.displayName,
+    defaultEnabledModules: defaultModules,
+    enabledModules: effectiveModules,
+    reviewerConfigs,
+    basisPackRefs,
+    deterministicRuleRefs,
+    riskFocus: riskFocusMap[requestedType] || [
+      '按文档类型注册表和 profile 解析结果进行审查，不套用其他方案类型规则。',
+      '证据不足时输出边界和人工复核要求，不臆造事实。'
+    ],
+    modelPolicy: { aiModel: '${AI_MODEL_PLACEHOLDER}', temperature: 0.2, maxToken: 4000, grouping: 'module' },
+    outputContract: {
+      language: 'zh-CN',
+      failClosed: true,
+      formalReportRequired: true,
+      requiredSections: ['总体结论', '模块结果', '关键问题', '证据边界', '审查依据来源', '整改建议', '人工复核要求', 'Traceability']
+    },
+    maintainerNotes: [
+      '同事日常维护限定在配置工具：方案类型启停、reviewer prompt、风险关注点、模块启用、规则包引用和输出要求。',
+      '禁止在主工作流新增 documentType -> basis file path。',
+      '禁止把大段规范原文塞进主工作流 prompt；依据选择必须走 registry/profile/pack。'
+    ],
+    configKey: registryEntry.configKey,
+    degraded: false,
+    degradedReason: ''
+  };
+  return {
+    documentTypeRegistry,
+    reviewConfig,
+    defaultEnabledModules: defaultModules,
+    reviewerConfigs,
+    degraded: false,
+    degradedReason: ''
+  };
+}
+`);
+}
+
 function reviewContextCode(governanceSnapshot, datasetManifest) {
   return normalizeMultilineCode(String.raw`
-function main({ reviewId, query, documentType, disciplineTags, enabledModules, disabledModules, focusRequirements, strictMode, targetFileUrls, basisFileUrls, contextFileUrls, documentText }) {
+function main({ reviewId, query, documentType, disciplineTags, enabledModules, disabledModules, focusRequirements, strictMode, targetFileUrls, basisFileUrls, contextFileUrls, reviewConfig, documentText }) {
   const GOVERNANCE_SNAPSHOT = ${jsJsonParseLiteral(governanceSnapshot)};
   const DATASET_MANIFEST = ${jsJsonParseLiteral(datasetManifest)};
   function toArray(value) {
@@ -868,12 +1045,97 @@ function main({ reviewId, query, documentType, disciplineTags, enabledModules, d
       manualReviewReason: attachmentMatches.length ? '正文引用了附件、附图或外部材料，需人工结合原件复核。' : null
     };
   }
+  function includesAny(text, words) {
+    return (words || []).some((word) => text.includes(word));
+  }
+  function pickBlocks(blocks, pattern, limit) {
+    return (blocks || [])
+      .filter((block) => block.type !== 'heading' && pattern.test(block.text || ''))
+      .slice(0, limit || 8)
+      .map((block) => ({
+        blockId: block.id,
+        sectionId: block.sectionId,
+        position: block.position,
+        text: String(block.text || '').slice(0, 700)
+      }));
+  }
+  function buildSectionMatrix(documentType, sections, normalizedText) {
+    const rules = {
+      construction_org: [
+        ['engineeringOverview', '工程概况', ['工程概况']],
+        ['preparationBasis', '编制依据/编制说明', ['编制依据', '编制说明']],
+        ['constructionDeployment', '施工部署', ['施工部署']],
+        ['schedulePlan', '进度计划', ['施工进度', '进度计划']],
+        ['resourcePlan', '资源配置', ['资源配置', '人员计划', '机械设备']],
+        ['qualityPlan', '质量管理', ['质量管理', '质量保证']],
+        ['safetyMeasures', '安全措施', ['安全措施', '安全技术']],
+        ['emergencyPlan', '应急预案/应急处置', ['应急预案', '应急处置']],
+        ['siteLayout', '施工平面布置', ['平面布置', '施工总平面']]
+      ],
+      distribution_network_special_scheme: [
+        ['engineeringOverview', '工程概况', ['工程概况']],
+        ['preparationBasis', '编制依据/编制说明', ['编制依据', '编制说明']],
+        ['outageScope', '停电范围与影响', ['停电范围', '停电计划', '影响用户', '停电时间']],
+        ['riskIdentification', '风险辨识', ['风险辨识', '风险分级', '风险评估']],
+        ['operationChain', '停电五步法/作业链路', ['停电', '验电', '接地', '挂牌', '遮栏', '复电', '送电']],
+        ['ticketChain', '工作票/操作票/许可链', ['工作票', '操作票', '许可', '现场勘察']],
+        ['antiBackfeed', '防反送电措施', ['防反送电', '反送电', '双电源', '自备电源']],
+        ['emergencyPlan', '应急预案/应急处置', ['应急预案', '应急处置', '抢修']],
+        ['restorationClosure', '复电与资料闭环', ['复电', '送电', '恢复送电', '验收', '归档']]
+      ]
+    };
+    const selected = rules[documentType] || [
+      ['preparationBasis', '编制依据/编制说明', ['编制依据', '编制说明']],
+      ['safetyMeasures', '安全措施', ['安全措施', '安全技术']],
+      ['emergencyPlan', '应急安排', ['应急', '抢修']]
+    ];
+    return selected.map(([itemKey, title, keywords]) => ({
+      itemKey,
+      title,
+      status: includesAny(normalizedText, keywords) ? 'present' : 'missing',
+      matchedKeywords: keywords.filter((keyword) => normalizedText.includes(keyword)),
+      sectionIds: (sections || []).filter((section) => includesAny(section.title || '', keywords)).map((section) => section.id)
+    }));
+  }
+  function addCandidate(candidates, moduleName, suffix, title, severity, summary, suggestion, options) {
+    candidates.push({
+      candidateId: moduleName + '-' + suffix,
+      title,
+      layerHint: 'deterministic',
+      severityHint: severity,
+      findingType: (options && options.findingType) || 'engineering_inference',
+      ruleHits: (options && options.ruleHits) || [],
+      evidenceMissing: Boolean(options && options.evidenceMissing),
+      manualReviewNeeded: Boolean(options && options.manualReviewNeeded),
+      manualReviewReason: options && options.manualReviewReason,
+      blockingReasons: (options && options.blockingReasons) || [],
+      summary,
+      suggestion,
+      evidenceStatus: (options && options.evidenceStatus) || 'grounded',
+      moduleName,
+      evidenceRefs: (options && options.evidenceRefs) || []
+    });
+  }
   const snapshot = GOVERNANCE_SNAPSHOT || {};
   const datasetManifest = DATASET_MANIFEST || {};
+  const config = reviewConfig && typeof reviewConfig === 'object' ? reviewConfig : {};
+  const effectiveDocumentType = (config.documentType || documentType || '').trim();
   const parsed = parseDocument(documentText || '');
   const visibility = parseVisibility(parsed.normalizedText);
   visibility.counts.sectionCount = parsed.sections.length;
   visibility.counts.blockCount = parsed.blocks.length;
+  const sectionMatrix = buildSectionMatrix(effectiveDocumentType, parsed.sections, parsed.normalizedText);
+  const keyParagraphSlices = pickBlocks(parsed.blocks, /风险|安全|停电|验电|接地|工作票|操作票|应急|计算|验算|消防|质量|进度|资源|吊装|临时用电/, 12);
+  const basisSectionSlices = pickBlocks(parsed.blocks, /编制依据|编制说明|GB|GB\/T|JGJ|DL|DL\/T|NB|Q\/CSG|Q\/GDW|规范|标准|条例|规定/, 10);
+  const calculationSlices = pickBlocks(parsed.blocks, /计算|验算|公式|参数|荷载|安全系数|校核|风险值|强度|稳定/, 10);
+  const operationChainSlices = pickBlocks(parsed.blocks, /停电|验电|接地|挂牌|遮栏|工作票|操作票|许可|复电|送电|反送电|双电源|现场勘察/, 12);
+  const attachmentVisibilityMatrix = {
+    attachmentMentions: visibility.attachmentCount,
+    manualReviewNeeded: visibility.manualReviewNeeded,
+    reasonCounts: visibility.reasonCounts,
+    parseWarnings: visibility.parseWarnings,
+    referencedLabels: unique((parsed.normalizedText.match(/附件[一二三四五六七八九十0-9A-Za-z-]*|附图[一二三四五六七八九十0-9A-Za-z-]*|附表[一二三四五六七八九十0-9A-Za-z-]*/g) || []))
+  };
   const basisSectionIds = targetSectionIds(parsed.sections);
   const normativeRefs = unique(parsed.blocks
     .filter((block) => block.type !== 'heading')
@@ -893,9 +1155,9 @@ function main({ reviewId, query, documentType, disciplineTags, enabledModules, d
     discipline_tags: toArray(disciplineTags)
   };
   const profileMapping = snapshot.profileMapping || {};
-  const resolvedProfile = profileMapping[documentType] || {
-    profile_id: documentType,
-    classification: { level1: '审查任务', level2: documentType },
+  const resolvedProfile = profileMapping[effectiveDocumentType] || {
+    profile_id: effectiveDocumentType,
+    classification: { level1: '审查任务', level2: effectiveDocumentType },
     default_pack_ids: [],
     required_pack_ids: [],
     optional_pack_ids: [],
@@ -919,21 +1181,21 @@ function main({ reviewId, query, documentType, disciplineTags, enabledModules, d
     };
   });
   const resolvedBasisProfile = {
-    profile_id: resolvedProfile.profile_id || documentType,
+    profile_id: resolvedProfile.profile_id || effectiveDocumentType,
     level1_classification: (resolvedProfile.classification || {}).level1 || '审查任务',
-    level2_classification: (resolvedProfile.classification || {}).level2 || documentType,
+    level2_classification: (resolvedProfile.classification || {}).level2 || effectiveDocumentType,
     level3_classification: (resolvedProfile.classification || {}).level3 || null,
     packs,
     rule_packs: (snapshot.rulePackRegistry && (resolvedProfile.rule_pack_ids || []).map((rulePackId) => snapshot.rulePackRegistry.rule_packs ? snapshot.rulePackRegistry.rule_packs[rulePackId] : null).filter(Boolean)) || [],
     basis_documents: basisDocuments,
-    degraded: false,
-    degradation_reasons: []
+    degraded: Boolean(config.degraded),
+    degradation_reasons: config.degradedReason ? [config.degradedReason] : []
   };
   const governedDatasetScope = {
-    documentType,
+    documentType: effectiveDocumentType,
     profileId: resolvedBasisProfile.profile_id,
-    datasetKeys: ((datasetManifest || {}).entries || []).filter((entry) => entry.profileId === resolvedBasisProfile.profile_id || (entry.documentTypes || []).includes(documentType)).map((entry) => entry.datasetKey),
-    datasetIdPlaceholders: ((datasetManifest || {}).entries || []).filter((entry) => entry.profileId === resolvedBasisProfile.profile_id || (entry.documentTypes || []).includes(documentType)).map((entry) => entry.datasetIdPlaceholder),
+    datasetKeys: ((datasetManifest || {}).entries || []).filter((entry) => entry.profileId === resolvedBasisProfile.profile_id || (entry.documentTypes || []).includes(effectiveDocumentType)).map((entry) => entry.datasetKey),
+    datasetIdPlaceholders: ((datasetManifest || {}).entries || []).filter((entry) => entry.profileId === resolvedBasisProfile.profile_id || (entry.documentTypes || []).includes(effectiveDocumentType)).map((entry) => entry.datasetIdPlaceholder),
     basisIds,
     basisTitles: basisDocuments.map((item) => item.title),
     basisFileRefs: unique(basisDocuments.flatMap((item) => item.file_refs || []))
@@ -954,19 +1216,42 @@ function main({ reviewId, query, documentType, disciplineTags, enabledModules, d
     blockingReasons: [],
     missingFactKeys: []
   }));
-  const enabled = toArray(enabledModules).length ? toArray(enabledModules) : Object.keys(moduleBindings);
-  const candidates = enabled.map((moduleName, index) => ({
-    candidateId: moduleName + '-candidate-' + (index + 1),
-    title: ((moduleBindings[moduleName] || {}).title || moduleName) + '：待主审复核',
-    layerHint: 'review',
-    severityHint: moduleName === 'evidence_validation' && visibility.manualReviewNeeded ? 'medium' : 'low',
-    findingType: visibility.manualReviewNeeded && moduleName === 'evidence_validation' ? 'visibility_gap' : 'engineering_inference',
-    ruleHits: ruleHits.slice(0, 2),
-    evidenceMissing: visibility.manualReviewNeeded && moduleName === 'evidence_validation',
-    manualReviewNeeded: visibility.manualReviewNeeded && moduleName === 'evidence_validation',
-    manualReviewReason: visibility.manualReviewReason,
-    blockingReasons: visibility.manualReviewNeeded && moduleName === 'evidence_validation' ? ['attachment_visibility_gap'] : []
-  }));
+  const enabled = toArray(config.enabledModules).length ? toArray(config.enabledModules) : (toArray(enabledModules).length ? toArray(enabledModules) : Object.keys(moduleBindings));
+  const candidates = [];
+  const missingSections = sectionMatrix.filter((item) => item.status === 'missing');
+  if (enabled.includes('structure_completeness') && missingSections.length) {
+    addCandidate(candidates, 'structure_completeness', 'section-matrix-gap', '核心章节矩阵存在缺口', missingSections.length >= 3 ? 'high' : 'medium', '缺失或未稳定识别章节：' + missingSections.map((item) => item.title).join('、') + '。', '请补齐缺失章节，或在原文中以清晰标题标注对应内容。', { ruleHits: ruleHits.slice(0, 2), evidenceRefs: missingSections.map((item) => item.itemKey) });
+  }
+  if (enabled.includes('execution_continuity') && effectiveDocumentType === 'distribution_network_special_scheme') {
+    const requiredSteps = ['停电', '验电', '接地', '挂牌', '遮栏', '复电'];
+    const missingSteps = requiredSteps.filter((step) => !parsed.normalizedText.includes(step));
+    if (missingSteps.length) {
+      addCandidate(candidates, 'execution_continuity', 'power-outage-five-step-gap', '停复电作业链路存在缺项', missingSteps.length >= 2 ? 'high' : 'medium', '停电五步法/复电闭环缺少：' + missingSteps.join('、') + '。', '请补充停电、验电、接地、挂牌、遮栏、复电等关键动作及责任人、验收条件。', { findingType: 'hard_evidence', evidenceRefs: operationChainSlices.map((item) => item.blockId) });
+    }
+    if (!/工作票|操作票|现场勘察|许可/.test(parsed.normalizedText)) {
+      addCandidate(candidates, 'execution_continuity', 'ticket-chain-gap', '工作票/操作票/现场勘察证据链缺失', 'medium', '未稳定识别工作票、操作票、现场勘察或许可手续描述。', '请补充票据链、许可手续、现场勘察记录和责任主体。', { evidenceStatus: 'evidence_gap', evidenceMissing: true });
+    }
+    if (!/防反送电|反送电|双电源|自备电源/.test(parsed.normalizedText)) {
+      addCandidate(candidates, 'execution_continuity', 'anti-backfeed-gap', '防反送电与双电源风险控制未单列', 'medium', '未稳定识别防反送电、双电源或用户自备电源控制措施。', '请单列防反送电措施，明确隔离、验电、闭锁、用户侧电源确认与恢复送电条件。', { evidenceStatus: 'evidence_gap', evidenceMissing: true });
+    }
+  }
+  if (enabled.includes('parameter_consistency')) {
+    const parameterSlices = pickBlocks(parsed.blocks, /(\d+\s*(天|人|台|kV|KV|米|m|mm|小时|h|%))|参数|型号|数量|工期|负荷|容量|截面/, 8);
+    if (parameterSlices.length) {
+      addCandidate(candidates, 'parameter_consistency', 'parameter-traceability', '关键参数需一致性复核', 'low', '已识别关键参数、数量、工期或规格信息，需要核对其在正文、附件和计算依据中的一致性。', '请核对参数来源、单位、上下文引用和附件/图纸中的同名参数是否一致。', { evidenceRefs: parameterSlices.map((item) => item.blockId) });
+    } else {
+      addCandidate(candidates, 'parameter_consistency', 'parameter-visibility-gap', '关键参数可视域不足', 'medium', '未稳定识别工期、资源、数量、规格或关键工程参数。', '请补充关键参数表、资源计划或工程量说明，并保持全文一致。', { evidenceStatus: 'evidence_gap', evidenceMissing: true });
+    }
+  }
+  if (enabled.includes('legality_compliance') && basisDocuments.length) {
+    addCandidate(candidates, 'legality_compliance', 'governed-basis-projection', '审查依据已按方案类型受治理加载', 'low', '本次已按 profile/pack 映射加载依据包：' + packs.map((item) => item.pack_id).join('、') + '。', '请主审 reviewer 结合原文段落逐项判断，不得在主工作流中硬编码依据路径。', { ruleHits: ruleHits.slice(0, 4), evidenceRefs: governedDatasetScope.basisFileRefs.slice(0, 5) });
+  }
+  if (enabled.includes('evidence_validation') && visibility.manualReviewNeeded) {
+    addCandidate(candidates, 'evidence_validation', 'attachment-visibility-gap', '附件及图纸解析受限，请结合原件复核', 'medium', visibility.manualReviewReason || '正文引用了附件或图纸，但当前可视域无法稳定获取其实质内容。', '请补充附件原件、图纸、计算书或人工核验记录。', { findingType: 'visibility_gap', evidenceStatus: 'visibility_gap', evidenceMissing: true, manualReviewNeeded: true, manualReviewReason: visibility.manualReviewReason, blockingReasons: ['attachment_visibility_gap'] });
+  }
+  if (enabled.includes('evidence_validation') && !calculationSlices.length) {
+    addCandidate(candidates, 'evidence_validation', 'calculation-book-gap', '未见计算书或验算过程，需人工补充复核', 'info', '当前可视文本未稳定呈现计算书、验算过程、公式参数或关键参数取值依据。', '请补充计算书、验算过程或关键参数来源后再复核。', { evidenceStatus: 'evidence_gap', evidenceMissing: true });
+  }
   const parseResult = {
     documentId: reviewId,
     filePath: (targetFileUrls || [])[0] || '',
@@ -977,13 +1262,19 @@ function main({ reviewId, query, documentType, disciplineTags, enabledModules, d
     blocks: parsed.blocks,
     attachments: [],
     normalizedText: parsed.normalizedText,
-    preview: parsed.normalizedText.slice(0, 1000),
+    preview: parsed.normalizedText.slice(0, 4000),
     visibility,
-    parseWarnings: visibility.parseWarnings
+    parseWarnings: visibility.parseWarnings,
+    sectionMatrix,
+    keyParagraphSlices,
+    basisSectionSlices,
+    calculationSlices,
+    operationChainSlices,
+    attachmentVisibilityMatrix
   };
   const supportPacketBase = {
     review_id: reviewId,
-    document_type: documentType,
+    document_type: effectiveDocumentType,
     document_preview: parseResult.preview,
     basis_summary: {
       profile_id: resolvedBasisProfile.profile_id,
@@ -995,12 +1286,21 @@ function main({ reviewId, query, documentType, disciplineTags, enabledModules, d
     facts,
     focus_requirements: toArray(focusRequirements),
     discipline_tags: toArray(disciplineTags),
-    strict_mode: strictMode !== false
+    strict_mode: strictMode !== false,
+    evidence_context: {
+      section_matrix: sectionMatrix,
+      key_paragraph_slices: keyParagraphSlices,
+      basis_section_slices: basisSectionSlices,
+      calculation_slices: calculationSlices,
+      operation_chain_slices: operationChainSlices,
+      attachment_visibility_matrix: attachmentVisibilityMatrix
+    }
   };
   const reviewContext = {
     reviewId,
     query,
-    documentType,
+    documentType: effectiveDocumentType,
+    reviewConfig: config,
     enabledModules: enabled,
     disabledModules: toArray(disabledModules),
     focusRequirements: toArray(focusRequirements),
@@ -1028,7 +1328,8 @@ function main({ reviewId, query, documentType, disciplineTags, enabledModules, d
     resolvedProfile,
     resolvedBasisProfile,
     governedDatasetScope,
-    supportPacketBase
+    supportPacketBase,
+    reviewConfig: config
   };
 }
 `);
@@ -1039,7 +1340,6 @@ function aiReviewPrepareCode(governanceSnapshot) {
 function main({ reviewContext, aiModel }) {
   const GOVERNANCE_SNAPSHOT = ${jsJsonParseLiteral(governanceSnapshot)};
   function unique(list) { return Array.from(new Set((list || []).filter(Boolean))); }
-  function lower(value) { return String(value || '').toLowerCase(); }
   const snapshot = GOVERNANCE_SNAPSHOT || {};
   const moduleBindings = snapshot.moduleBindings || {};
   const templateManifest = snapshot.templateManifest || [];
@@ -1053,51 +1353,112 @@ function main({ reviewContext, aiModel }) {
       templateIdToModules[templateId].push(moduleName);
     });
   });
-  const selectedAiTemplates = unique(enabledModules.flatMap((moduleName) => ((moduleBindings[moduleName] || {}).hermes_templates || [])))
-    .map((templateId) => templateManifest.find((item) => item.id === templateId))
-    .filter(Boolean)
-    .filter((template) => template.execution_mode === 'hermes_router')
-    .filter((template) => !Array.isArray(template.supported_document_types) || template.supported_document_types.length === 0 || template.supported_document_types.includes(documentType))
+  const configuredReviewers = (((reviewContext || {}).reviewConfig || {}).reviewerConfigs || []);
+  const selectedAiTemplates = (configuredReviewers.length ? configuredReviewers : unique(enabledModules.flatMap((moduleName) => ((moduleBindings[moduleName] || {}).hermes_templates || [])))
+      .map((templateId) => templateManifest.find((item) => item.id === templateId))
+      .filter(Boolean)
+      .filter((template) => template.execution_mode === 'hermes_router')
+      .filter((template) => !Array.isArray(template.supported_document_types) || template.supported_document_types.length === 0 || template.supported_document_types.includes(documentType))
+      .map((template) => ({
+        reviewerId: template.id,
+        name: template.agent_name,
+        purpose: template.agent_purpose,
+        prompt: template.prompt || '',
+        instructions: template.instructions || '',
+        focusKeywords: template.focus_keywords || [],
+        modules: unique(templateIdToModules[template.id] || [])
+      })))
     .map((template) => ({
-      reviewerId: template.id,
-      name: template.agent_name,
-      purpose: template.agent_purpose,
-      focusKeywords: template.focus_keywords || [],
-      modules: unique(templateIdToModules[template.id] || [])
+      reviewerId: template.reviewerId || template.id,
+      name: template.name || template.agent_name || template.reviewerId || template.id,
+      purpose: template.purpose || template.agent_purpose || '',
+      prompt: template.prompt || '',
+      instructions: template.instructions || '',
+      focusKeywords: template.focusKeywords || template.focus_keywords || [],
+      modules: unique(template.modules || template.moduleNames || templateIdToModules[template.reviewerId || template.id] || [])
     }));
-  const prompt = [
-    '你是 Hermes 结构化审查主审执行器。',
-    '必须严格依据给定的 reviewContext 输出 JSON，不得输出 JSON 之外的文字。',
-    '如无问题，可返回空 findings，但不得臆造计算错误。',
-    '若 reviewer 属于计算类且证据不足，不得编造错误，交由后续确定性 fallback 处理。',
-    '',
-    '返回 JSON 结构：',
-    '{',
-    '  "packets": [',
-    '    {',
-    '      "reviewerId": "string",',
-    '      "degraded": false,',
-    '      "overall": "string",',
-    '      "findings": [',
-    '        {',
-    '          "title": "string",',
-    '          "severity": "high|medium|low|info",',
-    '          "summary": "string",',
-    '          "suggestion": "string",',
-    '          "evidence_status": "grounded|inferred|evidence_gap|visibility_gap"',
-    '        }',
-    '      ]',
-    '    }',
-    '  ]',
-    '}',
-    '',
-    'selectedAiTemplates=' + JSON.stringify(selectedAiTemplates),
-    'reviewContext=' + JSON.stringify(reviewContext)
-  ].join('\n');
+  const contextForPrompt = {
+    reviewId: reviewContext.reviewId,
+    documentType: reviewContext.documentType,
+    enabledModules: reviewContext.enabledModules,
+    facts: reviewContext.facts,
+    riskFocus: ((reviewContext.reviewConfig || {}).riskFocus || []),
+    sectionMatrix: ((reviewContext.parseResult || {}).sectionMatrix || []),
+    keyParagraphSlices: ((reviewContext.parseResult || {}).keyParagraphSlices || []),
+    basisSectionSlices: ((reviewContext.parseResult || {}).basisSectionSlices || []),
+    calculationSlices: ((reviewContext.parseResult || {}).calculationSlices || []),
+    operationChainSlices: ((reviewContext.parseResult || {}).operationChainSlices || []),
+    attachmentVisibilityMatrix: ((reviewContext.parseResult || {}).attachmentVisibilityMatrix || {}),
+    basisDocuments: (((reviewContext.resolvedBasisProfile || {}).basis_documents) || []).map((item) => ({ basis_id: item.basis_id, title: item.title })),
+    candidates: (reviewContext.candidates || []).map((item) => ({
+      candidateId: item.candidateId,
+      moduleName: item.moduleName,
+      title: item.title,
+      severityHint: item.severityHint,
+      summary: item.summary,
+      suggestion: item.suggestion,
+      evidenceStatus: item.evidenceStatus,
+      manualReviewNeeded: item.manualReviewNeeded
+    })),
+    docTextPreview: String(reviewContext.docTextPreview || '').slice(0, 5000)
+  };
+  function reviewersForModule(moduleName) {
+    return selectedAiTemplates.filter((template) => (template.modules || []).includes(moduleName));
+  }
+  function buildPrompt(moduleName) {
+    const reviewers = reviewersForModule(moduleName);
+    if (!reviewers.length) {
+      return JSON.stringify({ packets: [] });
+    }
+    return [
+      '你是 Hermes 结构化审查主审执行器，当前只审查模块：' + moduleName + '。',
+      '必须严格依据给定的 contextForPrompt、reviewerConfigs、依据摘要和证据切片输出 JSON，不得输出 JSON 之外的文字。',
+      '必须为 reviewerConfigs 中每个 reviewer 单独返回一个 packet。',
+      '如果某 reviewer 未发现问题，findings 可以为空，但 overall 必须写清楚已检查的章节、依据、证据边界和“不输出问题”的原因；禁止只写 pass、通过、无问题。',
+      '证据不足、附件/图纸不可视、计算书缺失时，必须明确人工复核或补充材料要求。',
+      '计算类 reviewer 未见计算书或验算过程时，不得臆造计算错误。',
+      '',
+      '返回 JSON 结构：',
+      '{',
+      '  "packets": [',
+      '    {',
+      '      "reviewerId": "string",',
+      '      "degraded": false,',
+      '      "overall": "string",',
+      '      "findings": [',
+      '        {',
+      '          "title": "string",',
+      '          "severity": "high|medium|low|info",',
+      '          "summary": "string",',
+      '          "suggestion": "string",',
+      '          "evidence_status": "grounded|inferred|evidence_gap|visibility_gap",',
+      '          "manual_review_needed": false',
+      '        }',
+      '      ]',
+      '    }',
+      '  ]',
+      '}',
+      '',
+      'reviewerConfigs=' + JSON.stringify(reviewers),
+      'contextForPrompt=' + JSON.stringify(contextForPrompt)
+    ].join('\n');
+  }
+  const modulePrompts = {
+    structure_completeness: buildPrompt('structure_completeness'),
+    parameter_consistency: buildPrompt('parameter_consistency'),
+    legality_compliance: buildPrompt('legality_compliance'),
+    execution_continuity: buildPrompt('execution_continuity'),
+    evidence_validation: buildPrompt('evidence_validation')
+  };
   return {
     selectedAiTemplates,
     selectedReviewerIds: selectedAiTemplates.map((item) => item.reviewerId),
-    aiPrompt: prompt,
+    modulePrompts,
+    structurePrompt: modulePrompts.structure_completeness,
+    parameterPrompt: modulePrompts.parameter_consistency,
+    legalityPrompt: modulePrompts.legality_compliance,
+    executionPrompt: modulePrompts.execution_continuity,
+    evidencePrompt: modulePrompts.evidence_validation,
     aiModel: aiModel || '${AI_MODEL_PLACEHOLDER}'
   };
 }
@@ -1106,7 +1467,7 @@ function main({ reviewContext, aiModel }) {
 
 function aiReviewNormalizeCode(governanceSnapshot) {
   return normalizeMultilineCode(String.raw`
-function main({ reviewContext, selectedAiTemplates, aiAnswerText }) {
+function main({ reviewContext, selectedAiTemplates, structureAnswerText, parameterAnswerText, legalityAnswerText, executionAnswerText, evidenceAnswerText }) {
   const GOVERNANCE_SNAPSHOT = ${jsJsonParseLiteral(governanceSnapshot)};
   function unique(list) { return Array.from(new Set((list || []).filter(Boolean))); }
   function parseJson(text) {
@@ -1138,9 +1499,13 @@ function main({ reviewContext, selectedAiTemplates, aiAnswerText }) {
       templateIdToModules[templateId].push(moduleName);
     });
   });
-  const parsed = parseJson(aiAnswerText) || { packets: [] };
+  const aiAnswerTexts = [structureAnswerText, parameterAnswerText, legalityAnswerText, executionAnswerText, evidenceAnswerText];
+  const parsedPackets = aiAnswerTexts.flatMap((text) => {
+    const parsed = parseJson(text) || { packets: [] };
+    return Array.isArray(parsed.packets) ? parsed.packets : [];
+  });
   const packetMap = {};
-  (Array.isArray(parsed.packets) ? parsed.packets : []).forEach((packet) => {
+  parsedPackets.forEach((packet) => {
     if (packet && packet.reviewerId) packetMap[packet.reviewerId] = packet;
   });
   const reviewerPackets = (selectedAiTemplates || []).map((template, index) => {
@@ -1159,7 +1524,7 @@ function main({ reviewContext, selectedAiTemplates, aiAnswerText }) {
           review_modules: unique(template.modules || templateIdToModules[template.reviewerId] || []),
           agent_name: template.name
         },
-        raw_result: { parseError: true, answerText: aiAnswerText }
+        raw_result: { parseError: true, answerTexts: aiAnswerTexts }
       };
     }
     const findings = Array.isArray(packet.findings) ? packet.findings : [];
@@ -1176,6 +1541,7 @@ function main({ reviewContext, selectedAiTemplates, aiAnswerText }) {
         evidence_status: finding.evidence_status || 'grounded',
         source_engine: 'hermes',
         finding_type: 'hard_evidence',
+        manual_review_needed: Boolean(finding.manual_review_needed),
         raw_data: {
           module_name: (template.modules || templateIdToModules[template.reviewerId] || [])[0] || 'legality_compliance',
           review_modules: unique(template.modules || templateIdToModules[template.reviewerId] || []),
@@ -1244,6 +1610,38 @@ function main({ reviewContext, aiReviewResult }) {
   const packets = [];
   const visibility = reviewContext.parseResult && reviewContext.parseResult.visibility;
   const enabledModules = reviewContext.enabledModules || [];
+  function candidateModule(candidate) {
+    return candidate.moduleName || String(candidate.candidateId || '').split('-').slice(0, 2).join('_') || 'legality_compliance';
+  }
+  function candidateToFinding(candidate, index, moduleName) {
+    return {
+      id: 'H-DET-' + moduleName.toUpperCase().replace(/[^A-Z0-9]+/g, '-') + '-' + String(index + 1).padStart(3, '0'),
+      title: candidate.title || '确定性审查线索',
+      severity: severity(candidate.severityHint || 'low'),
+      category: moduleName,
+      summary: candidate.summary || ((candidate.ruleHits || []).map((hit) => hit.rationale).filter(Boolean).join('；') || '已形成确定性审查线索。'),
+      suggestion: candidate.suggestion || '请结合原文、附件和正式依据闭环处置。',
+      evidence_status: candidate.evidenceStatus || (candidate.evidenceMissing ? 'evidence_gap' : 'grounded'),
+      source_engine: 'hermes',
+      finding_type: candidate.findingType || 'engineering_inference',
+      manual_review_needed: Boolean(candidate.manualReviewNeeded),
+      raw_data: {
+        module_name: moduleName,
+        review_modules: [moduleName],
+        candidate_id: candidate.candidateId,
+        evidence_refs: candidate.evidenceRefs || []
+      }
+    };
+  }
+  ['structure_completeness', 'parameter_consistency', 'execution_continuity', 'legality_compliance'].forEach((moduleName) => {
+    if (!enabledModules.includes(moduleName)) return;
+    const moduleCandidates = (reviewContext.candidates || []).filter((candidate) => candidateModule(candidate) === moduleName);
+    if (!moduleCandidates.length) {
+      packets.push(makePacket(moduleName + '_deterministic_reviewer', [], moduleName + ' 模块已检查章节矩阵、关键段落切片和依据配置，未形成确定性问题；仍需 AI 主审给出证据化结论。', false, '', [moduleName]));
+      return;
+    }
+    packets.push(makePacket(moduleName + '_deterministic_reviewer', moduleCandidates.map((candidate, index) => candidateToFinding(candidate, index, moduleName)), moduleName + ' 模块已形成确定性审查线索。', false, '', [moduleName]));
+  });
   if (enabledModules.includes('evidence_validation') && visibility && visibility.manualReviewNeeded) {
     packets.push(makePacket('visibility_gap_reviewer', [{
       id: 'H-VIS-001',
@@ -1258,23 +1656,6 @@ function main({ reviewContext, aiReviewResult }) {
       manual_review_needed: true,
       raw_data: { module_name: 'evidence_validation', review_modules: ['evidence_validation'] }
     }], '可视域检查已完成。', false, '', ['evidence_validation']));
-  }
-  if (enabledModules.includes('legality_compliance')) {
-    const findings = (reviewContext.candidates || []).filter((candidate) => String(candidate.candidateId || '').includes('legality') || String(candidate.title || '').includes('合法') || String(candidate.title || '').includes('合规'))
-      .slice(0, 3)
-      .map((candidate, index) => ({
-        id: 'H-POL-' + String(index + 1).padStart(3, '0'),
-        title: candidate.title || '规范符合性提示',
-        severity: severity(candidate.severityHint || 'low'),
-        category: 'legality_compliance',
-        summary: (candidate.ruleHits || []).map((hit) => hit.rationale).filter(Boolean).join('；') || '已命中规范符合性线索，请结合正式依据复核。',
-        suggestion: '请结合正式依据和原文段落补充合规性说明。',
-        evidence_status: candidate.evidenceMissing ? 'evidence_gap' : 'grounded',
-        source_engine: 'hermes',
-        finding_type: 'engineering_inference',
-        raw_data: { module_name: 'legality_compliance', review_modules: ['legality_compliance'] }
-      }));
-    packets.push(makePacket('policy_compliance_reviewer', findings, findings.length ? '规范命中与合规线索已整理。' : '未发现需要单列的规范符合性问题。', false, '', ['legality_compliance']));
   }
   if (enabledModules.includes('evidence_validation')) {
     const refs = (((reviewContext.facts || {}).normative_refs) || []).slice(0, 12);
@@ -1358,16 +1739,18 @@ function main({ reviewContext }) {
     id: 'S-' + String(index + 1).padStart(3, '0'),
     title: candidate.title,
     severity: severity(candidate.severityHint),
-    category: String(candidate.candidateId || '').split('-candidate-')[0] || 'support_material',
-    summary: (candidate.ruleHits || []).map((hit) => hit.rationale).filter(Boolean).join('；') || '已命中治理快照中的审查线索。',
-    suggestion: candidate.manualReviewNeeded ? '请结合原件人工补充复核。' : '请结合正式审查结论闭环处置。',
-    evidence_status: candidate.manualReviewNeeded ? 'visibility_gap' : (candidate.evidenceMissing ? 'evidence_gap' : 'grounded'),
+    category: candidate.moduleName || String(candidate.candidateId || '').split('-candidate-')[0] || 'support_material',
+    summary: candidate.summary || ((candidate.ruleHits || []).map((hit) => hit.rationale).filter(Boolean).join('；') || '已命中治理快照中的审查线索。'),
+    suggestion: candidate.suggestion || (candidate.manualReviewNeeded ? '请结合原件人工补充复核。' : '请结合正式审查结论闭环处置。'),
+    evidence_status: candidate.evidenceStatus || (candidate.manualReviewNeeded ? 'visibility_gap' : (candidate.evidenceMissing ? 'evidence_gap' : 'grounded')),
     source_engine: '008',
     finding_type: candidate.findingType || 'engineering_inference',
+    manual_review_needed: Boolean(candidate.manualReviewNeeded),
     raw_data: {
       candidateId: candidate.candidateId,
-      review_modules: [String(candidate.candidateId || '').split('-candidate-')[0]],
-      module_name: String(candidate.candidateId || '').split('-candidate-')[0]
+      review_modules: [candidate.moduleName || String(candidate.candidateId || '').split('-candidate-')[0]],
+      module_name: candidate.moduleName || String(candidate.candidateId || '').split('-candidate-')[0],
+      evidence_refs: candidate.evidenceRefs || []
     }
   }));
   const reportMarkdown = ['# 008 支撑层结果', '', ...(findings.length ? findings.map((item) => '- [' + item.severity + '] ' + item.title + '：' + item.summary) : ['- 未识别到需输出的问题'])].join('\n');
@@ -1435,14 +1818,40 @@ function main({ reviewContext, aiReviewResult, deterministicReviewResult, suppor
   function flatten(list) { return [].concat(...(list || []).map((item) => Array.isArray(item) ? item : [item])); }
   const aiPackets = Array.isArray(aiReviewResult && aiReviewResult.reviewerPackets) ? aiReviewResult.reviewerPackets : [];
   const deterministicPackets = Array.isArray(deterministicReviewResult && deterministicReviewResult.reviewerPackets) ? deterministicReviewResult.reviewerPackets : [];
+  const supportPacket008 = supportReviewResult && supportReviewResult.supportPacket008 ? supportReviewResult.supportPacket008 : null;
+  const supportFindings = supportPacket008 && Array.isArray(supportPacket008.findings) ? supportPacket008.findings : [];
   const reviewerPackets = aiPackets.concat(deterministicPackets);
   const hermesPackets = reviewerPackets.filter((packet) => packet && packet.engine === 'hermes');
   const enabledModules = reviewContext.enabledModules || [];
   let degradedReason = '';
-  if (!hermesPackets.length) {
+  if ((reviewContext.reviewConfig || {}).degraded) {
+    degradedReason = (reviewContext.reviewConfig || {}).degradedReason || '方案类型配置降级，系统按 fail-closed 返回非正式结果。';
+  } else if (!aiPackets.length) {
+    degradedReason = 'Hermes AI 主审未形成 reviewer 分包，系统按 fail-closed 返回非正式结果。';
+  } else if (aiPackets.every((packet) => packet.degraded)) {
+    degradedReason = 'Hermes AI 主审 reviewer 全部降级，系统按 fail-closed 返回非正式结果。';
+  } else if (!hermesPackets.length) {
     degradedReason = 'Hermes 主审链路未形成任何实际审查结果。';
   } else if (hermesPackets.every((packet) => packet.degraded)) {
     degradedReason = 'Hermes 主审链路全部降级，系统按 fail-closed 返回非正式结果。';
+  }
+  function packetFindingsForModule(packet, moduleName) {
+    return (Array.isArray(packet && packet.findings) ? packet.findings : []).filter((finding) => {
+      const raw = finding.raw_data || {};
+      return raw.module_name === moduleName || (Array.isArray(raw.review_modules) && raw.review_modules.includes(moduleName)) || finding.category === moduleName;
+    });
+  }
+  function hasEvidenceOverall(packet) {
+    const text = String((packet && packet.overall_assessment) || '');
+    if (text.length < 36) return false;
+    if (/未返回|parseError|只写|pass/i.test(text)) return false;
+    return /依据|证据|章节|切片|核验|原文|可视域|人工复核|检查/.test(text);
+  }
+  function packetEffectiveForModule(packet, moduleName) {
+    if (!packet || packet.degraded) return false;
+    const findings = packetFindingsForModule(packet, moduleName);
+    if (findings.length > 0) return true;
+    return hasEvidenceOverall(packet);
   }
   if (!degradedReason) {
     for (const moduleName of enabledModules) {
@@ -1451,18 +1860,41 @@ function main({ reviewContext, aiReviewResult, deterministicReviewResult, suppor
         degradedReason = moduleLabel(moduleName) + ' 模块未形成实际审查结果，系统按 fail-closed 返回。';
         break;
       }
-      if (actualPackets.every((packet) => packet.degraded)) {
-        degradedReason = moduleLabel(moduleName) + ' 模块的实际运行 reviewer 全部降级，系统按 fail-closed 返回。';
+      if (!actualPackets.some((packet) => packetEffectiveForModule(packet, moduleName))) {
+        degradedReason = moduleLabel(moduleName) + ' 模块未形成有效证据化结论，系统按 fail-closed 返回。';
         break;
       }
     }
   }
-  const allFindings = reviewerPackets.flatMap((packet) => Array.isArray(packet.findings) ? packet.findings : []);
+  const hermesFindings = reviewerPackets.flatMap((packet) => Array.isArray(packet.findings) ? packet.findings : []);
+  const supportTitles = new Set(supportFindings.map((item) => item.title));
+  const supplementalSupportFindings = supportFindings.filter((item) => !hermesFindings.some((finding) => finding.title === item.title));
+  const allFindings = hermesFindings.concat(supplementalSupportFindings);
   const keyFindings = allFindings.filter((item) => severityRank(item.severity) >= 3).sort((a, b) => severityRank(b.severity) - severityRank(a.severity));
-  const supplementalFindings = allFindings.filter((item) => !keyFindings.includes(item));
+  const supplementalFindings = allFindings.filter((item) => !keyFindings.includes(item) && !supportTitles.has(item.title));
+  const supportOnlyFindings = allFindings.filter((item) => supportTitles.has(item.title) && !keyFindings.includes(item));
   const verdict = keyFindings.some((item) => String(item.severity).toLowerCase() === 'high') ? 'fail' : keyFindings.length ? 'needs_revision' : 'conditional_pass';
   const verdictLabel = { conditional_pass: '有条件通过', needs_revision: '需要修改', fail: '不通过' }[verdict];
   const topRisks = unique(keyFindings.slice(0, 5).map((item) => item.title));
+  const moduleResults = enabledModules.map((moduleName) => {
+    const modulePackets = hermesPackets.filter((packet) => Array.isArray(packet.metadata && packet.metadata.review_modules) && packet.metadata.review_modules.includes(moduleName));
+    const moduleFindings = allFindings.filter((item) => item.raw_data && item.raw_data.module_name === moduleName);
+    return {
+      moduleName,
+      title: moduleLabel(moduleName),
+      packetCount: modulePackets.length,
+      findingCount: moduleFindings.length,
+      effective: modulePackets.some((packet) => packetEffectiveForModule(packet, moduleName)),
+      status: modulePackets.some((packet) => packetEffectiveForModule(packet, moduleName)) ? (moduleFindings.length ? '发现问题或复核要求' : '已形成证据化结论') : '无有效结论',
+      findings: moduleFindings
+    };
+  });
+  const evidenceBoundaries = unique([
+    ...allFindings.filter((item) => ['evidence_gap', 'visibility_gap'].includes(String(item.evidence_status))).map((item) => item.title),
+    ...(((reviewContext.parseResult || {}).parseWarnings) || [])
+  ]);
+  const manualReviewItems = allFindings.filter((item) => item.manual_review_needed || ['evidence_gap', 'visibility_gap'].includes(String(item.evidence_status))).map((item) => item.title);
+  const basisSources = (((reviewContext.resolvedBasisProfile || {}).basis_documents) || []).map((item) => item.title || item.basis_id).slice(0, 12);
   const traceability = flatten([
     Array.isArray(aiReviewResult && aiReviewResult.traceability) ? aiReviewResult.traceability : [],
     allFindings.map((finding) => ({
@@ -1482,6 +1914,7 @@ function main({ reviewContext, aiReviewResult, deterministicReviewResult, suppor
     top_risks: topRisks,
     key_findings: keyFindings,
     supplemental_findings: supplementalFindings,
+    support_findings: supportOnlyFindings,
     traceability,
     report_markdown: '',
     metadata: {
@@ -1510,6 +1943,9 @@ function main({ reviewContext, aiReviewResult, deterministicReviewResult, suppor
       '',
       summary,
       '',
+      '## 模块结果',
+      ...(moduleResults.length ? moduleResults.map((item) => '- ' + item.title + '：' + item.status + '；有效 reviewer=' + item.packetCount + '；问题/复核项=' + item.findingCount) : ['- 未启用审查模块']),
+      '',
       '## 重点风险',
       ...(topRisks.length ? topRisks.map((item) => '- ' + item) : ['- 未识别到需要单列的高风险事项']),
       '',
@@ -1517,14 +1953,31 @@ function main({ reviewContext, aiReviewResult, deterministicReviewResult, suppor
       ...(keyFindings.length ? keyFindings.map((item) => '- [' + item.severity + '] ' + item.title + '：' + item.summary) : ['- 无']),
       '',
       '## 补充问题',
-      ...(supplementalFindings.length ? supplementalFindings.slice(0, 10).map((item) => '- [' + item.severity + '] ' + item.title + '：' + item.summary) : ['- 无'])
+      ...(supplementalFindings.length ? supplementalFindings.slice(0, 12).map((item) => '- [' + item.severity + '] ' + item.title + '：' + item.summary) : ['- 无']),
+      '',
+      '## 证据边界',
+      ...(evidenceBoundaries.length ? evidenceBoundaries.map((item) => '- ' + item) : ['- 未识别到需要单列的证据边界']),
+      '',
+      '## 审查依据来源',
+      ...(basisSources.length ? basisSources.map((item) => '- ' + item) : ['- 当前配置未解析到正式依据文件，需人工确认依据范围']),
+      '',
+      '## 整改建议',
+      ...(allFindings.length ? allFindings.slice(0, 12).map((item) => '- ' + (item.suggestion || ('请闭环处置：' + item.title))) : ['- 未形成单列整改建议']),
+      '',
+      '## 人工复核要求',
+      ...(manualReviewItems.length ? unique(manualReviewItems).map((item) => '- ' + item) : ['- 未形成必须人工复核的单列事项']),
+      '',
+      '## Traceability',
+      ...(traceability.length ? traceability.slice(0, 20).map((item) => '- finding=' + (item.findingId || item.finding_id || '') + '；module=' + (item.moduleName || item.module_name || '') + '；basis=' + ((item.basisIds || []).join(',') || '未绑定')) : ['- 未形成可追踪项'])
     ].join('\n');
     reportPrintCss = ['body { font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif; color: #111827; line-height: 1.7; }', '.structured-report__section { margin-bottom: 24px; }', '.structured-report__muted { color: #6b7280; font-size: 12px; }', '.structured-report__table-wrap { overflow-x: auto; overscroll-behavior-x: contain; }', '@media print { .structured-report__table-wrap { overflow: visible; } }'].join('\n');
     reportHtml = '<html><head><meta charset="utf-8" /><style>' + reportPrintCss + '</style></head><body>' +
       '<h1>' + title + '</h1>' +
       '<p>' + summary + '</p>' +
+      '<div class="structured-report__section"><h2>模块结果</h2><ul>' + moduleResults.map((item) => '<li>' + item.title + '：' + item.status + '</li>').join('') + '</ul></div>' +
       '<div class="structured-report__section"><h2>重点风险</h2><ul>' + (topRisks.length ? topRisks.map((item) => '<li>' + item + '</li>').join('') : '<li>未识别到需要单列的高风险事项</li>') + '</ul></div>' +
       '<div class="structured-report__section"><h2>关键问题</h2><ul>' + (keyFindings.length ? keyFindings.map((item) => '<li>[' + item.severity + '] ' + item.title + '：' + item.summary + '</li>').join('') : '<li>无</li>') + '</ul></div>' +
+      '<div class="structured-report__section"><h2>证据边界</h2><ul>' + (evidenceBoundaries.length ? evidenceBoundaries.map((item) => '<li>' + item + '</li>').join('') : '<li>未识别到需要单列的证据边界</li>') + '</ul></div>' +
       '</body></html>';
     finalReportViewModel = {
       reviewId: reviewContext.reviewId,
@@ -1545,6 +1998,11 @@ function main({ reviewContext, aiReviewResult, deterministicReviewResult, suppor
         title: moduleLabel(moduleName),
         findings: allFindings.filter((item) => item.raw_data && item.raw_data.module_name === moduleName)
       })),
+      moduleResults,
+      evidenceBoundaries,
+      manualReviewItems: unique(manualReviewItems),
+      basisSources,
+      traceability,
       normativeValidityChecks: allFindings.flatMap((item) => item.raw_data && Array.isArray(item.raw_data.normativeValidityChecks) ? item.raw_data.normativeValidityChecks : [])
     };
     finalAnswer = finalReportMarkdown;
@@ -1570,6 +2028,54 @@ function main({ reviewContext, aiReviewResult, deterministicReviewResult, suppor
 `);
 }
 
+function reviewConfigWorkflow(governanceSnapshot) {
+  const inputKeys = [
+    ['documentType', '文档类型', 'string'],
+    ['enabledModules', '启用模块', 'arrayString'],
+    ['focusRequirements', '关注点', 'arrayString'],
+    ['strictMode', '严格模式', 'boolean']
+  ];
+  const nodes = [
+    pluginConfigNode(pos(0, 0)),
+    pluginInputNode(
+      inputKeys.map(([key, label, valueType]) => inputRef(key, label, valueType, undefined, label)),
+      inputKeys.map(([key, label, valueType]) => outputHidden(key, valueType, label)),
+      pos(420, 0)
+    ),
+    codeNode({
+      nodeId: 'resolveReviewConfig',
+      name: '解析方案类型配置',
+      intro: '输出 document_type_registry、scheme_config 路由结果与 reviewer 配置。',
+      position: pos(980, 0),
+      code: reviewConfigCode(governanceSnapshot),
+      inputs: [
+        inputRef('documentType', 'documentType', 'string', ['pluginInput', 'documentType']),
+        inputRef('enabledModules', 'enabledModules', 'arrayString', ['pluginInput', 'enabledModules']),
+        inputRef('focusRequirements', 'focusRequirements', 'arrayString', ['pluginInput', 'focusRequirements']),
+        inputRef('strictMode', 'strictMode', 'boolean', ['pluginInput', 'strictMode'])
+      ],
+      outputs: [
+        outputDynamic('documentTypeRegistry', 'arrayObject'),
+        outputDynamic('reviewConfig', 'object'),
+        outputDynamic('defaultEnabledModules', 'arrayString'),
+        outputDynamic('reviewerConfigs', 'arrayObject'),
+        outputDynamic('degraded', 'boolean'),
+        outputDynamic('degradedReason', 'string')
+      ]
+    }),
+    pluginOutputNode([
+      pluginOutputRef('documentTypeRegistry', 'documentTypeRegistry', 'arrayObject', ['resolveReviewConfig', 'documentTypeRegistry']),
+      pluginOutputRef('reviewConfig', 'reviewConfig', 'object', ['resolveReviewConfig', 'reviewConfig']),
+      pluginOutputRef('defaultEnabledModules', 'defaultEnabledModules', 'arrayString', ['resolveReviewConfig', 'defaultEnabledModules']),
+      pluginOutputRef('reviewerConfigs', 'reviewerConfigs', 'arrayObject', ['resolveReviewConfig', 'reviewerConfigs']),
+      pluginOutputRef('degraded', 'degraded', 'boolean', ['resolveReviewConfig', 'degraded']),
+      pluginOutputRef('degradedReason', 'degradedReason', 'string', ['resolveReviewConfig', 'degradedReason'])
+    ], pos(1480, 0))
+  ];
+  const edges = [makeEdge('pluginInput', 'resolveReviewConfig'), makeEdge('resolveReviewConfig', 'pluginOutput')];
+  return { nodes, edges, chatConfig: {} };
+}
+
 function reviewContextWorkflow(governanceSnapshot, datasetManifest) {
   const inputKeys = [
     ['reviewId', '审查任务 ID', 'string'],
@@ -1582,7 +2088,8 @@ function reviewContextWorkflow(governanceSnapshot, datasetManifest) {
     ['strictMode', '严格模式', 'boolean'],
     ['targetFileUrls', '目标文件 URL', 'arrayString'],
     ['basisFileUrls', '依据文件 URL', 'arrayString'],
-    ['contextFileUrls', '补充上下文 URL', 'arrayString']
+    ['contextFileUrls', '补充上下文 URL', 'arrayString'],
+    ['reviewConfig', '审查配置', 'object']
   ];
   const nodes = [
     pluginConfigNode(pos(0, 0)),
@@ -1610,6 +2117,7 @@ function reviewContextWorkflow(governanceSnapshot, datasetManifest) {
         inputRef('targetFileUrls', 'targetFileUrls', 'arrayString', ['pluginInput', 'targetFileUrls']),
         inputRef('basisFileUrls', 'basisFileUrls', 'arrayString', ['pluginInput', 'basisFileUrls']),
         inputRef('contextFileUrls', 'contextFileUrls', 'arrayString', ['pluginInput', 'contextFileUrls']),
+        inputRef('reviewConfig', 'reviewConfig', 'object', ['pluginInput', 'reviewConfig']),
         inputRef('documentText', 'documentText', 'string', ['readTargetFiles', 'system_text'])
       ],
       outputs: [
@@ -1622,7 +2130,8 @@ function reviewContextWorkflow(governanceSnapshot, datasetManifest) {
         outputDynamic('resolvedProfile', 'object'),
         outputDynamic('resolvedBasisProfile', 'object'),
         outputDynamic('governedDatasetScope', 'object'),
-        outputDynamic('supportPacketBase', 'object')
+        outputDynamic('supportPacketBase', 'object'),
+        outputDynamic('reviewConfig', 'object')
       ]
     }),
     pluginOutputNode([
@@ -1635,7 +2144,8 @@ function reviewContextWorkflow(governanceSnapshot, datasetManifest) {
       pluginOutputRef('resolvedProfile', 'resolvedProfile', 'object', ['buildReviewContext', 'resolvedProfile']),
       pluginOutputRef('resolvedBasisProfile', 'resolvedBasisProfile', 'object', ['buildReviewContext', 'resolvedBasisProfile']),
       pluginOutputRef('governedDatasetScope', 'governedDatasetScope', 'object', ['buildReviewContext', 'governedDatasetScope']),
-      pluginOutputRef('supportPacketBase', 'supportPacketBase', 'object', ['buildReviewContext', 'supportPacketBase'])
+      pluginOutputRef('supportPacketBase', 'supportPacketBase', 'object', ['buildReviewContext', 'supportPacketBase']),
+      pluginOutputRef('reviewConfig', 'reviewConfig', 'object', ['buildReviewContext', 'reviewConfig'])
     ], pos(1740, 0))
   ];
   const edges = [
@@ -1674,29 +2184,74 @@ function aiReviewWorkflow(governanceSnapshot) {
       outputs: [
         outputDynamic('selectedAiTemplates', 'arrayObject'),
         outputDynamic('selectedReviewerIds', 'arrayString'),
-        outputDynamic('aiPrompt', 'string'),
+        outputDynamic('modulePrompts', 'object'),
+        outputDynamic('structurePrompt', 'string'),
+        outputDynamic('parameterPrompt', 'string'),
+        outputDynamic('legalityPrompt', 'string'),
+        outputDynamic('executionPrompt', 'string'),
+        outputDynamic('evidencePrompt', 'string'),
         outputDynamic('aiModel', 'string')
       ]
     }),
     chatNode({
-      nodeId: 'runAiReview',
-      name: '执行 AI 主审',
-      intro: '统一执行结构化 AI 审查并返回 reviewer 分包。',
+      nodeId: 'runStructureReview',
+      name: '执行文档完整性主审',
+      intro: '按模块分组执行结构化 AI 审查：文档完整性。',
       position: pos(1380, 0),
       modelValue: AI_MODEL_PLACEHOLDER,
       systemPrompt: '你是 Hermes 结构化审查主审执行器。必须严格输出 JSON，不得输出解释、代码块外文字或额外说明。',
-      userChatInputRef: ['prepareAiReview', 'aiPrompt']
+      userChatInputRef: ['prepareAiReview', 'structurePrompt']
+    }),
+    chatNode({
+      nodeId: 'runParameterReview',
+      name: '执行内容一致性主审',
+      intro: '按模块分组执行结构化 AI 审查：内容一致性。',
+      position: pos(1860, -180),
+      modelValue: AI_MODEL_PLACEHOLDER,
+      systemPrompt: '你是 Hermes 结构化审查主审执行器。必须严格输出 JSON，不得输出解释、代码块外文字或额外说明。',
+      userChatInputRef: ['prepareAiReview', 'parameterPrompt']
+    }),
+    chatNode({
+      nodeId: 'runLegalityReview',
+      name: '执行合规主审',
+      intro: '按模块分组执行结构化 AI 审查：合规审查。',
+      position: pos(2340, 0),
+      modelValue: AI_MODEL_PLACEHOLDER,
+      systemPrompt: '你是 Hermes 结构化审查主审执行器。必须严格输出 JSON，不得输出解释、代码块外文字或额外说明。',
+      userChatInputRef: ['prepareAiReview', 'legalityPrompt']
+    }),
+    chatNode({
+      nodeId: 'runExecutionReview',
+      name: '执行技术方案主审',
+      intro: '按模块分组执行结构化 AI 审查：技术方案审查。',
+      position: pos(2820, -180),
+      modelValue: AI_MODEL_PLACEHOLDER,
+      systemPrompt: '你是 Hermes 结构化审查主审执行器。必须严格输出 JSON，不得输出解释、代码块外文字或额外说明。',
+      userChatInputRef: ['prepareAiReview', 'executionPrompt']
+    }),
+    chatNode({
+      nodeId: 'runEvidenceReview',
+      name: '执行依据与验证主审',
+      intro: '按模块分组执行结构化 AI 审查：依据与验证。',
+      position: pos(3300, 0),
+      modelValue: AI_MODEL_PLACEHOLDER,
+      systemPrompt: '你是 Hermes 结构化审查主审执行器。必须严格输出 JSON，不得输出解释、代码块外文字或额外说明。',
+      userChatInputRef: ['prepareAiReview', 'evidencePrompt']
     }),
     codeNode({
       nodeId: 'normalizeAiReview',
       name: '归一化 AI 结果',
       intro: '将 AI 输出转换为 reviewerPackets，并对缺失 reviewer 执行 degrade。',
-      position: pos(1860, 0),
+      position: pos(3780, 0),
       code: aiReviewNormalizeCode(governanceSnapshot),
       inputs: [
         inputRef('reviewContext', 'reviewContext', 'object', ['pluginInput', 'reviewContext']),
         inputRef('selectedAiTemplates', 'selectedAiTemplates', 'arrayObject', ['prepareAiReview', 'selectedAiTemplates']),
-        inputRef('aiAnswerText', 'aiAnswerText', 'string', ['runAiReview', 'answerText'])
+        inputRef('structureAnswerText', 'structureAnswerText', 'string', ['runStructureReview', 'answerText']),
+        inputRef('parameterAnswerText', 'parameterAnswerText', 'string', ['runParameterReview', 'answerText']),
+        inputRef('legalityAnswerText', 'legalityAnswerText', 'string', ['runLegalityReview', 'answerText']),
+        inputRef('executionAnswerText', 'executionAnswerText', 'string', ['runExecutionReview', 'answerText']),
+        inputRef('evidenceAnswerText', 'evidenceAnswerText', 'string', ['runEvidenceReview', 'answerText'])
       ],
       outputs: [
         outputDynamic('aiReviewResult', 'object'),
@@ -1708,12 +2263,16 @@ function aiReviewWorkflow(governanceSnapshot) {
       pluginOutputRef('aiReviewResult', 'aiReviewResult', 'object', ['normalizeAiReview', 'aiReviewResult']),
       pluginOutputRef('reviewerPackets', 'reviewerPackets', 'arrayObject', ['normalizeAiReview', 'reviewerPackets']),
       pluginOutputRef('traceability', 'traceability', 'arrayObject', ['normalizeAiReview', 'traceability'])
-    ], pos(2320, 0))
+    ], pos(4240, 0))
   ];
   const edges = [
     makeEdge('pluginInput', 'prepareAiReview'),
-    makeEdge('prepareAiReview', 'runAiReview'),
-    makeEdge('runAiReview', 'normalizeAiReview'),
+    makeEdge('prepareAiReview', 'runStructureReview'),
+    makeEdge('runStructureReview', 'runParameterReview'),
+    makeEdge('runParameterReview', 'runLegalityReview'),
+    makeEdge('runLegalityReview', 'runExecutionReview'),
+    makeEdge('runExecutionReview', 'runEvidenceReview'),
+    makeEdge('runEvidenceReview', 'normalizeAiReview'),
     makeEdge('normalizeAiReview', 'pluginOutput')
   ];
   return { nodes, edges, chatConfig: {} };
@@ -1882,11 +2441,32 @@ function mainWorkflow(docTypeLabels) {
       ]
     }),
     pluginModuleNode({
+      nodeId: 'callReviewConfigWft',
+      name: '调用 hermes_review_config_wft',
+      intro: '按 documentType 解析平台注册表、方案配置和 reviewer 配置。',
+      position: pos(900, 0),
+      pluginId: TOOL_DEFS[0].placeholder,
+      inputs: [
+        inputRef('documentType', 'documentType', 'string', ['normalizeInput', 'documentType']),
+        inputRef('enabledModules', 'enabledModules', 'arrayString', ['normalizeInput', 'enabledModules']),
+        inputRef('focusRequirements', 'focusRequirements', 'arrayString', ['normalizeInput', 'focusRequirements']),
+        inputRef('strictMode', 'strictMode', 'boolean', ['normalizeInput', 'strictMode'])
+      ],
+      outputs: [
+        outputDynamic('documentTypeRegistry', 'arrayObject'),
+        outputDynamic('reviewConfig', 'object'),
+        outputDynamic('defaultEnabledModules', 'arrayString'),
+        outputDynamic('reviewerConfigs', 'arrayObject'),
+        outputDynamic('degraded', 'boolean'),
+        outputDynamic('degradedReason', 'string')
+      ]
+    }),
+    pluginModuleNode({
       nodeId: 'callReviewContextWft',
       name: '调用 hermes_review_context_wft',
       intro: '解析文档与治理快照。',
-      position: pos(900, 0),
-      pluginId: TOOL_DEFS[0].placeholder,
+      position: pos(1380, 0),
+      pluginId: TOOL_DEFS[1].placeholder,
       inputs: [
         inputRef('reviewId', 'reviewId', 'string', ['normalizeInput', 'reviewId']),
         inputRef('query', 'query', 'string', ['normalizeInput', 'query']),
@@ -1898,7 +2478,8 @@ function mainWorkflow(docTypeLabels) {
         inputRef('strictMode', 'strictMode', 'boolean', ['normalizeInput', 'strictMode']),
         inputRef('targetFileUrls', 'targetFileUrls', 'arrayString', ['normalizeInput', 'targetFileUrls']),
         inputRef('basisFileUrls', 'basisFileUrls', 'arrayString', ['normalizeInput', 'basisFileUrls']),
-        inputRef('contextFileUrls', 'contextFileUrls', 'arrayString', ['normalizeInput', 'contextFileUrls'])
+        inputRef('contextFileUrls', 'contextFileUrls', 'arrayString', ['normalizeInput', 'contextFileUrls']),
+        inputRef('reviewConfig', 'reviewConfig', 'object', ['callReviewConfigWft', 'reviewConfig'])
       ],
       outputs: [
         outputDynamic('reviewContext', 'object'),
@@ -1910,15 +2491,16 @@ function mainWorkflow(docTypeLabels) {
         outputDynamic('resolvedProfile', 'object'),
         outputDynamic('resolvedBasisProfile', 'object'),
         outputDynamic('governedDatasetScope', 'object'),
-        outputDynamic('supportPacketBase', 'object')
+        outputDynamic('supportPacketBase', 'object'),
+        outputDynamic('reviewConfig', 'object')
       ]
     }),
     pluginModuleNode({
       nodeId: 'callAiReviewWft',
       name: '调用 hermes_ai_review_wft',
       intro: '执行 AI 主审 reviewer。',
-      position: pos(1380, 0),
-      pluginId: TOOL_DEFS[1].placeholder,
+      position: pos(1860, 0),
+      pluginId: TOOL_DEFS[2].placeholder,
       inputs: [
         inputRef('reviewContext', 'reviewContext', 'object', ['callReviewContextWft', 'reviewContext']),
         inputRef('reviewId', 'reviewId', 'string', ['normalizeInput', 'reviewId']),
@@ -1936,8 +2518,8 @@ function mainWorkflow(docTypeLabels) {
       nodeId: 'callDeterministicWft',
       name: '调用 hermes_deterministic_review_wft',
       intro: '执行确定性审查与 calculation fallback。',
-      position: pos(1860, 0),
-      pluginId: TOOL_DEFS[2].placeholder,
+      position: pos(2340, 0),
+      pluginId: TOOL_DEFS[3].placeholder,
       inputs: [
         inputRef('reviewContext', 'reviewContext', 'object', ['callReviewContextWft', 'reviewContext']),
         inputRef('aiReviewResult', 'aiReviewResult', 'object', ['callAiReviewWft', 'aiReviewResult'])
@@ -1951,8 +2533,8 @@ function mainWorkflow(docTypeLabels) {
       nodeId: 'callSupportWft',
       name: '调用 hermes_support_008_wft',
       intro: '整理 008 支撑层结果。',
-      position: pos(2340, 0),
-      pluginId: TOOL_DEFS[3].placeholder,
+      position: pos(2820, 0),
+      pluginId: TOOL_DEFS[4].placeholder,
       inputs: [inputRef('reviewContext', 'reviewContext', 'object', ['callReviewContextWft', 'reviewContext'])],
       outputs: [
         outputDynamic('supportReviewResult', 'object'),
@@ -1966,8 +2548,8 @@ function mainWorkflow(docTypeLabels) {
       nodeId: 'callFinalAssemblerWft',
       name: '调用 hermes_final_assembler_wft',
       intro: '执行 fail-closed 与正式/降级输出。',
-      position: pos(2820, 0),
-      pluginId: TOOL_DEFS[4].placeholder,
+      position: pos(3300, 0),
+      pluginId: TOOL_DEFS[5].placeholder,
       inputs: [
         inputRef('reviewContext', 'reviewContext', 'object', ['callReviewContextWft', 'reviewContext']),
         inputRef('aiReviewResult', 'aiReviewResult', 'object', ['callAiReviewWft', 'aiReviewResult']),
@@ -1991,27 +2573,28 @@ function mainWorkflow(docTypeLabels) {
       nodeId: 'routeFinalReply',
       name: '判断是否降级',
       intro: '正式报告与降级结果二选一。',
-      position: pos(3300, 0),
+      position: pos(3780, 0),
       variableRef: ['callFinalAssemblerWft', 'degraded']
     }),
     answerNode({
       nodeId: 'formalReply',
       name: '正式报告输出',
       intro: '输出正式 Markdown 报告。',
-      position: pos(3720, -240),
+      position: pos(4200, -240),
       textValue: ['callFinalAssemblerWft', 'finalReportMarkdown']
     }),
     answerNode({
       nodeId: 'degradedReply',
       name: '降级结果输出',
       intro: '输出 fail-closed 说明。',
-      position: pos(3720, 240),
+      position: pos(4200, 240),
       textValue: ['callFinalAssemblerWft', 'finalAnswer']
     })
   ];
   const edges = [
     makeEdge('workflowStart', 'normalizeInput'),
-    makeEdge('normalizeInput', 'callReviewContextWft'),
+    makeEdge('normalizeInput', 'callReviewConfigWft'),
+    makeEdge('callReviewConfigWft', 'callReviewContextWft'),
     makeEdge('callReviewContextWft', 'callAiReviewWft'),
     makeEdge('callAiReviewWft', 'callDeterministicWft'),
     makeEdge('callDeterministicWft', 'callSupportWft'),
@@ -2153,6 +2736,7 @@ export function generateBundle({ repoRoot }) {
 
   const { governanceSnapshot, datasetManifest } = loadGovernance({ repoRoot });
   const toolWorkflows = {
+    hermes_review_config_wft: reviewConfigWorkflow(governanceSnapshot),
     hermes_review_context_wft: reviewContextWorkflow(governanceSnapshot, datasetManifest),
     hermes_ai_review_wft: aiReviewWorkflow(governanceSnapshot),
     hermes_deterministic_review_wft: deterministicWorkflow(governanceSnapshot),
