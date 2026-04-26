@@ -6,9 +6,11 @@
     "export:assets": "python3 ./scripts/export_governed_assets.py",
     "generate:workflow": "node ./scripts/generate_workflow.mjs",
     "generate:parity": "node ./scripts/generate_parity_matrix.mjs",
-    "generate:all": "npm run export:assets && npm run generate:workflow && npm run generate:parity",
+    "generate:all": "npm run export:assets && npm run generate:workflow && npm run link:local && npm run generate:parity",
+    "build:delivery": "node ./scripts/build_delivery_package.mjs",
     "test": "vitest run",
     "link:workflow": "node ./scripts/apply_runtime_overrides.mjs",
+    "link:local": "node ./scripts/apply_runtime_overrides.mjs ../../artifacts/fastgpt/workflow_tool_registry.local.json",
     "validate:bundle": "npm run generate:all",
     "legacy:build-pkg": "bash ./scripts/build_fastgpt_pkg.sh"
   },

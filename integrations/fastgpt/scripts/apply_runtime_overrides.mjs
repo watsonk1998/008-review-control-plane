@@ -13,6 +13,23 @@ function writeJson(file, payload) {
   fs.writeFileSync(file, `${JSON.stringify(payload, null, 2)}\n`);
 }
 
+function collectPlaceholders(value, acc = new Set()) {
+  if (typeof value === 'string') {
+    for (const match of value.matchAll(/__[^"\s]+__/g)) {
+      acc.add(match[0]);
+    }
+    return acc;
+  }
+  if (Array.isArray(value)) {
+    value.forEach((item) => collectPlaceholders(item, acc));
+    return acc;
+  }
+  if (value && typeof value === 'object') {
+    Object.values(value).forEach((item) => collectPlaceholders(item, acc));
+  }
+  return acc;
+}
+
 function replaceDeep(value, replacements) {
   if (typeof value === 'string') {
     let next = value;
@@ -50,15 +67,35 @@ const replacements = {
 
 const mainWorkflow = readJson(path.join(artifactsDir, 'hermes-main-review.workflow.json'));
 const mainCreate = readJson(path.join(artifactsDir, 'hermes-main-review.create.json'));
-writeJson(path.join(artifactsDir, 'hermes-main-review.linked.workflow.json'), replaceDeep(mainWorkflow, replacements));
-writeJson(path.join(artifactsDir, 'hermes-main-review.linked.create.json'), replaceDeep(mainCreate, replacements));
+const linkedArtifacts = [];
+
+const linkedMainWorkflow = replaceDeep(mainWorkflow, replacements);
+const linkedMainCreate = replaceDeep(mainCreate, replacements);
+writeJson(path.join(artifactsDir, 'hermes-main-review.linked.workflow.json'), linkedMainWorkflow);
+writeJson(path.join(artifactsDir, 'hermes-main-review.linked.create.json'), linkedMainCreate);
+linkedArtifacts.push(['hermes-main-review.linked.workflow.json', linkedMainWorkflow]);
+linkedArtifacts.push(['hermes-main-review.linked.create.json', linkedMainCreate]);
 
 const workflowToolsDir = path.join(artifactsDir, 'workflow-tools');
 for (const file of fs.readdirSync(workflowToolsDir)) {
   if (!file.endsWith('.json')) continue;
+  if (file.includes('.linked.')) continue;
   const source = readJson(path.join(workflowToolsDir, file));
   const targetName = file.replace(/\.json$/, '.linked.json');
-  writeJson(path.join(workflowToolsDir, targetName), replaceDeep(source, replacements));
+  const linked = replaceDeep(source, replacements);
+  writeJson(path.join(workflowToolsDir, targetName), linked);
+  linkedArtifacts.push([path.join('workflow-tools', targetName), linked]);
 }
 
 console.log(`已根据 ${registryPath} 生成 linked 工作流与工作流工具 JSON。`);
+
+const unresolved = linkedArtifacts
+  .map(([name, payload]) => [name, [...collectPlaceholders(payload)].sort()])
+  .filter(([, placeholders]) => placeholders.length > 0);
+
+if (unresolved.length) {
+  console.warn('警告：以下 linked JSON 仍包含未替换占位符，请在导入前确认是否需要补齐：');
+  for (const [name, placeholders] of unresolved) {
+    console.warn(`- ${name}: ${placeholders.join(', ')}`);
+  }
+}

@@ -673,8 +673,12 @@ function normalizeMultilineCode(code) {
   return code.trim().replace(/^\n+/, '');
 }
 
+function jsJsonParseLiteral(value) {
+  return `JSON.parse(${JSON.stringify(JSON.stringify(value))})`;
+}
+
 function mainNormalizeCode(docTypeLabels) {
-  return normalizeMultilineCode(`
+  return normalizeMultilineCode(String.raw`
 function main({ userChatInput, userFiles, documentTypeRaw, disciplineTagsRaw, enabledModulesRaw, disabledModulesRaw, focusRequirementsRaw, strictModeRaw }) {
   function toArray(value) {
     if (Array.isArray(value)) return value.filter(Boolean);
@@ -729,9 +733,11 @@ function main({ userChatInput, userFiles, documentTypeRaw, disciplineTagsRaw, en
 `);
 }
 
-function reviewContextCode() {
-  return normalizeMultilineCode(`
-function main({ reviewId, query, documentType, disciplineTags, enabledModules, disabledModules, focusRequirements, strictMode, targetFileUrls, basisFileUrls, contextFileUrls, documentText, governanceSnapshot, datasetManifest }) {
+function reviewContextCode(governanceSnapshot, datasetManifest) {
+  return normalizeMultilineCode(String.raw`
+function main({ reviewId, query, documentType, disciplineTags, enabledModules, disabledModules, focusRequirements, strictMode, targetFileUrls, basisFileUrls, contextFileUrls, documentText }) {
+  const GOVERNANCE_SNAPSHOT = ${jsJsonParseLiteral(governanceSnapshot)};
+  const DATASET_MANIFEST = ${jsJsonParseLiteral(datasetManifest)};
   function toArray(value) {
     if (Array.isArray(value)) return value.filter(Boolean);
     if (value == null || value === '') return [];
@@ -862,7 +868,8 @@ function main({ reviewId, query, documentType, disciplineTags, enabledModules, d
       manualReviewReason: attachmentMatches.length ? '正文引用了附件、附图或外部材料，需人工结合原件复核。' : null
     };
   }
-  const snapshot = governanceSnapshot || {};
+  const snapshot = GOVERNANCE_SNAPSHOT || {};
+  const datasetManifest = DATASET_MANIFEST || {};
   const parsed = parseDocument(documentText || '');
   const visibility = parseVisibility(parsed.normalizedText);
   visibility.counts.sectionCount = parsed.sections.length;
@@ -1027,12 +1034,13 @@ function main({ reviewId, query, documentType, disciplineTags, enabledModules, d
 `);
 }
 
-function aiReviewPrepareCode() {
-  return normalizeMultilineCode(`
-function main({ reviewContext, governanceSnapshot, aiModel }) {
+function aiReviewPrepareCode(governanceSnapshot) {
+  return normalizeMultilineCode(String.raw`
+function main({ reviewContext, aiModel }) {
+  const GOVERNANCE_SNAPSHOT = ${jsJsonParseLiteral(governanceSnapshot)};
   function unique(list) { return Array.from(new Set((list || []).filter(Boolean))); }
   function lower(value) { return String(value || '').toLowerCase(); }
-  const snapshot = governanceSnapshot || {};
+  const snapshot = GOVERNANCE_SNAPSHOT || {};
   const moduleBindings = snapshot.moduleBindings || {};
   const templateManifest = snapshot.templateManifest || [];
   const enabledModules = Array.isArray(reviewContext && reviewContext.enabledModules) ? reviewContext.enabledModules : [];
@@ -1096,9 +1104,10 @@ function main({ reviewContext, governanceSnapshot, aiModel }) {
 `);
 }
 
-function aiReviewNormalizeCode() {
-  return normalizeMultilineCode(`
-function main({ reviewContext, governanceSnapshot, selectedAiTemplates, aiAnswerText }) {
+function aiReviewNormalizeCode(governanceSnapshot) {
+  return normalizeMultilineCode(String.raw`
+function main({ reviewContext, selectedAiTemplates, aiAnswerText }) {
+  const GOVERNANCE_SNAPSHOT = ${jsJsonParseLiteral(governanceSnapshot)};
   function unique(list) { return Array.from(new Set((list || []).filter(Boolean))); }
   function parseJson(text) {
     const raw = String(text || '').trim();
@@ -1120,7 +1129,7 @@ function main({ reviewContext, governanceSnapshot, selectedAiTemplates, aiAnswer
     const normalized = String(value || 'low').toLowerCase();
     return ['high', 'medium', 'low', 'info'].includes(normalized) ? normalized : 'low';
   }
-  const snapshot = governanceSnapshot || {};
+  const snapshot = GOVERNANCE_SNAPSHOT || {};
   const moduleBindings = snapshot.moduleBindings || {};
   const templateIdToModules = {};
   Object.keys(moduleBindings).forEach((moduleName) => {
@@ -1208,8 +1217,8 @@ function main({ reviewContext, governanceSnapshot, selectedAiTemplates, aiAnswer
 }
 
 function deterministicCode() {
-  return normalizeMultilineCode(`
-function main({ reviewContext, governanceSnapshot, aiReviewResult }) {
+  return normalizeMultilineCode(String.raw`
+function main({ reviewContext, aiReviewResult }) {
   function unique(list) { return Array.from(new Set((list || []).filter(Boolean))); }
   function severity(value) {
     const normalized = String(value || 'low').toLowerCase();
@@ -1339,7 +1348,7 @@ function main({ reviewContext, governanceSnapshot, aiReviewResult }) {
 }
 
 function support008Code() {
-  return normalizeMultilineCode(`
+  return normalizeMultilineCode(String.raw`
 function main({ reviewContext }) {
   function severity(value) {
     const normalized = String(value || 'low').toLowerCase();
@@ -1410,7 +1419,7 @@ function main({ reviewContext }) {
 }
 
 function finalAssemblerCode(docTypeLabels, moduleTitles) {
-  return normalizeMultilineCode(`
+  return normalizeMultilineCode(String.raw`
 function main({ reviewContext, aiReviewResult, deterministicReviewResult, supportReviewResult }) {
   const DOC_LABELS = ${JSON.stringify(docTypeLabels)};
   const MODULE_TITLES = ${JSON.stringify(moduleTitles)};
@@ -1588,7 +1597,7 @@ function reviewContextWorkflow(governanceSnapshot, datasetManifest) {
       name: '构建审查上下文',
       intro: '解析文档、治理快照与数据集清单。',
       position: pos(1260, 0),
-      code: reviewContextCode(),
+      code: reviewContextCode(governanceSnapshot, datasetManifest),
       inputs: [
         inputRef('reviewId', 'reviewId', 'string', ['pluginInput', 'reviewId']),
         inputRef('query', 'query', 'string', ['pluginInput', 'query']),
@@ -1601,9 +1610,7 @@ function reviewContextWorkflow(governanceSnapshot, datasetManifest) {
         inputRef('targetFileUrls', 'targetFileUrls', 'arrayString', ['pluginInput', 'targetFileUrls']),
         inputRef('basisFileUrls', 'basisFileUrls', 'arrayString', ['pluginInput', 'basisFileUrls']),
         inputRef('contextFileUrls', 'contextFileUrls', 'arrayString', ['pluginInput', 'contextFileUrls']),
-        inputRef('documentText', 'documentText', 'string', ['readTargetFiles', 'system_text']),
-        inputHidden('governanceSnapshot', 'object', governanceSnapshot),
-        inputHidden('datasetManifest', 'object', datasetManifest)
+        inputRef('documentText', 'documentText', 'string', ['readTargetFiles', 'system_text'])
       ],
       outputs: [
         outputDynamic('reviewContext', 'object'),
@@ -1659,10 +1666,9 @@ function aiReviewWorkflow(governanceSnapshot) {
       name: '选择 AI reviewer',
       intro: '根据模块绑定、文档类型与模板元数据确定实际运行 reviewer。',
       position: pos(900, 0),
-      code: aiReviewPrepareCode(),
+      code: aiReviewPrepareCode(governanceSnapshot),
       inputs: [
         inputRef('reviewContext', 'reviewContext', 'object', ['pluginInput', 'reviewContext']),
-        inputHidden('governanceSnapshot', 'object', governanceSnapshot),
         inputVar('aiModel', 'aiModel', 'string', AI_MODEL_PLACEHOLDER, 'FastGPT 模型占位符')
       ],
       outputs: [
@@ -1686,10 +1692,9 @@ function aiReviewWorkflow(governanceSnapshot) {
       name: '归一化 AI 结果',
       intro: '将 AI 输出转换为 reviewerPackets，并对缺失 reviewer 执行 degrade。',
       position: pos(1860, 0),
-      code: aiReviewNormalizeCode(),
+      code: aiReviewNormalizeCode(governanceSnapshot),
       inputs: [
         inputRef('reviewContext', 'reviewContext', 'object', ['pluginInput', 'reviewContext']),
-        inputHidden('governanceSnapshot', 'object', governanceSnapshot),
         inputRef('selectedAiTemplates', 'selectedAiTemplates', 'arrayObject', ['prepareAiReview', 'selectedAiTemplates']),
         inputRef('aiAnswerText', 'aiAnswerText', 'string', ['runAiReview', 'answerText'])
       ],
@@ -1734,7 +1739,6 @@ function deterministicWorkflow(governanceSnapshot) {
       code: deterministicCode(),
       inputs: [
         inputRef('reviewContext', 'reviewContext', 'object', ['pluginInput', 'reviewContext']),
-        inputHidden('governanceSnapshot', 'object', governanceSnapshot),
         inputRef('aiReviewResult', 'aiReviewResult', 'object', ['pluginInput', 'aiReviewResult'])
       ],
       outputs: [
@@ -2043,7 +2047,7 @@ function mainWorkflow(docTypeLabels) {
         canSelectCustomFileExtension: false,
         customFileExtensionList: []
       },
-      instruction: 'migrationMode=workflow+workflow-tools。主工作流仅做固定编排，不允许 LLM 自主跳过关键阶段；若 Hermes 主审结果不可用，必须 fail-closed。'
+      instruction: 'migrationMode=workflow+workflow-tools; bindingMode=bound; 主工作流仅做固定编排，不允许 LLM 自主跳过关键阶段；若 Hermes 主审结果不可用，必须 fail-closed。'
     }
   };
 }

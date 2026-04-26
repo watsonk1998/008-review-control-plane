@@ -35,8 +35,19 @@ const datasetManifest = readJson(path.join(governanceDir, 'dataset_manifest.json
 const templates = governanceSnapshot.template_manifest || governanceSnapshot.templateManifest || [];
 const moduleBindings = governanceSnapshot.module_bindings || governanceSnapshot.moduleBindings || {};
 const docTypes = governanceSnapshot.doc_type_labels || governanceSnapshot.docTypeLabels || {};
-const toolWorkflowFiles = fs.readdirSync(workflowToolsDir).filter((name) => name.endsWith('.workflow.json')).sort();
-const mainWorkflowPath = path.join(artifactsDir, 'hermes-main-review.workflow.json');
+const linkedMainWorkflowPath = path.join(artifactsDir, 'hermes-main-review.linked.workflow.json');
+const mainWorkflowPath = fs.existsSync(linkedMainWorkflowPath)
+  ? linkedMainWorkflowPath
+  : path.join(artifactsDir, 'hermes-main-review.workflow.json');
+const toolWorkflowFiles = fs
+  .readdirSync(workflowToolsDir)
+  .filter((name) => name.endsWith('.workflow.linked.json') || (!name.includes('.linked.') && name.endsWith('.workflow.json')))
+  .filter((name, index, list) => {
+    if (!name.endsWith('.workflow.json')) return true;
+    const linkedName = name.replace(/\.workflow\.json$/, '.workflow.linked.json');
+    return !list.includes(linkedName);
+  })
+  .sort();
 const allWorkflowFiles = [mainWorkflowPath, ...toolWorkflowFiles.map((name) => path.join(workflowToolsDir, name))];
 
 const validationRows = allWorkflowFiles.map((file) => {
@@ -53,11 +64,11 @@ const readiness = runPython('generate_import_readiness_report.py', [
 
 const rows = [
   ['迁移模式', '已实现', '`workflow+workflow-tools`；无 repo-owned Helper API，无 MCP。'],
-  ['主工作流', '已生成', '`hermes-main-review.workflow.json` 固定编排 5 个工作流工具。'],
+  ['主工作流', '已生成', '`hermes-main-review.linked.workflow.json` 固定编排 5 个工作流工具，并已绑定当前实例 AppId。'],
   ['工作流工具数量', '已生成', `${toolWorkflowFiles.length} 个：review_context / ai_review / deterministic_review / support_008 / final_assembler。`],
   ['工具模板 JSON', '已生成', '每个工具输出 `.template.json`，内部 `type=plugin`，UI 语义为工作流工具。'],
   ['工具创建 JSON', '已生成', '每个工具输出 `.create.json`，用于 OpenAPI 创建。'],
-  ['治理快照', '已生成', '`governance_snapshot.json` 来自 Python 真源，工作流代码节点只消费快照。'],
+  ['治理快照', '已生成', '`governance_snapshot.json` 来自 Python 真源，生成期静态治理数据已编译进 code node，避免 hidden object 运行态丢失。'],
   ['数据集清单', '已生成', `dataset manifest 覆盖 ${datasetManifest.entries.length} 个 profile 依据范围。`],
   ['文档类型覆盖', '已覆盖', Object.keys(docTypes).join('、')],
   ['审核模块覆盖', '已覆盖', Object.keys(moduleBindings).join('、')],
@@ -71,8 +82,9 @@ const rows = [
 const md = ['# Hermes -> FastGPT 工作流工具迁移矩阵', '', '| 能力 | 状态 | 说明 |', '|---|---|---|'];
 for (const row of rows) md.push(`| ${row[0]} | ${row[1]} | ${row[2]} |`);
 md.push('', '## 生成产物', '');
-md.push('- 主工作流：`/Users/lucas/repos/review/hermes-review-agent/artifacts/fastgpt/hermes-main-review.workflow.json`');
-md.push('- 主工作流创建 JSON：`/Users/lucas/repos/review/hermes-review-agent/artifacts/fastgpt/hermes-main-review.create.json`');
+md.push('- 主工作流导入 JSON：`/Users/lucas/repos/review/hermes-review-agent/artifacts/fastgpt/hermes-main-review.linked.workflow.json`');
+md.push('- 主工作流创建 JSON：`/Users/lucas/repos/review/hermes-review-agent/artifacts/fastgpt/hermes-main-review.linked.create.json`');
+md.push('- 未绑定源 JSON：`/Users/lucas/repos/review/hermes-review-agent/artifacts/fastgpt/hermes-main-review.workflow.json`');
 md.push('- 工作流工具目录：`/Users/lucas/repos/review/hermes-review-agent/artifacts/fastgpt/workflow-tools/`');
 md.push('- 治理快照目录：`/Users/lucas/repos/review/hermes-review-agent/artifacts/fastgpt/governance/`');
 md.push('- 运行时 ID 回填模板：`/Users/lucas/repos/review/hermes-review-agent/artifacts/fastgpt/workflow_tool_registry.template.json`');

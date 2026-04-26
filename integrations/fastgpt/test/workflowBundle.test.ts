@@ -1,12 +1,73 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import os from 'node:os';
 import { execFileSync } from 'node:child_process';
+import vm from 'node:vm';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { generateBundle } from '../scripts/workflow_bundle_lib.mjs';
 
 const repoRoot = path.resolve(path.dirname(new URL(import.meta.url).pathname), '../../..');
 const artifactsDir = path.join(repoRoot, 'artifacts', 'fastgpt');
 const workflowToolsDir = path.join(artifactsDir, 'workflow-tools');
+
+function workflowFiles() {
+  return [
+    path.join(artifactsDir, 'hermes-main-review.workflow.json'),
+    ...fs
+      .readdirSync(workflowToolsDir)
+      .filter((name) => name.endsWith('.workflow.json'))
+      .map((name) => path.join(workflowToolsDir, name))
+  ];
+}
+
+function readWorkflow(file: string) {
+  return JSON.parse(fs.readFileSync(file, 'utf8'));
+}
+
+function codeInput(node: any, key: string) {
+  return node.inputs.find((input: any) => input.key === key);
+}
+
+function runCodeNode(code: string, args: Record<string, unknown>) {
+  const script = new vm.Script(`${code}\nmain(__args);`, { filename: 'fastgpt-code-node.js' });
+  return script.runInNewContext({ __args: args }, { timeout: 3000 });
+}
+
+function snapshotLinkedArtifacts() {
+  const files = [
+    ...fs
+      .readdirSync(artifactsDir)
+      .filter((name) => name.includes('.linked.'))
+      .map((name) => path.join(artifactsDir, name)),
+    ...fs
+      .readdirSync(workflowToolsDir)
+      .filter((name) => name.includes('.linked.'))
+      .map((name) => path.join(workflowToolsDir, name))
+  ];
+
+  return new Map(files.map((file) => [file, fs.readFileSync(file, 'utf8')]));
+}
+
+function restoreLinkedArtifacts(snapshot: Map<string, string>) {
+  const currentFiles = [
+    ...fs
+      .readdirSync(artifactsDir)
+      .filter((name) => name.includes('.linked.'))
+      .map((name) => path.join(artifactsDir, name)),
+    ...fs
+      .readdirSync(workflowToolsDir)
+      .filter((name) => name.includes('.linked.'))
+      .map((name) => path.join(workflowToolsDir, name))
+  ];
+
+  for (const file of currentFiles) {
+    if (!snapshot.has(file)) fs.rmSync(file, { force: true });
+  }
+
+  for (const [file, content] of snapshot.entries()) {
+    fs.writeFileSync(file, content);
+  }
+}
 
 beforeAll(() => {
   generateBundle({ repoRoot });
@@ -42,6 +103,7 @@ describe('FastGPT workflow-tool bundle', () => {
   });
 
   it('links workflow-tool placeholder IDs from a runtime registry', () => {
+    const linkedSnapshot = snapshotLinkedArtifacts();
     const registryPath = path.join('/tmp', `hermes-fastgpt-registry-${Date.now()}.json`);
     const registry = JSON.parse(fs.readFileSync(path.join(artifactsDir, 'workflow_tool_registry.template.json'), 'utf8'));
     registry.aiModel = 'fastgpt-test-model';
@@ -64,11 +126,192 @@ describe('FastGPT workflow-tool bundle', () => {
       'wft_support_test',
       'wft_final_test'
     ]);
-    for (const file of fs.readdirSync(artifactsDir)) {
-      if (file.includes('.linked.')) fs.rmSync(path.join(artifactsDir, file), { force: true });
+    restoreLinkedArtifacts(linkedSnapshot);
+  });
+
+  it('builds a dashboard import package from workflow linked JSON, not create/template wrappers', () => {
+    execFileSync('node', [
+      path.join(repoRoot, 'integrations', 'fastgpt', 'scripts', 'apply_runtime_overrides.mjs'),
+      path.join(artifactsDir, 'workflow_tool_registry.local.json')
+    ], {
+      cwd: path.join(repoRoot, 'integrations', 'fastgpt')
+    });
+
+    const outDir = fs.mkdtempSync(path.join(os.tmpdir(), 'hermes-fastgpt-delivery-'));
+    execFileSync('node', [path.join(repoRoot, 'integrations', 'fastgpt', 'scripts', 'build_delivery_package.mjs'), outDir], {
+      cwd: path.join(repoRoot, 'integrations', 'fastgpt')
+    });
+
+    const importDir = path.join(outDir, 'import');
+    const importFiles = fs.readdirSync(importDir).filter((name) => name.endsWith('.json')).sort();
+    expect(importFiles).toEqual([
+      '01-tool-review-context.json',
+      '02-tool-ai-review.json',
+      '03-tool-deterministic-review.json',
+      '04-tool-support-008.json',
+      '05-tool-final-assembler.json',
+      '06-main-review-app.json'
+    ]);
+    expect(importFiles.some((name) => name.includes('template') || name.includes('create'))).toBe(false);
+
+    for (const file of importFiles) {
+      const payload = JSON.parse(fs.readFileSync(path.join(importDir, file), 'utf8'));
+      expect(Object.keys(payload).sort()).toEqual(['chatConfig', 'edges', 'nodes']);
+      expect(payload).not.toHaveProperty('modules');
+      expect(payload).not.toHaveProperty('workflow');
+      expect(payload).not.toHaveProperty('type');
+      expect(payload).not.toHaveProperty('name');
+      expect(Array.isArray(payload.nodes)).toBe(true);
+      expect(Array.isArray(payload.edges)).toBe(true);
+      expect(typeof payload.chatConfig).toBe('object');
     }
-    for (const file of fs.readdirSync(workflowToolsDir)) {
-      if (file.endsWith('.linked.json')) fs.rmSync(path.join(workflowToolsDir, file), { force: true });
+  });
+
+  it('emits code-node JavaScript that is syntactically valid for FastGPT sandbox import', () => {
+    for (const file of workflowFiles()) {
+      const payload = readWorkflow(file);
+      for (const node of payload.nodes.filter((node: any) => node.flowNodeType === 'code')) {
+        const code = codeInput(node, 'code')?.value;
+        expect(typeof code).toBe('string');
+        expect(() => new vm.Script(String(code), { filename: `${path.basename(file)}:${node.nodeId}` })).not.toThrow();
+      }
     }
+  });
+
+  it('compiles generation-time governance assets into code nodes instead of hidden runtime object inputs', () => {
+    const forbiddenRuntimeKeys = new Set(['governanceSnapshot', 'datasetManifest']);
+    for (const file of workflowFiles()) {
+      const payload = readWorkflow(file);
+      for (const node of payload.nodes.filter((node: any) => node.flowNodeType === 'code')) {
+        const dynamicInputs = node.inputs.filter((input: any) => !['system_addInputParam', 'codeType', 'code'].includes(input.key));
+        expect(dynamicInputs.map((input: any) => input.key).filter((key: string) => forbiddenRuntimeKeys.has(key))).toEqual([]);
+
+        const hiddenObjectInputs = dynamicInputs.filter(
+          (input: any) => (input.renderTypeList || []).includes('hidden') && ['object', 'arrayObject', 'any'].includes(input.valueType)
+        );
+        expect(hiddenObjectInputs).toEqual([]);
+      }
+    }
+  });
+
+  it('selects reviewers from compiled governance data for multiple document types', () => {
+    const aiWorkflow = readWorkflow(path.join(workflowToolsDir, 'hermes_ai_review_wft.workflow.json'));
+    const prepareNode = aiWorkflow.nodes.find((node: any) => node.nodeId === 'prepareAiReview');
+    const code = codeInput(prepareNode, 'code')?.value;
+
+    const baseReviewContext = {
+      reviewId: 'r-fastgpt-test',
+      enabledModules: [
+        'structure_completeness',
+        'parameter_consistency',
+        'legality_compliance',
+        'execution_continuity',
+        'evidence_validation'
+      ]
+    };
+
+    const outage = runCodeNode(code, {
+      reviewContext: { ...baseReviewContext, documentType: 'distribution_network_special_scheme' },
+      aiModel: 'qwen3.5-flash'
+    });
+    const construction = runCodeNode(code, {
+      reviewContext: { ...baseReviewContext, documentType: 'construction_org' },
+      aiModel: 'qwen3.5-flash'
+    });
+
+    expect(outage.selectedReviewerIds.length).toBeGreaterThan(0);
+    expect(outage.selectedReviewerIds).toContain('power_outage_operation_chain_reviewer');
+    expect(outage.selectedReviewerIds).not.toContain('construction_org_structure_reviewer');
+    expect(construction.selectedReviewerIds.length).toBeGreaterThan(0);
+    expect(construction.selectedReviewerIds).toContain('construction_org_structure_reviewer');
+    expect(construction.selectedReviewerIds).not.toContain('power_outage_operation_chain_reviewer');
+  });
+
+  it('closes generated business pipeline into Chinese formal or fail-closed output for different samples', () => {
+    const contextWorkflow = readWorkflow(path.join(workflowToolsDir, 'hermes_review_context_wft.workflow.json'));
+    const deterministicWorkflow = readWorkflow(path.join(workflowToolsDir, 'hermes_deterministic_review_wft.workflow.json'));
+    const supportWorkflow = readWorkflow(path.join(workflowToolsDir, 'hermes_support_008_wft.workflow.json'));
+    const finalWorkflow = readWorkflow(path.join(workflowToolsDir, 'hermes_final_assembler_wft.workflow.json'));
+
+    const buildContext = codeInput(contextWorkflow.nodes.find((node: any) => node.nodeId === 'buildReviewContext'), 'code')?.value;
+    const runDeterministic = codeInput(
+      deterministicWorkflow.nodes.find((node: any) => node.nodeId === 'runDeterministicReview'),
+      'code'
+    )?.value;
+    const runSupport = codeInput(supportWorkflow.nodes.find((node: any) => node.nodeId === 'buildSupport008'), 'code')?.value;
+    const assembleFinal = codeInput(finalWorkflow.nodes.find((node: any) => node.nodeId === 'assembleFinalDecision'), 'code')?.value;
+
+    function runGeneratedPipeline(sample: { documentType: string; enabledModules: string[]; documentText: string }) {
+      const contextResult = runCodeNode(buildContext, {
+        reviewId: `r-${sample.documentType}`,
+        query: '请执行正式审查。',
+        documentType: sample.documentType,
+        disciplineTags: [],
+        enabledModules: sample.enabledModules,
+        disabledModules: [],
+        focusRequirements: [],
+        strictMode: true,
+        targetFileUrls: ['sample.md'],
+        basisFileUrls: [],
+        contextFileUrls: [],
+        documentText: sample.documentText
+      });
+      const aiReviewResult = { reviewerPackets: [], traceability: [], degradedCount: 0 };
+      const deterministicResult = runCodeNode(runDeterministic, {
+        reviewContext: contextResult.reviewContext,
+        aiReviewResult
+      });
+      const supportResult = runCodeNode(runSupport, {
+        reviewContext: contextResult.reviewContext
+      });
+      return runCodeNode(assembleFinal, {
+        reviewContext: contextResult.reviewContext,
+        aiReviewResult,
+        deterministicReviewResult: deterministicResult.deterministicReviewResult,
+        supportReviewResult: supportResult.supportReviewResult
+      });
+    }
+
+    const degradedOutage = runGeneratedPipeline({
+      documentType: 'distribution_network_special_scheme',
+      enabledModules: [
+        'structure_completeness',
+        'parameter_consistency',
+        'legality_compliance',
+        'execution_continuity',
+        'evidence_validation'
+      ],
+      documentText: `
+# 停电专项施工方案
+## 编制依据
+GB/T 6995
+## 停电作业流程
+停电、验电、接地、挂牌、遮栏、复电。
+## 附件
+详见附图一。
+`
+    });
+    const formalConstruction = runGeneratedPipeline({
+      documentType: 'construction_org',
+      enabledModules: ['legality_compliance', 'evidence_validation'],
+      documentText: `
+# 施工组织设计
+## 编制依据
+《建设工程施工现场消防安全技术规范》GB 50720-2011
+## 安全管理计划
+现场设置消防通道、动火审批和应急处置流程。
+`
+    });
+
+    expect(degradedOutage.degraded).toBe(true);
+    expect(degradedOutage.degradedReason.length).toBeGreaterThan(0);
+    expect(degradedOutage.finalAnswer).toContain('非正式审查报告');
+    expect(/[审查报告结果原因]/.test(degradedOutage.finalAnswer)).toBe(true);
+
+    expect(formalConstruction.degraded).toBe(false);
+    expect(formalConstruction.finalReportPacket).not.toBeNull();
+    expect(formalConstruction.finalReportMarkdown).toContain('总体评级结论');
+    expect(formalConstruction.finalReportViewModel.normativeValidityChecks.length).toBeGreaterThan(0);
+    expect(/[审查报告风险建议]/.test(formalConstruction.finalReportMarkdown)).toBe(true);
   });
 });
