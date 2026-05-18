@@ -3,12 +3,21 @@ from __future__ import annotations
 import asyncio
 import json
 import re
+import time
 from typing import Any
 
 try:
     from duckduckgo_search import DDGS
 except Exception:  # pragma: no cover
     DDGS = None
+
+# ---------------------------------------------------------------------------
+# Web-search resilience constants
+# ---------------------------------------------------------------------------
+_WEB_SEARCH_TIMEOUT = 12.0  # seconds per DDGS call
+_WEB_SEARCH_CONCURRENCY = 3  # max parallel web searches
+_WEB_SEARCH_COOLDOWN = 60.0  # seconds to skip web after consecutive failures
+_WEB_SEARCH_MAX_CONSECUTIVE_FAILS = 3  # failures before circuit opens
 
 
 _OFFICIAL_DOMAIN_KEYWORDS = (
@@ -67,6 +76,9 @@ _EXCLUDED_DOCUMENT_KEYWORDS = (
 class NormativeValidityChecker:
     def __init__(self, *, llm_gateway=None):
         self.llm_gateway = llm_gateway
+        # Per-instance circuit breaker state (reset each verify call)
+        self._web_circuit_open_until: float = 0.0
+        self._web_consecutive_fails: int = 0
 
     async def verify_candidates(self, candidates) -> list[dict[str, Any]]:
         return await self._verify_sources(self._extract_sources_from_candidates(candidates))
@@ -77,7 +89,16 @@ class NormativeValidityChecker:
     async def _verify_sources(self, sources: list[dict[str, str]]) -> list[dict[str, Any]]:
         if not sources:
             return []
-        results = await asyncio.gather(*[self._verify_source(source) for source in sources])
+        # Reset circuit breaker for each batch
+        self._web_circuit_open_until = 0.0
+        self._web_consecutive_fails = 0
+        semaphore = asyncio.Semaphore(_WEB_SEARCH_CONCURRENCY)
+
+        async def _limited_verify(source: dict[str, str]) -> dict[str, Any]:
+            async with semaphore:
+                return await self._verify_source(source)
+
+        results = await asyncio.gather(*[_limited_verify(s) for s in sources])
         return [result for result in results if result]
 
     def _extract_sources_from_candidates(self, candidates) -> list[dict[str, str]]:
@@ -222,7 +243,29 @@ class NormativeValidityChecker:
     async def _search_web(self, title: str) -> dict[str, Any]:
         if DDGS is None:
             return self._unknown_result('web', '当前环境未启用联网检索依赖。')
-        return await asyncio.to_thread(self._search_web_sync, title)
+        # Circuit breaker: skip web search if too many consecutive failures
+        if time.monotonic() < self._web_circuit_open_until:
+            return self._unknown_result('web', '联网检索暂时不可用（连续失败冷却中）。')
+        try:
+            result = await asyncio.wait_for(
+                asyncio.to_thread(self._search_web_sync, title),
+                timeout=_WEB_SEARCH_TIMEOUT,
+            )
+        except asyncio.TimeoutError:
+            self._record_web_failure()
+            return self._unknown_result('web', f'联网检索超时（{_WEB_SEARCH_TIMEOUT}s）。')
+        except Exception as exc:
+            self._record_web_failure()
+            return self._unknown_result('web', f'联网检索失败：{exc}')
+        # If we got here, reset consecutive fail counter on any non-failure
+        if result.get('resolvedBy') == 'web' and '失败' not in result.get('summary', ''):
+            self._web_consecutive_fails = 0
+        return result
+
+    def _record_web_failure(self) -> None:
+        self._web_consecutive_fails += 1
+        if self._web_consecutive_fails >= _WEB_SEARCH_MAX_CONSECUTIVE_FAILS:
+            self._web_circuit_open_until = time.monotonic() + _WEB_SEARCH_COOLDOWN
 
     def _search_web_sync(self, title: str) -> dict[str, Any]:
         query = f'{title} 现行 有效 废止 替代'
@@ -230,7 +273,7 @@ class NormativeValidityChecker:
             with DDGS() as ddgs:
                 results = list(ddgs.text(query, max_results=8))
         except Exception as exc:  # pragma: no cover
-            return self._unknown_result('web', f'联网检索失败：{exc}')
+            raise RuntimeError(f'联网检索失败：{exc}') from exc
         official = [item for item in results if self._is_official_result(item)]
         pool = official or results
         if not pool:
