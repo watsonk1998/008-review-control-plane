@@ -343,6 +343,7 @@ class HermesController:
                 final_packet=final_packet,
                 support_result=support_result_008,
                 selected_modules=enabled_modules,
+                parse_result=workspace.get('parse_result'),
             )
             report_html = self.final_report_renderer.render_html(final_report_view_model)
             report_print_css = self.final_report_renderer.render_print_css()

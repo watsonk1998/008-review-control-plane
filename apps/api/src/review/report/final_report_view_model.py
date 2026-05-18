@@ -229,6 +229,7 @@ class FinalReportRenderer:
         final_packet: FinalReportPacket | dict[str, Any],
         support_result: dict[str, Any] | None = None,
         selected_modules: list[str] | None = None,
+        parse_result=None,
     ) -> FinalReportViewModel:
         packet = (
             final_packet.model_dump(mode="json")
@@ -262,7 +263,7 @@ class FinalReportRenderer:
             for item in ((support.get("matrices") or {}).get("sectionStructure") or [])
             if isinstance(item, dict)
         ]
-        basis_files = self._collect_basis_files(packet, support_issues, support)
+        basis_files = self._collect_basis_files(packet, support_issues, support, parse_result=parse_result)
         findings = [
             item for item in packet.get("all_findings", []) if isinstance(item, dict)
         ]
@@ -959,6 +960,7 @@ class FinalReportRenderer:
         packet: dict[str, Any],
         support_issues: list[dict[str, Any]],
         support_result: dict[str, Any],
+        parse_result=None,
     ) -> list[str]:
         basis: list[str] = []
         seen: set[str] = set()
@@ -972,6 +974,22 @@ class FinalReportRenderer:
                 continue
             seen.add(label)
             basis.append(label)
+
+        # Extract standards from document's own "编制依据" chapter
+        if parse_result is not None and len(basis) < 20:
+            try:
+                from src.review.hermes.normative_validity import NormativeValidityChecker
+
+                checker = NormativeValidityChecker()
+                doc_sources = checker._extract_sources_from_parse_result(parse_result)
+                for src in doc_sources:
+                    label = src.get("title", "")
+                    if label and label not in seen and len(basis) < 20:
+                        seen.add(label)
+                        basis.append(f"[文档引用] {label}")
+            except Exception:
+                pass  # Graceful degradation
+
         return basis[:20]
 
     def _iter_basis_source_ids(
