@@ -118,6 +118,71 @@
   owner: "MOHURD"
   freshness_rule: "yearly"
 
+"construction-《建筑工程施工质量验收统一标准》GB 50300":
+  basis_id: "construction-《建筑工程施工质量验收统一标准》GB 50300"
+  title: "《建筑工程施工质量验收统一标准》"
+  source_type: "national_standard"
+  version: "GB 50300"
+  effective_status: "active"
+  jurisdiction: "National"
+  file_refs:
+    - "knowledge/review_basis/national_standards/gb_50300.md"
+  applicability_tags: ["construction_org", "base"]
+  owner: "MOHURD"
+  freshness_rule: "yearly"
+
+"construction-《质量管理体系 要求》GB/T 19001":
+  basis_id: "construction-《质量管理体系 要求》GB/T 19001"
+  title: "《质量管理体系 要求》"
+  source_type: "national_standard"
+  version: "GB/T 19001"
+  effective_status: "active"
+  jurisdiction: "National"
+  file_refs:
+    - "knowledge/review_basis/national_standards/gb_t_19001.md"
+  applicability_tags: ["construction_org", "base"]
+  owner: "SAC"
+  freshness_rule: "yearly"
+
+"construction-《职业健康安全管理体系 规范》GB/T 28001":
+  basis_id: "construction-《职业健康安全管理体系 规范》GB/T 28001"
+  title: "《职业健康安全管理体系 规范》"
+  source_type: "national_standard"
+  version: "GB/T 28001"
+  effective_status: "active"
+  jurisdiction: "National"
+  file_refs:
+    - "knowledge/review_basis/national_standards/gb_t_28001.md"
+  applicability_tags: ["construction_org", "base"]
+  owner: "SAC"
+  freshness_rule: "yearly"
+
+"construction-《环境管理体系 要求及使用指南》GB/T 24001":
+  basis_id: "construction-《环境管理体系 要求及使用指南》GB/T 24001"
+  title: "《环境管理体系 要求及使用指南》"
+  source_type: "national_standard"
+  version: "GB/T 24001"
+  effective_status: "active"
+  jurisdiction: "National"
+  file_refs:
+    - "knowledge/review_basis/national_standards/gb_t_24001.md"
+  applicability_tags: ["construction_org", "base"]
+  owner: "SAC"
+  freshness_rule: "yearly"
+
+"construction-《施工现场临时建筑物技术规范》JGJ/T 188-2009":
+  basis_id: "construction-《施工现场临时建筑物技术规范》JGJ/T 188-2009"
+  title: "《施工现场临时建筑物技术规范》"
+  source_type: "industry_standard"
+  version: "JGJ/T 188-2009"
+  effective_status: "active"
+  jurisdiction: "National"
+  file_refs:
+    - "knowledge/review_basis/industry_standards/jgj_t_188_2009.md"
+  applicability_tags: ["construction_org", "base"]
+  owner: "MOHURD"
+  freshness_rule: "yearly"
+
 
 "power-grid-《电网工程建设施工安全基准风险指南》（2012年版）":
   basis_id: "power-grid-《电网工程建设施工安全基准风险指南》（2012年版）"

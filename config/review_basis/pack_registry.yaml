@@ -13,6 +13,11 @@ packs:
       - "construction-《建筑施工安全检查标准》JGJ 59-2011"
       - "construction-《关于实施危险性较大的分部分项工程安全管理规定有关问题的通知》（建办质〔2018〕31号）"
       - "construction-《房屋市政工程生产安全重大事故隐患判定标准（2024版）》"
+      - "construction-《建筑工程施工质量验收统一标准》GB 50300"
+      - "construction-《质量管理体系 要求》GB/T 19001"
+      - "construction-《职业健康安全管理体系 规范》GB/T 28001"
+      - "construction-《环境管理体系 要求及使用指南》GB/T 24001"
+      - "construction-《施工现场临时建筑物技术规范》JGJ/T 188-2009"
     status: "active"
     default_profiles: ["construction_org"]
     priority: "high"
