@@ -26,8 +26,14 @@ class PresentationConsistencyValidator:
                 errors.append(f"Missing final grade conclusion keyword, expected one of: {expected_keywords}")
         
         # 2 & 3 & 8 & 9. 问题数量与主要标题不得丢失；不再要求在正文或隐藏注释中保留英文 ID。
+        # Skip clause-level findings (construction_org_clause_*) — these are mechanical
+        # rule hits that don't need individual mention in the presentation markdown.
         for finding in authoritative.all_findings:
-            if finding.title and finding.title not in presentation_md:
+            if not finding.title:
+                continue
+            if finding.title.startswith("construction_org_clause_"):
+                continue
+            if finding.title not in presentation_md:
                 errors.append(f"Missing finding title from authoritative packet: {finding.title}")
 
         # 6. Manual review required flag MUST NOT be lost
