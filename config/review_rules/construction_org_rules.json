@@ -1,0 +1,754 @@
+[
+  {
+    "rule_id": "GB50720-消防安全规范-3.1.2",
+    "review_item_code": "structure_integrity",
+    "rule_name": "总平面布局应纳入内容",
+    "rule_description": "施工现场总平面布局应纳入出入口、围墙、场内临时道路、给水管网及配电线路走向、办公用房宿舍等临时用房、消防车道及消防水源等内容（依据：《建设工程施工现场消防安全技术规范》GB 50720-2011 §3.1.2）",
+    "enabled": true,
+    "based_on_review_basis": false
+  },
+  {
+    "rule_id": "GB50720-消防安全规范-5.1.1",
+    "review_item_code": "structure_integrity",
+    "rule_name": "应设置临时消防设施",
+    "rule_description": "施工现场应设置灭火器、临时消防给水系统和应急照明等临时消防设施（依据：《建设工程施工现场消防安全技术规范》GB 50720-2011 §5.1.1）",
+    "enabled": true,
+    "based_on_review_basis": false
+  },
+  {
+    "rule_id": "GB50720-消防安全规范-6.1.3",
+    "review_item_code": "structure_integrity",
+    "rule_name": "应建立消防管理组织",
+    "rule_description": "施工单位应建立消防安全管理组织机构及义务消防组织，确定消防安全负责人和消防安全管理人员（依据：《建设工程施工现场消防安全技术规范》GB 50720-2011 §6.1.3）",
+    "enabled": true,
+    "based_on_review_basis": false
+  },
+  {
+    "rule_id": "GB50720-消防安全规范-6.1.4",
+    "review_item_code": "structure_integrity",
+    "rule_name": "消防安全管理制度内容",
+    "rule_description": "消防安全管理制度应包括：消防安全教育与培训制度、可燃及易燃易爆危险品管理制度、用火用电用气管理制度、消防安全检查制度、应急预案演练制度（依据：《建设工程施工现场消防安全技术规范》GB 50720-2011 §6.1.4）",
+    "enabled": true,
+    "based_on_review_basis": false
+  },
+  {
+    "rule_id": "GB50720-消防安全规范-6.1.5",
+    "review_item_code": "structure_integrity",
+    "rule_name": "防火技术方案内容",
+    "rule_description": "防火技术方案应包括：施工现场重大火灾危险源辨识、防火技术措施、临时消防设施及疏散设施配备、临时消防设施和消防警示标识布置图（依据：《建设工程施工现场消防安全技术规范》GB 50720-2011 §6.1.5）",
+    "enabled": true,
+    "based_on_review_basis": false
+  },
+  {
+    "rule_id": "GB50720-消防安全规范-6.1.6",
+    "review_item_code": "structure_integrity",
+    "rule_name": "灭火应急疏散预案内容",
+    "rule_description": "灭火及应急疏散预案应包括：应急灭火处置机构及各级人员职责、报警接警处置程序和通讯联络方式、扑救初起火灾的程序和措施、应急疏散及救援的程序和措施（依据：《建设工程施工现场消防安全技术规范》GB 50720-2011 §6.1.6）",
+    "enabled": true,
+    "based_on_review_basis": false
+  },
+  {
+    "rule_id": "GBT50502-施工组织设计规范-3.0.3",
+    "review_item_code": "structure_integrity",
+    "rule_name": "编制依据内容完整性",
+    "rule_description": "施工组织设计应以下列内容作为编制依据：法律法规、国家现行标准、行政主管部门批准文件、施工合同或招标投标文件、工程设计文件、现场条件及自然条件、资源供应情况、施工企业能力（依据：《建筑施工组织设计规范》GB/T 50502-2009 §3.0.3）",
+    "enabled": true,
+    "based_on_review_basis": false
+  },
+  {
+    "rule_id": "GBT50502-施工组织设计规范-3.0.4",
+    "review_item_code": "structure_integrity",
+    "rule_name": "基本内容完整性",
+    "rule_description": "施工组织设计应包括编制依据、工程概况、施工部署、施工进度计划、施工准备与资源配置计划、主要施工方法、施工现场平面布置及主要施工管理计划等基本内容（依据：《建筑施工组织设计规范》GB/T 50502-2009 §3.0.4）",
+    "enabled": true,
+    "based_on_review_basis": false
+  },
+  {
+    "rule_id": "GBT50502-施工组织设计规范-4.1.1-5.1.1-6.1.1",
+    "review_item_code": "structure_integrity",
+    "rule_name": "工程概况内容完整性",
+    "rule_description": "工程概况应包括工程主要情况、各专业设计简介和工程施工条件等（依据：《建筑施工组织设计规范》GB/T 50502-2009 §4.1.1/§5.1.1/§6.1.1）",
+    "enabled": true,
+    "based_on_review_basis": false
+  },
+  {
+    "rule_id": "GBT50502-施工组织设计规范-4.1.2",
+    "review_item_code": "structure_integrity",
+    "rule_name": "项目主要情况完整性",
+    "rule_description": "项目主要情况应包括：项目名称、性质、地理位置和建设规模；各相关单位情况；项目设计概况；承包范围及主要分包工程范围；施工合同或招标文件的重点要求；其他应说明的情况（依据：《建筑施工组织设计规范》GB/T 50502-2009 §4.1.2）",
+    "enabled": true,
+    "based_on_review_basis": false
+  },
+  {
+    "rule_id": "GBT50502-施工组织设计规范-4.1.3",
+    "review_item_code": "structure_integrity",
+    "rule_name": "施工条件完整性",
+    "rule_description": "项目主要施工条件应包括：气象状况、地形和工程水文地质状况、地上地下管线及相邻建构筑物、道路河流等状况、建筑材料设备供应和交通运输、供电供水供热和通信能力、其他与施工有关的主要因素（依据：《建筑施工组织设计规范》GB/T 50502-2009 §4.1.3）",
+    "enabled": true,
+    "based_on_review_basis": false
+  },
+  {
+    "rule_id": "GBT50502-施工组织设计规范-4.4.3-5.4.2-6.4.2",
+    "review_item_code": "structure_integrity",
+    "rule_name": "资源配置计划完整性",
+    "rule_description": "资源配置计划应包括：劳动力配置计划——确定工程用工量并编制专业工种劳动力计划表；物资配置计划——包括工程材料和设备配置计划、周转材料和施工机具配置计划以及计量、测量和检验仪器配置计划等（依据：《建筑施工组织设计规范》GB/T 50502-2009 §4.4.3/§5.4.2/§6.4.2）",
+    "enabled": true,
+    "based_on_review_basis": false
+  },
+  {
+    "rule_id": "GBT50502-施工组织设计规范-4.4.4",
+    "review_item_code": "structure_integrity",
+    "rule_name": "劳动力配置计划完整性",
+    "rule_description": "劳动力配置计划应包括：确定各施工阶段（期）的总用工量；根据施工总进度计划确定各施工阶段（期）的劳动力配置计划（依据：《建筑施工组织设计规范》GB/T 50502-2009 §4.4.4）",
+    "enabled": true,
+    "based_on_review_basis": false
+  },
+  {
+    "rule_id": "GBT50502-施工组织设计规范-4.4.5",
+    "review_item_code": "structure_integrity",
+    "rule_name": "物资配置计划完整性",
+    "rule_description": "物资配置计划应包括：根据施工总进度计划确定主要工程材料和设备的配置计划；根据总体施工部署和施工总进度计划确定主要施工周转材料和施工机具的配置计划（依据：《建筑施工组织设计规范》GB/T 50502-2009 §4.4.5）",
+    "enabled": true,
+    "based_on_review_basis": false
+  },
+  {
+    "rule_id": "GBT50502-施工组织设计规范-4.6.3-5.6.2",
+    "review_item_code": "structure_integrity",
+    "rule_name": "总平面布置图完整性",
+    "rule_description": "施工现场平面布置图应包括：工程施工场地状况；拟建建构筑物的位置、轮廓尺寸、层数等；加工设施、存贮设施、办公和生活用房等的位置和面积；垂直运输设施、供电设施、供水供热设施、排水排污设施和临时施工道路等；施工现场必备的安全、消防、保卫和环境保护等设施；相邻的既有建构筑物及相关环境（依据：《建筑施工组织设计规范》GB/T 50502-2009 §4.6.3/§5.6.2）",
+    "enabled": true,
+    "based_on_review_basis": false
+  },
+  {
+    "rule_id": "GBT50502-施工组织设计规范-5.1.2",
+    "review_item_code": "structure_integrity",
+    "rule_name": "工程主要情况完整性",
+    "rule_description": "工程主要情况应包括：工程名称、性质和地理位置；各相关单位情况；工程承包范围和分包工程范围；施工合同、招标文件或总承包单位对工程施工的重点要求；其他应说明的情况（依据：《建筑施工组织设计规范》GB/T 50502-2009 §5.1.2）",
+    "enabled": true,
+    "based_on_review_basis": false
+  },
+  {
+    "rule_id": "GBT50502-施工组织设计规范-7.1.1",
+    "review_item_code": "structure_integrity",
+    "rule_name": "管理计划内容完整性",
+    "rule_description": "施工管理计划应包括进度管理计划、质量管理计划、安全管理计划、环境管理计划、成本管理计划以及其他管理计划等内容（依据：《建筑施工组织设计规范》GB/T 50502-2009 §7.1.1）",
+    "enabled": true,
+    "based_on_review_basis": false
+  },
+  {
+    "rule_id": "GBT50502-施工组织设计规范-7.2.2",
+    "review_item_code": "structure_integrity",
+    "rule_name": "进度管理计划完整性",
+    "rule_description": "进度管理计划应包括：对施工进度计划进行逐级分解；建立施工进度管理组织机构并明确职责；制定不同施工阶段的进度管理措施；建立施工进度动态管理机制；制定相应的协调措施减少外部因素影响（依据：《建筑施工组织设计规范》GB/T 50502-2009 §7.2.2）",
+    "enabled": true,
+    "based_on_review_basis": false
+  },
+  {
+    "rule_id": "GBT50502-施工组织设计规范-7.3.2",
+    "review_item_code": "structure_integrity",
+    "rule_name": "质量管理计划完整性",
+    "rule_description": "质量管理计划应包括：确定质量目标并进行目标分解，质量指标应具有可测量性；建立项目质量管理组织机构并明确职责；制定技术保障和资源保障措施；建立质量过程检查制度（依据：《建筑施工组织设计规范》GB/T 50502-2009 §7.3.2）",
+    "enabled": true,
+    "based_on_review_basis": false
+  },
+  {
+    "rule_id": "GBT50502-施工组织设计规范-7.4.2",
+    "review_item_code": "structure_integrity",
+    "rule_name": "安全管理计划完整性",
+    "rule_description": "安全管理计划应包括：确定项目重要危险源并制定安全管理目标；建立安全管理组织机构并明确职责；进行安全资源配置；建立安全生产管理制度和职工安全教育培训制度；制定安全技术措施；制定季节性安全施工措施；建立现场安全检查制度（依据：《建筑施工组织设计规范》GB/T 50502-2009 §7.4.2）",
+    "enabled": true,
+    "based_on_review_basis": false
+  },
+  {
+    "rule_id": "GBT50502-施工组织设计规范-7.5.2",
+    "review_item_code": "structure_integrity",
+    "rule_name": "环境管理计划完整性",
+    "rule_description": "环境管理计划应包括：确定项目重要环境因素并制定环境管理目标；建立项目环境管理组织机构并明确职责；进行环境保护方面的资源配置；制定现场环境保护控制措施；建立现场环境检查制度（依据：《建筑施工组织设计规范》GB/T 50502-2009 §7.5.2）",
+    "enabled": true,
+    "based_on_review_basis": false
+  },
+  {
+    "rule_id": "GBT50502-施工组织设计规范-7.6.2",
+    "review_item_code": "structure_integrity",
+    "rule_name": "成本管理计划完整性",
+    "rule_description": "成本管理计划应包括：根据施工预算制定成本目标；根据施工进度计划对成本目标进行阶段分解；建立施工成本管理组织机构并明确职责；采取技术组织和合同等措施控制施工成本；确定成本分析方法并制定纠偏措施和风险控制措施（依据：《建筑施工组织设计规范》GB/T 50502-2009 §7.6.2）",
+    "enabled": true,
+    "based_on_review_basis": false
+  },
+  {
+    "rule_id": "建办质2018-31-二一",
+    "review_item_code": "structure_integrity",
+    "rule_name": "危大工程范围识别",
+    "rule_description": "施工组织设计应识别并列出本工程涉及的危险性较大的分部分项工程范围，包括超过一定规模的危大工程（依据：建办质〔2018〕31号第二条第一款）",
+    "enabled": true,
+    "based_on_review_basis": false
+  },
+  {
+    "rule_id": "建办质2024-63-通用10",
+    "review_item_code": "structure_integrity",
+    "rule_name": "相关施工图纸",
+    "rule_description": "方案应附相关施工图纸，缺失则判定为严重缺陷（依据：建办质〔2024〕63号通用条款第10条）",
+    "enabled": true,
+    "based_on_review_basis": false
+  },
+  {
+    "rule_id": "建办质2024-63-通用3",
+    "review_item_code": "structure_integrity",
+    "rule_name": "现场布置与资源配置",
+    "rule_description": "方案应包含施工现场布置图和资源配置计划表，缺失则判定为严重缺陷（依据：建办质〔2024〕63号通用条款第3条）",
+    "enabled": true,
+    "based_on_review_basis": false
+  },
+  {
+    "rule_id": "GBT50502-施工组织设计规范-4.3.2-5.3.2-6.3.2",
+    "review_item_code": "basis_accuracy",
+    "rule_name": "进度计划表示形式",
+    "rule_description": "施工进度计划可采用网络图或横道图表示，并附必要说明；对于工程规模较大或较复杂的工程，宜采用网络图表示（依据：《建筑施工组织设计规范》GB/T 50502-2009 §4.3.2/§5.3.2/§6.3.2）",
+    "enabled": true,
+    "based_on_review_basis": false
+  },
+  {
+    "rule_id": "GBT50502-施工组织设计规范-5.1.3",
+    "review_item_code": "basis_accuracy",
+    "rule_name": "各专业设计简介完整性",
+    "rule_description": "各专业设计简介应包括：建筑设计简介（依据建筑设计文件描述建筑规模、功能、特点、耐火防水节能要求及主要装修做法）；结构设计简介（依据结构设计文件描述结构形式、地基基础形式、安全等级、抗震设防类别等）；机电及设备安装专业设计简介（依据相关专业设计文件描述给排水采暖、通风空调、电气、智能化、电梯等系统做法要求）（依据：《建筑施工组织设计规范》GB/T 50502-2009 §5.1.3）",
+    "enabled": true,
+    "based_on_review_basis": false
+  },
+  {
+    "rule_id": "GBT50502-施工组织设计规范-6.1.3",
+    "review_item_code": "basis_accuracy",
+    "rule_name": "施工方案设计简介",
+    "rule_description": "设计简介应主要介绍施工范围内的工程设计内容和相关要求（依据：《建筑施工组织设计规范》GB/T 50502-2009 §6.1.3）",
+    "enabled": true,
+    "based_on_review_basis": false
+  },
+  {
+    "rule_id": "GBT50502-施工组织设计规范-7.3.1",
+    "review_item_code": "basis_accuracy",
+    "rule_name": "质量管理计划编制依据",
+    "rule_description": "质量管理计划可参照《质量管理体系 要求》GB/T 19001，在施工单位质量管理体系的框架内编制（依据：《建筑施工组织设计规范》GB/T 50502-2009 §7.3.1）",
+    "enabled": true,
+    "based_on_review_basis": false
+  },
+  {
+    "rule_id": "GBT50502-施工组织设计规范-7.4.1",
+    "review_item_code": "basis_accuracy",
+    "rule_name": "安全管理计划编制依据",
+    "rule_description": "安全管理计划可参照《职业健康安全管理体系 规范》GB/T 28001，在施工单位安全管理体系的框架内编制（依据：《建筑施工组织设计规范》GB/T 50502-2009 §7.4.1）",
+    "enabled": true,
+    "based_on_review_basis": false
+  },
+  {
+    "rule_id": "GBT50502-施工组织设计规范-7.5.1",
+    "review_item_code": "basis_accuracy",
+    "rule_name": "环境管理计划编制依据",
+    "rule_description": "环境管理计划可参照《环境管理体系 要求及使用指南》GB/T 24001，在施工单位环境管理体系的框架内编制（依据：《建筑施工组织设计规范》GB/T 50502-2009 §7.5.1）",
+    "enabled": true,
+    "based_on_review_basis": false
+  },
+  {
+    "rule_id": "GBT50502-施工组织设计规范-7.6.1",
+    "review_item_code": "basis_accuracy",
+    "rule_name": "成本管理计划编制依据",
+    "rule_description": "成本管理计划应以项目施工预算和施工进度计划为依据编制（依据：《建筑施工组织设计规范》GB/T 50502-2009 §7.6.1）",
+    "enabled": true,
+    "based_on_review_basis": false
+  },
+  {
+    "rule_id": "GBT50502-施工组织设计规范-5.2.2",
+    "review_item_code": "consistency_check",
+    "rule_name": "进度安排与逻辑关系",
+    "rule_description": "工程主要施工内容及其进度安排应明确说明，施工顺序应符合工序逻辑关系；施工流水段应结合工程具体情况分阶段进行划分（依据：《建筑施工组织设计规范》GB/T 50502-2009 §5.2.2）",
+    "enabled": true,
+    "based_on_review_basis": false
+  },
+  {
+    "rule_id": "GBT50502-施工组织设计规范-5.3.1",
+    "review_item_code": "consistency_check",
+    "rule_name": "进度计划与部署一致",
+    "rule_description": "单位工程施工进度计划应按照施工部署的安排进行编制（依据：《建筑施工组织设计规范》GB/T 50502-2009 §5.3.1）",
+    "enabled": true,
+    "based_on_review_basis": false
+  },
+  {
+    "rule_id": "GBT50502-施工组织设计规范-7.6.3",
+    "review_item_code": "consistency_check",
+    "rule_name": "成本与其他目标协调",
+    "rule_description": "必须正确处理成本与进度、质量、安全和环境等之间的关系（依据：《建筑施工组织设计规范》GB/T 50502-2009 §7.6.3）",
+    "enabled": true,
+    "based_on_review_basis": false
+  },
+  {
+    "rule_id": "GB50720-消防安全规范-3.2.1",
+    "review_item_code": "content_compliance",
+    "rule_name": "防火间距应满足要求",
+    "rule_description": "易燃易爆危险品库房与在建工程防火间距不应小于15m，可燃材料堆场及加工场、固定动火作业场与在建工程防火间距不应小于10m，其他临时用房、临时设施与在建工程防火间距不应小于6m（依据：《建设工程施工现场消防安全技术规范》GB 50720-2011 §3.2.1 强制性条文）",
+    "enabled": true,
+    "based_on_review_basis": false
+  },
+  {
+    "rule_id": "GB50720-消防安全规范-3.3.2-3.3.3",
+    "review_item_code": "content_compliance",
+    "rule_name": "消防车道设置应合规",
+    "rule_description": "临时消防车道宜为环形，净宽度和净空高度均不应小于4m；非环形车道尽端应设置不小于12m×12m回车场。建筑高度大于24m的在建工程、单体占地面积大于3000m²的在建工程、超过10栋且成组布置的临时用房，应设置环形临时消防车道（依据：《建设工程施工现场消防安全技术规范》GB 50720-2011 §3.3.2/§3.3.3）",
+    "enabled": true,
+    "based_on_review_basis": false
+  },
+  {
+    "rule_id": "GB50720-消防安全规范-4.3.3",
+    "review_item_code": "content_compliance",
+    "rule_name": "施工区非施工区分隔",
+    "rule_description": "既有建筑进行扩建、改建施工时，必须明确划分施工区和非施工区，施工区不得营业、使用和居住（依据：《建设工程施工现场消防安全技术规范》GB 50720-2011 §4.3.3 强制性条文）",
+    "enabled": true,
+    "based_on_review_basis": false
+  },
+  {
+    "rule_id": "GB50720-消防安全规范-5.3.4",
+    "review_item_code": "content_compliance",
+    "rule_name": "应设室外消防给水系统",
+    "rule_description": "临时用房建筑面积之和大于1000m²或在建工程单体体积大于10000m³时，应设置临时室外消防给水系统（依据：《建设工程施工现场消防安全技术规范》GB 50720-2011 §5.3.4）",
+    "enabled": true,
+    "based_on_review_basis": false
+  },
+  {
+    "rule_id": "GB50720-消防安全规范-5.3.8",
+    "review_item_code": "content_compliance",
+    "rule_name": "高层应设室内消防给水",
+    "rule_description": "建筑高度大于24m或单体体积超过30000m³的在建工程，应设置临时室内消防给水系统（依据：《建设工程施工现场消防安全技术规范》GB 50720-2011 §5.3.8）",
+    "enabled": true,
+    "based_on_review_basis": false
+  },
+  {
+    "rule_id": "GBT50502-施工组织设计规范-3.0.2",
+    "review_item_code": "content_compliance",
+    "rule_name": "编制原则符合性",
+    "rule_description": "施工组织设计的编制必须遵循工程建设程序，并应符合：符合施工合同要求；积极开发使用新技术新工艺；坚持科学的施工程序；采取技术和管理措施推广建筑节能和绿色施工；与质量、环境和职业健康安全三个管理体系有效结合（依据：《建筑施工组织设计规范》GB/T 50502-2009 §3.0.2）",
+    "enabled": true,
+    "based_on_review_basis": false
+  },
+  {
+    "rule_id": "GBT50502-施工组织设计规范-3.0.5",
+    "review_item_code": "content_compliance",
+    "rule_name": "编制和审批程序",
+    "rule_description": "施工组织设计的编制和审批应符合下列规定：施工组织设计应由项目负责人主持编制；施工组织总设计应由总承包单位技术负责人审批，单位工程施工组织设计应由施工单位技术负责人或授权技术人员审批，施工方案应由项目技术负责人审批；重点难点分部（分项）工程和专项工程施工方案应由施工单位技术部门组织相关专家评审，施工单位技术负责人批准（依据：《建筑施工组织设计规范》GB/T 50502-2009 §3.0.5）",
+    "enabled": true,
+    "based_on_review_basis": false
+  },
+  {
+    "rule_id": "GBT50502-施工组织设计规范-3.0.6",
+    "review_item_code": "content_compliance",
+    "rule_name": "动态管理规定",
+    "rule_description": "施工组织设计应实行动态管理：发生工程设计重大修改、法规标准变更、施工方法重大调整、资源配置重大调整、施工环境重大改变时应及时修改或补充；经修改或补充后应重新审批后实施；项目施工前应进行逐级交底（依据：《建筑施工组织设计规范》GB/T 50502-2009 §3.0.6）",
+    "enabled": true,
+    "based_on_review_basis": false
+  },
+  {
+    "rule_id": "GBT50502-施工组织设计规范-3.0.7",
+    "review_item_code": "content_compliance",
+    "rule_name": "竣工验收后归档",
+    "rule_description": "施工组织设计应在工程竣工验收后归档（依据：《建筑施工组织设计规范》GB/T 50502-2009 §3.0.7）",
+    "enabled": true,
+    "based_on_review_basis": false
+  },
+  {
+    "rule_id": "GBT50502-施工组织设计规范-4.2.1",
+    "review_item_code": "content_compliance",
+    "rule_name": "总体施工部署宏观要求",
+    "rule_description": "施工组织总设计应对项目总体施工做出宏观部署：确定项目施工总目标（进度、质量、安全、环境和成本）；确定项目分阶段（期）交付计划；确定项目分阶段（期）施工的合理顺序及空间组织（依据：《建筑施工组织设计规范》GB/T 50502-2009 §4.2.1）",
+    "enabled": true,
+    "based_on_review_basis": false
+  },
+  {
+    "rule_id": "GBT50502-施工组织设计规范-4.2.2-5.2.3-6.2.3",
+    "review_item_code": "content_compliance",
+    "rule_name": "重点难点分析",
+    "rule_description": "对于工程施工的重点和难点应进行分析，包括组织管理和施工技术两个方面（依据：《建筑施工组织设计规范》GB/T 50502-2009 §4.2.2/§5.2.3/§6.2.3）",
+    "enabled": true,
+    "based_on_review_basis": false
+  },
+  {
+    "rule_id": "GBT50502-施工组织设计规范-4.2.3-5.2.4-6.2.4",
+    "review_item_code": "content_compliance",
+    "rule_name": "组织机构形式明确",
+    "rule_description": "工程管理的组织机构形式应按照第4.2.3条执行，并确定项目经理部的工作岗位设置及其职责划分（依据：《建筑施工组织设计规范》GB/T 50502-2009 §4.2.3/§5.2.4/§6.2.4）",
+    "enabled": true,
+    "based_on_review_basis": false
+  },
+  {
+    "rule_id": "GBT50502-施工组织设计规范-4.2.4-5.2.5",
+    "review_item_code": "content_compliance",
+    "rule_name": "新技术新工艺部署",
+    "rule_description": "对于项目施工中开发和使用的新技术、新工艺应做出部署，对新材料和新设备的使用应提出技术及管理要求（依据：《建筑施工组织设计规范》GB/T 50502-2009 §4.2.4/§5.2.5）",
+    "enabled": true,
+    "based_on_review_basis": false
+  },
+  {
+    "rule_id": "GBT50502-施工组织设计规范-4.2.5-5.2.6",
+    "review_item_code": "content_compliance",
+    "rule_name": "分包单位资质要求",
+    "rule_description": "对主要分包工程施工单位的选择要求及管理方式应进行简要说明（依据：《建筑施工组织设计规范》GB/T 50502-2009 §4.2.5/§5.2.6）",
+    "enabled": true,
+    "based_on_review_basis": false
+  },
+  {
+    "rule_id": "GBT50502-施工组织设计规范-4.4.1-5.4.1",
+    "review_item_code": "content_compliance",
+    "rule_name": "总体施工准备要求",
+    "rule_description": "施工准备应包括技术准备、现场准备和资金准备等。技术准备应包括施工方案编制计划、试验检验及设备调试工作计划、样板制作计划等（依据：《建筑施工组织设计规范》GB/T 50502-2009 §4.4.1/§5.4.1）",
+    "enabled": true,
+    "based_on_review_basis": false
+  },
+  {
+    "rule_id": "GBT50502-施工组织设计规范-4.5.1-5.5.1",
+    "review_item_code": "content_compliance",
+    "rule_name": "施工方法简要说明",
+    "rule_description": "单位工程应按照《建筑工程施工质量验收统一标准》GB 50300中分部、分项工程的划分原则，对主要分部、分项工程制定施工方案（依据：《建筑施工组织设计规范》GB/T 50502-2009 §4.5.1/§5.5.1）",
+    "enabled": true,
+    "based_on_review_basis": false
+  },
+  {
+    "rule_id": "GBT50502-施工组织设计规范-4.5.2",
+    "review_item_code": "content_compliance",
+    "rule_name": "专项工程施工方法简述",
+    "rule_description": "对脚手架工程、起重吊装工程、临时用水用电工程、季节性施工等专项工程所采用的施工方法应进行简要说明（依据：《建筑施工组织设计规范》GB/T 50502-2009 §4.5.2）",
+    "enabled": true,
+    "based_on_review_basis": false
+  },
+  {
+    "rule_id": "GBT50502-施工组织设计规范-4.6.1-5.6.1",
+    "review_item_code": "content_compliance",
+    "rule_name": "施工总平面布置原则",
+    "rule_description": "施工总平面布置应符合：平面布置科学合理、施工场地占用面积少；合理组织运输、减少二次搬运；施工区域划分应符合总体施工部署和施工流程要求；临时设施应方便生产和生活，办公区、生活区和生产区宜分离设置；符合节能、环保、安全和消防等要求（依据：《建筑施工组织设计规范》GB/T 50502-2009 §4.6.1/§5.6.1）",
+    "enabled": true,
+    "based_on_review_basis": false
+  },
+  {
+    "rule_id": "GBT50502-施工组织设计规范-4.6.2",
+    "review_item_code": "content_compliance",
+    "rule_name": "总平面布置图绘制要求",
+    "rule_description": "施工总平面布置图应根据项目总体施工部署，绘制现场不同施工阶段（期）的总平面布置图；绘制应符合国家相关标准要求并附必要说明（依据：《建筑施工组织设计规范》GB/T 50502-2009 §4.6.2）",
+    "enabled": true,
+    "based_on_review_basis": false
+  },
+  {
+    "rule_id": "GBT50502-施工组织设计规范-5.2.1-6.2.1",
+    "review_item_code": "content_compliance",
+    "rule_name": "施工目标满足要求",
+    "rule_description": "工程施工目标应根据施工合同、招标文件以及本单位对工程管理目标的要求确定，包括进度、质量、安全、环境和成本等目标。各项目标应满足施工组织总设计中确定的总体目标（依据：《建筑施工组织设计规范》GB/T 50502-2009 §5.2.1/§6.2.1）",
+    "enabled": true,
+    "based_on_review_basis": false
+  },
+  {
+    "rule_id": "GBT50502-施工组织设计规范-5.5.2",
+    "review_item_code": "content_compliance",
+    "rule_name": "专项工程方案验算说明",
+    "rule_description": "对脚手架工程、起重吊装工程、临时用水用电工程、季节性施工等专项工程所采用的施工方案应进行必要的验算和说明（依据：《建筑施工组织设计规范》GB/T 50502-2009 §5.5.2）",
+    "enabled": true,
+    "based_on_review_basis": false
+  },
+  {
+    "rule_id": "GBT50502-施工组织设计规范-6.2.2",
+    "review_item_code": "content_compliance",
+    "rule_name": "施工顺序及流水段确定",
+    "rule_description": "工程施工顺序及施工流水段应在施工安排中确定（依据：《建筑施工组织设计规范》GB/T 50502-2009 §6.2.2）",
+    "enabled": true,
+    "based_on_review_basis": false
+  },
+  {
+    "rule_id": "GBT50502-施工组织设计规范-6.5.1",
+    "review_item_code": "content_compliance",
+    "rule_name": "施工方法及工艺核算",
+    "rule_description": "应明确分部（分项）工程或专项工程施工方法并进行必要的技术核算，对主要分项工程（工序）明确施工工艺要求（依据：《建筑施工组织设计规范》GB/T 50502-2009 §6.5.1）",
+    "enabled": true,
+    "based_on_review_basis": false
+  },
+  {
+    "rule_id": "GBT50502-施工组织设计规范-6.5.2",
+    "review_item_code": "content_compliance",
+    "rule_name": "质量安全重点说明",
+    "rule_description": "对易发生质量通病、易出现安全问题、施工难度大、技术含量高的分项工程（工序）等应做出重点说明（依据：《建筑施工组织设计规范》GB/T 50502-2009 §6.5.2）",
+    "enabled": true,
+    "based_on_review_basis": false
+  },
+  {
+    "rule_id": "GBT50502-施工组织设计规范-6.5.3",
+    "review_item_code": "content_compliance",
+    "rule_name": "新技术新工艺试验论证",
+    "rule_description": "对开发和使用的新技术、新工艺以及采用的新材料、新设备应通过必要的试验或论证并制定计划（依据：《建筑施工组织设计规范》GB/T 50502-2009 §6.5.3）",
+    "enabled": true,
+    "based_on_review_basis": false
+  },
+  {
+    "rule_id": "GBT50502-施工组织设计规范-6.5.4",
+    "review_item_code": "content_compliance",
+    "rule_name": "季节性施工要求",
+    "rule_description": "对季节性施工应提出具体要求（依据：《建筑施工组织设计规范》GB/T 50502-2009 §6.5.4）",
+    "enabled": true,
+    "based_on_review_basis": false
+  },
+  {
+    "rule_id": "GBT50502-施工组织设计规范-7.4.3",
+    "review_item_code": "content_compliance",
+    "rule_name": "安全管理符合政府要求",
+    "rule_description": "现场安全管理应符合国家和地方政府部门的要求（依据：《建筑施工组织设计规范》GB/T 50502-2009 §7.4.3）",
+    "enabled": true,
+    "based_on_review_basis": false
+  },
+  {
+    "rule_id": "GBT50502-施工组织设计规范-7.5.3",
+    "review_item_code": "content_compliance",
+    "rule_name": "环境管理符合政府要求",
+    "rule_description": "现场环境管理应符合国家和地方政府部门的要求（依据：《建筑施工组织设计规范》GB/T 50502-2009 §7.5.3）",
+    "enabled": true,
+    "based_on_review_basis": false
+  },
+  {
+    "rule_id": "GBT50502-施工组织设计规范-7.7.3",
+    "review_item_code": "content_compliance",
+    "rule_name": "管理计划结构要求",
+    "rule_description": "各项管理计划的内容应有目标、有组织机构、有资源配置、有管理制度和技术组织措施等（依据：《建筑施工组织设计规范》GB/T 50502-2009 §7.7.3）",
+    "enabled": true,
+    "based_on_review_basis": false
+  },
+  {
+    "rule_id": "JGJ59-安全检查标准-3.1.3",
+    "review_item_code": "content_compliance",
+    "rule_name": "施工组织设计安全措施",
+    "rule_description": "工程项目部在施工前应编制施工组织设计，施工组织设计应针对工程特点、施工工艺制定安全技术措施（依据：《建筑施工安全检查标准》JGJ 59-2011 §3.1.3）",
+    "enabled": true,
+    "based_on_review_basis": false
+  },
+  {
+    "rule_id": "JGJ59-安全检查标准-3.1.3-2b",
+    "review_item_code": "content_compliance",
+    "rule_name": "危大工程专项方案",
+    "rule_description": "危险性较大的分部分项工程应按规定编制安全专项施工方案，专项施工方案应有针对性，并按有关规定进行设计计算（依据：《建筑施工安全检查标准》JGJ 59-2011 §3.1.3）",
+    "enabled": true,
+    "based_on_review_basis": false
+  },
+  {
+    "rule_id": "JGJ59-安全检查标准-3.1.3-2c",
+    "review_item_code": "content_compliance",
+    "rule_name": "超规模专家论证",
+    "rule_description": "超过一定规模危险性较大的分部分项工程，施工单位应组织专家对专项施工方案进行论证（依据：《建筑施工安全检查标准》JGJ 59-2011 §3.1.3）",
+    "enabled": true,
+    "based_on_review_basis": false
+  },
+  {
+    "rule_id": "JGJ59-安全检查标准-3.1.3-2d",
+    "review_item_code": "content_compliance",
+    "rule_name": "方案审批签字要求",
+    "rule_description": "施工组织设计、安全专项施工方案，应由有关部门审核，施工单位技术负责人、监理单位项目总监批准（依据：《建筑施工安全检查标准》JGJ 59-2011 §3.1.3）",
+    "enabled": true,
+    "based_on_review_basis": false
+  },
+  {
+    "rule_id": "JGJ59-安全检查标准-3.2.1",
+    "review_item_code": "content_compliance",
+    "rule_name": "文明施工符合消防规范",
+    "rule_description": "文明施工检查评定应符合现行国家标准《建设工程施工现场消防安全技术规范》GB 50720的规定（依据：《建筑施工安全检查标准》JGJ 59-2011 §3.2.1）",
+    "enabled": true,
+    "based_on_review_basis": false
+  },
+  {
+    "rule_id": "JGJ59-安全检查标准-3.2.3",
+    "review_item_code": "content_compliance",
+    "rule_name": "现场防火应符合规范",
+    "rule_description": "施工现场应建立消防安全管理制度、制定消防措施；消防通道、消防水源应符合规范要求；灭火器材应保证可靠有效（依据：《建筑施工安全检查标准》JGJ 59-2011 §3.2.3）",
+    "enabled": true,
+    "based_on_review_basis": false
+  },
+  {
+    "rule_id": "JGJ59-安全检查标准-3.2.3-1",
+    "review_item_code": "content_compliance",
+    "rule_name": "围挡设置应达标",
+    "rule_description": "市区主要路段的工地应设置高度不小于2.5m的封闭围挡；一般路段的工地应设置高度不小于1.8m的封闭围挡（依据：《建筑施工安全检查标准》JGJ 59-2011 §3.2.3）",
+    "enabled": true,
+    "based_on_review_basis": false
+  },
+  {
+    "rule_id": "建办质2018-31-二",
+    "review_item_code": "content_compliance",
+    "rule_name": "专项方案九项内容",
+    "rule_description": "危大工程专项施工方案应包括工程概况、编制依据、施工计划、施工工艺技术、施工安全保证措施、施工管理及作业人员配备和分工、验收要求、应急处置措施、计算书及相关施工图纸九项内容（依据：建办质〔2018〕31号第二条）",
+    "enabled": true,
+    "based_on_review_basis": false
+  },
+  {
+    "rule_id": "建办质2018-31-二七",
+    "review_item_code": "content_compliance",
+    "rule_name": "危大工程验收要求",
+    "rule_description": "施工组织设计应包含危大工程验收要求，含验收标准、验收程序、验收内容、验收人员（依据：建办质〔2018〕31号第二条第七款）",
+    "enabled": true,
+    "based_on_review_basis": false
+  },
+  {
+    "rule_id": "建办质2018-31-二五",
+    "review_item_code": "content_compliance",
+    "rule_name": "危大工程安全保证",
+    "rule_description": "施工组织设计应包含危大工程专项施工方案对应的施工安全保证措施，含组织保障、技术措施、监测监控（依据：建办质〔2018〕31号第二条第五款）",
+    "enabled": true,
+    "based_on_review_basis": false
+  },
+  {
+    "rule_id": "建办质2018-31-二八",
+    "review_item_code": "content_compliance",
+    "rule_name": "危大工程应急措施",
+    "rule_description": "施工组织设计应包含危大工程应急处置措施（依据：建办质〔2018〕31号第二条第八款）",
+    "enabled": true,
+    "based_on_review_basis": false
+  },
+  {
+    "rule_id": "建办质2018-31-二六",
+    "review_item_code": "content_compliance",
+    "rule_name": "危大工程人员配备",
+    "rule_description": "施工组织设计应明确危大工程施工管理及作业人员配备和分工，含施工管理人员、专职安全生产管理人员、特种作业人员（依据：建办质〔2018〕31号第二条第六款）",
+    "enabled": true,
+    "based_on_review_basis": false
+  },
+  {
+    "rule_id": "建办质2018-31-四一",
+    "review_item_code": "content_compliance",
+    "rule_name": "方案内容完整可行",
+    "rule_description": "专家论证应审查专项施工方案内容是否完整、可行（依据：建办质〔2018〕31号第四条第一款）",
+    "enabled": true,
+    "based_on_review_basis": false
+  },
+  {
+    "rule_id": "建办质2018-31-四三",
+    "review_item_code": "content_compliance",
+    "rule_name": "满足现场确保安全",
+    "rule_description": "专项施工方案应满足现场实际情况，并能够确保施工安全（依据：建办质〔2018〕31号第四条第三款）",
+    "enabled": true,
+    "based_on_review_basis": false
+  },
+  {
+    "rule_id": "建办质2024-63-通用1",
+    "review_item_code": "content_compliance",
+    "rule_name": "工程及周边环境描述",
+    "rule_description": "方案应包含工程及周边环境情况描述，缺失则判定为严重缺陷（依据：建办质〔2024〕63号通用条款第1条）",
+    "enabled": true,
+    "based_on_review_basis": false
+  },
+  {
+    "rule_id": "建办质2024-63-通用11",
+    "review_item_code": "content_compliance",
+    "rule_name": "禁用工艺设备材料",
+    "rule_description": "不得采用禁止使用的施工工艺、设备和材料，违反则判定为严重缺陷（依据：建办质〔2024〕63号通用条款第11条）",
+    "enabled": true,
+    "based_on_review_basis": false
+  },
+  {
+    "rule_id": "建办质2024-63-通用12",
+    "review_item_code": "content_compliance",
+    "rule_name": "有限空间安全措施",
+    "rule_description": "涉及有限空间作业时，应包含通风、有害和可燃气体检测、专人监护等安全技术措施，缺失则判定为严重缺陷（依据：建办质〔2024〕63号通用条款第12条）",
+    "enabled": true,
+    "based_on_review_basis": false
+  },
+  {
+    "rule_id": "建办质2024-63-通用13",
+    "review_item_code": "content_compliance",
+    "rule_name": "地下水控制措施",
+    "rule_description": "涉及地下水时，应包含地下水控制措施，缺失则判定为严重缺陷（依据：建办质〔2024〕63号通用条款第13条）",
+    "enabled": true,
+    "based_on_review_basis": false
+  },
+  {
+    "rule_id": "建办质2024-63-通用14",
+    "review_item_code": "content_compliance",
+    "rule_name": "防高坠安全措施",
+    "rule_description": "涉及高空作业时，应包含防高坠安全技术措施，缺失则判定为严重缺陷（依据：建办质〔2024〕63号通用条款第14条）",
+    "enabled": true,
+    "based_on_review_basis": false
+  },
+  {
+    "rule_id": "建办质2024-63-通用15",
+    "review_item_code": "content_compliance",
+    "rule_name": "临时用电安全措施",
+    "rule_description": "涉及临时用电时，应包含临时施工用电安全技术措施，缺失则判定为严重缺陷（依据：建办质〔2024〕63号通用条款第15条）",
+    "enabled": true,
+    "based_on_review_basis": false
+  },
+  {
+    "rule_id": "建办质2024-63-通用16",
+    "review_item_code": "content_compliance",
+    "rule_name": "毗邻建构筑物防护",
+    "rule_description": "涉及因施工可能造成损害的毗邻建筑物、构筑物、道路及地下管线等，应有专项防护措施，缺失则判定为严重缺陷（依据：建办质〔2024〕63号通用条款第16条）",
+    "enabled": true,
+    "based_on_review_basis": false
+  },
+  {
+    "rule_id": "建办质2024-63-通用17",
+    "review_item_code": "content_compliance",
+    "rule_name": "其他重大风险措施",
+    "rule_description": "存在其他重大施工安全风险时，应有针对性施工安全保证措施，缺失则判定为严重缺陷（依据：建办质〔2024〕63号通用条款第17条）",
+    "enabled": true,
+    "based_on_review_basis": false
+  },
+  {
+    "rule_id": "建办质2024-63-通用2",
+    "review_item_code": "content_compliance",
+    "rule_name": "风险辨识分级管控",
+    "rule_description": "方案应包含施工风险辨识、风险分级及相应的风险管控措施，缺失则判定为严重缺陷（依据：建办质〔2024〕63号通用条款第2条）",
+    "enabled": true,
+    "based_on_review_basis": false
+  },
+  {
+    "rule_id": "建办质2024-63-通用4",
+    "review_item_code": "content_compliance",
+    "rule_name": "施工工艺满足实际",
+    "rule_description": "施工工艺技术应满足设计和现场实际情况，不符合则判定为严重缺陷（依据：建办质〔2024〕63号通用条款第4条）",
+    "enabled": true,
+    "based_on_review_basis": false
+  },
+  {
+    "rule_id": "建办质2024-63-通用5",
+    "review_item_code": "content_compliance",
+    "rule_name": "施工安全保证措施",
+    "rule_description": "方案应包含施工安全保证措施，含组织保障措施、技术保障措施、监测监控措施，缺失则判定为严重缺陷（依据：建办质〔2024〕63号通用条款第5条）",
+    "enabled": true,
+    "based_on_review_basis": false
+  },
+  {
+    "rule_id": "建办质2024-63-通用6",
+    "review_item_code": "content_compliance",
+    "rule_name": "人员配备与安全职责",
+    "rule_description": "方案应包含施工管理及作业人员配备和分工、安全职责，含施工管理人员、专职安全生产管理人员、建筑施工特种作业人员和其他作业人员，缺失则判定为严重缺陷（依据：建办质〔2024〕63号通用条款第6条）",
+    "enabled": true,
+    "based_on_review_basis": false
+  },
+  {
+    "rule_id": "建办质2024-63-通用7",
+    "review_item_code": "content_compliance",
+    "rule_name": "检验与验收要求",
+    "rule_description": "方案应包含关键工序检验与验收要求，缺失则判定为严重缺陷（依据：建办质〔2024〕63号通用条款第7条）",
+    "enabled": true,
+    "based_on_review_basis": false
+  },
+  {
+    "rule_id": "建办质2024-63-通用8",
+    "review_item_code": "content_compliance",
+    "rule_name": "应急处置措施",
+    "rule_description": "方案应包含应急处置措施，缺失则判定为严重缺陷（依据：建办质〔2024〕63号通用条款第8条）",
+    "enabled": true,
+    "based_on_review_basis": false
+  },
+  {
+    "rule_id": "建办质2018-31-四二",
+    "review_item_code": "calculation_review",
+    "rule_name": "计算验算符合规范",
+    "rule_description": "专项施工方案计算书和验算依据、施工图应符合有关标准规范（依据：建办质〔2018〕31号第四条第二款）",
+    "enabled": true,
+    "based_on_review_basis": false
+  },
+  {
+    "rule_id": "建办质2024-63-通用9",
+    "review_item_code": "calculation_review",
+    "rule_name": "设计计算符合规范",
+    "rule_description": "设计和计算应符合强制性规范要求，不符合则判定为严重缺陷（依据：建办质〔2024〕63号通用条款第9条）",
+    "enabled": true,
+    "based_on_review_basis": false
+  }
+]

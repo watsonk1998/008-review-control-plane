@@ -170,3 +170,22 @@ rule_packs:
     output_issue_types:
       - "missing_supervision_step"
     false_positive_risk: "low"
+
+  "construction_org.clause_rules.v1":
+    rule_pack_id: "construction_org.clause_rules.v1"
+    related_pack_ids:
+      - "construction_org.base"
+    scope: "施工组织设计条文级审查规则（80项）"
+    evidence_requirements:
+      - require_structure_completeness
+      - require_basis_accuracy
+      - require_content_compliance
+      - require_consistency_check
+      - require_calculation_review
+    output_issue_types:
+      - "structure_integrity"
+      - "basis_accuracy"
+      - "consistency_check"
+      - "content_compliance"
+      - "calculation_review"
+    false_positive_risk: "low"

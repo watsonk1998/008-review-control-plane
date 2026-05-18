@@ -1,7 +1,21 @@
 from __future__ import annotations
 
+import json
+from pathlib import Path
+
 from src.domain.models import ReviewLayer
 from src.review.schema import ExtractedFacts, PolicyPack, RuleHit
+
+_CONSTRUCTION_ORG_RULES_PATH = (
+    Path(__file__).resolve().parents[5] / "config" / "review_rules" / "construction_org_rules.json"
+)
+
+
+def _load_construction_org_rules() -> list[dict]:
+    if not _CONSTRUCTION_ORG_RULES_PATH.exists():
+        return []
+    with open(_CONSTRUCTION_ORG_RULES_PATH, encoding="utf-8") as f:
+        return json.load(f)
 
 
 class ReviewRuleEngine:
@@ -14,6 +28,7 @@ class ReviewRuleEngine:
 
         hits: list[RuleHit] = []
         hits.extend(self._construction_org_hits(facts, pack_by_rule))
+        hits.extend(self._construction_org_clause_hits(facts, pack_by_rule, parse_result))
         hits.extend(self._construction_scheme_hits(facts, pack_by_rule))
         hits.extend(self._hazardous_special_scheme_hits(facts, pack_by_rule))
         hits.extend(self._distribution_network_special_scheme_hits(facts, pack_by_rule, parse_result))
@@ -159,6 +174,122 @@ class ReviewRuleEngine:
             )
         )
         return hits
+
+    def _construction_org_clause_hits(
+        self, facts: ExtractedFacts, pack_by_rule: dict[str, tuple[str, str]], parse_result
+    ) -> list[RuleHit]:
+        """Evaluate clause-level rules from JSON rule set against parsed document."""
+        if not any(
+            pid == "construction_org.base" for pid, _ in pack_by_rule.values()
+        ):
+            return []
+
+        rules = _load_construction_org_rules()
+        if not rules:
+            return []
+
+        # Build fact lookup from structure completeness and section presence
+        structure_rows = facts.projectFacts.get("structureCompleteness") or []
+        structure_map = {row["itemKey"]: row for row in structure_rows}
+        section_presence = facts.projectFacts.get("sectionPresence") or {}
+
+        # Build text content index from parse_result for keyword matching
+        block_texts: list[str] = []
+        if parse_result is not None:
+            for block in getattr(parse_result, "blocks", []) or []:
+                text = str(block.get("text") or "").strip()
+                if text:
+                    block_texts.append(text)
+        full_text = "\n".join(block_texts)
+
+        hits: list[RuleHit] = []
+        for rule in rules:
+            if not rule.get("enabled", True):
+                continue
+
+            rule_id = rule["rule_id"]
+            item_code = rule["review_item_code"]
+            rule_desc = rule["rule_description"]
+
+            # Determine pack and readiness
+            pack_key = f"construction_org_clause_{rule_id}"
+            pack_id, pack_readiness = pack_by_rule.get(
+                pack_key, ("construction_org.base", "ready")
+            )
+
+            # Evaluate rule based on review_item_code category
+            status, severity, fact_refs, evidence_refs = self._evaluate_clause_rule(
+                rule, structure_map, section_presence, full_text
+            )
+
+            hits.append(
+                RuleHit(
+                    ruleId=pack_key,
+                    packId=pack_id,
+                    packReadiness=pack_readiness,
+                    matchType="direct_hit",
+                    status=status,
+                    layerHint=ReviewLayer.L1 if item_code == "structure_integrity" else ReviewLayer.L2,
+                    severityHint=severity,
+                    factRefs=fact_refs,
+                    evidenceRefs=evidence_refs,
+                    rationale=rule_desc[:200],
+                )
+            )
+
+        return hits
+
+    def _evaluate_clause_rule(
+        self,
+        rule: dict,
+        structure_map: dict,
+        section_presence: dict,
+        full_text: str,
+    ) -> tuple[str, str, list[str], list[str]]:
+        """Evaluate a single clause rule. Returns (status, severity, factRefs, evidenceRefs)."""
+        item_code = rule["review_item_code"]
+        rule_desc = rule["rule_description"]
+
+        # Map review_item_code to structure item keys
+        _ITEM_TO_STRUCTURE_KEY = {
+            "structure_integrity": "preparationBasis",
+            "basis_accuracy": "preparationBasis",
+            "consistency_check": "constructionDeployment",
+            "content_compliance": "engineeringOverview",
+            "calculation_review": "processMethod",
+        }
+
+        structure_key = _ITEM_TO_STRUCTURE_KEY.get(item_code, "engineeringOverview")
+        structure_row = structure_map.get(structure_key)
+
+        # For structure_integrity rules: check if the relevant section exists
+        if item_code == "structure_integrity":
+            if structure_row and structure_row.get("status") == "missing":
+                return "hit", "high", [f"project.structureCompleteness.{structure_key}"], ["policy:construction_org_structure"]
+            elif structure_row and structure_row.get("status") == "partial":
+                return "hit", "medium", [f"project.structureCompleteness.{structure_key}"], ["policy:construction_org_structure"]
+            return "pass", "low", [f"project.structureCompleteness.{structure_key}"], ["policy:construction_org_structure"]
+
+        # For content_compliance and other rules: keyword-based check
+        keywords = self._extract_keywords_from_rule(rule_desc)
+        if keywords and not any(kw in full_text for kw in keywords):
+            return "manual_review_needed", "medium", [f"project.sectionPresence.{structure_key}"], ["policy:construction_org_clause_rules"]
+
+        return "pass", "low", [f"project.sectionPresence.{structure_key}"], ["policy:construction_org_clause_rules"]
+
+    @staticmethod
+    def _extract_keywords_from_rule(rule_desc: str) -> list[str]:
+        """Extract checkable keywords from rule description for document matching."""
+        import re
+        keywords = []
+        match = re.search(r'应(?:包括|包含|设置|建立|明确|识别|制定)(.*?)(?:（|$)', rule_desc)
+        if match:
+            items = re.split(r'[、；;]', match.group(1))
+            for item in items:
+                item = item.strip().strip('等')
+                if len(item) >= 2:
+                    keywords.append(item)
+        return keywords[:5]
 
     def _construction_scheme_hits(self, facts: ExtractedFacts, pack_by_rule: dict[str, tuple[str, str]]) -> list[RuleHit]:
         if not any(pack_id == 'construction_scheme.base' for pack_id, _ in pack_by_rule.values()):
