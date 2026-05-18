@@ -47,7 +47,7 @@ _NON_NORMATIVE_HINTS = (
     '查勘记录',
 )
 _NORMATIVE_CODE_PATTERN = re.compile(
-    r'(?:(?:GB|GB/T|GBJ|DL/T|DL|Q/CSG|Q/GDW|Q/SH|Q/BGJ|JGJ|NB/T|NB|AQ|DB|DBJ|DGJ|YD/T|SL|GA|CECS|TSG|HG|CJJ|SH/T|YB|JB|CJ|YS|SY|HJ|TB|LB|MZ)\s*[-/A-Z]*\s*\d{2,}(?:\.\d+)?(?:[-—]\d{2,4})?)',
+    r'(?:(?:GB|GB/T|GBJ|DL/T|DL|Q/CSG|Q/GDW|Q/SH|Q/BGJ|JGJ/T|JGJ|NB/T|NB|AQ|DB|DBJ|DGJ|YD/T|SL|GA|CECS|TSG|HG|CJJ|SH/T|YB|JB|CJ|YS|SY|HJ|TB|LB|MZ)\s*[-/A-Z]*\s*\d{2,}(?:\.\d+)?(?:[-—]\d{2,4})?)',
     re.IGNORECASE,
 )
 _VERSION_YEAR_PATTERN = re.compile(r'[-—]\d{4}(?:\b|$)')
@@ -241,8 +241,6 @@ class NormativeValidityChecker:
         }
 
     async def _search_web(self, title: str) -> dict[str, Any]:
-        if DDGS is None:
-            return self._unknown_result('web', '当前环境未启用联网检索依赖。')
         # Circuit breaker: skip web search if too many consecutive failures
         if time.monotonic() < self._web_circuit_open_until:
             return self._unknown_result('web', '联网检索暂时不可用（连续失败冷却中）。')
@@ -268,11 +266,100 @@ class NormativeValidityChecker:
             self._web_circuit_open_until = time.monotonic() + _WEB_SEARCH_COOLDOWN
 
     def _search_web_sync(self, title: str) -> dict[str, Any]:
+        """Search Chinese standards portals directly for standard validity."""
+        # Extract standard code from title for targeted search
+        code_match = _NORMATIVE_CODE_PATTERN.search(title)
+        query_code = code_match.group(0) if code_match else title
+
+        # Try standards portal first
+        result = self._try_standards_portal(query_code, title)
+        if result:
+            return result
+
+        # Fallback: try DDGS if available
+        if DDGS is not None:
+            return self._try_ddgs_search(title)
+
+        return self._unknown_result('web', '当前环境未启用联网检索依赖。')
+
+    def _try_standards_portal(self, query_code: str, title: str) -> dict[str, Any] | None:
+        """Try scraping Chinese standards portals for standard status."""
+        import urllib.request
+        import urllib.parse
+
+        # Try openstd.samr.gov.cn (national standards portal)
+        try:
+            search_url = f"https://openstd.samr.gov.cn/bzgk/gb/newGbInfo?hcno={urllib.parse.quote(query_code)}"
+            req = urllib.request.Request(
+                search_url,
+                headers={
+                    'User-Agent': 'Mozilla/5.0 (compatible; HermesReviewBot/1.0)',
+                    'Accept': 'text/html,application/xhtml+xml',
+                },
+            )
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                html_content = resp.read().decode('utf-8', errors='ignore')
+
+            if any(hint in html_content for hint in ('废止', '作废', '被替代')):
+                return {
+                    'status': 'superseded',
+                    'resolvedBy': 'web',
+                    'summary': '国家标准信息平台显示该标准已废止或被替代。',
+                    'evidenceTitle': f'国家标准信息平台 - {query_code}',
+                    'evidenceUrl': search_url,
+                }
+            if any(hint in html_content for hint in ('现行', '有效', '实施')):
+                return {
+                    'status': 'current',
+                    'resolvedBy': 'web',
+                    'summary': '国家标准信息平台显示该标准现行有效。',
+                    'evidenceTitle': f'国家标准信息平台 - {query_code}',
+                    'evidenceUrl': search_url,
+                }
+        except Exception:
+            pass
+
+        # Try std.samr.gov.cn (Standardization Administration)
+        try:
+            search_url = f"https://std.samr.gov.cn/search?keyword={urllib.parse.quote(query_code)}"
+            req = urllib.request.Request(
+                search_url,
+                headers={
+                    'User-Agent': 'Mozilla/5.0 (compatible; HermesReviewBot/1.0)',
+                    'Accept': 'text/html,application/xhtml+xml',
+                },
+            )
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                html_content = resp.read().decode('utf-8', errors='ignore')
+
+            if any(hint in html_content for hint in ('废止', '作废', '被替代')):
+                return {
+                    'status': 'superseded',
+                    'resolvedBy': 'web',
+                    'summary': '国家标准化管理委员会显示该标准已废止或被替代。',
+                    'evidenceTitle': f'国标委 - {query_code}',
+                    'evidenceUrl': search_url,
+                }
+            if any(hint in html_content for hint in ('现行', '有效', '实施')):
+                return {
+                    'status': 'current',
+                    'resolvedBy': 'web',
+                    'summary': '国家标准化管理委员会显示该标准现行有效。',
+                    'evidenceTitle': f'国标委 - {query_code}',
+                    'evidenceUrl': search_url,
+                }
+        except Exception:
+            pass
+
+        return None
+
+    def _try_ddgs_search(self, title: str) -> dict[str, Any]:
+        """Fallback to DuckDuckGo search."""
         query = f'{title} 现行 有效 废止 替代'
         try:
             with DDGS() as ddgs:
                 results = list(ddgs.text(query, max_results=8))
-        except Exception as exc:  # pragma: no cover
+        except Exception as exc:
             raise RuntimeError(f'联网检索失败：{exc}') from exc
         official = [item for item in results if self._is_official_result(item)]
         pool = official or results
